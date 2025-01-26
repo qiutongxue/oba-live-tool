@@ -20,18 +20,18 @@ export default function Sidebar({ activeTab, onTabChange }: SidebarProps) {
   ]
 
   return (
-    <aside className="w-64 min-w-[256px] bg-white border-r">
-      <div className="p-4">
-        <h2 className="text-lg font-semibold text-gray-800 mb-4">功能列表</h2>
-        <nav className="space-y-1">
+    <aside className="w-64 min-w-[256px] bg-white border-r border-gray-200 shadow-sm relative z-0">
+      <div className="p-6">
+        <h2 className="text-lg font-semibold text-gray-800 mb-6">功能列表</h2>
+        <nav className="space-y-2">
           {tabs.map(tab => (
             <button
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
-              className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
+              className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-all ${
                 activeTab === tab.id
-                  ? 'bg-blue-50 text-blue-700'
-                  : 'text-gray-700 hover:bg-gray-50'
+                  ? 'bg-blue-50 text-blue-700 shadow-sm ring-1 ring-blue-100'
+                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
               }`}
             >
               {tab.icon}

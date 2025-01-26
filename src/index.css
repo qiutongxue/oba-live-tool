@@ -2,6 +2,26 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 移除所有元素的默认 focus 轮廓 */
+@layer base {
+  :focus {
+    outline: none;
+  }
+
+  /* 自定义输入框的 focus 效果 */
+  input:not([type="checkbox"]):focus {
+    --tw-ring-color: transparent;
+    border-color: #93C5FD;
+    box-shadow: 0 0 0 1px #93C5FD, 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
+  }
+
+  /* 移除按钮的 focus ring */
+  button:focus {
+    --tw-ring-color: transparent;
+  }
+}
+
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -57,10 +77,10 @@ button:hover {
   border-color: #646cff;
 }
 
-button:focus,
+/* button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
-}
+} */
 
 code {
   background-color: #1a1a1a;

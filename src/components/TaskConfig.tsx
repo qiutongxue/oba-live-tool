@@ -21,6 +21,48 @@ interface TaskConfigPanelProps {
   activeTab: string
 }
 
+function EnableSwitch({ enabled, onChange }: { enabled: boolean, onChange: (checked: boolean) => void }) {
+  return (
+    <label
+      className="flex items-center gap-3 px-4 py-2 rounded-lg border-2 transition-colors cursor-pointer hover:bg-gray-50"
+      style={{ borderColor: enabled ? '#10B981' : '#E5E7EB' }}
+    >
+      <div className="flex items-center gap-2">
+        <svg
+          className={`w-5 h-5 transition-colors ${enabled ? 'text-green-500' : 'text-gray-400'}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            d="M13 10V3L4 14h7v7l9-11h-7z"
+          />
+        </svg>
+        <span className={`font-medium ${enabled ? 'text-green-600' : 'text-gray-500'}`}>
+          {enabled ? '功能启用' : '功能关闭'}
+        </span>
+      </div>
+      <div className="relative inline-flex items-center">
+        <input
+          type="checkbox"
+          checked={enabled}
+          onChange={e => onChange(e.target.checked)}
+          className="sr-only peer"
+        />
+        <div className="w-11 h-6 bg-gray-200 peer-focus:ring-0 rounded-full peer dark:bg-gray-700
+          peer-checked:after:translate-x-[20px] peer-checked:bg-green-500
+          after:content-[''] after:absolute after:top-[2px] after:left-[2px]
+          after:bg-white after:border-gray-300 after:border after:rounded-full
+          after:h-5 after:w-5 after:transition-all"
+        />
+      </div>
+    </label>
+  )
+}
+
 export default function TaskConfigPanel({ activeTab }: TaskConfigPanelProps) {
   const [config, setConfig] = useState<TaskConfig>({
     autoMessage: {
@@ -38,11 +80,20 @@ export default function TaskConfigPanel({ activeTab }: TaskConfigPanelProps) {
     },
   })
 
+  // 添加一个状态来存储原始配置
+  const [originalConfig, setOriginalConfig] = useState<TaskConfig | null>(null)
   // 添加错误状态
   const [validationError, setValidationError] = useState<string | null>(null)
   // 添加成功提示状态
   //   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' } | null>(null)
+
+  // 检查配置是否发生变化
+  const hasChanges = (): boolean => {
+    if (!originalConfig)
+      return false
+    return JSON.stringify(config) !== JSON.stringify(originalConfig)
+  }
 
   // 验证配置
   const validateConfig = () => {
@@ -82,21 +133,6 @@ export default function TaskConfigPanel({ activeTab }: TaskConfigPanelProps) {
     return true
   }
 
-  // 保存配置到本地
-  const saveConfig = async () => {
-    if (!validateConfig())
-      return
-
-    try {
-      await window.ipcRenderer.invoke('save-task-config', config)
-      setToast({ message: '配置保存成功', type: 'success' })
-    }
-    catch (error) {
-      console.error('保存配置失败:', error)
-      setToast({ message: '保存配置失败', type: 'error' })
-    }
-  }
-
   // 从本地加载配置
   useEffect(() => {
     const loadConfig = async () => {
@@ -104,6 +140,7 @@ export default function TaskConfigPanel({ activeTab }: TaskConfigPanelProps) {
         const savedConfig = await window.ipcRenderer.invoke('load-task-config')
         if (savedConfig) {
           setConfig(savedConfig)
+          setOriginalConfig(savedConfig) // 保存原始配置
         }
       }
       catch (error) {
@@ -112,6 +149,22 @@ export default function TaskConfigPanel({ activeTab }: TaskConfigPanelProps) {
     }
     loadConfig()
   }, [])
+
+  // 保存配置到本地
+  const saveConfig = async () => {
+    if (!validateConfig() || !hasChanges())
+      return
+
+    try {
+      await window.ipcRenderer.invoke('save-task-config', config)
+      setOriginalConfig(config) // 更新原始配置
+      setToast({ message: '配置保存成功', type: 'success' })
+    }
+    catch (error) {
+      console.error('保存配置失败:', error)
+      setToast({ message: '保存配置失败', type: 'error' })
+    }
+  }
 
   // 开始任务
   const startTask = async () => {
@@ -174,21 +227,13 @@ export default function TaskConfigPanel({ activeTab }: TaskConfigPanelProps) {
                     {config.autoMessage.enabled ? '已启用' : '已禁用'}
                   </span>
                 </div>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <span className="text-sm text-gray-600">启用</span>
-                  <div className="relative inline-flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={config.autoMessage.enabled}
-                      onChange={e => setConfig(prev => ({
-                        ...prev,
-                        autoMessage: { ...prev.autoMessage, enabled: e.target.checked },
-                      }))}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                  </div>
-                </label>
+                <EnableSwitch
+                  enabled={config.autoMessage.enabled}
+                  onChange={checked => setConfig(prev => ({
+                    ...prev,
+                    autoMessage: { ...prev.autoMessage, enabled: checked },
+                  }))}
+                />
               </div>
 
               <div className="space-y-6">
@@ -206,7 +251,7 @@ export default function TaskConfigPanel({ activeTab }: TaskConfigPanelProps) {
                           interval: [Number(e.target.value) * 1000, prev.autoMessage.interval[1]],
                         },
                       }))}
-                      className="w-24 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-24 px-3 py-2 border border-gray-300 rounded-md transition-shadow"
                       min="1"
                     />
                     <span className="text-gray-500">至</span>
@@ -220,7 +265,7 @@ export default function TaskConfigPanel({ activeTab }: TaskConfigPanelProps) {
                           interval: [prev.autoMessage.interval[0], Number(e.target.value) * 1000],
                         },
                       }))}
-                      className="w-24 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-24 px-3 py-2 border border-gray-300 rounded-md transition-shadow"
                       min="1"
                     />
                   </div>
@@ -236,16 +281,18 @@ export default function TaskConfigPanel({ activeTab }: TaskConfigPanelProps) {
                           type="text"
                           value={message}
                           onChange={e => handleMessageChange(index, e.target.value)}
-                          className={`flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                            message.length > 50 ? 'border-red-500' : ''
+                          className={`flex-1 px-3 py-2 border border-gray-300 rounded-md transition-all ${
+                            message.length > 50
+                              ? 'border-red-300 focus:border-red-300 focus:shadow-[0_0_0_1px_#FCA5A5,0_1px_2px_0_rgba(0,0,0,0.05)]'
+                              : ''
                           }`}
                         />
-                        {message.length > 0 && (
+                        <div className="w-12 text-right">
                           <span className={`text-xs ${message.length > 50 ? 'text-red-500' : 'text-gray-500'}`}>
                             {message.length}
                             /50
                           </span>
-                        )}
+                        </div>
                         <label className="flex items-center gap-2 min-w-[80px]">
                           <input
                             type="checkbox"
@@ -259,7 +306,7 @@ export default function TaskConfigPanel({ activeTab }: TaskConfigPanelProps) {
                                 autoMessage: { ...prev.autoMessage, pinTops: newPinTops },
                               }))
                             }}
-                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            className="rounded border-gray-300 text-blue-600"
                           />
                           <span className="text-sm text-gray-600">置顶</span>
                         </label>
@@ -306,7 +353,7 @@ export default function TaskConfigPanel({ activeTab }: TaskConfigPanelProps) {
                       ...prev,
                       autoMessage: { ...prev.autoMessage, random: e.target.checked },
                     }))}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    className="rounded border-gray-300 text-blue-600"
                   />
                   <span className="text-sm text-gray-700">随机发送</span>
                 </label>
@@ -328,21 +375,13 @@ export default function TaskConfigPanel({ activeTab }: TaskConfigPanelProps) {
                     {config.autoPopUp.enabled ? '已启用' : '已禁用'}
                   </span>
                 </div>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <span className="text-sm text-gray-600">启用</span>
-                  <div className="relative inline-flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={config.autoPopUp.enabled}
-                      onChange={e => setConfig(prev => ({
-                        ...prev,
-                        autoPopUp: { ...prev.autoPopUp, enabled: e.target.checked },
-                      }))}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                  </div>
-                </label>
+                <EnableSwitch
+                  enabled={config.autoPopUp.enabled}
+                  onChange={checked => setConfig(prev => ({
+                    ...prev,
+                    autoPopUp: { ...prev.autoPopUp, enabled: checked },
+                  }))}
+                />
               </div>
 
               <div className="space-y-6">
@@ -360,7 +399,7 @@ export default function TaskConfigPanel({ activeTab }: TaskConfigPanelProps) {
                           interval: [Number(e.target.value) * 1000, prev.autoPopUp.interval[1]],
                         },
                       }))}
-                      className="w-24 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-24 px-3 py-2 border border-gray-300 rounded-md transition-shadow"
                       min="1"
                     />
                     <span className="text-gray-500">至</span>
@@ -374,7 +413,7 @@ export default function TaskConfigPanel({ activeTab }: TaskConfigPanelProps) {
                           interval: [prev.autoPopUp.interval[0], Number(e.target.value) * 1000],
                         },
                       }))}
-                      className="w-24 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-24 px-3 py-2 border border-gray-300 rounded-md transition-shadow"
                       min="1"
                     />
                   </div>
@@ -390,8 +429,9 @@ export default function TaskConfigPanel({ activeTab }: TaskConfigPanelProps) {
                           type="number"
                           value={id}
                           onChange={e => handleGoodsIdChange(index, Number(e.target.value))}
-                          className="w-24 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-32 px-3 py-2 border border-gray-300 rounded-md transition-shadow"
                           min="1"
+                          placeholder="输入商品ID"
                         />
                         <button
                           onClick={() => {
@@ -436,7 +476,7 @@ export default function TaskConfigPanel({ activeTab }: TaskConfigPanelProps) {
                       ...prev,
                       autoPopUp: { ...prev.autoPopUp, random: e.target.checked },
                     }))}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    className="rounded border-gray-300 text-blue-600"
                   />
                   <span className="text-sm text-gray-700">随机弹窗</span>
                 </label>
@@ -478,11 +518,11 @@ export default function TaskConfigPanel({ activeTab }: TaskConfigPanelProps) {
       <div className="flex justify-end gap-4">
         <button
           onClick={saveConfig}
-          disabled={!!validationError}
+          disabled={!!validationError || !hasChanges()}
           className={`px-6 py-2.5 rounded-lg transition-colors flex items-center gap-2 ${
-            validationError
+            validationError || !hasChanges()
               ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200 focus:ring-4 focus:ring-gray-300'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -496,7 +536,7 @@ export default function TaskConfigPanel({ activeTab }: TaskConfigPanelProps) {
           className={`px-6 py-2.5 rounded-lg transition-colors flex items-center gap-2 ${
             validationError
               ? 'bg-blue-300 text-white cursor-not-allowed'
-              : 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-4 focus:ring-blue-300'
+              : 'bg-blue-600 text-white hover:bg-blue-700'
           }`}
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

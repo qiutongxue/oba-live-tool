@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react'
+import { createPortal } from 'react-dom'
 
 interface ToastProps {
   message: string
@@ -12,8 +13,8 @@ export default function Toast({ message, type, onClose }: ToastProps) {
     return () => clearTimeout(timer)
   }, [onClose])
 
-  return (
-    <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 animate-toast-slide-down">
+  return createPortal(
+    <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50">
       <div className={`px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 ${
         type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
       }`}
@@ -31,6 +32,7 @@ export default function Toast({ message, type, onClose }: ToastProps) {
             )}
         <span className="font-medium">{message}</span>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
