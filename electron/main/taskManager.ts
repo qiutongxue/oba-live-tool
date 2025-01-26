@@ -3,6 +3,7 @@ import type { createAutoMessage } from './tasks/autoMessage'
 import type { createAutoPopUp } from './tasks/autoPopUp'
 import type { BaseConfig, Scheduler } from './tasks/scheduler'
 import { createLogger } from './logger'
+import windowManager from './windowManager'
 
 export class TaskManager {
   private static instance: TaskManager
@@ -45,13 +46,13 @@ export class TaskManager {
     this.tasks = {}
   }
 
-  async startTask(taskName: string) {
+  startTask(taskName: string) {
     if (!this.tasks[taskName])
       throw new Error(`Task ${taskName} not found`)
-    this.tasks[taskName].start()
+      this.tasks[taskName].start()
   }
 
-  async stopTask(taskName: string) {
+  stopTask(taskName: string) {
     if (!this.tasks[taskName])
       throw new Error(`Task ${taskName} not found`)
     this.tasks[taskName].stop()

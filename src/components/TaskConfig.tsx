@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useLiveControl } from '../contexts/LiveControlContext'
+import { TaskPanel } from './TaskPanel'
 import Toast from './Toast'
 
 interface TaskConfig {
@@ -26,50 +27,14 @@ interface TaskConfigPanelProps {
   activeTab: string
 }
 
-function EnableSwitch({ enabled, onChange }: { enabled: boolean, onChange: (checked: boolean) => void }) {
-  return (
-    <label
-      className="flex items-center gap-3 px-4 py-2 rounded-lg border-2 transition-colors cursor-pointer hover:bg-gray-50"
-      style={{ borderColor: enabled ? '#10B981' : '#E5E7EB' }}
-    >
-      <div className="flex items-center gap-2">
-        <svg
-          className={`w-5 h-5 transition-colors ${enabled ? 'text-green-500' : 'text-gray-400'}`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            d="M13 10V3L4 14h7v7l9-11h-7z"
-          />
-        </svg>
-        <span className={`font-medium ${enabled ? 'text-green-600' : 'text-gray-500'}`}>
-          {enabled ? '功能启用' : '功能关闭'}
-        </span>
-      </div>
-      <div className="relative inline-flex items-center">
-        <input
-          type="checkbox"
-          checked={enabled}
-          onChange={e => onChange(e.target.checked)}
-          className="sr-only peer"
-        />
-        <div className="w-11 h-6 bg-gray-200 peer-focus:ring-0 rounded-full peer dark:bg-gray-700
-          peer-checked:after:translate-x-[20px] peer-checked:bg-green-500
-          after:content-[''] after:absolute after:top-[2px] after:left-[2px]
-          after:bg-white after:border-gray-300 after:border after:rounded-full
-          after:h-5 after:w-5 after:transition-all"
-        />
-      </div>
-    </label>
-  )
-}
-
 export default function TaskConfigPanel({ activeTab }: TaskConfigPanelProps) {
-  const { isConnected } = useLiveControl()
+  const {
+    isConnected,
+    isAutoMessageRunning,
+    setAutoMessageRunning,
+    isAutoPopUpRunning,
+    setAutoPopUpRunning,
+  } = useLiveControl()
   const [config, setConfig] = useState<TaskConfig>({
     autoMessage: {
       enabled: false,
@@ -175,6 +140,27 @@ export default function TaskConfigPanel({ activeTab }: TaskConfigPanelProps) {
     }
   }
 
+  // 监听任务停止事件
+  useEffect(() => {
+    const handleAutoMessageStop = () => {
+      setAutoMessageRunning(false)
+      setToast({ message: '自动发言任务已停止', type: 'success' })
+    }
+
+    const handleAutoPopUpStop = () => {
+      setAutoPopUpRunning(false)
+      setToast({ message: '自动弹窗任务已停止', type: 'success' })
+    }
+
+    window.ipcRenderer.on('stop-auto-message', handleAutoMessageStop)
+    window.ipcRenderer.on('stop-auto-popup', handleAutoPopUpStop)
+
+    return () => {
+      window.ipcRenderer.off('stop-auto-message', handleAutoMessageStop)
+      window.ipcRenderer.off('stop-auto-popup', handleAutoPopUpStop)
+    }
+  }, [setAutoMessageRunning, setAutoPopUpRunning])
+
   // 开始任务
   const startTask = async () => {
     if (validationError)
@@ -189,6 +175,7 @@ export default function TaskConfigPanel({ activeTab }: TaskConfigPanelProps) {
           pinTops: config.autoMessage.pinTops,
           random: config.autoMessage.random,
         })
+        setAutoMessageRunning(true)
       }
       else if (activeTab === 'autoPopUp') {
         await window.ipcRenderer.invoke('start-auto-popup', {
@@ -196,6 +183,7 @@ export default function TaskConfigPanel({ activeTab }: TaskConfigPanelProps) {
           scheduler: config.autoPopUp.scheduler,
           random: config.autoPopUp.random,
         })
+        setAutoPopUpRunning(true)
       }
       setToast({ message: '任务启动成功', type: 'success' })
     }
@@ -206,6 +194,29 @@ export default function TaskConfigPanel({ activeTab }: TaskConfigPanelProps) {
       setIsStarting(false)
     }
   }
+
+  // 停止任务
+  const stopTask = async () => {
+    try {
+      if (activeTab === 'autoMessage') {
+        await window.ipcRenderer.invoke('stop-auto-message')
+        setAutoMessageRunning(false)
+      }
+      else if (activeTab === 'autoPopUp') {
+        await window.ipcRenderer.invoke('stop-auto-popup')
+        setAutoPopUpRunning(false)
+      }
+      setToast({ message: '任务已停止', type: 'success' })
+    }
+    catch {
+      setToast({ message: '停止任务失败', type: 'error' })
+    }
+  }
+
+  // 获取当前任务的运行状态
+  const isTaskRunning = activeTab === 'autoMessage'
+    ? isAutoMessageRunning
+    : isAutoPopUpRunning
 
   // 修改消息列表验证
   const handleMessageChange = (index: number, value: string) => {
@@ -243,286 +254,190 @@ export default function TaskConfigPanel({ activeTab }: TaskConfigPanelProps) {
     switch (activeTab) {
       case 'autoMessage':
         return (
-          <div className="border rounded-xl shadow-sm">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <h2 className="text-xl font-semibold text-gray-800">自动发言配置</h2>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    config.autoMessage.enabled ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
-                  }`}
-                  >
-                    {config.autoMessage.enabled ? '已启用' : '已禁用'}
-                  </span>
-                </div>
-                <EnableSwitch
-                  enabled={config.autoMessage.enabled}
-                  onChange={checked => setConfig(prev => ({
-                    ...prev,
-                    autoMessage: { ...prev.autoMessage, enabled: checked },
-                  }))}
-                />
-              </div>
-
-              <div className="space-y-6">
-                {/* 间隔配置 */}
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <label className="block text-sm font-medium text-gray-700 mb-3">发送间隔 (秒)</label>
-                  <div className="flex gap-4 items-center">
+          <TaskPanel
+            title="自动发言配置"
+            enabled={config.autoMessage.enabled}
+            onEnableChange={checked => setConfig(prev => ({
+              ...prev,
+              autoMessage: { ...prev.autoMessage, enabled: checked },
+            }))}
+            scheduler={config.autoMessage.scheduler}
+            onSchedulerChange={interval => setConfig(prev => ({
+              ...prev,
+              autoMessage: {
+                ...prev.autoMessage,
+                scheduler: { ...prev.autoMessage.scheduler, interval },
+              },
+            }))}
+          >
+            {/* 消息列表 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-3">消息列表</label>
+              <div className="space-y-3">
+                {config.autoMessage.messages.map((message, index) => (
+                  <div key={index} className="flex gap-3 items-center group">
                     <input
-                      type="number"
-                      value={config.autoMessage.scheduler.interval[0] / 1000}
-                      onChange={e => setConfig(prev => ({
-                        ...prev,
-                        autoMessage: {
-                          ...prev.autoMessage,
-                          scheduler: {
-                            ...prev.autoMessage.scheduler,
-                            interval: [Number(e.target.value) * 1000, prev.autoMessage.scheduler.interval[1]],
-                          },
-                        },
-                      }))}
-                      className="w-24 px-3 py-2 border border-gray-300 rounded-md transition-shadow"
-                      min="1"
+                      type="text"
+                      value={message}
+                      onChange={e => handleMessageChange(index, e.target.value)}
+                      className={`flex-1 px-3 py-2 border border-gray-300 rounded-md transition-all ${
+                        message.length > 50
+                          ? 'border-red-300 focus:border-red-300 focus:shadow-[0_0_0_1px_#FCA5A5,0_1px_2px_0_rgba(0,0,0,0.05)]'
+                          : ''
+                      }`}
                     />
-                    <span className="text-gray-500">至</span>
-                    <input
-                      type="number"
-                      value={config.autoMessage.scheduler.interval[1] / 1000}
-                      onChange={e => setConfig(prev => ({
-                        ...prev,
-                        autoMessage: {
-                          ...prev.autoMessage,
-                          scheduler: {
-                            ...prev.autoMessage.scheduler,
-                            interval: [prev.autoMessage.scheduler.interval[0], Number(e.target.value) * 1000],
-                          },
-                        },
-                      }))}
-                      className="w-24 px-3 py-2 border border-gray-300 rounded-md transition-shadow"
-                      min="1"
-                    />
-                  </div>
-                </div>
-
-                {/* 消息列表 */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-3">消息列表</label>
-                  <div className="space-y-3">
-                    {config.autoMessage.messages.map((message, index) => (
-                      <div key={index} className="flex gap-3 items-center group">
-                        <input
-                          type="text"
-                          value={message}
-                          onChange={e => handleMessageChange(index, e.target.value)}
-                          className={`flex-1 px-3 py-2 border border-gray-300 rounded-md transition-all ${
-                            message.length > 50
-                              ? 'border-red-300 focus:border-red-300 focus:shadow-[0_0_0_1px_#FCA5A5,0_1px_2px_0_rgba(0,0,0,0.05)]'
-                              : ''
-                          }`}
-                        />
-                        <div className="w-12 text-right">
-                          <span className={`text-xs ${message.length > 50 ? 'text-red-500' : 'text-gray-500'}`}>
-                            {message.length}
-                            /50
-                          </span>
-                        </div>
-                        <label className="flex items-center gap-2 min-w-[80px]">
-                          <input
-                            type="checkbox"
-                            checked={config.autoMessage.pinTops.includes(index)}
-                            onChange={(e) => {
-                              const newPinTops = e.target.checked
-                                ? [...config.autoMessage.pinTops, index]
-                                : config.autoMessage.pinTops.filter(i => i !== index)
-                              setConfig(prev => ({
-                                ...prev,
-                                autoMessage: { ...prev.autoMessage, pinTops: newPinTops },
-                              }))
-                            }}
-                            className="rounded border-gray-300 text-blue-600"
-                          />
-                          <span className="text-sm text-gray-600">置顶</span>
-                        </label>
-                        <button
-                          onClick={() => {
-                            const newMessages = config.autoMessage.messages.filter((_, i) => i !== index)
-                            setConfig(prev => ({
-                              ...prev,
-                              autoMessage: { ...prev.autoMessage, messages: newMessages },
-                            }))
-                          }}
-                          className="p-2 text-gray-400 hover:text-red-500 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
-                      </div>
-                    ))}
+                    <div className="w-12 text-right">
+                      <span className={`text-xs ${message.length > 50 ? 'text-red-500' : 'text-gray-500'}`}>
+                        {message.length}
+                        /50
+                      </span>
+                    </div>
+                    <label className="flex items-center gap-2 min-w-[80px]">
+                      <input
+                        type="checkbox"
+                        checked={config.autoMessage.pinTops.includes(index)}
+                        onChange={(e) => {
+                          const newPinTops = e.target.checked
+                            ? [...config.autoMessage.pinTops, index]
+                            : config.autoMessage.pinTops.filter(i => i !== index)
+                          setConfig(prev => ({
+                            ...prev,
+                            autoMessage: { ...prev.autoMessage, pinTops: newPinTops },
+                          }))
+                        }}
+                        className="rounded border-gray-300 text-blue-600"
+                      />
+                      <span className="text-sm text-gray-600">置顶</span>
+                    </label>
                     <button
-                      onClick={() => setConfig(prev => ({
-                        ...prev,
-                        autoMessage: {
-                          ...prev.autoMessage,
-                          messages: [...prev.autoMessage.messages, ''],
-                        },
-                      }))}
-                      className="w-full px-4 py-2 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 transition-colors flex items-center justify-center gap-2"
+                      onClick={() => {
+                        const newMessages = config.autoMessage.messages.filter((_, i) => i !== index)
+                        setConfig(prev => ({
+                          ...prev,
+                          autoMessage: { ...prev.autoMessage, messages: newMessages },
+                        }))
+                      }}
+                      className="p-2 text-gray-400 hover:text-red-500 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                       </svg>
-                      添加消息
                     </button>
                   </div>
-                </div>
-
-                {/* 随机发送 */}
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={config.autoMessage.random}
-                    onChange={e => setConfig(prev => ({
-                      ...prev,
-                      autoMessage: { ...prev.autoMessage, random: e.target.checked },
-                    }))}
-                    className="rounded border-gray-300 text-blue-600"
-                  />
-                  <span className="text-sm text-gray-700">随机发送</span>
-                </label>
+                ))}
+                <button
+                  onClick={() => setConfig(prev => ({
+                    ...prev,
+                    autoMessage: {
+                      ...prev.autoMessage,
+                      messages: [...prev.autoMessage.messages, ''],
+                    },
+                  }))}
+                  className="w-full px-4 py-2 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 transition-colors flex items-center justify-center gap-2"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  添加消息
+                </button>
               </div>
             </div>
-          </div>
+
+            {/* 随机发送 */}
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={config.autoMessage.random}
+                onChange={e => setConfig(prev => ({
+                  ...prev,
+                  autoMessage: { ...prev.autoMessage, random: e.target.checked },
+                }))}
+                className="rounded border-gray-300 text-blue-600"
+              />
+              <span className="text-sm text-gray-700">随机发送</span>
+            </label>
+          </TaskPanel>
         )
       case 'autoPopUp':
         return (
-          <div className="border rounded-xl shadow-sm">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <h2 className="text-xl font-semibold text-gray-800">自动弹窗配置</h2>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    config.autoPopUp.enabled ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
-                  }`}
-                  >
-                    {config.autoPopUp.enabled ? '已启用' : '已禁用'}
-                  </span>
-                </div>
-                <EnableSwitch
-                  enabled={config.autoPopUp.enabled}
-                  onChange={checked => setConfig(prev => ({
-                    ...prev,
-                    autoPopUp: { ...prev.autoPopUp, enabled: checked },
-                  }))}
-                />
-              </div>
-
-              <div className="space-y-6">
-                {/* 间隔配置 */}
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <label className="block text-sm font-medium text-gray-700 mb-3">弹窗间隔 (秒)</label>
-                  <div className="flex gap-4 items-center">
+          <TaskPanel
+            title="自动弹窗配置"
+            enabled={config.autoPopUp.enabled}
+            onEnableChange={checked => setConfig(prev => ({
+              ...prev,
+              autoPopUp: { ...prev.autoPopUp, enabled: checked },
+            }))}
+            scheduler={config.autoPopUp.scheduler}
+            onSchedulerChange={interval => setConfig(prev => ({
+              ...prev,
+              autoPopUp: {
+                ...prev.autoPopUp,
+                scheduler: { ...prev.autoPopUp.scheduler, interval },
+              },
+            }))}
+          >
+            {/* 商品ID列表 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-3">商品ID列表</label>
+              <div className="space-y-3">
+                {config.autoPopUp.goodsIds.map((id, index) => (
+                  <div key={index} className="flex gap-3 items-center group">
                     <input
                       type="number"
-                      value={config.autoPopUp.scheduler.interval[0] / 1000}
-                      onChange={e => setConfig(prev => ({
-                        ...prev,
-                        autoPopUp: {
-                          ...prev.autoPopUp,
-                          scheduler: {
-                            ...prev.autoPopUp.scheduler,
-                            interval: [Number(e.target.value) * 1000, prev.autoPopUp.scheduler.interval[1]],
-                          },
-                        },
-                      }))}
-                      className="w-24 px-3 py-2 border border-gray-300 rounded-md transition-shadow"
+                      value={id}
+                      onChange={e => handleGoodsIdChange(index, Number(e.target.value))}
+                      className="w-32 px-3 py-2 border border-gray-300 rounded-md transition-shadow"
                       min="1"
+                      placeholder="输入商品ID"
                     />
-                    <span className="text-gray-500">至</span>
-                    <input
-                      type="number"
-                      value={config.autoPopUp.scheduler.interval[1] / 1000}
-                      onChange={e => setConfig(prev => ({
-                        ...prev,
-                        autoPopUp: {
-                          ...prev.autoPopUp,
-                          scheduler: {
-                            ...prev.autoPopUp.scheduler,
-                            interval: [prev.autoPopUp.scheduler.interval[0], Number(e.target.value) * 1000],
-                          },
-                        },
-                      }))}
-                      className="w-24 px-3 py-2 border border-gray-300 rounded-md transition-shadow"
-                      min="1"
-                    />
-                  </div>
-                </div>
-
-                {/* 商品ID列表 */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-3">商品ID列表</label>
-                  <div className="space-y-3">
-                    {config.autoPopUp.goodsIds.map((id, index) => (
-                      <div key={index} className="flex gap-3 items-center group">
-                        <input
-                          type="number"
-                          value={id}
-                          onChange={e => handleGoodsIdChange(index, Number(e.target.value))}
-                          className="w-32 px-3 py-2 border border-gray-300 rounded-md transition-shadow"
-                          min="1"
-                          placeholder="输入商品ID"
-                        />
-                        <button
-                          onClick={() => {
-                            const newIds = config.autoPopUp.goodsIds.filter((_, i) => i !== index)
-                            setConfig(prev => ({
-                              ...prev,
-                              autoPopUp: { ...prev.autoPopUp, goodsIds: newIds },
-                            }))
-                          }}
-                          className="p-2 text-gray-400 hover:text-red-500 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
-                      </div>
-                    ))}
                     <button
-                      onClick={() => setConfig(prev => ({
-                        ...prev,
-                        autoPopUp: {
-                          ...prev.autoPopUp,
-                          goodsIds: [...prev.autoPopUp.goodsIds, 1],
-                        },
-                      }))}
-                      className="w-full px-4 py-2 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 transition-colors flex items-center justify-center gap-2"
+                      onClick={() => {
+                        const newIds = config.autoPopUp.goodsIds.filter((_, i) => i !== index)
+                        setConfig(prev => ({
+                          ...prev,
+                          autoPopUp: { ...prev.autoPopUp, goodsIds: newIds },
+                        }))
+                      }}
+                      className="p-2 text-gray-400 hover:text-red-500 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                       </svg>
-                      添加商品ID
                     </button>
                   </div>
-                </div>
-
-                {/* 随机弹窗 */}
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={config.autoPopUp.random}
-                    onChange={e => setConfig(prev => ({
-                      ...prev,
-                      autoPopUp: { ...prev.autoPopUp, random: e.target.checked },
-                    }))}
-                    className="rounded border-gray-300 text-blue-600"
-                  />
-                  <span className="text-sm text-gray-700">随机弹窗</span>
-                </label>
+                ))}
+                <button
+                  onClick={() => setConfig(prev => ({
+                    ...prev,
+                    autoPopUp: {
+                      ...prev.autoPopUp,
+                      goodsIds: [...prev.autoPopUp.goodsIds, 1],
+                    },
+                  }))}
+                  className="w-full px-4 py-2 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 transition-colors flex items-center justify-center gap-2"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  添加商品ID
+                </button>
               </div>
             </div>
-          </div>
+
+            {/* 随机弹窗 */}
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={config.autoPopUp.random}
+                onChange={e => setConfig(prev => ({
+                  ...prev,
+                  autoPopUp: { ...prev.autoPopUp, random: e.target.checked },
+                }))}
+                className="rounded border-gray-300 text-blue-600"
+              />
+              <span className="text-sm text-gray-700">随机弹窗</span>
+            </label>
+          </TaskPanel>
         )
       default:
         return null
@@ -571,20 +486,25 @@ export default function TaskConfigPanel({ activeTab }: TaskConfigPanelProps) {
           保存配置
         </button>
         <button
-          onClick={startTask}
+          onClick={isTaskRunning ? stopTask : startTask}
           disabled={!!validationError || isStarting || !isConnected}
           className={`px-6 py-2.5 rounded-lg transition-colors flex items-center gap-2 ${
             validationError || isStarting || !isConnected
               ? 'bg-blue-300 text-white cursor-not-allowed'
-              : 'bg-blue-600 text-white hover:bg-blue-700'
+              : isTaskRunning
+                ? 'bg-red-600 text-white hover:bg-red-700'
+                : 'bg-blue-600 text-white hover:bg-blue-700'
           }`}
           title={!isConnected ? '请先连接直播控制台' : ''}
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            {isTaskRunning ? (
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z M10 15l-3-3m0 0l3-3m-3 3h12" />
+            ) : (
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            )}
           </svg>
-          开始任务
+          {isTaskRunning ? '停止任务' : '开始任务'}
         </button>
       </div>
     </div>

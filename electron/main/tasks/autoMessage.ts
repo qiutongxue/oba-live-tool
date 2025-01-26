@@ -5,6 +5,7 @@ import { createLogger } from '#/logger'
 import { randomInt, type RequiredWith } from '#/utils'
 import { merge } from 'lodash-es'
 import { createScheduler } from './scheduler'
+import windowManager from '#/windowManager'
 
 const TASK_NAME = '自动发言'
 
@@ -84,6 +85,7 @@ export function createAutoMessage(page: Page, userConfig: Partial<MessageConfig>
       },
       onStop: () => {
         logger.info(`「${TASK_NAME}」停止执行`)
+        windowManager.sendToWindow('main', 'stop-auto-message')
       },
     }),
   )

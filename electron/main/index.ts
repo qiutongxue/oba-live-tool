@@ -248,7 +248,7 @@ ipcMain.handle('start-auto-message', async (_, config) => {
 ipcMain.handle('start-auto-popup', async (_, config: Partial<PopUpConfig>) => {
   pageManager.register('autoPopUp', createAutoPopUp, config)
   try {
-    await pageManager.startTask('autoPopUp')
+    pageManager.startTask('autoPopUp')
     return { success: true }
   }
   catch (error) {
@@ -257,10 +257,10 @@ ipcMain.handle('start-auto-popup', async (_, config: Partial<PopUpConfig>) => {
   }
 })
 
-ipcMain.handle('stop-auto-message', () => {
+ipcMain.handle('stop-auto-message', async () => {
   pageManager.stopTask('autoMessage')
 })
 
-ipcMain.handle('stop-auto-popup', () => {
+ipcMain.handle('stop-auto-popup', async () => {
   pageManager.stopTask('autoPopUp')
 })
