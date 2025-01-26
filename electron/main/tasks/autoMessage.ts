@@ -3,9 +3,9 @@ import type { BaseConfig } from './scheduler'
 import { COMMENT_TEXTAREA_SELECTOR, PIN_TOP_SELECTOR } from '#/constants'
 import { createLogger } from '#/logger'
 import { randomInt, type RequiredWith } from '#/utils'
+import windowManager from '#/windowManager'
 import { merge } from 'lodash-es'
 import { createScheduler } from './scheduler'
-import windowManager from '#/windowManager'
 
 const TASK_NAME = '自动发言'
 

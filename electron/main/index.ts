@@ -12,7 +12,7 @@ import path from 'node:path'
 // ├─┬ dist
 // │ └── index.html    > Electron-Renderer
 //
-import process, { config } from 'node:process'
+import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 import { app, BrowserWindow, ipcMain, shell } from 'electron'
 

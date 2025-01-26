@@ -4,9 +4,9 @@ import type { BaseConfig, Scheduler } from './scheduler'
 import { GOODS_ACTION_SELECTOR, GOODS_ITEM_SELECTOR } from '#/constants'
 import { createLogger } from '#/logger'
 import { randomInt } from '#/utils'
+import windowManager from '#/windowManager'
 import { merge } from 'lodash-es'
 import { createScheduler } from './scheduler'
-import windowManager from '#/windowManager'
 
 const TASK_NAME = '自动弹窗'
 

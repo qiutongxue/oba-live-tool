@@ -24,7 +24,8 @@ export function LiveControlProvider({ children }: { children: React.ReactNode })
       setAutoMessageRunning,
       isAutoPopUpRunning,
       setAutoPopUpRunning,
-    }}>
+    }}
+    >
       {children}
     </LiveControlContext.Provider>
   )

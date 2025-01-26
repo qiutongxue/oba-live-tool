@@ -2,7 +2,6 @@ import type { SignaleOptions } from 'signale'
 import process from 'node:process'
 import { Writable } from 'node:stream'
 import chalk from 'chalk'
-import { ipcMain } from 'electron'
 import signale from 'signale'
 import windowManager from './windowManager'
 
