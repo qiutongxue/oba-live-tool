@@ -5,6 +5,8 @@ export interface SchedulerConfig {
   readonly name: string
   interval: [number, number]
   maxRetries?: number
+  onStart?: () => void
+  onStop?: () => void
 }
 
 export interface BaseConfig {
@@ -47,6 +49,7 @@ export function createScheduler(
       }
       catch (error) {
         logger.error(`执行「${config.name}」失败:`, error)
+        stop()
       }
       finally {
         if (!isStopped) {
@@ -55,22 +58,29 @@ export function createScheduler(
       }
     }, delay)
   }
+  function start() {
+    if (isStopped) {
+      isStopped = false
+      config.onStart?.()
+      scheduleNext(0)
+    }
+  }
+
+  function stop() {
+    isStopped = true
+    clearTimer()
+    config.onStop?.()
+  }
+
+  function updateConfig(newConfig: BaseConfig) {
+    config = merge({}, config, newConfig)
+  }
 
   return {
-    start() {
-      if (isStopped) {
-        isStopped = false
-        scheduleNext(0)
-      }
-    },
+    start,
+    stop,
+    updateConfig,
 
-    stop() {
-      isStopped = true
-      clearTimer()
-    },
-    updateConfig(newConfig: BaseConfig) {
-      config = merge({}, config, newConfig)
-    },
     get isRunning() {
       return !isStopped
     },

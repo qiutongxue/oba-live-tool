@@ -37,6 +37,7 @@ export function createAutoMessage(page: Page, userConfig: Partial<MessageConfig>
       if (e instanceof Error) {
         logger.error(`「${TASK_NAME}」执行失败: ${e.message}`)
       }
+      throw e
     }
   }
 
@@ -77,7 +78,14 @@ export function createAutoMessage(page: Page, userConfig: Partial<MessageConfig>
 
   const scheduler = createScheduler(
     exectute,
-    config.scheduler!,
+    merge(config.scheduler, {
+      onStart: () => {
+        logger.info(`「${TASK_NAME}」开始执行`)
+      },
+      onStop: () => {
+        logger.info(`「${TASK_NAME}」停止执行`)
+      },
+    }),
   )
 
   return {

@@ -30,8 +30,6 @@ export function createAutoPopUp(page: Page, userConfig: Partial<PopUpConfig> = {
 
   async function execute() {
     try {
-      logger.debug(`开始执行「${TASK_NAME}」`)
-
       const goodsId = getNextGoodsId()
       logger.debug(`准备讲解商品 ID: ${goodsId}`)
 
@@ -42,10 +40,17 @@ export function createAutoPopUp(page: Page, userConfig: Partial<PopUpConfig> = {
       if (error instanceof Error) {
         logger.error(`「${TASK_NAME}」执行失败: ${error.message}`)
       }
+      throw error
     }
   }
-
-  const scheduler = createScheduler(execute, config.scheduler)
+  const scheduler = createScheduler(execute, merge(config.scheduler, {
+    onStart: () => {
+      logger.info(`「${TASK_NAME}」开始执行`)
+    },
+    onStop: () => {
+      logger.info(`「${TASK_NAME}」停止执行`)
+    },
+  }))
 
   function validateConfig() {
     if (config.goodsIds.length === 0) {
@@ -119,8 +124,12 @@ export function createAutoPopUp(page: Page, userConfig: Partial<PopUpConfig> = {
   validateConfig()
 
   return {
-    start: () => scheduler.start(),
-    stop: () => scheduler.stop(),
+    start: () => {
+      scheduler.start()
+    },
+    stop: () => {
+      scheduler.stop()
+    },
     updateConfig: (newConfig: Partial<PopUpConfig>) => {
       if (newConfig.scheduler) {
         scheduler.updateConfig(newConfig)

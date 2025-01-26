@@ -1,3 +1,4 @@
+import type { PopUpConfig } from './tasks/autoPopUp'
 import { createRequire } from 'node:module'
 import os from 'node:os'
 import path from 'node:path'
@@ -14,9 +15,13 @@ import path from 'node:path'
 import process, { config } from 'node:process'
 import { fileURLToPath } from 'node:url'
 import { app, BrowserWindow, ipcMain, shell } from 'electron'
-import fs from 'fs-extra'
 
+import fs from 'fs-extra'
+import { connectLiveControl } from './liveControl'
 import start from './start'
+import { pageManager } from './taskManager'
+import { createAutoMessage } from './tasks/autoMessage'
+import { createAutoPopUp } from './tasks/autoPopUp'
 import { update } from './update'
 import windowManager from './windowManager'
 
@@ -96,8 +101,9 @@ async function createWindow() {
 
 app.whenReady().then(createWindow)
 
-app.on('window-all-closed', () => {
+app.on('window-all-closed', async () => {
   win = null
+  pageManager.cleanup()
   if (process.platform !== 'darwin')
     app.quit()
 })
@@ -139,25 +145,16 @@ ipcMain.handle('open-win', (_, arg) => {
   }
 })
 
-// 配置文件路径
-const CONFIG_PATH = path.join(app.getPath('userData'), 'task-config.json')
-
-// 验证配置
+// 添加配置验证函数
 function validateConfig(config: any) {
-  // 验证消息长度
-  if (config.autoMessage.enabled) {
-    const invalidMessages = config.autoMessage.messages.filter((msg: string) => msg.length > 50)
-    if (invalidMessages.length > 0)
-      throw new Error('消息长度不能超过50个字符！')
-  }
-
-  // 验证商品ID是否重复
-  if (config.autoPopUp.enabled) {
-    const uniqueGoodsIds = new Set(config.autoPopUp.goodsIds)
-    if (uniqueGoodsIds.size !== config.autoPopUp.goodsIds.length)
-      throw new Error('商品ID不能重复！')
-  }
+  // 根据需要添加验证逻辑
+  if (!config)
+    throw new Error('配置不能为空')
+  return true
 }
+
+// 添加配置路径常量
+const CONFIG_PATH = path.join(app.getPath('userData'), 'config.json')
 
 // 保存配置
 ipcMain.handle('save-task-config', async (_, config) => {
@@ -218,4 +215,52 @@ ipcMain.handle('start', async (_, config) => {
     console.error('启动任务失败:', error)
     throw error
   }
+})
+
+// 添加新的 IPC 处理函数
+ipcMain.handle('connect-live-control', async () => {
+  try {
+    const { browser, page } = await connectLiveControl()
+    // 保存到 PageManager
+    pageManager.setBrowser(browser)
+    pageManager.setPage(page)
+
+    return { success: true }
+  }
+  catch (error) {
+    console.error('连接直播控制台失败:', error)
+    return { success: false }
+  }
+})
+
+ipcMain.handle('start-auto-message', async (_, config) => {
+  pageManager.register('autoMessage', createAutoMessage, config)
+  try {
+    await pageManager.startTask('autoMessage')
+    return { success: true }
+  }
+  catch (error) {
+    console.error('启动自动发言失败:', error)
+    throw error
+  }
+})
+
+ipcMain.handle('start-auto-popup', async (_, config: Partial<PopUpConfig>) => {
+  pageManager.register('autoPopUp', createAutoPopUp, config)
+  try {
+    await pageManager.startTask('autoPopUp')
+    return { success: true }
+  }
+  catch (error) {
+    console.error('启动自动弹窗失败:', error)
+    throw error
+  }
+})
+
+ipcMain.handle('stop-auto-message', () => {
+  pageManager.stopTask('autoMessage')
+})
+
+ipcMain.handle('stop-auto-popup', () => {
+  pageManager.stopTask('autoPopUp')
 })

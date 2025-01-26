@@ -1,17 +1,22 @@
 import React, { useEffect, useState } from 'react'
+import { useLiveControl } from '../contexts/LiveControlContext'
 import Toast from './Toast'
 
 interface TaskConfig {
   autoMessage: {
     enabled: boolean
-    interval: [number, number] // [最小间隔, 最大间隔]
+    scheduler: {
+      interval: [number, number] // [最小间隔, 最大间隔]
+    }
     messages: string[]
     pinTops: number[] // 需要置顶的消息索引
     random: boolean
   }
   autoPopUp: {
     enabled: boolean
-    interval: [number, number]
+    scheduler: {
+      interval: [number, number]
+    }
     goodsIds: number[]
     random: boolean
   }
@@ -64,34 +69,38 @@ function EnableSwitch({ enabled, onChange }: { enabled: boolean, onChange: (chec
 }
 
 export default function TaskConfigPanel({ activeTab }: TaskConfigPanelProps) {
+  const { isConnected } = useLiveControl()
   const [config, setConfig] = useState<TaskConfig>({
     autoMessage: {
       enabled: false,
-      interval: [30000, 60000], // 默认 30-60 秒
+      scheduler: {
+        interval: [30000, 60000], // 默认 30-60 秒
+      },
       messages: [],
       pinTops: [],
       random: true,
     },
     autoPopUp: {
       enabled: false,
-      interval: [30000, 45000], // 默认 30-45 秒
+      scheduler: {
+        interval: [30000, 45000], // 默认 30-45 秒
+      },
       goodsIds: [],
       random: true,
     },
   })
 
   // 添加一个状态来存储原始配置
-  const [originalConfig, setOriginalConfig] = useState<TaskConfig | null>(null)
+  const [originalConfig, setOriginalConfig] = useState<TaskConfig>(config)
   // 添加错误状态
   const [validationError, setValidationError] = useState<string | null>(null)
   // 添加成功提示状态
   //   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' } | null>(null)
+  const [isStarting, setIsStarting] = useState(false)
 
   // 检查配置是否发生变化
   const hasChanges = (): boolean => {
-    if (!originalConfig)
-      return false
     return JSON.stringify(config) !== JSON.stringify(originalConfig)
   }
 
@@ -168,14 +177,33 @@ export default function TaskConfigPanel({ activeTab }: TaskConfigPanelProps) {
 
   // 开始任务
   const startTask = async () => {
-    if (!validateConfig())
+    if (validationError)
       return
 
     try {
-      await window.ipcRenderer.invoke('start', config)
+      setIsStarting(true)
+      if (activeTab === 'autoMessage') {
+        await window.ipcRenderer.invoke('start-auto-message', {
+          messages: config.autoMessage.messages,
+          scheduler: config.autoMessage.scheduler,
+          pinTops: config.autoMessage.pinTops,
+          random: config.autoMessage.random,
+        })
+      }
+      else if (activeTab === 'autoPopUp') {
+        await window.ipcRenderer.invoke('start-auto-popup', {
+          goodsIds: config.autoPopUp.goodsIds,
+          scheduler: config.autoPopUp.scheduler,
+          random: config.autoPopUp.random,
+        })
+      }
+      setToast({ message: '任务启动成功', type: 'success' })
     }
-    catch (error) {
-      console.error('启动任务失败:', error)
+    catch {
+      setToast({ message: '任务启动失败', type: 'error' })
+    }
+    finally {
+      setIsStarting(false)
     }
   }
 
@@ -243,12 +271,15 @@ export default function TaskConfigPanel({ activeTab }: TaskConfigPanelProps) {
                   <div className="flex gap-4 items-center">
                     <input
                       type="number"
-                      value={config.autoMessage.interval[0] / 1000}
+                      value={config.autoMessage.scheduler.interval[0] / 1000}
                       onChange={e => setConfig(prev => ({
                         ...prev,
                         autoMessage: {
                           ...prev.autoMessage,
-                          interval: [Number(e.target.value) * 1000, prev.autoMessage.interval[1]],
+                          scheduler: {
+                            ...prev.autoMessage.scheduler,
+                            interval: [Number(e.target.value) * 1000, prev.autoMessage.scheduler.interval[1]],
+                          },
                         },
                       }))}
                       className="w-24 px-3 py-2 border border-gray-300 rounded-md transition-shadow"
@@ -257,12 +288,15 @@ export default function TaskConfigPanel({ activeTab }: TaskConfigPanelProps) {
                     <span className="text-gray-500">至</span>
                     <input
                       type="number"
-                      value={config.autoMessage.interval[1] / 1000}
+                      value={config.autoMessage.scheduler.interval[1] / 1000}
                       onChange={e => setConfig(prev => ({
                         ...prev,
                         autoMessage: {
                           ...prev.autoMessage,
-                          interval: [prev.autoMessage.interval[0], Number(e.target.value) * 1000],
+                          scheduler: {
+                            ...prev.autoMessage.scheduler,
+                            interval: [prev.autoMessage.scheduler.interval[0], Number(e.target.value) * 1000],
+                          },
                         },
                       }))}
                       className="w-24 px-3 py-2 border border-gray-300 rounded-md transition-shadow"
@@ -391,12 +425,15 @@ export default function TaskConfigPanel({ activeTab }: TaskConfigPanelProps) {
                   <div className="flex gap-4 items-center">
                     <input
                       type="number"
-                      value={config.autoPopUp.interval[0] / 1000}
+                      value={config.autoPopUp.scheduler.interval[0] / 1000}
                       onChange={e => setConfig(prev => ({
                         ...prev,
                         autoPopUp: {
                           ...prev.autoPopUp,
-                          interval: [Number(e.target.value) * 1000, prev.autoPopUp.interval[1]],
+                          scheduler: {
+                            ...prev.autoPopUp.scheduler,
+                            interval: [Number(e.target.value) * 1000, prev.autoPopUp.scheduler.interval[1]],
+                          },
                         },
                       }))}
                       className="w-24 px-3 py-2 border border-gray-300 rounded-md transition-shadow"
@@ -405,12 +442,15 @@ export default function TaskConfigPanel({ activeTab }: TaskConfigPanelProps) {
                     <span className="text-gray-500">至</span>
                     <input
                       type="number"
-                      value={config.autoPopUp.interval[1] / 1000}
+                      value={config.autoPopUp.scheduler.interval[1] / 1000}
                       onChange={e => setConfig(prev => ({
                         ...prev,
                         autoPopUp: {
                           ...prev.autoPopUp,
-                          interval: [prev.autoPopUp.interval[0], Number(e.target.value) * 1000],
+                          scheduler: {
+                            ...prev.autoPopUp.scheduler,
+                            interval: [prev.autoPopUp.scheduler.interval[0], Number(e.target.value) * 1000],
+                          },
                         },
                       }))}
                       className="w-24 px-3 py-2 border border-gray-300 rounded-md transition-shadow"
@@ -532,12 +572,13 @@ export default function TaskConfigPanel({ activeTab }: TaskConfigPanelProps) {
         </button>
         <button
           onClick={startTask}
-          disabled={!!validationError}
+          disabled={!!validationError || isStarting || !isConnected}
           className={`px-6 py-2.5 rounded-lg transition-colors flex items-center gap-2 ${
-            validationError
+            validationError || isStarting || !isConnected
               ? 'bg-blue-300 text-white cursor-not-allowed'
               : 'bg-blue-600 text-white hover:bg-blue-700'
           }`}
+          title={!isConnected ? '请先连接直播控制台' : ''}
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
