@@ -1,23 +1,10 @@
-import React, { useState } from 'react'
-import BrowserControl from './components/BrowserControl'
+import { Outlet } from 'react-router'
 import LogDisplayer from './components/LogDisplayer'
 import Sidebar from './components/Sidebar'
-import TaskConfig from './components/TaskConfig'
 import { LiveControlProvider } from './contexts/LiveControlContext'
 import './App.css'
 
 function App() {
-  const [activeTab, setActiveTab] = useState('browser')
-
-  const renderContent = () => {
-    switch (activeTab) {
-      case 'browser':
-        return <BrowserControl />
-      default:
-        return <TaskConfig activeTab={activeTab} />
-    }
-  }
-
   return (
     <LiveControlProvider>
       <div className="flex flex-col h-screen bg-gray-50">
@@ -33,12 +20,9 @@ function App() {
 
         {/* 主要内容区域 */}
         <div className="flex flex-1 min-h-0">
-          {/* 侧边栏 */}
-          <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
-
-          {/* 配置页 */}
+          <Sidebar />
           <div className="flex-1 p-8 overflow-auto">
-            {renderContent()}
+            <Outlet />
           </div>
         </div>
 
