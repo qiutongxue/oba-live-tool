@@ -1,5 +1,5 @@
+import { useLiveControl } from '@/hooks/useLiveControl'
 import React, { useState } from 'react'
-import { useLiveControl } from '../contexts/LiveControlContext'
 import Toast from './Toast'
 
 export default function BrowserControl() {
@@ -32,6 +32,7 @@ export default function BrowserControl() {
       <div className="bg-white p-6 rounded-lg shadow-sm">
         <h2 className="text-lg font-medium text-gray-900 mb-4">浏览器控制</h2>
         <button
+          type="button"
           onClick={connectLiveControl}
           disabled={isLoading || isConnected}
           className={`px-6 py-2.5 rounded-lg transition-colors flex items-center gap-2 ${

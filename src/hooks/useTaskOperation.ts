@@ -1,6 +1,6 @@
 import type { TaskConfig } from '@/types'
 import { useEffect, useState } from 'react'
-import { useLiveControl } from '../contexts/LiveControlContext'
+import { useLiveControl } from './useLiveControl'
 
 interface TaskOperationProps {
   taskType: 'auto-message' | 'auto-popup'
@@ -47,7 +47,7 @@ export function useTaskOperation({
     return () => {
       window.ipcRenderer.off(`stop-${taskType}`, handleStop)
     }
-  }, [setTaskRunning])
+  }, [taskType, setTaskRunning])
 
   const startTask = async () => {
     try {

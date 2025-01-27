@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 interface ParsedLog {
   timestamp: string
@@ -12,11 +12,11 @@ export default function LogDisplayer() {
   const [autoScroll, setAutoScroll] = useState(true)
   const scrollRef = useRef<HTMLDivElement>(null)
 
-  const scrollToBottom = () => {
+  const scrollToBottom = useCallback(() => {
     if (scrollRef.current && autoScroll) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight
     }
-  }
+  }, [autoScroll, scrollRef])
 
   const parseLogMessage = (log: string): ParsedLog => {
     // 匹配格式：[时间] [模块] » 级别 消息
@@ -45,15 +45,19 @@ export default function LogDisplayer() {
   }
 
   useEffect(() => {
+    let timer: NodeJS.Timeout | null = null
     const handleLogMessage = (_event: any, message: string) => {
       setLogMessages(prev => [...prev, message])
-      setTimeout(scrollToBottom, 0)
+      if (autoScroll) {
+        timer = setTimeout(scrollToBottom, 0)
+      }
     }
     window.ipcRenderer.on('log', handleLogMessage)
     return () => {
       window.ipcRenderer.off('log', handleLogMessage)
+      timer && clearTimeout(timer)
     }
-  }, [autoScroll])
+  }, [autoScroll, scrollToBottom])
 
   return (
     <div className="h-full flex flex-col">
@@ -80,6 +84,7 @@ export default function LogDisplayer() {
             <span className="text-xs text-gray-600">自动滚动</span>
           </label>
           <button
+            type="button"
             onClick={() => {
               setLogMessages([])
               scrollToBottom()

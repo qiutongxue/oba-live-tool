@@ -86,7 +86,7 @@ function Update() {
       window.ipcRenderer.off('download-progress', onDownloadProgress)
       window.ipcRenderer.off('update-downloaded', onUpdateDownloaded)
     }
-  }, [])
+  }, [onUpdateCanAvailable, onUpdateError, onDownloadProgress, onUpdateDownloaded])
 
   return (
     <>
@@ -133,7 +133,7 @@ function Update() {
                 )}
         </div>
       </Modal>
-      <button disabled={checking} onClick={checkUpdate}>
+      <button type="button" disabled={checking} onClick={checkUpdate}>
         {checking ? 'Checking...' : 'Check update'}
       </button>
     </>

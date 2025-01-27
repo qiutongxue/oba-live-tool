@@ -22,6 +22,7 @@ export function TaskOperationButtons({
   return (
     <div className="flex justify-end gap-4">
       <button
+        type="button"
         onClick={onSave}
         disabled={!!validationError || !hasChanges()}
         className={`px-6 py-2.5 rounded-lg transition-colors flex items-center gap-2 ${
@@ -36,6 +37,7 @@ export function TaskOperationButtons({
         保存配置
       </button>
       <button
+        type="button"
         onClick={onStartStop}
         disabled={!!validationError || isStarting || !isConnected}
         className={`px-6 py-2.5 rounded-lg transition-colors flex items-center gap-2 ${

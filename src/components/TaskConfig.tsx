@@ -1,5 +1,5 @@
+import { useLiveControl } from '@/hooks/useLiveControl'
 import React, { useEffect, useState } from 'react'
-import { useLiveControl } from '../contexts/LiveControlContext'
 import { TaskPanel } from './TaskPanel'
 import Toast from './Toast'
 
@@ -310,6 +310,7 @@ export default function TaskConfigPanel({ activeTab }: TaskConfigPanelProps) {
                       <span className="text-sm text-gray-600">置顶</span>
                     </label>
                     <button
+                      type="button"
                       onClick={() => {
                         const newMessages = config.autoMessage.messages.filter((_, i) => i !== index)
                         setConfig(prev => ({
@@ -326,6 +327,7 @@ export default function TaskConfigPanel({ activeTab }: TaskConfigPanelProps) {
                   </div>
                 ))}
                 <button
+                  type="button"
                   onClick={() => setConfig(prev => ({
                     ...prev,
                     autoMessage: {
@@ -391,6 +393,7 @@ export default function TaskConfigPanel({ activeTab }: TaskConfigPanelProps) {
                       placeholder="输入商品ID"
                     />
                     <button
+                      type="button"
                       onClick={() => {
                         const newIds = config.autoPopUp.goodsIds.filter((_, i) => i !== index)
                         setConfig(prev => ({
@@ -407,6 +410,7 @@ export default function TaskConfigPanel({ activeTab }: TaskConfigPanelProps) {
                   </div>
                 ))}
                 <button
+                  type="button"
                   onClick={() => setConfig(prev => ({
                     ...prev,
                     autoPopUp: {
@@ -472,6 +476,7 @@ export default function TaskConfigPanel({ activeTab }: TaskConfigPanelProps) {
       {/* 操作按钮 */}
       <div className="flex justify-end gap-4">
         <button
+          type="button"
           onClick={saveConfig}
           disabled={!!validationError || !hasChanges()}
           className={`px-6 py-2.5 rounded-lg transition-colors flex items-center gap-2 ${
@@ -486,6 +491,7 @@ export default function TaskConfigPanel({ activeTab }: TaskConfigPanelProps) {
           保存配置
         </button>
         <button
+          type="button"
           onClick={isTaskRunning ? stopTask : startTask}
           disabled={!!validationError || isStarting || !isConnected}
           className={`px-6 py-2.5 rounded-lg transition-colors flex items-center gap-2 ${

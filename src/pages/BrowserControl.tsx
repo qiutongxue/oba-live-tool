@@ -1,6 +1,6 @@
+import Toast from '@/components/Toast'
+import { useLiveControl } from '@/hooks/useLiveControl'
 import React, { useState } from 'react'
-import Toast from '../components/Toast'
-import { useLiveControl } from '../contexts/LiveControlContext'
 
 export default function BrowserControl() {
   const { isConnected, setIsConnected } = useLiveControl()

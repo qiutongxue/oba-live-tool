@@ -124,6 +124,7 @@ export default function AutoMessage() {
                   <span className="text-sm text-gray-600">置顶</span>
                 </label>
                 <button
+                  type="button"
                   onClick={() => {
                     const newMessages = config.autoMessage.messages.filter((_, i) => i !== index)
                     setConfig(prev => ({
@@ -140,6 +141,7 @@ export default function AutoMessage() {
               </div>
             ))}
             <button
+              type="button"
               onClick={() => setConfig(prev => ({
                 ...prev,
                 autoMessage: {

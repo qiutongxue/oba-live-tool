@@ -107,6 +107,7 @@ export default function AutoPopUp() {
                   placeholder="输入商品ID"
                 />
                 <button
+                  type="button"
                   onClick={() => {
                     const newGoodsIds = config.autoPopUp.goodsIds.filter((_, i) => i !== index)
                     setConfig(prev => ({
@@ -123,6 +124,7 @@ export default function AutoPopUp() {
               </div>
             ))}
             <button
+              type="button"
               onClick={() => setConfig(prev => ({
                 ...prev,
                 autoPopUp: {
