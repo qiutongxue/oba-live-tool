@@ -5,6 +5,7 @@ import { createLogger } from '#/logger'
 import { randomInt, type RequiredWith } from '#/utils'
 import windowManager from '#/windowManager'
 import { merge } from 'lodash-es'
+import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { createScheduler } from './scheduler'
 
 const TASK_NAME = '自动发言'
@@ -85,7 +86,7 @@ export function createAutoMessage(page: Page, userConfig: Partial<MessageConfig>
       },
       onStop: () => {
         logger.info(`「${TASK_NAME}」停止执行`)
-        windowManager.sendToWindow('main', 'stop-auto-message')
+        windowManager.sendToWindow('main', IPC_CHANNELS.tasks.autoMessage.stop)
       },
     }),
   )

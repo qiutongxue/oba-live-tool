@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
+import { IPC_CHANNELS } from 'shared/ipcChannels'
 
 // --------- Expose some API to the Renderer process ---------
 contextBridge.exposeInMainWorld('ipcRenderer', {
@@ -22,6 +23,8 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
   // You can expose other APTs you need here.
   // ...
 })
+
+contextBridge.exposeInMainWorld('ipcChannels', IPC_CHANNELS)
 
 // --------- Preload scripts loading ---------
 function domReady(condition: DocumentReadyState[] = ['complete', 'interactive']) {
@@ -109,6 +112,7 @@ function useLoading() {
 
 // ----------------------------------------------------------------------
 
+// eslint-disable-next-line react-hooks/rules-of-hooks
 const { appendLoading, removeLoading } = useLoading()
 domReady().then(appendLoading)
 

@@ -10,7 +10,7 @@ export default function BrowserControl() {
   const connectLiveControl = async () => {
     try {
       setIsLoading(true)
-      const { success } = await window.ipcRenderer.invoke('connect-live-control')
+      const { success } = await window.ipcRenderer.invoke(window.ipcChannels.tasks.liveControl.connect)
       if (success) {
         setIsConnected(true)
         setToast({ message: '已连接到直播控制台', type: 'success' })

@@ -1,36 +1,18 @@
 import type { TaskConfig } from '@/types'
-import React, { useState } from 'react'
-import { TaskOperationButtons } from '../components/TaskOperationButtons'
-import { TaskPanel } from '../components/TaskPanel'
-import Toast from '../components/Toast'
-import { useTaskConfig } from '../hooks/useTaskConfig'
-import { useTaskOperation } from '../hooks/useTaskOperation'
+import { TaskOperationButtons } from '@/components/TaskOperationButtons'
+import { TaskPanel } from '@/components/TaskPanel'
+import Toast from '@/components/Toast'
+import { useLiveControl } from '@/hooks/useLiveControl'
+import { useTaskConfig } from '@/hooks/useTaskConfig'
+import { useTaskOperation } from '@/hooks/useTaskOperation'
+import React, { useCallback, useState } from 'react'
 
 export default function AutoMessage() {
   const { config, setConfig } = useTaskConfig()
-
+  const { isConnected, isAutoMessageRunning: isTaskRunning, setAutoMessageRunning: setTaskRunning } = useLiveControl()
   const [originalConfig, setOriginalConfig] = useState<TaskConfig>(config)
 
-  const {
-    isStarting,
-    isTaskRunning,
-    isConnected,
-    toast,
-    validationError,
-    setToast,
-    hasChanges,
-    startTask,
-    stopTask,
-    saveConfig,
-  } = useTaskOperation({
-    taskType: 'auto-message',
-    config,
-    originalConfig,
-    setOriginalConfig,
-    configValidator,
-  })
-
-  function configValidator(setValidationError: (error: string | null) => void) {
+  const configValidator = useCallback((setValidationError: (error: string | null) => void) => {
     if (config.autoMessage.enabled && config.autoMessage.messages.length === 0) {
       setValidationError('请至少添加一条消息')
       return false
@@ -41,7 +23,34 @@ export default function AutoMessage() {
     }
     setValidationError(null)
     return true
-  }
+  }, [])
+
+  const onStartTask = useCallback(() => {
+    window.ipcRenderer.invoke(window.ipcChannels.tasks.autoMessage.start, config.autoMessage)
+    setTaskRunning(true)
+  }, [])
+
+  const onStopTask = useCallback(() => {
+    window.ipcRenderer.invoke(window.ipcChannels.tasks.autoMessage.stop)
+    setTaskRunning(false)
+  }, [])
+
+  const {
+    toast,
+    validationError,
+    setToast,
+    hasChanges,
+    startTask,
+    stopTask,
+    saveConfig,
+  } = useTaskOperation({
+    config,
+    originalConfig,
+    setOriginalConfig,
+    configValidator,
+    onStartTask,
+    onStopTask,
+  })
 
   const handleMessageChange = (index: number, value: string) => {
     if (value.length > 50)
@@ -177,7 +186,7 @@ export default function AutoMessage() {
       <TaskOperationButtons
         validationError={validationError}
         hasChanges={hasChanges}
-        isStarting={isStarting}
+        isStarting={isTaskRunning}
         isConnected={isConnected}
         isTaskRunning={isTaskRunning}
         onSave={saveConfig}

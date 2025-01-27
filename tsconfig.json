@@ -17,6 +17,9 @@
       ],
       "#/*": [
         "electron/main/*"
+      ],
+      "shared/*": [
+        "./shared/*"
       ]
     },
     "resolveJsonModule": true,
@@ -36,6 +39,7 @@
   ],
   "include": [
     "src",
-    "electron"
+    "electron",
+    "shared"
   ]
 }

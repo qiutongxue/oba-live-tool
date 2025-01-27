@@ -1,7 +1,7 @@
+import LogDisplayer from '@/components/LogDisplayer'
+import Sidebar from '@/components/Sidebar'
+import { LiveControlProvider } from '@/providers/LiveControlProvider'
 import { Outlet } from 'react-router'
-import LogDisplayer from './components/LogDisplayer'
-import Sidebar from './components/Sidebar'
-import { LiveControlProvider } from './contexts/LiveControlContext'
 import './App.css'
 
 function App() {

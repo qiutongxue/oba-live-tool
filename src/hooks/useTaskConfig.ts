@@ -27,7 +27,7 @@ export function useTaskConfig() {
   useEffect(() => {
     const loadConfig = async () => {
       try {
-        const savedConfig = await window.ipcRenderer.invoke('load-task-config')
+        const savedConfig = await window.ipcRenderer.invoke(window.ipcChannels.config.load)
         if (savedConfig)
           setConfig(savedConfig)
       }

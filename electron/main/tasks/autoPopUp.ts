@@ -6,6 +6,7 @@ import { createLogger } from '#/logger'
 import { randomInt } from '#/utils'
 import windowManager from '#/windowManager'
 import { merge } from 'lodash-es'
+import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { createScheduler } from './scheduler'
 
 const TASK_NAME = '自动弹窗'
@@ -50,7 +51,7 @@ export function createAutoPopUp(page: Page, userConfig: Partial<PopUpConfig> = {
     },
     onStop: () => {
       logger.info(`「${TASK_NAME}」停止执行`)
-      windowManager.sendToWindow('main', 'stop-auto-popup')
+      windowManager.sendToWindow('main', IPC_CHANNELS.tasks.autoPopUp.stop)
     },
   }))
 

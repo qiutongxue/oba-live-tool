@@ -17,8 +17,8 @@ import { fileURLToPath } from 'node:url'
 import { app, BrowserWindow, ipcMain, shell } from 'electron'
 
 import fs from 'fs-extra'
+import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { connectLiveControl } from './liveControl'
-import start from './start'
 import { pageManager } from './taskManager'
 import { createAutoMessage } from './tasks/autoMessage'
 import { createAutoPopUp } from './tasks/autoPopUp'
@@ -157,7 +157,7 @@ function validateConfig(config: any) {
 const CONFIG_PATH = path.join(app.getPath('userData'), 'config.json')
 
 // 保存配置
-ipcMain.handle('save-task-config', async (_, config) => {
+ipcMain.handle(IPC_CHANNELS.config.save, async (_, config) => {
   try {
     validateConfig(config)
     await fs.writeFile(CONFIG_PATH, JSON.stringify(config, null, 2))
@@ -170,7 +170,7 @@ ipcMain.handle('save-task-config', async (_, config) => {
 })
 
 // 加载配置
-ipcMain.handle('load-task-config', async () => {
+ipcMain.handle(IPC_CHANNELS.config.load, async () => {
   try {
     if (await fs.pathExists(CONFIG_PATH)) {
       const configStr = await fs.readFile(CONFIG_PATH, 'utf-8')
@@ -185,40 +185,40 @@ ipcMain.handle('load-task-config', async () => {
 })
 
 // 启动任务时使用保存的配置
-ipcMain.handle('start', async (_, config) => {
-  try {
-    validateConfig(config)
-    await fs.writeFile(CONFIG_PATH, JSON.stringify(config, null, 2))
+// ipcMain.handle('start', async (_, config) => {
+//   try {
+//     validateConfig(config)
+//     await fs.writeFile(CONFIG_PATH, JSON.stringify(config, null, 2))
 
-    const { autoMessage, autoPopUp } = config
+//     const { autoMessage, autoPopUp } = config
 
-    // 创建新窗口并启动任务
-    start({
-      autoMessage: autoMessage.enabled
-        ? {
-            messages: autoMessage.messages,
-            interval: autoMessage.interval,
-            pinTops: autoMessage.pinTops,
-            random: autoMessage.random,
-          }
-        : undefined,
-      autoPopUp: autoPopUp.enabled
-        ? {
-            goodsIds: autoPopUp.goodsIds,
-            interval: autoPopUp.interval,
-            random: autoPopUp.random,
-          }
-        : undefined,
-    })
-  }
-  catch (error) {
-    console.error('启动任务失败:', error)
-    throw error
-  }
-})
+//     // 创建新窗口并启动任务
+//     start({
+//       autoMessage: autoMessage.enabled
+//         ? {
+//             messages: autoMessage.messages,
+//             interval: autoMessage.interval,
+//             pinTops: autoMessage.pinTops,
+//             random: autoMessage.random,
+//           }
+//         : undefined,
+//       autoPopUp: autoPopUp.enabled
+//         ? {
+//             goodsIds: autoPopUp.goodsIds,
+//             interval: autoPopUp.interval,
+//             random: autoPopUp.random,
+//           }
+//         : undefined,
+//     })
+//   }
+//   catch (error) {
+//     console.error('启动任务失败:', error)
+//     throw error
+//   }
+// })
 
 // 添加新的 IPC 处理函数
-ipcMain.handle('connect-live-control', async () => {
+ipcMain.handle(IPC_CHANNELS.tasks.liveControl.connect, async () => {
   try {
     const { browser, page } = await connectLiveControl()
     // 保存到 PageManager
@@ -233,10 +233,10 @@ ipcMain.handle('connect-live-control', async () => {
   }
 })
 
-ipcMain.handle('start-auto-message', async (_, config) => {
+ipcMain.handle(IPC_CHANNELS.tasks.autoMessage.start, async (_, config) => {
   pageManager.register('autoMessage', createAutoMessage, config)
   try {
-    await pageManager.startTask('autoMessage')
+    pageManager.startTask('autoMessage')
     return { success: true }
   }
   catch (error) {
@@ -245,7 +245,7 @@ ipcMain.handle('start-auto-message', async (_, config) => {
   }
 })
 
-ipcMain.handle('start-auto-popup', async (_, config: Partial<PopUpConfig>) => {
+ipcMain.handle(IPC_CHANNELS.tasks.autoPopUp.start, async (_, config: Partial<PopUpConfig>) => {
   pageManager.register('autoPopUp', createAutoPopUp, config)
   try {
     pageManager.startTask('autoPopUp')
@@ -257,10 +257,10 @@ ipcMain.handle('start-auto-popup', async (_, config: Partial<PopUpConfig>) => {
   }
 })
 
-ipcMain.handle('stop-auto-message', async () => {
+ipcMain.handle(IPC_CHANNELS.tasks.autoMessage.stop, async () => {
   pageManager.stopTask('autoMessage')
 })
 
-ipcMain.handle('stop-auto-popup', async () => {
+ipcMain.handle(IPC_CHANNELS.tasks.autoPopUp.stop, async () => {
   pageManager.stopTask('autoPopUp')
 })

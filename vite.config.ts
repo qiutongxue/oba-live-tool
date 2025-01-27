@@ -18,8 +18,8 @@ export default defineConfig(({ command }) => {
     resolve: {
       alias: {
         '@': path.join(__dirname, 'src'),
+        'shared': path.join(__dirname, 'shared'),
       },
-
     },
     plugins: [
       react(),
@@ -43,14 +43,13 @@ export default defineConfig(({ command }) => {
               rollupOptions: {
                 external: [
                   ...Object.keys('dependencies' in pkg ? pkg.dependencies : {}),
-                  // 'playwright',
-                  // 'chromium-bidi',
                 ],
               },
             },
             resolve: {
               alias: {
                 '#': path.join(__dirname, 'electron/main'),
+                'shared': path.join(__dirname, 'shared'),
               },
             },
           },
@@ -67,9 +66,12 @@ export default defineConfig(({ command }) => {
               rollupOptions: {
                 external: [
                   ...Object.keys('dependencies' in pkg ? pkg.dependencies : {}),
-                  // /^playwright-core\/.*/,
-                  // /^@playwright\/.*/,
                 ],
+              },
+            },
+            resolve: {
+              alias: {
+                shared: path.join(__dirname, 'shared'),
               },
             },
           },

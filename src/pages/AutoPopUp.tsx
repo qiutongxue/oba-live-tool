@@ -1,16 +1,18 @@
 import type { TaskConfig } from '@/types'
-import React, { useState } from 'react'
-import { TaskOperationButtons } from '../components/TaskOperationButtons'
-import { TaskPanel } from '../components/TaskPanel'
-import Toast from '../components/Toast'
-import { useTaskConfig } from '../hooks/useTaskConfig'
-import { useTaskOperation } from '../hooks/useTaskOperation'
+import { TaskOperationButtons } from '@/components/TaskOperationButtons'
+import { TaskPanel } from '@/components/TaskPanel'
+import Toast from '@/components/Toast'
+import { useLiveControl } from '@/hooks/useLiveControl'
+import { useTaskConfig } from '@/hooks/useTaskConfig'
+import { useTaskOperation } from '@/hooks/useTaskOperation'
+import React, { useCallback, useState } from 'react'
 
 export default function AutoPopUp() {
   const { config, setConfig } = useTaskConfig()
   const [originalConfig, setOriginalConfig] = useState<TaskConfig>(config)
+  const { isConnected, isAutoPopUpRunning: isTaskRunning, setAutoPopUpRunning: setTaskRunning } = useLiveControl()
 
-  const configValidator = (setValidationError: (error: string | null) => void) => {
+  const configValidator = useCallback((setValidationError: (error: string | null) => void) => {
     if (config.autoPopUp.enabled && config.autoPopUp.goodsIds.length === 0) {
       setValidationError('请至少添加一个商品ID')
       return false
@@ -22,12 +24,19 @@ export default function AutoPopUp() {
     }
     setValidationError(null)
     return true
-  }
+  }, [])
+
+  const onStartTask = useCallback(() => {
+    window.ipcRenderer.invoke(window.ipcChannels.tasks.autoPopUp.start, config.autoPopUp)
+    setTaskRunning(true)
+  }, [])
+
+  const onStopTask = useCallback(() => {
+    window.ipcRenderer.invoke(window.ipcChannels.tasks.autoPopUp.stop)
+    setTaskRunning(false)
+  }, [])
 
   const {
-    isConnected,
-    isStarting,
-    isTaskRunning,
     toast,
     validationError,
     setValidationError,
@@ -37,11 +46,12 @@ export default function AutoPopUp() {
     stopTask,
     saveConfig,
   } = useTaskOperation({
-    taskType: 'auto-popup',
     config,
     originalConfig,
     setOriginalConfig,
     configValidator,
+    onStartTask,
+    onStopTask,
   })
 
   const handleGoodsIdChange = (index: number, value: string) => {
@@ -159,7 +169,7 @@ export default function AutoPopUp() {
       <TaskOperationButtons
         validationError={validationError}
         hasChanges={hasChanges}
-        isStarting={isStarting}
+        isStarting={isTaskRunning}
         isConnected={isConnected}
         isTaskRunning={isTaskRunning}
         onSave={saveConfig}
