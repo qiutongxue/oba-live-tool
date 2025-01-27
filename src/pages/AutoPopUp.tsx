@@ -1,15 +1,12 @@
-import type { TaskConfig } from '@/types'
 import { TaskOperationButtons } from '@/components/TaskOperationButtons'
 import { TaskPanel } from '@/components/TaskPanel'
-import Toast from '@/components/Toast'
 import { useLiveControl } from '@/hooks/useLiveControl'
 import { useTaskConfig } from '@/hooks/useTaskConfig'
 import { useTaskOperation } from '@/hooks/useTaskOperation'
-import React, { useCallback, useState } from 'react'
+import React, { useCallback } from 'react'
 
 export default function AutoPopUp() {
-  const { config, setConfig } = useTaskConfig()
-  const [originalConfig, setOriginalConfig] = useState<TaskConfig>(config)
+  const { config, setConfig, saveConfig, hasChanges } = useTaskConfig()
   const { isConnected, isAutoPopUpRunning: isTaskRunning, setAutoPopUpRunning: setTaskRunning } = useLiveControl()
 
   const configValidator = useCallback((setValidationError: (error: string | null) => void) => {
@@ -37,18 +34,12 @@ export default function AutoPopUp() {
   }, [])
 
   const {
-    toast,
     validationError,
     setValidationError,
-    setToast,
-    hasChanges,
     startTask,
     stopTask,
-    saveConfig,
   } = useTaskOperation({
     config,
-    originalConfig,
-    setOriginalConfig,
     configValidator,
     onStartTask,
     onStopTask,
@@ -176,13 +167,6 @@ export default function AutoPopUp() {
         onStartStop={isTaskRunning ? stopTask : startTask}
       />
 
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
-      )}
     </div>
   )
 }

@@ -1,5 +1,6 @@
 import LogDisplayer from '@/components/LogDisplayer'
 import Sidebar from '@/components/Sidebar'
+import { ToastContainer } from '@/components/ToastContainer'
 import { LiveControlProvider } from '@/providers/LiveControlProvider'
 import { Outlet } from 'react-router'
 import './App.css'
@@ -31,6 +32,7 @@ function App() {
           <LogDisplayer />
         </div>
       </div>
+      <ToastContainer />
     </LiveControlProvider>
   )
 }

@@ -4,15 +4,9 @@ import { createPortal } from 'react-dom'
 interface ToastProps {
   message: string
   type: 'success' | 'error'
-  onClose: () => void
 }
 
-export default function Toast({ message, type, onClose }: ToastProps) {
-  useEffect(() => {
-    const timer = setTimeout(onClose, 3000)
-    return () => clearTimeout(timer)
-  }, [onClose])
-
+export default function Toast({ message, type }: ToastProps) {
   return createPortal(
     <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50">
       <div className={`px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 ${

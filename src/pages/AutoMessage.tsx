@@ -1,16 +1,13 @@
-import type { TaskConfig } from '@/types'
 import { TaskOperationButtons } from '@/components/TaskOperationButtons'
 import { TaskPanel } from '@/components/TaskPanel'
-import Toast from '@/components/Toast'
 import { useLiveControl } from '@/hooks/useLiveControl'
 import { useTaskConfig } from '@/hooks/useTaskConfig'
 import { useTaskOperation } from '@/hooks/useTaskOperation'
-import React, { useCallback, useState } from 'react'
+import React, { useCallback } from 'react'
 
 export default function AutoMessage() {
-  const { config, setConfig } = useTaskConfig()
+  const { config, setConfig, saveConfig, hasChanges } = useTaskConfig()
   const { isConnected, isAutoMessageRunning: isTaskRunning, setAutoMessageRunning: setTaskRunning } = useLiveControl()
-  const [originalConfig, setOriginalConfig] = useState<TaskConfig>(config)
 
   const configValidator = useCallback((setValidationError: (error: string | null) => void) => {
     if (config.autoMessage.enabled && config.autoMessage.messages.length === 0) {
@@ -36,17 +33,11 @@ export default function AutoMessage() {
   }, [])
 
   const {
-    toast,
     validationError,
-    setToast,
-    hasChanges,
     startTask,
     stopTask,
-    saveConfig,
   } = useTaskOperation({
     config,
-    originalConfig,
-    setOriginalConfig,
     configValidator,
     onStartTask,
     onStopTask,
@@ -192,14 +183,6 @@ export default function AutoMessage() {
         onSave={saveConfig}
         onStartStop={isTaskRunning ? stopTask : startTask}
       />
-
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
-      )}
     </div>
   )
 }
