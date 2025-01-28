@@ -19,6 +19,7 @@ import { app, BrowserWindow, ipcMain, shell } from 'electron'
 import fs from 'fs-extra'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { connectLiveControl } from './liveControl'
+import { createLogger } from './logger'
 import { pageManager } from './taskManager'
 import { createAutoMessage } from './tasks/autoMessage'
 import { createAutoPopUp } from './tasks/autoPopUp'
@@ -156,6 +157,8 @@ function validateConfig(config: any) {
 // 添加配置路径常量
 const CONFIG_PATH = path.join(app.getPath('userData'), 'config.json')
 
+const logger = createLogger('main')
+
 // 保存配置
 ipcMain.handle(IPC_CHANNELS.config.save, async (_, config) => {
   try {
@@ -164,7 +167,7 @@ ipcMain.handle(IPC_CHANNELS.config.save, async (_, config) => {
     return true
   }
   catch (error) {
-    console.error('保存配置失败:', error)
+    logger.error('保存配置失败:', error)
     throw error
   }
 })
@@ -179,7 +182,7 @@ ipcMain.handle(IPC_CHANNELS.config.load, async () => {
     return null
   }
   catch (error) {
-    console.error('加载配置失败:', error)
+    logger.error('加载配置失败:', error)
     throw error
   }
 })
@@ -228,7 +231,7 @@ ipcMain.handle(IPC_CHANNELS.tasks.liveControl.connect, async () => {
     return { success: true }
   }
   catch (error) {
-    console.error('连接直播控制台失败:', error)
+    logger.error('连接直播控制台失败:', (error as Error).message)
     return { success: false }
   }
 })
@@ -240,7 +243,7 @@ ipcMain.handle(IPC_CHANNELS.tasks.autoMessage.start, async (_, config) => {
     return { success: true }
   }
   catch (error) {
-    console.error('启动自动发言失败:', error)
+    logger.error('启动自动发言失败:', error)
     throw error
   }
 })
@@ -252,7 +255,7 @@ ipcMain.handle(IPC_CHANNELS.tasks.autoPopUp.start, async (_, config: Partial<Pop
     return { success: true }
   }
   catch (error) {
-    console.error('启动自动弹窗失败:', error)
+    logger.error('启动自动弹窗失败:', error)
     throw error
   }
 })
