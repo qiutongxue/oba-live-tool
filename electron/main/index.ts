@@ -187,39 +187,6 @@ ipcMain.handle(IPC_CHANNELS.config.load, async () => {
   }
 })
 
-// 启动任务时使用保存的配置
-// ipcMain.handle('start', async (_, config) => {
-//   try {
-//     validateConfig(config)
-//     await fs.writeFile(CONFIG_PATH, JSON.stringify(config, null, 2))
-
-//     const { autoMessage, autoPopUp } = config
-
-//     // 创建新窗口并启动任务
-//     start({
-//       autoMessage: autoMessage.enabled
-//         ? {
-//             messages: autoMessage.messages,
-//             interval: autoMessage.interval,
-//             pinTops: autoMessage.pinTops,
-//             random: autoMessage.random,
-//           }
-//         : undefined,
-//       autoPopUp: autoPopUp.enabled
-//         ? {
-//             goodsIds: autoPopUp.goodsIds,
-//             interval: autoPopUp.interval,
-//             random: autoPopUp.random,
-//           }
-//         : undefined,
-//     })
-//   }
-//   catch (error) {
-//     console.error('启动任务失败:', error)
-//     throw error
-//   }
-// })
-
 // 添加新的 IPC 处理函数
 ipcMain.handle(IPC_CHANNELS.tasks.liveControl.connect, async () => {
   try {

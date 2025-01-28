@@ -16,9 +16,6 @@ export function useTaskOperation({
   const { toast } = useToast()
   const [validationError, setValidationError] = useState<string | null>(null)
 
-  //   const isTaskRunning = taskType === 'autoMessage' ? isAutoMessageRunning : isAutoPopUpRunning
-  //   const setTaskRunning = taskType === 'autoMessage' ? setAutoMessageRunning : setAutoPopUpRunning
-
   const startTask = async () => {
     try {
       onStartTask?.()
