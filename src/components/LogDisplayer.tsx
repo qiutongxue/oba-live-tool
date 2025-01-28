@@ -7,6 +7,8 @@ interface ParsedLog {
   message: string
 }
 
+const MAX_LOG_MESSAGES = 200 // 仅展示最近的 200 条日志
+
 export default function LogDisplayer() {
   const [logMessages, setLogMessages] = useState<string[]>([])
   const [autoScroll, setAutoScroll] = useState(true)
@@ -47,7 +49,7 @@ export default function LogDisplayer() {
   useEffect(() => {
     let timer: NodeJS.Timeout | null = null
     const handleLogMessage = (_event: any, message: string) => {
-      setLogMessages(prev => [...prev, message])
+      setLogMessages(prev => [...prev.slice(-MAX_LOG_MESSAGES), message])
       if (autoScroll) {
         timer = setTimeout(scrollToBottom, 0)
       }
