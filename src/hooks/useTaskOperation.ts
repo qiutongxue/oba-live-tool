@@ -1,4 +1,4 @@
-import type { TaskConfig } from '@/types'
+import type { TaskConfig } from './useTaskConfig'
 import { useState } from 'react'
 import { useToast } from './useToast'
 
