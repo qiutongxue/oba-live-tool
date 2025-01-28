@@ -1,42 +1,94 @@
 import fs from 'fs-extra'
 import playwright from 'playwright'
-import { GOODS_ITEM_SELECTOR, IS_LOGGED_IN_SELECTOR, LIVE_CONTROL_URL } from './constants'
+import { GOODS_ITEM_SELECTOR, IS_LOGGED_IN_SELECTOR, LIVE_CONTROL_URL, LOGIN_URL, LOGIN_URL_REGEX } from './constants'
 import { createLogger } from './logger'
+import { findChrome } from './utils/checkChrome'
 
-export async function connectLiveControl() {
-  const logger = createLogger('browser')
+const logger = createLogger('中控台')
 
-  logger.info('启动中……')
-  const browser = await playwright.chromium.launch({
-    headless: false,
-    executablePath: 'C:\\Users\\qbw\\AppData\\Local\\Google\\Chrome\\Application\\chrome.exe',
+async function createBrowser(headless = true) {
+  const chromePath = await findChrome()
+  if (!chromePath)
+    throw new Error('未找到 Chrome 浏览器')
+
+  return playwright.chromium.launch({
+    headless,
+    executablePath: chromePath,
   })
+}
 
-  logger.info('已连接到浏览器')
-  const context = await browser.newContext()
-  const page = await context.newPage()
-
-  // 加载 cookies
+async function loadCookies(context: playwright.BrowserContext) {
   try {
     const cookiesString = await fs.readFile('cookies', 'utf8')
     const cookies = JSON.parse(cookiesString)
     await context.addCookies(cookies)
+    return true
   }
   catch {
-    logger.warn('读取 cookies 失败')
+    return false
   }
+}
 
-  await page.goto(LIVE_CONTROL_URL)
-
-  // 等待登录
-  await page.waitForSelector(IS_LOGGED_IN_SELECTOR, { timeout: 0 })
-  logger.info('已登录')
-
+async function saveCookies(context: playwright.BrowserContext) {
   const cookies = await context.cookies()
   await fs.writeFile('cookies', JSON.stringify(cookies))
+}
 
+export async function connectLiveControl() {
+  logger.info('启动中……')
+  let loginSuccess = false
+  let browser: playwright.Browser | null = null
+  let page: playwright.Page | null = null
+
+  while (!loginSuccess) {
+  // 1. 先尝试无头模式
+    browser = await createBrowser(true)
+    let context = await browser.newContext()
+    page = await context.newPage()
+
+    // 加载 cookies
+    const hasCookies = await loadCookies(context)
+    if (!hasCookies)
+      logger.debug('读取 cookies 失败')
+
+    // 访问中控台
+    await page.goto(LIVE_CONTROL_URL)
+    await Promise.race([
+      // 登录页面
+      page.waitForURL(LOGIN_URL_REGEX, { timeout: 0 }),
+      // 登录成功后的中控台
+      page.waitForSelector(IS_LOGGED_IN_SELECTOR, { timeout: 0 }),
+    ])
+    logger.debug(`当前的页面为：${page.url()}}`)
+    // 2. 检查是否需要登录
+    if (page.url().startsWith(LOGIN_URL)) {
+      logger.info('需要登录，请在打开的浏览器中完成登录')
+      // 关闭当前浏览器
+      await browser.close()
+
+      // 启动有头模式
+      browser = await createBrowser(false)
+      context = await browser.newContext()
+      page = await context.newPage()
+
+      // 直接访问登录页
+      await page.goto(LOGIN_URL)
+
+      // 3. 等待用户登录成功
+      await page.waitForSelector(IS_LOGGED_IN_SELECTOR, { timeout: 0 })
+
+      // 保存 cookies
+      await saveCookies(context)
+      // 关闭有头浏览器
+      await browser.close()
+    }
+    else {
+      loginSuccess = true
+    }
+  }
   // 等待中控台页面加载完成
-  await page.waitForSelector(GOODS_ITEM_SELECTOR, { timeout: 0 })
+  await page!.waitForSelector(GOODS_ITEM_SELECTOR, { timeout: 0 })
+  logger.success('登录成功')
 
-  return { browser, page }
+  return { browser: browser!, page: page! }
 }

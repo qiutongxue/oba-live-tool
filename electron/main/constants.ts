@@ -1,4 +1,6 @@
 export const LIVE_CONTROL_URL = 'https://fxg.jinritemai.com/ffa/buyin/dashboard/live/control' as const
+export const LOGIN_URL = 'https://fxg.jinritemai.com/login/common'
+export const LOGIN_URL_REGEX = /.*fxg\.jinritemai\.com\/login\/common.*/
 /**
  * 这里根据【直播管理】标签的存在与否判断是否登录成功，因为只有登录状态下才
  * 但是【巨量百应】和【抖音小店】的左侧菜单栏不一样，所以这边需要修改
