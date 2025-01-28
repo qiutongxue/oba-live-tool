@@ -1,10 +1,10 @@
 import AutoMessage from '@/pages/AutoMessage'
 import AutoPopUp from '@/pages/AutoPopUp'
 import BrowserControl from '@/pages/BrowserControl'
-import { createBrowserRouter } from 'react-router'
+import { createHashRouter } from 'react-router'
 import App from '../App'
 
-export const router = createBrowserRouter([
+export const router = createHashRouter([
   {
     path: '/',
     element: <App />,
