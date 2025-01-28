@@ -1,5 +1,6 @@
 import { TaskOperationButtons } from '@/components/TaskOperationButtons'
 import { TaskPanel } from '@/components/TaskPanel'
+import { useAutoMessage } from '@/hooks/useAutoMessage'
 import { useLiveControl } from '@/hooks/useLiveControl'
 import { useTaskConfig } from '@/hooks/useTaskConfig'
 import { useTaskOperation } from '@/hooks/useTaskOperation'
@@ -7,7 +8,8 @@ import React, { useCallback } from 'react'
 
 export default function AutoMessage() {
   const { config, setConfig, saveConfig, hasChanges } = useTaskConfig()
-  const { isConnected, isAutoMessageRunning: isTaskRunning, setAutoMessageRunning: setTaskRunning } = useLiveControl()
+  const { isConnected } = useLiveControl()
+  const { isAutoMessageRunning, setAutoMessageRunning } = useAutoMessage()
 
   const configValidator = useCallback((setValidationError: (error: string | null) => void) => {
     if (config.autoMessage.enabled && config.autoMessage.messages.length === 0) {
@@ -24,12 +26,12 @@ export default function AutoMessage() {
 
   const onStartTask = useCallback(() => {
     window.ipcRenderer.invoke(window.ipcChannels.tasks.autoMessage.start, config.autoMessage)
-    setTaskRunning(true)
+    setAutoMessageRunning(true)
   }, [])
 
   const onStopTask = useCallback(() => {
     window.ipcRenderer.invoke(window.ipcChannels.tasks.autoMessage.stop)
-    setTaskRunning(false)
+    setAutoMessageRunning(false)
   }, [])
 
   const {
@@ -177,11 +179,11 @@ export default function AutoMessage() {
       <TaskOperationButtons
         validationError={validationError}
         hasChanges={hasChanges}
-        isStarting={isTaskRunning}
+        isStarting={isAutoMessageRunning}
         isConnected={isConnected}
-        isTaskRunning={isTaskRunning}
+        isTaskRunning={isAutoMessageRunning}
         onSave={saveConfig}
-        onStartStop={isTaskRunning ? stopTask : startTask}
+        onStartStop={isAutoMessageRunning ? stopTask : startTask}
       />
     </div>
   )

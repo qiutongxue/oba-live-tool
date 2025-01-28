@@ -1,10 +1,13 @@
-import type { LiveControlContextType } from '@/contexts/LiveControlContext'
-import { LiveControlContext } from '@/contexts/LiveControlContext'
-import { useContext } from 'react'
+import { create } from 'zustand'
 
-export function useLiveControl(): LiveControlContextType {
-  const context = useContext(LiveControlContext)
-  if (!context)
-    throw new Error('useLiveControl must be used within a LiveControlProvider')
-  return context
+interface LiveControlStore {
+  isConnected: boolean
+  setIsConnected: (connected: boolean) => void
 }
+
+export const useLiveControl = create<LiveControlStore>((set) => {
+  return {
+    isConnected: false,
+    setIsConnected: connected => set({ isConnected: connected }),
+  }
+})

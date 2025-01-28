@@ -1,8 +1,21 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect } from 'react'
+import { create } from 'zustand'
 import { useToast } from './useToast'
 
+interface AutoPopUpStore {
+  isAutoPopUpRunning: boolean
+  setAutoPopUpRunning: (running: boolean) => void
+}
+
+const useAutoPopUpStore = create<AutoPopUpStore>((set) => {
+  return {
+    isAutoPopUpRunning: false,
+    setAutoPopUpRunning: running => set({ isAutoPopUpRunning: running }),
+  }
+})
+
 export function useAutoPopUp() {
-  const [isAutoPopUpRunning, setAutoPopUpRunning] = useState(false)
+  const { isAutoPopUpRunning, setAutoPopUpRunning } = useAutoPopUpStore()
   const { toast } = useToast()
   const handleTaskStop = useCallback(() => {
     setAutoPopUpRunning(false)

@@ -1,8 +1,21 @@
 import { useCallback, useEffect, useState } from 'react'
+import { create } from 'zustand'
 import { useToast } from './useToast'
 
+interface AutoMessageStore {
+  isAutoMessageRunning: boolean
+  setAutoMessageRunning: (running: boolean) => void
+}
+
+const useAutoMessageStore = create<AutoMessageStore>((set) => {
+  return {
+    isAutoMessageRunning: false,
+    setAutoMessageRunning: running => set({ isAutoMessageRunning: running }),
+  }
+})
+
 export function useAutoMessage() {
-  const [isAutoMessageRunning, setAutoMessageRunning] = useState(false)
+  const { isAutoMessageRunning, setAutoMessageRunning } = useAutoMessageStore()
   const { toast } = useToast()
   const handleTaskStop = useCallback(() => {
     setAutoMessageRunning(false)

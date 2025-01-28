@@ -1,5 +1,6 @@
 import { TaskOperationButtons } from '@/components/TaskOperationButtons'
 import { TaskPanel } from '@/components/TaskPanel'
+import { useAutoPopUp } from '@/hooks/useAutoPopUp'
 import { useLiveControl } from '@/hooks/useLiveControl'
 import { useTaskConfig } from '@/hooks/useTaskConfig'
 import { useTaskOperation } from '@/hooks/useTaskOperation'
@@ -7,7 +8,8 @@ import React, { useCallback } from 'react'
 
 export default function AutoPopUp() {
   const { config, setConfig, saveConfig, hasChanges } = useTaskConfig()
-  const { isConnected, isAutoPopUpRunning: isTaskRunning, setAutoPopUpRunning: setTaskRunning } = useLiveControl()
+  const { isConnected } = useLiveControl()
+  const { isAutoPopUpRunning, setAutoPopUpRunning } = useAutoPopUp()
 
   const configValidator = useCallback((setValidationError: (error: string | null) => void) => {
     if (config.autoPopUp.enabled && config.autoPopUp.goodsIds.length === 0) {
@@ -25,12 +27,12 @@ export default function AutoPopUp() {
 
   const onStartTask = useCallback(() => {
     window.ipcRenderer.invoke(window.ipcChannels.tasks.autoPopUp.start, config.autoPopUp)
-    setTaskRunning(true)
+    setAutoPopUpRunning(true)
   }, [])
 
   const onStopTask = useCallback(() => {
     window.ipcRenderer.invoke(window.ipcChannels.tasks.autoPopUp.stop)
-    setTaskRunning(false)
+    setAutoPopUpRunning(false)
   }, [])
 
   const {
@@ -160,11 +162,11 @@ export default function AutoPopUp() {
       <TaskOperationButtons
         validationError={validationError}
         hasChanges={hasChanges}
-        isStarting={isTaskRunning}
+        isStarting={isAutoPopUpRunning}
         isConnected={isConnected}
-        isTaskRunning={isTaskRunning}
+        isTaskRunning={isAutoPopUpRunning}
         onSave={saveConfig}
-        onStartStop={isTaskRunning ? stopTask : startTask}
+        onStartStop={isAutoPopUpRunning ? stopTask : startTask}
       />
 
     </div>
