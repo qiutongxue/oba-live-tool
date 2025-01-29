@@ -60,7 +60,10 @@ const indexHtml = path.join(RENDERER_DIST, 'index.html')
 
 async function createWindow() {
   win = new BrowserWindow({
-    title: 'Main window',
+    title: 'OBA 直播工具',
+    width: 1280,
+    height: 800,
+    autoHideMenuBar: !app.isPackaged,
     icon: path.join(process.env.VITE_PUBLIC, 'favicon.ico'),
     webPreferences: {
       preload,
