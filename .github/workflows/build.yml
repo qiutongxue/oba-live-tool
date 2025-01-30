@@ -43,5 +43,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: release_on_${{ matrix.os }}
-          file: release/${{ github.ref_name }}/*.exe
+          path: release/*/*.exe
           retention-days: 5
