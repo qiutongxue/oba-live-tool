@@ -207,26 +207,28 @@ ipcMain.handle(IPC_CHANNELS.tasks.liveControl.connect, async () => {
 })
 
 ipcMain.handle(IPC_CHANNELS.tasks.autoMessage.start, async (_, config) => {
-  pageManager.register('autoMessage', createAutoMessage, config)
   try {
+    pageManager.register('autoMessage', createAutoMessage, config)
     pageManager.startTask('autoMessage')
     return { success: true }
   }
   catch (error) {
     logger.error('启动自动发言失败:', error)
-    throw error
+    // throw error
+    return { success: false }
   }
 })
 
 ipcMain.handle(IPC_CHANNELS.tasks.autoPopUp.start, async (_, config: Partial<PopUpConfig>) => {
-  pageManager.register('autoPopUp', createAutoPopUp, config)
   try {
+    pageManager.register('autoPopUp', createAutoPopUp, config)
     pageManager.startTask('autoPopUp')
     return { success: true }
   }
   catch (error) {
     logger.error('启动自动弹窗失败:', error)
-    throw error
+    // throw error
+    return { success: false }
   }
 })
 
