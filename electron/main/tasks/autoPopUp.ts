@@ -21,7 +21,7 @@ const DEFAULT_CONFIG: RequiredWith<PopUpConfig, 'scheduler'> = {
     name: TASK_NAME,
     interval: [30000, 45000],
   },
-  goodsIds: [1, 2],
+  goodsIds: [],
   random: false,
 }
 
