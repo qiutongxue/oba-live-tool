@@ -3,7 +3,6 @@ import React from 'react'
 interface TaskOperationButtonsProps {
   validationError: string | null
   hasChanges: () => boolean
-  isStarting: boolean
   isConnected: boolean
   isTaskRunning: boolean
   onSave: () => void
@@ -13,7 +12,6 @@ interface TaskOperationButtonsProps {
 export function TaskOperationButtons({
   validationError,
   hasChanges,
-  isStarting,
   isConnected,
   isTaskRunning,
   onSave,
@@ -39,9 +37,9 @@ export function TaskOperationButtons({
       <button
         type="button"
         onClick={onStartStop}
-        disabled={!!validationError || isStarting || !isConnected}
+        disabled={!!validationError || !isConnected}
         className={`px-6 py-2.5 rounded-lg transition-colors flex items-center gap-2 ${
-          validationError || isStarting || !isConnected
+          validationError || !isConnected
             ? 'bg-blue-300 text-white cursor-not-allowed'
             : isTaskRunning
               ? 'bg-red-600 text-white hover:bg-red-700'

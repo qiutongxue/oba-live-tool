@@ -162,7 +162,6 @@ export default function AutoPopUp() {
       <TaskOperationButtons
         validationError={validationError}
         hasChanges={hasChanges}
-        isStarting={isAutoPopUpRunning}
         isConnected={isConnected}
         isTaskRunning={isAutoPopUpRunning}
         onSave={saveConfig}

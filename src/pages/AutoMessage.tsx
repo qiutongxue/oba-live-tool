@@ -179,7 +179,6 @@ export default function AutoMessage() {
       <TaskOperationButtons
         validationError={validationError}
         hasChanges={hasChanges}
-        isStarting={isAutoMessageRunning}
         isConnected={isConnected}
         isTaskRunning={isAutoMessageRunning}
         onSave={saveConfig}
