@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
+import { create } from 'zustand'
 import { useToast } from './useToast'
 
 export interface TaskConfig {
@@ -41,10 +42,25 @@ const defaultConfig: TaskConfig = {
   },
 }
 
+interface TaskConfigStore {
+  config: TaskConfig
+  setConfig: (config: TaskConfig) => void
+  originalConfig: TaskConfig
+  setOriginalConfig: (config: TaskConfig) => void
+}
+
+const useTaskConfigStore = create<TaskConfigStore>((set) => {
+  return {
+    config: defaultConfig,
+    setConfig: (config: TaskConfig) => set({ config }),
+    originalConfig: defaultConfig,
+    setOriginalConfig: (config: TaskConfig) => set({ originalConfig: config }),
+  }
+})
+
 export function useTaskConfig() {
   const { toast } = useToast()
-  const [config, setConfig] = useState<TaskConfig>(defaultConfig)
-  const [originalConfig, setOriginalConfig] = useState<TaskConfig>(config)
+  const { config, setConfig, originalConfig, setOriginalConfig } = useTaskConfigStore()
 
   const saveConfig = async () => {
     // TODO: 添加配置验证
