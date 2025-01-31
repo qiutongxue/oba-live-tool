@@ -20,11 +20,12 @@ export function useAutoPopUp() {
   const handleTaskStop = useCallback(() => {
     setAutoPopUpRunning(false)
     toast.error('自动弹窗已停止')
-  }, [])
+  }, [setAutoPopUpRunning, toast])
+
   useEffect(() => {
-    window.ipcRenderer.on(window.ipcChannels.tasks.autoPopUp.stop, handleTaskStop)
+    const removeListener = window.ipcRenderer.on(window.ipcChannels.tasks.autoPopUp.stop, handleTaskStop)
     return () => {
-      window.ipcRenderer.off(window.ipcChannels.tasks.autoPopUp.stop, handleTaskStop)
+      removeListener()
     }
   }, [handleTaskStop])
   return { isAutoPopUpRunning, setAutoPopUpRunning }

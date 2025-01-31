@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect } from 'react'
 import { create } from 'zustand'
 import { useToast } from './useToast'
 
@@ -20,11 +20,11 @@ export function useAutoMessage() {
   const handleTaskStop = useCallback(() => {
     setAutoMessageRunning(false)
     toast.error('自动消息已停止')
-  }, [])
+  }, [setAutoMessageRunning, toast])
   useEffect(() => {
-    window.ipcRenderer.on(window.ipcChannels.tasks.autoMessage.stop, handleTaskStop)
+    const removeListener = window.ipcRenderer.on(window.ipcChannels.tasks.autoMessage.stop, handleTaskStop)
     return () => {
-      window.ipcRenderer.off(window.ipcChannels.tasks.autoMessage.stop, handleTaskStop)
+      removeListener()
     }
   }, [handleTaskStop])
   return { isAutoMessageRunning, setAutoMessageRunning }

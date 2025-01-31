@@ -48,15 +48,17 @@ export default function LogDisplayer() {
 
   useEffect(() => {
     let timer: NodeJS.Timeout | null = null
-    const handleLogMessage = (_event: any, message: string) => {
+    const handleLogMessage = (message: string) => {
       setLogMessages(prev => [...prev.slice(-MAX_LOG_MESSAGES), message])
       if (autoScroll) {
         timer = setTimeout(scrollToBottom, 0)
       }
     }
-    window.ipcRenderer.on('log', handleLogMessage)
+
+    const removeListener = window.ipcRenderer.on('log', handleLogMessage)
+
     return () => {
-      window.ipcRenderer.off('log', handleLogMessage)
+      removeListener()
       timer && clearTimeout(timer)
     }
   }, [autoScroll, scrollToBottom])
