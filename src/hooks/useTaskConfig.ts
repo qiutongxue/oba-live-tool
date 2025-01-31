@@ -44,7 +44,7 @@ const defaultConfig: TaskConfig = {
 
 interface TaskConfigStore {
   config: TaskConfig
-  setConfig: (config: TaskConfig) => void
+  setConfig: (updater: TaskConfig | ((prevConfig: TaskConfig) => TaskConfig)) => void
   originalConfig: TaskConfig
   setOriginalConfig: (config: TaskConfig) => void
 }
@@ -52,7 +52,14 @@ interface TaskConfigStore {
 const useTaskConfigStore = create<TaskConfigStore>((set) => {
   return {
     config: defaultConfig,
-    setConfig: (config: TaskConfig) => set({ config }),
+    setConfig: (updater: TaskConfig | ((prevConfig: TaskConfig) => TaskConfig)) => {
+      if (typeof updater === 'function') {
+        set(state => ({ config: updater(state.config) }))
+      }
+      else {
+        set({ config: updater })
+      }
+    },
     originalConfig: defaultConfig,
     setOriginalConfig: (config: TaskConfig) => set({ originalConfig: config }),
   }
