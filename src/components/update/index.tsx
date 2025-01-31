@@ -75,16 +75,16 @@ function Update() {
 
   useEffect(() => {
     // Get version information and whether to update
-    window.ipcRenderer.on('update-can-available', onUpdateCanAvailable)
-    window.ipcRenderer.on('update-error', onUpdateError)
-    window.ipcRenderer.on('download-progress', onDownloadProgress)
-    window.ipcRenderer.on('update-downloaded', onUpdateDownloaded)
+    const removeUpdateCanAvailable = window.ipcRenderer.on('update-can-available', onUpdateCanAvailable)
+    const removeUpdateError = window.ipcRenderer.on('update-error', onUpdateError)
+    const removeDownloadProgress = window.ipcRenderer.on('download-progress', onDownloadProgress)
+    const removeUpdateDownloaded = window.ipcRenderer.on('update-downloaded', onUpdateDownloaded)
 
     return () => {
-      window.ipcRenderer.off('update-can-available', onUpdateCanAvailable)
-      window.ipcRenderer.off('update-error', onUpdateError)
-      window.ipcRenderer.off('download-progress', onDownloadProgress)
-      window.ipcRenderer.off('update-downloaded', onUpdateDownloaded)
+      removeUpdateCanAvailable()
+      removeUpdateError()
+      removeDownloadProgress()
+      removeUpdateDownloaded()
     }
   }, [onUpdateCanAvailable, onUpdateError, onDownloadProgress, onUpdateDownloaded])
 
