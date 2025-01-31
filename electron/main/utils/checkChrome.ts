@@ -1,5 +1,4 @@
 import { exec } from 'node:child_process'
-import { platform } from 'node:process'
 import { promisify } from 'node:util'
 import { createLogger } from '../logger'
 

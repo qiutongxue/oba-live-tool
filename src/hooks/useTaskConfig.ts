@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useCallback, useEffect } from 'react'
 import { create } from 'zustand'
 import { useToast } from './useToast'
 
@@ -69,7 +69,7 @@ export function useTaskConfig() {
   const { toast } = useToast()
   const { config, setConfig, originalConfig, setOriginalConfig } = useTaskConfigStore()
 
-  const saveConfig = async () => {
+  const saveConfig = useCallback(async () => {
     // TODO: 添加配置验证
     // if (!configValidator(setValidationError))
     //   return
@@ -82,7 +82,7 @@ export function useTaskConfig() {
     catch {
       toast.error('配置保存失败')
     }
-  }
+  }, [config, setOriginalConfig, toast])
 
   const hasChanges = (): boolean => {
     return JSON.stringify(config) !== JSON.stringify(originalConfig)
@@ -102,7 +102,7 @@ export function useTaskConfig() {
       }
     }
     loadConfig()
-  }, [toast])
+  }, [toast, setConfig, setOriginalConfig])
 
   return {
     config,

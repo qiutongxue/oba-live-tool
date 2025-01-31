@@ -1,10 +1,7 @@
-import type { TaskConfig } from './useTaskConfig'
 import { useState } from 'react'
 import { useToast } from './useToast'
 
 interface TaskOperationProps {
-  config: TaskConfig
-  configValidator: (setValidationError: (error: string | null) => void) => boolean
   onStartTask?: () => void
   onStopTask?: () => void
 }

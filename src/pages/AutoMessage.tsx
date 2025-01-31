@@ -3,15 +3,17 @@ import { TaskPanel } from '@/components/TaskPanel'
 import { useAutoMessage } from '@/hooks/useAutoMessage'
 import { useLiveControl } from '@/hooks/useLiveControl'
 import { useTaskConfig } from '@/hooks/useTaskConfig'
-import { useTaskOperation } from '@/hooks/useTaskOperation'
-import React, { useCallback } from 'react'
+import { useToast } from '@/hooks/useToast'
+import React, { useCallback, useState } from 'react'
 
 export default function AutoMessage() {
   const { config, setConfig, saveConfig, hasChanges } = useTaskConfig()
   const { isConnected } = useLiveControl()
   const { isAutoMessageRunning, setAutoMessageRunning } = useAutoMessage()
+  const { toast } = useToast()
+  const [validationError, setValidationError] = useState<string | null>(null)
 
-  const configValidator = useCallback((setValidationError: (error: string | null) => void) => {
+  const configValidator = useCallback(() => {
     if (config.autoMessage.enabled && config.autoMessage.messages.length === 0) {
       setValidationError('请至少添加一条消息')
       return false
@@ -22,28 +24,32 @@ export default function AutoMessage() {
     }
     setValidationError(null)
     return true
-  }, [])
+  }, [config.autoMessage.messages, config.autoMessage.enabled])
 
-  const onStartTask = useCallback(() => {
-    window.ipcRenderer.invoke(window.ipcChannels.tasks.autoMessage.start, config.autoMessage)
-    setAutoMessageRunning(true)
-  }, [])
+  const onStartTask = useCallback(async () => {
+    if (!configValidator())
+      return
+    const result = await window.ipcRenderer.invoke(window.ipcChannels.tasks.autoMessage.start, config.autoMessage)
+    if (result) {
+      setAutoMessageRunning(true)
+      toast.success('自动消息任务已启动')
+    }
+    else {
+      setAutoMessageRunning(false)
+      toast.error('自动消息任务启动失败')
+    }
+  }, [config.autoMessage, setAutoMessageRunning, toast, configValidator])
 
-  const onStopTask = useCallback(() => {
-    window.ipcRenderer.invoke(window.ipcChannels.tasks.autoMessage.stop)
-    setAutoMessageRunning(false)
-  }, [])
-
-  const {
-    validationError,
-    startTask,
-    stopTask,
-  } = useTaskOperation({
-    config,
-    configValidator,
-    onStartTask,
-    onStopTask,
-  })
+  const onStopTask = useCallback(async () => {
+    const result = await window.ipcRenderer.invoke(window.ipcChannels.tasks.autoMessage.stop)
+    if (result) {
+      setAutoMessageRunning(false)
+      toast.success('自动消息任务已停止')
+    }
+    else {
+      toast.error('自动消息任务停止失败')
+    }
+  }, [setAutoMessageRunning, toast])
 
   const handleMessageChange = (index: number, value: string) => {
     if (value.length > 50)
@@ -182,7 +188,7 @@ export default function AutoMessage() {
         isConnected={isConnected}
         isTaskRunning={isAutoMessageRunning}
         onSave={saveConfig}
-        onStartStop={isAutoMessageRunning ? stopTask : startTask}
+        onStartStop={isAutoMessageRunning ? onStopTask : onStartTask}
       />
     </div>
   )

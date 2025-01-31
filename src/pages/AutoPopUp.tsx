@@ -3,15 +3,17 @@ import { TaskPanel } from '@/components/TaskPanel'
 import { useAutoPopUp } from '@/hooks/useAutoPopUp'
 import { useLiveControl } from '@/hooks/useLiveControl'
 import { useTaskConfig } from '@/hooks/useTaskConfig'
-import { useTaskOperation } from '@/hooks/useTaskOperation'
-import React, { useCallback } from 'react'
+import { useToast } from '@/hooks/useToast'
+import React, { useCallback, useState } from 'react'
 
 export default function AutoPopUp() {
   const { config, setConfig, saveConfig, hasChanges } = useTaskConfig()
   const { isConnected } = useLiveControl()
   const { isAutoPopUpRunning, setAutoPopUpRunning } = useAutoPopUp()
+  const [validationError, setValidationError] = useState<string | null>(null)
+  const { toast } = useToast()
 
-  const configValidator = useCallback((setValidationError: (error: string | null) => void) => {
+  const configValidator = useCallback(() => {
     if (config.autoPopUp.enabled && config.autoPopUp.goodsIds.length === 0) {
       setValidationError('请至少添加一个商品ID')
       return false
@@ -23,29 +25,32 @@ export default function AutoPopUp() {
     }
     setValidationError(null)
     return true
-  }, [])
+  }, [config.autoPopUp.goodsIds, config.autoPopUp.enabled])
 
-  const onStartTask = useCallback(() => {
-    window.ipcRenderer.invoke(window.ipcChannels.tasks.autoPopUp.start, config.autoPopUp)
-    setAutoPopUpRunning(true)
-  }, [])
+  const onStartTask = useCallback(async () => {
+    if (!configValidator())
+      return
+    const result = await window.ipcRenderer.invoke(window.ipcChannels.tasks.autoPopUp.start, config.autoPopUp)
+    if (result) {
+      setAutoPopUpRunning(true)
+      toast.success('自动弹窗任务已启动')
+    }
+    else {
+      setAutoPopUpRunning(false)
+      toast.error('自动弹窗任务启动失败')
+    }
+  }, [config.autoPopUp, setAutoPopUpRunning, toast, configValidator])
 
-  const onStopTask = useCallback(() => {
-    window.ipcRenderer.invoke(window.ipcChannels.tasks.autoPopUp.stop)
-    setAutoPopUpRunning(false)
-  }, [])
-
-  const {
-    validationError,
-    setValidationError,
-    startTask,
-    stopTask,
-  } = useTaskOperation({
-    config,
-    configValidator,
-    onStartTask,
-    onStopTask,
-  })
+  const onStopTask = useCallback(async () => {
+    const result = await window.ipcRenderer.invoke(window.ipcChannels.tasks.autoPopUp.stop)
+    if (result) {
+      setAutoPopUpRunning(false)
+      toast.success('自动弹窗任务已停止')
+    }
+    else {
+      toast.error('自动弹窗任务停止失败')
+    }
+  }, [setAutoPopUpRunning, toast])
 
   const handleGoodsIdChange = (index: number, value: string) => {
     const numValue = Number(value)
@@ -165,7 +170,7 @@ export default function AutoPopUp() {
         isConnected={isConnected}
         isTaskRunning={isAutoPopUpRunning}
         onSave={saveConfig}
-        onStartStop={isAutoPopUpRunning ? stopTask : startTask}
+        onStartStop={isAutoPopUpRunning ? onStopTask : onStartTask}
       />
 
     </div>
