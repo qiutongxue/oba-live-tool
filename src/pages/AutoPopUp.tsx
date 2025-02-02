@@ -2,55 +2,53 @@ import { TaskOperationButtons } from '@/components/TaskOperationButtons'
 import { TaskPanel } from '@/components/TaskPanel'
 import { useAutoPopUp } from '@/hooks/useAutoPopUp'
 import { useLiveControl } from '@/hooks/useLiveControl'
-import { useTaskConfig } from '@/hooks/useTaskConfig'
 import { useToast } from '@/hooks/useToast'
 import React, { useCallback, useState } from 'react'
 
 export default function AutoPopUp() {
-  const { config, setConfig, saveConfig, hasChanges } = useTaskConfig()
   const { isConnected } = useLiveControl()
-  const { isAutoPopUpRunning, setAutoPopUpRunning } = useAutoPopUp()
+  const { store, saveConfig, hasChanges } = useAutoPopUp()
   const [validationError, setValidationError] = useState<string | null>(null)
   const { toast } = useToast()
 
   const configValidator = useCallback(() => {
-    if (config.autoPopUp.enabled && config.autoPopUp.goodsIds.length === 0) {
+    if (store.config.enabled && store.config.goodsIds.length === 0) {
       setValidationError('请至少添加一个商品ID')
       return false
     }
-    const uniqueGoodsIds = new Set(config.autoPopUp.goodsIds)
-    if (uniqueGoodsIds.size !== config.autoPopUp.goodsIds.length) {
+    const uniqueGoodsIds = new Set(store.config.goodsIds)
+    if (uniqueGoodsIds.size !== store.config.goodsIds.length) {
       setValidationError('商品ID不能重复！')
       return false
     }
     setValidationError(null)
     return true
-  }, [config.autoPopUp.goodsIds, config.autoPopUp.enabled])
+  }, [store.config.goodsIds, store.config.enabled])
 
   const onStartTask = useCallback(async () => {
     if (!configValidator())
       return
-    const result = await window.ipcRenderer.invoke(window.ipcChannels.tasks.autoPopUp.start, config.autoPopUp)
+    const result = await window.ipcRenderer.invoke(window.ipcChannels.tasks.autoPopUp.start, store.config)
     if (result) {
-      setAutoPopUpRunning(true)
+      store.setIsRunning(true)
       toast.success('自动弹窗任务已启动')
     }
     else {
-      setAutoPopUpRunning(false)
+      store.setIsRunning(false)
       toast.error('自动弹窗任务启动失败')
     }
-  }, [config.autoPopUp, setAutoPopUpRunning, toast, configValidator])
+  }, [store, toast, configValidator])
 
   const onStopTask = useCallback(async () => {
     const result = await window.ipcRenderer.invoke(window.ipcChannels.tasks.autoPopUp.stop)
     if (result) {
-      setAutoPopUpRunning(false)
+      store.setIsRunning(false)
       toast.success('自动弹窗任务已停止')
     }
     else {
       toast.error('自动弹窗任务停止失败')
     }
-  }, [setAutoPopUpRunning, toast])
+  }, [store, toast])
 
   const handleGoodsIdChange = (index: number, value: string) => {
     const numValue = Number(value)
@@ -58,7 +56,7 @@ export default function AutoPopUp() {
       setValidationError('请输入有效的商品ID')
       return
     }
-    const newIds = [...config.autoPopUp.goodsIds]
+    const newIds = [...store.config.goodsIds]
     if (newIds.includes(numValue)) {
       setValidationError('商品ID不能重复！')
       return
@@ -66,10 +64,7 @@ export default function AutoPopUp() {
     newIds[index] = numValue
 
     setValidationError(null)
-    setConfig(prev => ({
-      ...prev,
-      autoPopUp: { ...prev.autoPopUp, goodsIds: newIds },
-    }))
+    store.setGoodsIds(newIds)
   }
 
   return (
@@ -87,24 +82,18 @@ export default function AutoPopUp() {
 
       <TaskPanel
         title="自动弹窗配置"
-        enabled={config.autoPopUp.enabled}
-        onEnableChange={checked => setConfig(prev => ({
-          ...prev,
-          autoPopUp: { ...prev.autoPopUp, enabled: checked },
-        }))}
-        scheduler={config.autoPopUp.scheduler}
-        onSchedulerChange={interval => setConfig(prev => ({
-          ...prev,
-          autoPopUp: {
-            ...prev.autoPopUp,
-            scheduler: { ...prev.autoPopUp.scheduler, interval },
-          },
-        }))}
+        enabled={store.config.enabled}
+        onEnableChange={checked => store.setConfig({
+          ...store.config,
+          enabled: checked,
+        })}
+        scheduler={store.config.scheduler}
+        onSchedulerChange={interval => store.setScheduler({ interval })}
       >
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-3">商品ID列表</label>
           <div className="space-y-3">
-            {config.autoPopUp.goodsIds.map((id, index) => (
+            {store.config.goodsIds.map((id, index) => (
               <div key={index} className="flex gap-3 items-center group">
                 <input
                   type="number"
@@ -117,11 +106,8 @@ export default function AutoPopUp() {
                 <button
                   type="button"
                   onClick={() => {
-                    const newGoodsIds = config.autoPopUp.goodsIds.filter((_, i) => i !== index)
-                    setConfig(prev => ({
-                      ...prev,
-                      autoPopUp: { ...prev.autoPopUp, goodsIds: newGoodsIds },
-                    }))
+                    const newGoodsIds = store.config.goodsIds.filter((_, i) => i !== index)
+                    store.setGoodsIds(newGoodsIds)
                   }}
                   className="p-2 text-gray-400 hover:text-red-500 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
                 >
@@ -133,13 +119,7 @@ export default function AutoPopUp() {
             ))}
             <button
               type="button"
-              onClick={() => setConfig(prev => ({
-                ...prev,
-                autoPopUp: {
-                  ...prev.autoPopUp,
-                  goodsIds: [...prev.autoPopUp.goodsIds, 1],
-                },
-              }))}
+              onClick={() => store.setGoodsIds([...store.config.goodsIds, 1])}
               className="w-full px-4 py-2 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 transition-colors flex items-center justify-center gap-2"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -153,11 +133,8 @@ export default function AutoPopUp() {
         <label className="flex items-center gap-2 cursor-pointer">
           <input
             type="checkbox"
-            checked={config.autoPopUp.random}
-            onChange={e => setConfig(prev => ({
-              ...prev,
-              autoPopUp: { ...prev.autoPopUp, random: e.target.checked },
-            }))}
+            checked={store.config.random}
+            onChange={e => store.setRandom(e.target.checked)}
             className="rounded border-gray-300 text-blue-600"
           />
           <span className="text-sm text-gray-700">随机弹窗</span>
@@ -168,9 +145,9 @@ export default function AutoPopUp() {
         validationError={validationError}
         hasChanges={hasChanges}
         isConnected={isConnected}
-        isTaskRunning={isAutoPopUpRunning}
+        isTaskRunning={store.isRunning}
         onSave={saveConfig}
-        onStartStop={isAutoPopUpRunning ? onStopTask : onStartTask}
+        onStartStop={store.isRunning ? onStopTask : onStartTask}
       />
 
     </div>
