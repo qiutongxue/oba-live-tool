@@ -3,15 +3,16 @@ import React from 'react'
 import { createPortal } from 'react-dom'
 import './modal.css'
 
-const ModalTemplate: React.FC<React.PropsWithChildren<{
+function ModalTemplate(props: {
   title?: ReactNode
   footer?: ReactNode
+  children?: ReactNode
   cancelText?: string
   okText?: string
   onCancel?: () => void
   onOk?: () => void
   width?: number
-}>> = (props) => {
+}) {
   const {
     title,
     children,
