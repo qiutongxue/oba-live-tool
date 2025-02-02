@@ -67,6 +67,14 @@ export default function AutoPopUp() {
     store.setGoodsIds(newIds)
   }
 
+  const addGoodsId = useCallback(() => {
+    let id = 1
+    while (store.config.goodsIds.includes(id)) {
+      id += 1
+    }
+    store.setGoodsIds([...store.config.goodsIds, id])
+  }, [store])
+
   return (
     <div className="space-y-8">
       {validationError && (
@@ -119,7 +127,7 @@ export default function AutoPopUp() {
             ))}
             <button
               type="button"
-              onClick={() => store.setGoodsIds([...store.config.goodsIds, 1])}
+              onClick={addGoodsId}
               className="w-full px-4 py-2 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 transition-colors flex items-center justify-center gap-2"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
