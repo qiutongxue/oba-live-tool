@@ -49,6 +49,7 @@ jobs:
           body_path: CHANGELOG.md # 使用 CHANGELOG 作为 Release 说明
           files: |
             release/*/*.exe
+            release/*/latest.yml
           draft: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # 自动注入的 GitHub Token

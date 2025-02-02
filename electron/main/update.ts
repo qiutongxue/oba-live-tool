@@ -1,4 +1,5 @@
 import type {
+  AppUpdater,
   ProgressInfo,
   UpdateDownloadedEvent,
   UpdateInfo,
@@ -6,7 +7,7 @@ import type {
 import { createRequire } from 'node:module'
 import { app, ipcMain } from 'electron'
 
-const { autoUpdater } = createRequire(import.meta.url)('electron-updater')
+const { autoUpdater }: { autoUpdater: AppUpdater } = createRequire(import.meta.url)('electron-updater')
 
 export function update(win: Electron.BrowserWindow) {
   // When set to false, the update download will be triggered through the API
@@ -36,7 +37,7 @@ export function update(win: Electron.BrowserWindow) {
       return await autoUpdater.checkForUpdatesAndNotify()
     }
     catch (error) {
-      return { message: 'Network error', error }
+      return { message: '网络错误', error }
     }
   })
 

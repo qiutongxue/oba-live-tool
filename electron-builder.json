@@ -26,17 +26,17 @@
       }
     ],
     "icon": "public/favicon.ico",
-    "artifactName": "${productName}_${version}.${ext}"
+    "artifactName": "${productName}_${version}.${ext}",
+    "publish": {
+      "provider": "github",
+      "owner": "qiutongxue",
+      "repo": "oba-live-tool"
+    }
   },
   "nsis": {
     "oneClick": false,
     "perMachine": false,
     "allowToChangeInstallationDirectory": true,
     "deleteAppDataOnUninstall": false
-  },
-  "publish": {
-    "provider": "generic",
-    "channel": "latest",
-    "url": "https://github.com/electron-vite/electron-vite-react/releases/download/v0.9.9/"
   }
 }

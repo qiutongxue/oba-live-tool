@@ -36,7 +36,7 @@ function Update() {
     }
   }
 
-  const onUpdateCanAvailable = useCallback((_event: Electron.IpcRendererEvent, arg1: VersionInfo) => {
+  const onUpdateCanAvailable = useCallback((arg1: VersionInfo) => {
     setVersionInfo(arg1)
     setUpdateError(undefined)
     // Can be update
@@ -54,16 +54,16 @@ function Update() {
     }
   }, [])
 
-  const onUpdateError = useCallback((_event: Electron.IpcRendererEvent, arg1: ErrorType) => {
+  const onUpdateError = useCallback((arg1: ErrorType) => {
     setUpdateAvailable(false)
     setUpdateError(arg1)
   }, [])
 
-  const onDownloadProgress = useCallback((_event: Electron.IpcRendererEvent, arg1: ProgressInfo) => {
+  const onDownloadProgress = useCallback((arg1: ProgressInfo) => {
     setProgressInfo(arg1)
   }, [])
 
-  const onUpdateDownloaded = useCallback((_event: Electron.IpcRendererEvent) => {
+  const onUpdateDownloaded = useCallback(() => {
     setProgressInfo({ percent: 100 })
     setModalBtn(state => ({
       ...state,
@@ -97,6 +97,7 @@ function Update() {
         onCancel={modalBtn?.onCancel}
         onOk={modalBtn?.onOk}
         footer={updateAvailable ? /* hide footer */null : undefined}
+        title={<div className="text-white px-4">软件更新</div>}
       >
         <div className="modal-slot">
           {updateError
@@ -129,12 +130,30 @@ function Update() {
                   </div>
                 )
               : (
-                  <div className="can-not-available">{JSON.stringify(versionInfo ?? {}, null, 2)}</div>
+                  <div className="can-not-available">
+                    {
+                      versionInfo?.version === versionInfo?.newVersion
+                        ? '已经是最新版本了！'
+                        : JSON.stringify(versionInfo ?? {}, null, 2)
+                    }
+                  </div>
                 )}
         </div>
       </Modal>
-      <button type="button" disabled={checking} onClick={checkUpdate}>
-        {checking ? 'Checking...' : 'Check update'}
+      <button
+        type="button"
+        disabled={checking}
+        onClick={checkUpdate}
+        className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${
+          checking
+            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+            : 'bg-blue-600 text-white hover:bg-blue-700'
+        }`}
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        </svg>
+        {checking ? '检查更新中...' : '检查更新'}
       </button>
     </>
   )
