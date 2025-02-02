@@ -19,7 +19,7 @@
     "pretest": "vite build --mode=test",
     "test": "vitest run",
     "prepare": "husky",
-    "release": "bumpp && git push --follow-tags"
+    "release": "pnpm build && bumpp && git push --follow-tags"
   },
   "dependencies": {
     "electron-updater": "^6.3.9",
