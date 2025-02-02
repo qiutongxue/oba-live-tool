@@ -2,65 +2,60 @@ import { TaskOperationButtons } from '@/components/TaskOperationButtons'
 import { TaskPanel } from '@/components/TaskPanel'
 import { useAutoMessage } from '@/hooks/useAutoMessage'
 import { useLiveControl } from '@/hooks/useLiveControl'
-import { useTaskConfig } from '@/hooks/useTaskConfig'
 import { useToast } from '@/hooks/useToast'
 import React, { useCallback, useState } from 'react'
 
 export default function AutoMessage() {
-  const { config, setConfig, saveConfig, hasChanges } = useTaskConfig()
   const { isConnected } = useLiveControl()
-  const { isAutoMessageRunning, setAutoMessageRunning } = useAutoMessage()
+  const { hasChanges, saveConfig, store } = useAutoMessage()
   const { toast } = useToast()
   const [validationError, setValidationError] = useState<string | null>(null)
 
   const configValidator = useCallback(() => {
-    if (config.autoMessage.enabled && config.autoMessage.messages.length === 0) {
+    if (store.config.enabled && store.config.messages.length === 0) {
       setValidationError('请至少添加一条消息')
       return false
     }
-    if (config.autoMessage.messages.some(msg => msg.length > 50)) {
+    if (store.config.messages.some(msg => msg.length > 50)) {
       setValidationError('消息长度不能超过50个字符')
       return false
     }
     setValidationError(null)
     return true
-  }, [config.autoMessage.messages, config.autoMessage.enabled])
+  }, [store.config.messages, store.config.enabled])
 
   const onStartTask = useCallback(async () => {
     if (!configValidator())
       return
-    const result = await window.ipcRenderer.invoke(window.ipcChannels.tasks.autoMessage.start, config.autoMessage)
+    const result = await window.ipcRenderer.invoke(window.ipcChannels.tasks.autoMessage.start, store.config)
     if (result) {
-      setAutoMessageRunning(true)
+      store.setIsRunning(true)
       toast.success('自动消息任务已启动')
     }
     else {
-      setAutoMessageRunning(false)
+      store.setIsRunning(false)
       toast.error('自动消息任务启动失败')
     }
-  }, [config.autoMessage, setAutoMessageRunning, toast, configValidator])
+  }, [store, toast, configValidator])
 
   const onStopTask = useCallback(async () => {
     const result = await window.ipcRenderer.invoke(window.ipcChannels.tasks.autoMessage.stop)
     if (result) {
-      setAutoMessageRunning(false)
+      store.setIsRunning(false)
       toast.success('自动消息任务已停止')
     }
     else {
       toast.error('自动消息任务停止失败')
     }
-  }, [setAutoMessageRunning, toast])
+  }, [store, toast])
 
   const handleMessageChange = (index: number, value: string) => {
     if (value.length > 50)
       return // 不允许输入超过50个字符
 
-    const newMessages = [...config.autoMessage.messages]
+    const newMessages = [...store.config.messages]
     newMessages[index] = value
-    setConfig(prev => ({
-      ...prev,
-      autoMessage: { ...prev.autoMessage, messages: newMessages },
-    }))
+    store.setMessages(newMessages)
   }
 
   return (
@@ -78,35 +73,24 @@ export default function AutoMessage() {
 
       <TaskPanel
         title="自动发言配置"
-        enabled={config.autoMessage.enabled}
-        onEnableChange={checked => setConfig(prev => ({
-          ...prev,
-          autoMessage: { ...prev.autoMessage, enabled: checked },
-        }))}
-        scheduler={config.autoMessage.scheduler}
-        onSchedulerChange={interval => setConfig(prev => ({
-          ...prev,
-          autoMessage: {
-            ...prev.autoMessage,
-            scheduler: { ...prev.autoMessage.scheduler, interval },
-          },
-        }))}
+        enabled={store.config.enabled}
+        onEnableChange={checked => store.setEnabled(checked)}
+        scheduler={store.config.scheduler}
+        onSchedulerChange={interval => store.setScheduler({ interval })}
       >
         {/* 消息列表 */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-3">消息列表</label>
           <div className="space-y-3">
-            {config.autoMessage.messages.map((message, index) => (
+            {store.config.messages.map((message, index) => (
               <div key={index} className="flex gap-3 items-center group">
                 <input
                   type="text"
                   value={message}
                   onChange={e => handleMessageChange(index, e.target.value)}
-                  className={`flex-1 px-3 py-2 border border-gray-300 rounded-md transition-all ${
-                    message.length > 50
-                      ? 'border-red-300 focus:border-red-300 focus:shadow-[0_0_0_1px_#FCA5A5,0_1px_2px_0_rgba(0,0,0,0.05)]'
-                      : ''
-                  }`}
+                  className={`flex-1 px-3 py-2 border border-gray-300 rounded-md transition-all ${message.length > 50
+                    ? 'border-red-300 focus:border-red-300 focus:shadow-[0_0_0_1px_#FCA5A5,0_1px_2px_0_rgba(0,0,0,0.05)]'
+                    : ''}`}
                 />
                 <div className="w-12 text-right">
                   <span className={`text-xs ${message.length > 50 ? 'text-red-500' : 'text-gray-500'}`}>
@@ -117,15 +101,12 @@ export default function AutoMessage() {
                 <label className="flex items-center gap-2 min-w-[80px]">
                   <input
                     type="checkbox"
-                    checked={config.autoMessage.pinTops.includes(index)}
+                    checked={store.config.pinTops.includes(index)}
                     onChange={(e) => {
                       const newPinTops = e.target.checked
-                        ? [...config.autoMessage.pinTops, index]
-                        : config.autoMessage.pinTops.filter(i => i !== index)
-                      setConfig(prev => ({
-                        ...prev,
-                        autoMessage: { ...prev.autoMessage, pinTops: newPinTops },
-                      }))
+                        ? [...store.config.pinTops, index]
+                        : store.config.pinTops.filter(i => i !== index)
+                      store.setPinTops(newPinTops)
                     }}
                     className="rounded border-gray-300 text-blue-600"
                   />
@@ -134,11 +115,8 @@ export default function AutoMessage() {
                 <button
                   type="button"
                   onClick={() => {
-                    const newMessages = config.autoMessage.messages.filter((_, i) => i !== index)
-                    setConfig(prev => ({
-                      ...prev,
-                      autoMessage: { ...prev.autoMessage, messages: newMessages },
-                    }))
+                    const newMessages = store.config.messages.filter((_, i) => i !== index)
+                    store.setMessages(newMessages)
                   }}
                   className="p-2 text-gray-400 hover:text-red-500 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
                 >
@@ -150,13 +128,7 @@ export default function AutoMessage() {
             ))}
             <button
               type="button"
-              onClick={() => setConfig(prev => ({
-                ...prev,
-                autoMessage: {
-                  ...prev.autoMessage,
-                  messages: [...prev.autoMessage.messages, ''],
-                },
-              }))}
+              onClick={() => store.setMessages([...store.config.messages, ''])}
               className="w-full px-4 py-2 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 transition-colors flex items-center justify-center gap-2"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -171,11 +143,8 @@ export default function AutoMessage() {
         <label className="flex items-center gap-2 cursor-pointer">
           <input
             type="checkbox"
-            checked={config.autoMessage.random}
-            onChange={e => setConfig(prev => ({
-              ...prev,
-              autoMessage: { ...prev.autoMessage, random: e.target.checked },
-            }))}
+            checked={store.config.random}
+            onChange={e => store.setRandom(e.target.checked)}
             className="rounded border-gray-300 text-blue-600"
           />
           <span className="text-sm text-gray-700">随机发送</span>
@@ -186,9 +155,9 @@ export default function AutoMessage() {
         validationError={validationError}
         hasChanges={hasChanges}
         isConnected={isConnected}
-        isTaskRunning={isAutoMessageRunning}
+        isTaskRunning={store.isRunning}
         onSave={saveConfig}
-        onStartStop={isAutoMessageRunning ? onStopTask : onStartTask}
+        onStartStop={store.isRunning ? onStopTask : onStartTask}
       />
     </div>
   )
