@@ -10,11 +10,11 @@ export function setupAIChat() {
     baseURL: 'https://openrouter.ai/api/v1',
   })
 
-  ipcMain.handle('ai-chat', async (_, message: string) => {
+  ipcMain.handle('ai-chat', async (_, context: any[]) => {
     try {
       const completion = await openai.chat.completions.create({
         model: 'deepseek/deepseek-r1:free',
-        messages: [{ role: 'user', content: message }],
+        messages: [...context],
       })
       if (!completion.choices) {
         throw new Error(JSON.stringify(completion))

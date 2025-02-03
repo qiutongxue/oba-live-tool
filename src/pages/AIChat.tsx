@@ -4,6 +4,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Textarea } from '@/components/ui/textarea'
 import { useAIChatStore } from '@/hooks/useAIChat'
 import { useToast } from '@/hooks/useToast'
+import { messagesToContext } from '@/lib/utils'
 import { PaperPlaneIcon, TrashIcon } from '@radix-ui/react-icons'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
@@ -44,7 +45,7 @@ export default function AIChat() {
 
     try {
       setLoading(true)
-      const response = await window.ipcRenderer.invoke('ai-chat', userMessage)
+      const response = await window.ipcRenderer.invoke('ai-chat', messagesToContext(messages, userMessage))
       if (response.success) {
         addMessage({ role: 'assistant', content: response.message })
       }
