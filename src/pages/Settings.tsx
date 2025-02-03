@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import Update from '@/components/update'
+import { version } from '../../package.json'
 
 export default function Settings() {
   return (
@@ -34,7 +35,7 @@ export default function Settings() {
                 <div className="space-y-1">
                   <h4 className="text-sm font-medium leading-none">当前版本</h4>
                   <p className="text-sm text-muted-foreground">
-                    v1.0.0
+                    {version}
                   </p>
                 </div>
               </div>
