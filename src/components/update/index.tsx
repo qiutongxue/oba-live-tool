@@ -1,6 +1,8 @@
 import type { ProgressInfo } from 'electron-updater'
-import Modal from '@/components/update/Modal'
-import Progress from '@/components/update/Progress'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Progress } from '@/components/ui/progress'
+import { DownloadIcon, ReloadIcon } from '@radix-ui/react-icons'
 import { useCallback, useEffect, useState } from 'react'
 import './update.css'
 
@@ -90,71 +92,103 @@ function Update() {
 
   return (
     <>
-      <Modal
-        open={modalOpen}
-        cancelText={modalBtn?.cancelText}
-        okText={modalBtn?.okText}
-        onCancel={modalBtn?.onCancel}
-        onOk={modalBtn?.onOk}
-        footer={updateAvailable ? /* hide footer */null : undefined}
-        title={<div className="text-white px-4">软件更新</div>}
-      >
-        <div className="modal-slot">
-          {updateError
-            ? (
-                <div>
-                  <p>Error downloading the latest version.</p>
-                  <p>{updateError.message}</p>
-                </div>
-              )
-            : updateAvailable
+      <Dialog open={modalOpen} onOpenChange={open => !open && modalBtn?.onCancel?.()}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>软件更新</DialogTitle>
+            <DialogDescription>
+              {updateError
+                ? '检查更新时发生错误'
+                : updateAvailable
+                  ? '发现新版本'
+                  : '检查更新状态'}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4">
+            {updateError
               ? (
-                  <div>
-                    <div>
-                      The last version is: v
-                      {versionInfo?.newVersion}
-                    </div>
-                    <div className="new-version__target">
-                      v
-                      {versionInfo?.version}
-                      {' '}
-                      -&gt; v
-                      {versionInfo?.newVersion}
-                    </div>
-                    <div className="update__progress">
-                      <div className="progress__title">Update progress:</div>
-                      <div className="progress__bar">
-                        <Progress percent={progressInfo?.percent}></Progress>
-                      </div>
-                    </div>
+                  <div className="text-sm text-destructive">
+                    <p>
+                      错误信息：
+                      {updateError.message}
+                    </p>
                   </div>
                 )
-              : (
-                  <div className="can-not-available">
-                    {
-                      versionInfo?.version === versionInfo?.newVersion
-                        ? '已经是最新版本了！'
-                        : JSON.stringify(versionInfo ?? {}, null, 2)
-                    }
-                  </div>
-                )}
-        </div>
-      </Modal>
-      <button
-        type="button"
+              : updateAvailable
+                ? (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">当前版本</span>
+                        <span className="font-medium">
+                          v
+                          {versionInfo?.version}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">最新版本</span>
+                        <span className="font-medium">
+                          v
+                          {versionInfo?.newVersion}
+                        </span>
+                      </div>
+                      {progressInfo?.percent !== undefined && (
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">下载进度</span>
+                            <span>
+                              {Math.round(progressInfo.percent)}
+                              %
+                            </span>
+                          </div>
+                          <Progress value={progressInfo.percent} />
+                        </div>
+                      )}
+                    </div>
+                  )
+                : (
+                    <div className="text-center text-sm text-muted-foreground">
+                      {versionInfo?.version === versionInfo?.newVersion
+                        ? '您的应用程序已是最新版本！'
+                        : '正在检查更新...'}
+                    </div>
+                  )}
+          </div>
+
+          {updateAvailable && (
+            <DialogFooter>
+              <Button variant="outline" onClick={modalBtn?.onCancel}>
+                {modalBtn?.cancelText || '稍后再说'}
+              </Button>
+              <Button onClick={modalBtn?.onOk}>
+                <DownloadIcon className="mr-2 h-4 w-4" />
+                {modalBtn?.okText || '立即更新'}
+              </Button>
+            </DialogFooter>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Button
+        variant="outline"
         disabled={checking}
         onClick={checkUpdate}
-        className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${
-          checking
-            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-            : 'bg-blue-600 text-white hover:bg-blue-700'
-        }`}
+        size="sm"
       >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-        </svg>
-        {checking ? '检查更新中...' : '检查更新'}
-      </button>
+        {checking
+          ? (
+              <>
+                <ReloadIcon className="mr-2 h-4 w-4 animate-spin" />
+                检查更新中
+              </>
+            )
+          : (
+              <>
+                <ReloadIcon className="mr-2 h-4 w-4" />
+                检查更新
+              </>
+            )}
+      </Button>
     </>
   )
 }

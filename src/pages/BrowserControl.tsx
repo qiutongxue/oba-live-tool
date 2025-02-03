@@ -1,5 +1,8 @@
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useLiveControl } from '@/hooks/useLiveControl'
 import { useToast } from '@/hooks/useToast'
+import { CheckIcon, GlobeIcon } from '@radix-ui/react-icons'
 import React, { useState } from 'react'
 
 export default function BrowserControl() {
@@ -28,72 +31,78 @@ export default function BrowserControl() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* 状态卡片 */}
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-        <div className="px-6 py-3.5 border-b border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-800">直播控制台状态</h2>
-        </div>
-        <div className="px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-gray-300'}`} />
-              <span className="text-sm font-medium text-gray-600">
-                {isConnected ? '已连接' : '未连接'}
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={connectLiveControl}
-              disabled={isLoading || isConnected}
-              className={`px-6 py-2.5 rounded-lg transition-all flex items-center gap-2 ${
-                isConnected
-                  ? 'bg-green-50 text-green-600 cursor-not-allowed'
-                  : isLoading
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
-              }`}
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                {isConnected
-                  ? (
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                    )
-                  : (
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-                    )}
-              </svg>
-              {isConnected ? '已连接' : isLoading ? '连接中...' : '连接直播控制台'}
-            </button>
-          </div>
-        </div>
+    <div className="container py-8 space-y-8">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">直播控制台</h1>
+        <p className="text-muted-foreground mt-2">
+          连接并管理您的直播控制台。
+        </p>
       </div>
 
-      {/* 使用说明 */}
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-        <div className="px-6 py-3.5 border-b border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-800">使用说明</h2>
-        </div>
-        <div className="px-6 py-4">
-          <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <div className="w-6 h-6 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
-                <span className="text-sm font-semibold text-blue-600">1</span>
+      <div className="space-y-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>控制台状态</CardTitle>
+            <CardDescription>查看并管理直播控制台的连接状态</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-gray-300'}`} />
+                <span className="text-sm text-muted-foreground">
+                  {isConnected ? '已连接' : '未连接'}
+                </span>
               </div>
-              <p className="text-gray-600 leading-6">
-                点击"连接直播控制台"按钮，等待登录抖音小店
-              </p>
+              <Button
+                variant={isConnected ? 'secondary' : 'default'}
+                onClick={connectLiveControl}
+                disabled={isLoading || isConnected}
+                size="sm"
+              >
+                {isConnected
+                  ? (
+                      <>
+                        <CheckIcon className="mr-2 h-4 w-4" />
+                        已连接
+                      </>
+                    )
+                  : (
+                      <>
+                        <GlobeIcon className="mr-2 h-4 w-4" />
+                        {isLoading ? '连接中...' : '连接直播控制台'}
+                      </>
+                    )}
+              </Button>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="w-6 h-6 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
-                <span className="text-sm font-semibold text-blue-600">2</span>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>使用说明</CardTitle>
+            <CardDescription>了解如何使用直播控制台</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex gap-3">
+                <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <span className="text-sm font-medium text-primary">1</span>
+                </div>
+                <p className="text-sm text-muted-foreground leading-6">
+                  点击"连接直播控制台"按钮，等待登录抖音小店
+                </p>
               </div>
-              <p className="text-gray-600 leading-6">
-                登录成功后，即可使用自动发言和自动弹窗功能
-              </p>
+              <div className="flex gap-3">
+                <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <span className="text-sm font-medium text-primary">2</span>
+                </div>
+                <p className="text-sm text-muted-foreground leading-6">
+                  登录成功后，即可使用自动发言和自动弹窗功能
+                </p>
+              </div>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )

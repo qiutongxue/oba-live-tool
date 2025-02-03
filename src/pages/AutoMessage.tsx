@@ -1,8 +1,15 @@
 import { TaskOperationButtons } from '@/components/TaskOperationButtons'
-import { TaskPanel } from '@/components/TaskPanel'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
 import { useAutoMessage } from '@/hooks/useAutoMessage'
 import { useLiveControl } from '@/hooks/useLiveControl'
 import { useToast } from '@/hooks/useToast'
+import { PlusIcon, TrashIcon } from '@radix-ui/react-icons'
 import React, { useCallback, useState } from 'react'
 
 export default function AutoMessage() {
@@ -59,97 +66,170 @@ export default function AutoMessage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="container py-8 space-y-6">
+      <div className="space-y-0.5">
+        <h1 className="text-3xl font-bold tracking-tight">自动发言</h1>
+        <p className="text-muted-foreground">
+          配置自动发送消息的规则。
+        </p>
+      </div>
+
       {validationError && (
-        <div className="border-l-4 border-red-500 p-4 rounded-r-lg">
-          <div className="flex items-center gap-3">
-            <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span className="text-red-700">{validationError}</span>
-          </div>
-        </div>
+        <Alert variant="destructive">
+          <AlertDescription>{validationError}</AlertDescription>
+        </Alert>
       )}
 
-      <TaskPanel
-        title="自动发言配置"
-        enabled={store.config.enabled}
-        onEnableChange={checked => store.setEnabled(checked)}
-        scheduler={store.config.scheduler}
-        onSchedulerChange={interval => store.setScheduler({ interval })}
-      >
-        {/* 消息列表 */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">消息列表</label>
-          <div className="space-y-3">
-            {store.config.messages.map((message, index) => (
-              <div key={index} className="flex gap-3 items-center group">
-                <input
-                  type="text"
-                  value={message}
-                  onChange={e => handleMessageChange(index, e.target.value)}
-                  className={`flex-1 px-3 py-2 border border-gray-300 rounded-md transition-all ${message.length > 50
-                    ? 'border-red-300 focus:border-red-300 focus:shadow-[0_0_0_1px_#FCA5A5,0_1px_2px_0_rgba(0,0,0,0.05)]'
-                    : ''}`}
-                />
-                <div className="w-12 text-right">
-                  <span className={`text-xs ${message.length > 50 ? 'text-red-500' : 'text-gray-500'}`}>
-                    {message.length}
-                    /50
-                  </span>
-                </div>
-                <label className="flex items-center gap-2 min-w-[80px]">
-                  <input
-                    type="checkbox"
-                    checked={store.config.pinTops.includes(index)}
-                    onChange={(e) => {
-                      const newPinTops = e.target.checked
-                        ? [...store.config.pinTops, index]
-                        : store.config.pinTops.filter(i => i !== index)
-                      store.setPinTops(newPinTops)
-                    }}
-                    className="rounded border-gray-300 text-blue-600"
-                  />
-                  <span className="text-sm text-gray-600">置顶</span>
-                </label>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const newMessages = store.config.messages.filter((_, i) => i !== index)
-                    store.setMessages(newMessages)
-                  }}
-                  className="p-2 text-gray-400 hover:text-red-500 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                </button>
+      <div className="grid gap-6">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <Label>启用自动发言</Label>
+                <p className="text-sm text-muted-foreground">
+                  开启后将按照设定的规则自动发送消息
+                </p>
               </div>
-            ))}
-            <button
-              type="button"
-              onClick={() => store.setMessages([...store.config.messages, ''])}
-              className="w-full px-4 py-2 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 transition-colors flex items-center justify-center gap-2"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-              添加消息
-            </button>
-          </div>
-        </div>
+              <Switch
+                checked={store.config.enabled}
+                onCheckedChange={checked => store.setEnabled(checked)}
+              />
+            </div>
+          </CardContent>
+        </Card>
 
-        {/* 随机发送 */}
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={store.config.random}
-            onChange={e => store.setRandom(e.target.checked)}
-            className="rounded border-gray-300 text-blue-600"
-          />
-          <span className="text-sm text-gray-700">随机发送</span>
-        </label>
-      </TaskPanel>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label>消息列表</Label>
+                  <p className="text-sm text-muted-foreground">
+                    添加需要自动发送的消息内容
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => store.setMessages([...store.config.messages, ''])}
+                >
+                  <PlusIcon className="mr-2 h-4 w-4" />
+                  添加消息
+                </Button>
+              </div>
+
+              <div className="space-y-4">
+                {store.config.messages.map((message, index) => (
+                  <div key={index} className="flex gap-3 items-start group">
+                    <div className="flex-1 space-y-2">
+                      <Input
+                        value={message}
+                        onChange={e => handleMessageChange(index, e.target.value)}
+                        className={message.length > 50 ? 'border-destructive' : ''}
+                        placeholder="输入消息内容"
+                      />
+                      <div className="flex items-center justify-between px-1">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`pin-${index}`}
+                            checked={store.config.pinTops.includes(index)}
+                            onCheckedChange={(checked) => {
+                              const newPinTops = checked
+                                ? [...store.config.pinTops, index]
+                                : store.config.pinTops.filter(i => i !== index)
+                              store.setPinTops(newPinTops)
+                            }}
+                          />
+                          <label
+                            htmlFor={`pin-${index}`}
+                            className="text-sm text-muted-foreground cursor-pointer select-none"
+                          >
+                            置顶此消息
+                          </label>
+                        </div>
+                        <span className={`text-xs ${
+                          message.length > 50 ? 'text-destructive' : 'text-muted-foreground'
+                        }`}
+                        >
+                          {message.length}
+                          /50
+                        </span>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        const newMessages = store.config.messages.filter((_, i) => i !== index)
+                        store.setMessages(newMessages)
+                      }}
+                      className="opacity-0 group-hover:opacity-100 self-start"
+                    >
+                      <TrashIcon className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label>发送设置</Label>
+                  <p className="text-sm text-muted-foreground">
+                    配置消息发送的相关选项
+                  </p>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="random"
+                    checked={store.config.random}
+                    onCheckedChange={checked => store.setRandom(checked)}
+                  />
+                  <Label htmlFor="random" className="cursor-pointer">
+                    随机发送
+                  </Label>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <Label>发送间隔（秒）</Label>
+                <div className="flex items-center space-x-2">
+                  <Input
+                    type="number"
+                    value={store.config.scheduler.interval[0] / 1000}
+                    onChange={e => store.setScheduler({
+                      interval: [Number(e.target.value) * 1000, store.config.scheduler.interval[1]],
+                    })}
+                    className="w-24"
+                    min="1"
+                    placeholder="最小"
+                  />
+                  <span className="text-sm text-muted-foreground">至</span>
+                  <Input
+                    type="number"
+                    value={store.config.scheduler.interval[1] / 1000}
+                    onChange={e => store.setScheduler({
+                      interval: [store.config.scheduler.interval[0], Number(e.target.value) * 1000],
+                    })}
+                    className="w-24"
+                    min="1"
+                    placeholder="最大"
+                  />
+                  <span className="text-sm text-muted-foreground">秒</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  系统将在设定的时间区间内随机选择发送时机
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       <TaskOperationButtons
         validationError={validationError}

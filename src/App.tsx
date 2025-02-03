@@ -1,6 +1,6 @@
 import LogDisplayer from '@/components/LogDisplayer'
 import Sidebar from '@/components/Sidebar'
-import { ToastContainer } from '@/components/ToastContainer'
+import { Toaster } from '@/components/ui/toaster'
 import { Outlet } from 'react-router'
 import './App.css'
 
@@ -34,7 +34,7 @@ function App() {
           <LogDisplayer />
         </div>
       </div>
-      <ToastContainer />
+      <Toaster />
     </>
   )
 }

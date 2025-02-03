@@ -1,3 +1,4 @@
+import { cn } from '@/lib/utils'
 import { NavLink } from 'react-router'
 
 export default function Sidebar() {
@@ -42,19 +43,21 @@ export default function Sidebar() {
   ]
 
   return (
-    <aside className="w-64 min-w-[256px] bg-white border-r border-gray-200 shadow-sm relative z-0">
+    <aside className="w-64 min-w-[256px] bg-background border-r">
       <div className="p-6">
-        <h2 className="text-lg font-semibold text-gray-800 mb-6">功能列表</h2>
+        <h2 className="text-lg font-semibold mb-6">功能列表</h2>
         <nav className="space-y-2">
           {tabs.map(tab => (
             <NavLink
               key={tab.id}
               to={tab.id}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-all ${isActive
-                  ? 'bg-blue-50 text-blue-700 shadow-sm ring-1 ring-blue-100'
-                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                }`}
+                cn(
+                  'flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-all',
+                  isActive
+                    ? 'bg-primary/10 text-primary shadow-sm'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                )}
             >
               {tab.icon}
               {tab.name}

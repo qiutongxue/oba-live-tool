@@ -1,8 +1,14 @@
 import { TaskOperationButtons } from '@/components/TaskOperationButtons'
-import { TaskPanel } from '@/components/TaskPanel'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
 import { useAutoPopUp } from '@/hooks/useAutoPopUp'
 import { useLiveControl } from '@/hooks/useLiveControl'
 import { useToast } from '@/hooks/useToast'
+import { PlusIcon, TrashIcon } from '@radix-ui/react-icons'
 import React, { useCallback, useState } from 'react'
 
 export default function AutoPopUp() {
@@ -76,78 +82,146 @@ export default function AutoPopUp() {
   }, [store])
 
   return (
-    <div className="space-y-8">
+    <div className="container py-8 space-y-6">
+      <div className="space-y-0.5">
+        <h1 className="text-3xl font-bold tracking-tight">自动弹窗</h1>
+        <p className="text-muted-foreground">
+          配置自动弹出商品的规则。
+        </p>
+      </div>
+
       {validationError && (
-        <div className="border-l-4 border-red-500 p-4 rounded-r-lg">
-          <div className="flex items-center gap-3">
-            <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span className="text-red-700">{validationError}</span>
-          </div>
-        </div>
+        <Alert variant="destructive">
+          <AlertDescription>{validationError}</AlertDescription>
+        </Alert>
       )}
 
-      <TaskPanel
-        title="自动弹窗配置"
-        enabled={store.config.enabled}
-        onEnableChange={checked => store.setConfig({
-          ...store.config,
-          enabled: checked,
-        })}
-        scheduler={store.config.scheduler}
-        onSchedulerChange={interval => store.setScheduler({ interval })}
-      >
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">商品ID列表</label>
-          <div className="space-y-3">
-            {store.config.goodsIds.map((id, index) => (
-              <div key={index} className="flex gap-3 items-center group">
-                <input
-                  type="number"
-                  value={id}
-                  onChange={e => handleGoodsIdChange(index, e.target.value)}
-                  className="w-32 px-3 py-2 border border-gray-300 rounded-md transition-shadow"
-                  min="1"
-                  placeholder="输入商品ID"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    const newGoodsIds = store.config.goodsIds.filter((_, i) => i !== index)
-                    store.setGoodsIds(newGoodsIds)
-                  }}
-                  className="p-2 text-gray-400 hover:text-red-500 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                </button>
+      <div className="grid gap-6">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <Label>启用自动弹窗</Label>
+                <p className="text-sm text-muted-foreground">
+                  开启后将按照设定的规则自动弹出商品
+                </p>
               </div>
-            ))}
-            <button
-              type="button"
-              onClick={addGoodsId}
-              className="w-full px-4 py-2 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 transition-colors flex items-center justify-center gap-2"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-              添加商品
-            </button>
-          </div>
-        </div>
+              <Switch
+                checked={store.config.enabled}
+                onCheckedChange={checked => store.setConfig({
+                  ...store.config,
+                  enabled: checked,
+                })}
+              />
+            </div>
+          </CardContent>
+        </Card>
 
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={store.config.random}
-            onChange={e => store.setRandom(e.target.checked)}
-            className="rounded border-gray-300 text-blue-600"
-          />
-          <span className="text-sm text-gray-700">随机弹窗</span>
-        </label>
-      </TaskPanel>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label>商品列表</Label>
+                  <p className="text-sm text-muted-foreground">
+                    添加需要自动弹出的商品ID
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={addGoodsId}
+                >
+                  <PlusIcon className="mr-2 h-4 w-4" />
+                  添加商品
+                </Button>
+              </div>
+
+              <div className="space-y-4">
+                {store.config.goodsIds.map((id, index) => (
+                  <div key={index} className="flex gap-3 items-center group">
+                    <Input
+                      type="number"
+                      value={id}
+                      onChange={e => handleGoodsIdChange(index, e.target.value)}
+                      className="w-32"
+                      min="1"
+                      placeholder="商品ID"
+                    />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        const newGoodsIds = store.config.goodsIds.filter((_, i) => i !== index)
+                        store.setGoodsIds(newGoodsIds)
+                      }}
+                      className="opacity-0 group-hover:opacity-100"
+                    >
+                      <TrashIcon className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label>弹窗设置</Label>
+                  <p className="text-sm text-muted-foreground">
+                    配置商品弹窗的相关选项
+                  </p>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="random"
+                    checked={store.config.random}
+                    onCheckedChange={checked => store.setRandom(checked)}
+                  />
+                  <Label htmlFor="random" className="cursor-pointer">
+                    随机弹窗
+                  </Label>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <Label>弹窗间隔（秒）</Label>
+                <div className="flex items-center space-x-2">
+                  <Input
+                    type="number"
+                    value={store.config.scheduler.interval[0] / 1000}
+                    onChange={e => store.setScheduler({
+                      interval: [Number(e.target.value) * 1000, store.config.scheduler.interval[1]],
+                    })}
+                    className="w-24"
+                    min="1"
+                    placeholder="最小"
+                  />
+                  <span className="text-sm text-muted-foreground">至</span>
+                  <Input
+                    type="number"
+                    value={store.config.scheduler.interval[1] / 1000}
+                    onChange={e => store.setScheduler({
+                      interval: [store.config.scheduler.interval[0], Number(e.target.value) * 1000],
+                    })}
+                    className="w-24"
+                    min="1"
+                    placeholder="最大"
+                  />
+                  <span className="text-sm text-muted-foreground">秒</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  系统将在设定的时间区间内随机选择弹窗时机
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       <TaskOperationButtons
         validationError={validationError}
@@ -157,7 +231,6 @@ export default function AutoPopUp() {
         onSave={saveConfig}
         onStartStop={store.isRunning ? onStopTask : onStartTask}
       />
-
     </div>
   )
 }
