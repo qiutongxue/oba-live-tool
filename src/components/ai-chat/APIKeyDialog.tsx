@@ -35,8 +35,10 @@ export function APIKeyDialog() {
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>API Key 配置</DialogTitle>
-          <DialogDescription>
-            设置您的 OpenAI API Key，用于访问 AI 服务。
+          <DialogDescription className="py-1">
+            设置您的
+            <a href="https://platform.deepseek.com/api_keys" target="_blank" className="px-1 text-primary hover:underline">DeepSeek API Key</a>
+            ，用于访问 AI 服务。
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -47,7 +49,7 @@ export function APIKeyDialog() {
               type="password"
               value={tempKey}
               onChange={e => setTempKey(e.target.value)}
-              placeholder="请输入您的 OpenAI API Key"
+              placeholder="请输入您的 DeepSeek API Key"
               className="font-mono"
             />
             <p className="text-xs text-muted-foreground">

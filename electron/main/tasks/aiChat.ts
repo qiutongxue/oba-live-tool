@@ -5,15 +5,15 @@ import OpenAI from 'openai'
 export function setupAIChat() {
   const logger = createLogger('aiChat')
 
-  ipcMain.handle('ai-chat', async (_, { messages, apiKey }) => {
+  ipcMain.handle('ai-chat', async (_, { messages, apiKey, model }) => {
     try {
       const openai = new OpenAI({
         apiKey,
-        baseURL: 'https://openrouter.ai/api/v1',
+        baseURL: 'https://api.deepseek.com',
       })
 
       const completion = await openai.chat.completions.create({
-        model: 'deepseek/deepseek-r1:free',
+        model: model ?? 'deepseek-chat',
         messages,
       })
 
