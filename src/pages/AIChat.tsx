@@ -1,4 +1,5 @@
 import { APIKeyDialog } from '@/components/ai-chat/APIKeyDialog'
+import { Message } from '@/components/ai-chat/Message'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -36,22 +37,11 @@ export default function AIChat() {
     scrollToBottom()
   }, [messages, scrollToBottom])
 
-  const handleSubmit = async () => {
-    if (!apiKey) {
-      toast.error('请先配置 API Key')
-      return
-    }
-    if (!input.trim() || isLoading)
-      return
-
-    const userMessage = input.trim()
-    setInput('')
-    addMessage({ role: 'user', content: userMessage })
-
+  const trySendMessage = async (messages: { role: string, content: string }[]) => {
     try {
       setLoading(true)
       const response = await window.ipcRenderer.invoke('ai-chat', {
-        messages: messagesToContext(messages, userMessage),
+        messages,
         apiKey,
       })
       if (response.success) {
@@ -67,6 +57,21 @@ export default function AIChat() {
     finally {
       setLoading(false)
     }
+  }
+
+  const handleSubmit = async () => {
+    if (!apiKey) {
+      toast.error('请先配置 API Key')
+      return
+    }
+    if (!input.trim() || isLoading)
+      return
+
+    const userMessage = input.trim()
+    setInput('')
+    addMessage({ role: 'user', content: userMessage })
+
+    await trySendMessage(messagesToContext(messages, userMessage))
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -108,40 +113,7 @@ export default function AIChat() {
           >
             <div className="space-y-6 min-h-[100px]">
               {messages.map(message => (
-                <div
-                  key={message.id}
-                  className={`relative flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div
-                    className={`max-w-[80%] rounded-lg px-4 py-2 break-words shadow-sm ${
-                      message.role === 'user'
-                        ? 'bg-primary text-primary-foreground'
-                        : message.isError
-                          ? 'bg-destructive text-destructive-foreground'
-                          : 'bg-muted hover:bg-muted/80'
-                    }`}
-                    style={{ overflowWrap: 'break-word', wordBreak: 'break-word' }}
-                  >
-                    <p className="whitespace-pre-wrap leading-relaxed text-[15px]">
-                      {message.content}
-                    </p>
-                    <div className={`absolute -bottom-5 select-none ${
-                      message.role === 'user'
-                        ? 'right-1'
-                        : 'left-1'
-                    }`}
-                    >
-                      <span className={`text-[11px] ${
-                        message.role === 'user'
-                          ? 'text-primary/70'
-                          : 'text-muted-foreground/70'
-                      }`}
-                      >
-                        {new Date(message.timestamp).toLocaleTimeString()}
-                      </span>
-                    </div>
-                  </div>
-                </div>
+                <Message key={message.id} {...message} onRetry={trySendMessage} />
               ))}
               {isLoading && (
                 <div className="flex justify-start">

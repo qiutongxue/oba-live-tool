@@ -16,6 +16,7 @@ interface AIChat {
   apiKey: string
   setApiKey: (key: string) => void
   addMessage: (message: Omit<ChatMessage, 'id' | 'timestamp'>) => void
+  setMessages: (messages: ChatMessage[]) => void
   setLoading: (loading: boolean) => void
   clearMessages: () => void
 }
@@ -39,6 +40,11 @@ export const useAIChatStore = create<AIChat>()(
               id: crypto.randomUUID(),
               timestamp: Date.now(),
             })
+          })
+        },
+        setMessages: (messages) => {
+          set((state) => {
+            state.messages = messages
           })
         },
         setLoading: (loading) => {
