@@ -40,7 +40,7 @@ export interface ButtonProps
   asChild?: boolean
 }
 
-function Button({ ref, className, variant, size, asChild = false, ...props }: ButtonProps & { ref?: React.RefObject<HTMLButtonElement> }) {
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(({ className, variant, size, asChild = false, ...props }, ref) => {
   const Comp = asChild ? Slot : 'button'
   return (
     <Comp
@@ -49,7 +49,7 @@ function Button({ ref, className, variant, size, asChild = false, ...props }: Bu
       {...props}
     />
   )
-}
+})
 Button.displayName = 'Button'
 
 // eslint-disable-next-line react-refresh/only-export-components
