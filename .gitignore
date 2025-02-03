@@ -33,5 +33,5 @@ yarn.lock
 /playwright/.cache/
 
 cookies
-
+release/
 .eslintcache
