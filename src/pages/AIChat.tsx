@@ -11,7 +11,7 @@ import { PaperPlaneIcon, TrashIcon } from '@radix-ui/react-icons'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 export default function AIChat() {
-  const { messages, addMessage, isLoading, setLoading, clearMessages, apiKey } = useAIChatStore()
+  const { messages, addMessage, isLoading, setLoading, clearMessages, provider, apiKeys } = useAIChatStore()
   const [input, setInput] = useState('')
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const viewportRef = useRef<HTMLDivElement>(null)
@@ -42,7 +42,8 @@ export default function AIChat() {
       setLoading(true)
       const response = await window.ipcRenderer.invoke('ai-chat', {
         messages,
-        apiKey,
+        apiKey: apiKeys[provider],
+        provider,
       })
       if (response.success) {
         addMessage({ role: 'assistant', content: response.message })
@@ -60,7 +61,7 @@ export default function AIChat() {
   }
 
   const handleSubmit = async () => {
-    if (!apiKey) {
+    if (!apiKeys[provider]) {
       toast.error('请先配置 API Key')
       return
     }
