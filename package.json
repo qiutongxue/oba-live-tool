@@ -1,7 +1,7 @@
 {
   "name": "oba-live-tool",
   "type": "module",
-  "version": "1.1.6",
+  "version": "1.1.7",
   "private": true,
   "description": "抖音直播工具，用于直播带货，能自动弹窗，自动发言",
   "author": "OBA Douyin Live Streaming Department",
