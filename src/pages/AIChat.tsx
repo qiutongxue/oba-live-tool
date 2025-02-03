@@ -1,3 +1,4 @@
+import { APIKeyDialog } from '@/components/ai-chat/APIKeyDialog'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -9,7 +10,7 @@ import { PaperPlaneIcon, TrashIcon } from '@radix-ui/react-icons'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 export default function AIChat() {
-  const { messages, addMessage, isLoading, setLoading, clearMessages } = useAIChatStore()
+  const { messages, addMessage, isLoading, setLoading, clearMessages, apiKey } = useAIChatStore()
   const [input, setInput] = useState('')
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const viewportRef = useRef<HTMLDivElement>(null)
@@ -36,6 +37,10 @@ export default function AIChat() {
   }, [messages, scrollToBottom])
 
   const handleSubmit = async () => {
+    if (!apiKey) {
+      toast.error('请先配置 API Key')
+      return
+    }
     if (!input.trim() || isLoading)
       return
 
@@ -45,7 +50,10 @@ export default function AIChat() {
 
     try {
       setLoading(true)
-      const response = await window.ipcRenderer.invoke('ai-chat', messagesToContext(messages, userMessage))
+      const response = await window.ipcRenderer.invoke('ai-chat', {
+        messages: messagesToContext(messages, userMessage),
+        apiKey,
+      })
       if (response.success) {
         addMessage({ role: 'assistant', content: response.message })
       }
@@ -54,7 +62,7 @@ export default function AIChat() {
       }
     }
     catch {
-      toast.error(`发送消息失败`)
+      toast.error('发送消息失败')
     }
     finally {
       setLoading(false)
@@ -77,19 +85,22 @@ export default function AIChat() {
             与 AI 助手进行对话，获取帮助。
           </p>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={clearMessages}
-          disabled={messages.length === 0}
-          className="text-muted-foreground hover:text-destructive"
-        >
-          <TrashIcon className="mr-2 h-4 w-4" />
-          清空对话
-        </Button>
+        <div className="flex items-center gap-2">
+          <APIKeyDialog />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={clearMessages}
+            disabled={messages.length === 0}
+            className="text-muted-foreground hover:text-destructive"
+          >
+            <TrashIcon className="mr-2 h-4 w-4" />
+            清空对话
+          </Button>
+        </div>
       </div>
 
-      <Card className="flex flex-col h-[calc(100vh-20rem)] border-none">
+      <Card className="flex flex-col h-[calc(100vh-16rem)] border-none">
         <CardContent className="flex-1 flex flex-col gap-4 p-0 overflow-hidden">
           <ScrollArea
             ref={scrollAreaRef}
