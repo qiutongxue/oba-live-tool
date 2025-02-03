@@ -23,7 +23,7 @@ export const router = createHashRouter([
         element: <AutoPopUp />,
       },
       {
-        path: 'settings',
+        path: '/settings',
         element: <Settings />,
       },
     ],
