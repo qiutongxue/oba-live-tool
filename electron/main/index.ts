@@ -21,6 +21,7 @@ import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { connectLiveControl } from './liveControl'
 import { createLogger } from './logger'
 import { pageManager } from './taskManager'
+import { setupAIChat } from './tasks/aiChat'
 import { createAutoMessage } from './tasks/autoMessage'
 import { createAutoPopUp } from './tasks/autoPopUp'
 import { update } from './update'
@@ -101,6 +102,7 @@ async function createWindow() {
 
   // Auto update
   update(win)
+  setupAIChat()
 }
 
 app.whenReady().then(createWindow)

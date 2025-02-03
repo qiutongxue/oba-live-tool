@@ -38,6 +38,17 @@ export default function Sidebar() {
       ),
     },
     {
+      id: '/ai-chat',
+      name: 'AI 助手',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h.01M12 7h.01M16 7h.01" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 11.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" />
+        </svg>
+      ),
+    },
+    {
       id: '/settings',
       name: '应用设置',
       icon: (
@@ -47,6 +58,7 @@ export default function Sidebar() {
         </svg>
       ),
     },
+
   ]
 
   return (

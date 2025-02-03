@@ -1,3 +1,4 @@
+import AIChat from '@/pages/AIChat'
 import AutoMessage from '@/pages/AutoMessage'
 import AutoPopUp from '@/pages/AutoPopUp'
 import BrowserControl from '@/pages/BrowserControl'
@@ -25,6 +26,10 @@ export const router = createHashRouter([
       {
         path: '/settings',
         element: <Settings />,
+      },
+      {
+        path: '/ai-chat',
+        element: <AIChat />,
       },
     ],
   },
