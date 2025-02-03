@@ -114,7 +114,7 @@ export function createAutoPopUp(page: Page, userConfig: Partial<PopUpConfig> = {
     }
 
     await button.click()
-    logger.success(`${expectedText} 商品 | ID: ${currentGoodIndex + 1} | 总商品数: ${config.goodsIds.length}`)
+    logger.success(`${expectedText} 商品 | ID: ${config.goodsIds[currentGoodIndex]} | 总商品数: ${config.goodsIds.length}`)
   }
 
   async function waitForStateChange(element: ElementHandle) {
