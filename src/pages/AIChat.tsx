@@ -105,7 +105,7 @@ export default function AIChat() {
         </div>
       </div>
 
-      <Card className="flex flex-col h-[calc(100vh-16rem)] border-none">
+      <Card className="flex flex-col h-[calc(100vh-20rem)] border-none">
         <CardContent className="flex-1 flex flex-col gap-4 p-0 overflow-hidden">
           <ScrollArea
             ref={scrollAreaRef}
