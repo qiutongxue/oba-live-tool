@@ -13,7 +13,7 @@ import path from 'node:path'
 //
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
-import { app, BrowserWindow, ipcMain, shell } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
 
 import fs from 'fs-extra'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
@@ -21,6 +21,7 @@ import { createLogger } from './logger'
 import { pageManager } from './taskManager'
 import { setupAIChat } from './tasks/aiChat'
 import { update } from './update'
+import { findChrome } from './utils/checkChrome'
 import windowManager from './windowManager'
 import './tasks/liveControl'
 import './tasks/autoMessage'
@@ -192,3 +193,18 @@ ipcMain.handle(IPC_CHANNELS.config.load, async () => {
 })
 
 // 添加新的 IPC 处理函数
+ipcMain.handle(IPC_CHANNELS.getChromePath, async () => {
+  const path = await findChrome()
+  return path
+})
+
+ipcMain.handle(IPC_CHANNELS.selectChromePath, async () => {
+  // 打开文件选择器，选择 chrome.exe
+  const path = await dialog.showOpenDialog({
+    properties: ['openFile'],
+    filters: [{ name: 'chrome', extensions: ['exe'] }],
+  })
+  if (path.filePaths.length > 0) {
+    return path.filePaths[0]
+  }
+})

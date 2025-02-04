@@ -1,14 +1,25 @@
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { useChromeConfig } from '@/hooks/useChromeConfig'
 import { useLiveControl } from '@/hooks/useLiveControl'
 import { useToast } from '@/hooks/useToast'
 import { CheckIcon, GlobeIcon } from '@radix-ui/react-icons'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
 export default function BrowserControl() {
   const { isConnected, setIsConnected } = useLiveControl()
   const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
+
+  const { setPath, path: chromePath } = useChromeConfig()
+  useEffect(() => {
+    const removeListener = window.ipcRenderer.on(window.ipcChannels.setChromePath, (path) => {
+      if (path && !chromePath) {
+        setPath(path)
+      }
+    })
+    return () => removeListener()
+  }, [setPath, chromePath])
 
   const connectLiveControl = async () => {
     try {

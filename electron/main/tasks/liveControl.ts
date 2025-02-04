@@ -42,8 +42,9 @@ async function saveCookies(context: playwright.BrowserContext) {
 }
 
 (function registerListeners() {
-  ipcMain.handle(IPC_CHANNELS.tasks.liveControl.connect, async () => {
+  ipcMain.handle(IPC_CHANNELS.tasks.liveControl.connect, async (_, path) => {
     try {
+      chromePath = path
       const { browser, page } = await connectLiveControl()
       // 保存到 PageManager
       pageManager.setBrowser(browser)
@@ -63,7 +64,6 @@ export async function connectLiveControl() {
   let loginSuccess = false
   let browser: playwright.Browser | null = null
   let page: playwright.Page | null = null
-
   while (!loginSuccess) {
   // 1. 先尝试无头模式
     browser = await createBrowser(true)

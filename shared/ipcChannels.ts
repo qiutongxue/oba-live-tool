@@ -18,4 +18,7 @@ export const IPC_CHANNELS = {
     save: 'config:save',
     load: 'config:load',
   },
+  getChromePath: 'chromePath:get',
+  setChromePath: 'chromePath:set',
+  selectChromePath: 'chromePath:select',
 } as const

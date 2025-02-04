@@ -5,9 +5,15 @@ interface LiveControlStore {
   setIsConnected: (connected: boolean) => void
 }
 
-export const useLiveControl = create<LiveControlStore>((set) => {
+export const useLiveControlStore = create<LiveControlStore>((set) => {
   return {
     isConnected: false,
     setIsConnected: connected => set({ isConnected: connected }),
   }
 })
+
+export function useLiveControl() {
+  const { isConnected, setIsConnected } = useLiveControlStore()
+
+  return { isConnected, setIsConnected }
+}
