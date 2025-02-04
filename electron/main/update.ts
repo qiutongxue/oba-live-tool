@@ -16,6 +16,12 @@ export function update(win: Electron.BrowserWindow) {
   autoUpdater.autoDownload = false
   autoUpdater.disableWebInstaller = false
   autoUpdater.allowDowngrade = false
+  autoUpdater.setFeedURL({
+    provider: 'github',
+    owner: 'qiutongxue',
+    repo: 'oba-live-tool',
+  })
+
   // TODO: 设一个本地服务器模拟一下
   // autoUpdater.forceDevUpdateConfig = true
   // start check

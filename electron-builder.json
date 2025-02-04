@@ -26,12 +26,7 @@
       }
     ],
     "icon": "public/favicon.ico",
-    "artifactName": "${productName}_${version}.${ext}",
-    "publish": {
-      "provider": "github",
-      "owner": "qiutongxue",
-      "repo": "oba-live-tool"
-    }
+    "artifactName": "${productName}_${version}.${ext}"
   },
   "nsis": {
     "oneClick": false,
@@ -39,6 +34,5 @@
     "allowToChangeInstallationDirectory": true,
     "deleteAppDataOnUninstall": false,
     "differentialPackage": true
-
   }
 }
