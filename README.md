@@ -6,9 +6,7 @@
   <br>
 
 ![GitHub Release][github release badge]
-
 ![GitHub Release Date][github release date badge]
-
 ![GitHub][github license badge]
 
 </div>
