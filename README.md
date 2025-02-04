@@ -1,6 +1,19 @@
-# oba-live-tool
+<div align="center">
 
-抖音小店直播小工具
+  <img src="./public/favicon.png" alt="logo" width="256px" height="auto">
+  <h1> oba live tool </h1>
+  <p> 抖音小店直播小工具 </p>
+  <br>
+
+![GitHub Release][github release badge]
+
+![GitHub Release Date][github release date badge]
+
+![GitHub][github license badge]
+
+</div>
+
+---
 
 ## 📸 界面预览
 
@@ -39,3 +52,11 @@
 ## 📑 许可证
 
 本项目遵循 MIT 许可证
+
+<!-- badage -->
+
+[github release badge]: https://img.shields.io/github/v/release/qiutongxue/oba-live-tool?style=for-the-badge
+
+[github release date badge]: https://img.shields.io/github/release-date/qiutongxue/oba-live-tool?style=for-the-badge
+
+[github license badge]: https://img.shields.io/github/license/qiutongxue/oba-live-tool?style=for-the-badge
