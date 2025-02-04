@@ -2,12 +2,13 @@ import type { ProgressInfo } from 'electron-updater'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Progress } from '@/components/ui/progress'
-import { DownloadIcon, ReloadIcon } from '@radix-ui/react-icons'
+import { DownloadIcon, ReloadIcon, RocketIcon } from '@radix-ui/react-icons'
 import { useCallback, useEffect, useState } from 'react'
 import './update.css'
 
 function Update() {
   const [checking, setChecking] = useState(false)
+  const [downloading, setDownloading] = useState(false)
   const [updateAvailable, setUpdateAvailable] = useState(false)
   const [versionInfo, setVersionInfo] = useState<VersionInfo>()
   const [updateError, setUpdateError] = useState<ErrorType>()
@@ -20,14 +21,14 @@ function Update() {
     onOk?: () => void
   }>({
         onCancel: () => setModalOpen(false),
-        onOk: () => window.ipcRenderer.invoke('start-download'),
+        onOk: () => {
+          setDownloading(true)
+          window.ipcRenderer.invoke('start-download')
+        },
       })
 
   const checkUpdate = async () => {
     setChecking(true)
-    /**
-     * @type {import('electron-updater').UpdateCheckResult | null | { message: string, error: Error }}
-     */
     const result = await window.ipcRenderer.invoke('check-update')
     setProgressInfo({ percent: 0 })
     setChecking(false)
@@ -45,9 +46,12 @@ function Update() {
     if (arg1.update) {
       setModalBtn(state => ({
         ...state,
-        cancelText: 'Cancel',
-        okText: 'Update',
-        onOk: () => window.ipcRenderer.invoke('start-download'),
+        cancelText: '稍后再说',
+        okText: '立即更新',
+        onOk: () => {
+          setDownloading(true)
+          window.ipcRenderer.invoke('start-download')
+        },
       }))
       setUpdateAvailable(true)
     }
@@ -59,6 +63,7 @@ function Update() {
   const onUpdateError = useCallback((arg1: ErrorType) => {
     setUpdateAvailable(false)
     setUpdateError(arg1)
+    setDownloading(false)
   }, [])
 
   const onDownloadProgress = useCallback((arg1: ProgressInfo) => {
@@ -67,16 +72,41 @@ function Update() {
 
   const onUpdateDownloaded = useCallback(() => {
     setProgressInfo({ percent: 100 })
+    setDownloading(false)
     setModalBtn(state => ({
       ...state,
-      cancelText: 'Later',
-      okText: 'Install now',
+      cancelText: '稍后安装',
+      okText: '马上安装',
       onOk: () => window.ipcRenderer.invoke('quit-and-install'),
     }))
   }, [])
 
+  const getUpdateButtonContent = () => {
+    if (downloading) {
+      return (
+        <>
+          <DownloadIcon className="mr-2 h-4 w-4 animate-bounce" />
+          正在更新...
+        </>
+      )
+    }
+    if (progressInfo?.percent === 100) {
+      return (
+        <>
+          <RocketIcon className="mr-2 h-4 w-4" />
+          马上安装
+        </>
+      )
+    }
+    return (
+      <>
+        <DownloadIcon className="mr-2 h-4 w-4" />
+        立即更新
+      </>
+    )
+  }
+
   useEffect(() => {
-    // Get version information and whether to update
     const removeUpdateCanAvailable = window.ipcRenderer.on('update-can-available', onUpdateCanAvailable)
     const removeUpdateError = window.ipcRenderer.on('update-error', onUpdateError)
     const removeDownloadProgress = window.ipcRenderer.on('download-progress', onDownloadProgress)
@@ -160,9 +190,11 @@ function Update() {
               <Button variant="outline" onClick={modalBtn?.onCancel}>
                 {modalBtn?.cancelText || '稍后再说'}
               </Button>
-              <Button onClick={modalBtn?.onOk}>
-                <DownloadIcon className="mr-2 h-4 w-4" />
-                {modalBtn?.okText || '立即更新'}
+              <Button
+                onClick={modalBtn?.onOk}
+                disabled={downloading}
+              >
+                {getUpdateButtonContent()}
               </Button>
             </DialogFooter>
           )}
