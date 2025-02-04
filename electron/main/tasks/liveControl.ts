@@ -1,15 +1,22 @@
+import { pageManager } from '#/taskManager'
+import { ipcMain } from 'electron'
 import fs from 'fs-extra'
 import playwright from 'playwright'
-import { GOODS_ITEM_SELECTOR, IS_LOGGED_IN_SELECTOR, LIVE_CONTROL_URL, LOGIN_URL, LOGIN_URL_REGEX } from './constants'
-import { createLogger } from './logger'
-import { findChrome } from './utils/checkChrome'
+import { IPC_CHANNELS } from 'shared/ipcChannels'
+import { GOODS_ITEM_SELECTOR, IS_LOGGED_IN_SELECTOR, LIVE_CONTROL_URL, LOGIN_URL, LOGIN_URL_REGEX } from '../constants'
+import { createLogger } from '../logger'
+import { findChrome } from '../utils/checkChrome'
 
 const logger = createLogger('中控台')
+let chromePath: string | null = null
 
 async function createBrowser(headless = true) {
-  const chromePath = await findChrome()
-  if (!chromePath)
-    throw new Error('未找到 Chrome 浏览器')
+  // TODO: 这里需要改成从配置文件中读取 appConfig.json
+  if (!chromePath) {
+    chromePath = await findChrome()
+    if (!chromePath)
+      throw new Error('未找到 Chrome 浏览器')
+  }
 
   return playwright.chromium.launch({
     headless,
@@ -33,6 +40,23 @@ async function saveCookies(context: playwright.BrowserContext) {
   const cookies = await context.cookies()
   await fs.writeFile('cookies', JSON.stringify(cookies))
 }
+
+(function registerListeners() {
+  ipcMain.handle(IPC_CHANNELS.tasks.liveControl.connect, async () => {
+    try {
+      const { browser, page } = await connectLiveControl()
+      // 保存到 PageManager
+      pageManager.setBrowser(browser)
+      pageManager.setPage(page)
+
+      return { success: true }
+    }
+    catch (error) {
+      logger.error('连接直播控制台失败:', (error as Error).message)
+      return { success: false }
+    }
+  })
+})()
 
 export async function connectLiveControl() {
   logger.info('启动中……')

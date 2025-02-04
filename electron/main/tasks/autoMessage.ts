@@ -2,13 +2,16 @@ import type { Page } from 'playwright'
 import type { BaseConfig } from './scheduler'
 import { COMMENT_TEXTAREA_SELECTOR, PIN_TOP_SELECTOR } from '#/constants'
 import { createLogger } from '#/logger'
+import { pageManager } from '#/taskManager'
 import { randomInt, type RequiredWith } from '#/utils'
 import windowManager from '#/windowManager'
+import { ipcMain } from 'electron'
 import { merge } from 'lodash-es'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { createScheduler } from './scheduler'
 
 const TASK_NAME = '自动发言'
+const logger = createLogger(TASK_NAME)
 
 interface MessageConfig extends BaseConfig {
   messages: string[]
@@ -25,10 +28,28 @@ const DEFAULT_CONFIG: RequiredWith<MessageConfig, 'scheduler'> = {
   random: false,
 }
 
+;(() => {
+  ipcMain.handle(IPC_CHANNELS.tasks.autoMessage.start, async (_, config) => {
+    try {
+      pageManager.register('autoMessage', createAutoMessage, config)
+      pageManager.startTask('autoMessage')
+      return { success: true }
+    }
+    catch (error) {
+      logger.error('启动自动发言失败:', error)
+      // throw error
+      return { success: false }
+    }
+  })
+
+  ipcMain.handle(IPC_CHANNELS.tasks.autoMessage.stop, async () => {
+    pageManager.stopTask('autoMessage')
+  })
+})()
+
 export function createAutoMessage(page: Page, userConfig: Partial<MessageConfig> = {}) {
   let currentMessageIndex = 0
   const config = merge({}, DEFAULT_CONFIG, userConfig)
-  const logger = createLogger(TASK_NAME)
 
   async function exectute() {
     try {

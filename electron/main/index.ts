@@ -1,4 +1,3 @@
-import type { PopUpConfig } from './tasks/autoPopUp'
 import { createRequire } from 'node:module'
 import os from 'node:os'
 import path from 'node:path'
@@ -18,14 +17,14 @@ import { app, BrowserWindow, ipcMain, shell } from 'electron'
 
 import fs from 'fs-extra'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
-import { connectLiveControl } from './liveControl'
 import { createLogger } from './logger'
 import { pageManager } from './taskManager'
 import { setupAIChat } from './tasks/aiChat'
-import { createAutoMessage } from './tasks/autoMessage'
-import { createAutoPopUp } from './tasks/autoPopUp'
 import { update } from './update'
 import windowManager from './windowManager'
+import './tasks/liveControl'
+import './tasks/autoMessage'
+import './tasks/autoPopUp'
 
 const _require = createRequire(import.meta.url)
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -193,51 +192,3 @@ ipcMain.handle(IPC_CHANNELS.config.load, async () => {
 })
 
 // 添加新的 IPC 处理函数
-ipcMain.handle(IPC_CHANNELS.tasks.liveControl.connect, async () => {
-  try {
-    const { browser, page } = await connectLiveControl()
-    // 保存到 PageManager
-    pageManager.setBrowser(browser)
-    pageManager.setPage(page)
-
-    return { success: true }
-  }
-  catch (error) {
-    logger.error('连接直播控制台失败:', (error as Error).message)
-    return { success: false }
-  }
-})
-
-ipcMain.handle(IPC_CHANNELS.tasks.autoMessage.start, async (_, config) => {
-  try {
-    pageManager.register('autoMessage', createAutoMessage, config)
-    pageManager.startTask('autoMessage')
-    return { success: true }
-  }
-  catch (error) {
-    logger.error('启动自动发言失败:', error)
-    // throw error
-    return { success: false }
-  }
-})
-
-ipcMain.handle(IPC_CHANNELS.tasks.autoPopUp.start, async (_, config: Partial<PopUpConfig>) => {
-  try {
-    pageManager.register('autoPopUp', createAutoPopUp, config)
-    pageManager.startTask('autoPopUp')
-    return { success: true }
-  }
-  catch (error) {
-    logger.error('启动自动弹窗失败:', error)
-    // throw error
-    return { success: false }
-  }
-})
-
-ipcMain.handle(IPC_CHANNELS.tasks.autoMessage.stop, async () => {
-  pageManager.stopTask('autoMessage')
-})
-
-ipcMain.handle(IPC_CHANNELS.tasks.autoPopUp.stop, async () => {
-  pageManager.stopTask('autoPopUp')
-})

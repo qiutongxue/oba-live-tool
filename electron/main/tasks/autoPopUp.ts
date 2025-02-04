@@ -3,13 +3,16 @@ import type { ElementHandle, Page } from 'playwright'
 import type { BaseConfig, Scheduler } from './scheduler'
 import { GOODS_ACTION_SELECTOR, GOODS_ITEM_SELECTOR } from '#/constants'
 import { createLogger } from '#/logger'
+import { pageManager } from '#/taskManager'
 import { randomInt } from '#/utils'
 import windowManager from '#/windowManager'
+import { ipcMain } from 'electron'
 import { merge } from 'lodash-es'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { createScheduler } from './scheduler'
 
 const TASK_NAME = '自动弹窗'
+const logger = createLogger(TASK_NAME)
 
 export interface PopUpConfig extends BaseConfig {
   goodsIds: number[]
@@ -25,8 +28,26 @@ const DEFAULT_CONFIG: RequiredWith<PopUpConfig, 'scheduler'> = {
   random: false,
 }
 
+;(() => {
+  ipcMain.handle(IPC_CHANNELS.tasks.autoPopUp.start, async (_, config: Partial<PopUpConfig>) => {
+    try {
+      pageManager.register('autoPopUp', createAutoPopUp, config)
+      pageManager.startTask('autoPopUp')
+      return { success: true }
+    }
+    catch (error) {
+      logger.error('启动自动弹窗失败:', error)
+      // throw error
+      return { success: false }
+    }
+  })
+
+  ipcMain.handle(IPC_CHANNELS.tasks.autoPopUp.stop, async () => {
+    pageManager.stopTask('autoPopUp')
+  })
+})()
+
 export function createAutoPopUp(page: Page, userConfig: Partial<PopUpConfig> = {}): Scheduler {
-  const logger = createLogger(TASK_NAME)
   let config = merge(DEFAULT_CONFIG, userConfig)
   let currentGoodIndex = 0
 
