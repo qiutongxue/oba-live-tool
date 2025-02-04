@@ -24,7 +24,7 @@ export default function BrowserControl() {
   const connectLiveControl = async () => {
     try {
       setIsLoading(true)
-      const { success } = await window.ipcRenderer.invoke(window.ipcChannels.tasks.liveControl.connect)
+      const { success } = await window.ipcRenderer.invoke(window.ipcChannels.tasks.liveControl.connect, chromePath)
       if (success) {
         setIsConnected(true)
         toast.success('已连接到直播控制台')
