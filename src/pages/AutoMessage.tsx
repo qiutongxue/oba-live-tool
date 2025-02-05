@@ -120,7 +120,7 @@ export default function AutoMessage() {
 
               <div className="space-y-4">
                 {store.config.messages.map((message, index) => (
-                  <div key={index} className="flex gap-3 items-start group">
+                  <div key={message} className="flex gap-3 items-start group">
                     <div className="flex-1 space-y-2">
                       <Input
                         value={message}
