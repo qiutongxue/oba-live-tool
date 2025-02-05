@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Switch } from '@/components/ui/switch'
@@ -34,7 +33,7 @@ export default function LogDisplayer() {
     if (!match)
       return null
     return {
-      id: randomUUID(),
+      id: crypto.randomUUID(),
       timestamp: match[1],
       module: match[2],
       level: match[3],
