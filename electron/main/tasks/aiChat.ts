@@ -6,19 +6,17 @@ import { IPC_CHANNELS } from 'shared/ipcChannels'
 const providers = {
   deepseek: {
     baseURL: 'https://api.deepseek.com',
-    model: 'deepseek-reasoner',
   },
   openrouter: {
     baseURL: 'https://openrouter.ai/api/v1',
-    model: 'deepseek/deepseek-r1:free',
   },
 }
 
 export function setupAIChat() {
   const logger = createLogger('ai对话')
 
-  ipcMain.handle(IPC_CHANNELS.tasks.aiChat.chat, async (event, { messages, apiKey, provider }) => {
-    const { baseURL, model } = providers[provider as keyof typeof providers]
+  ipcMain.handle(IPC_CHANNELS.tasks.aiChat.chat, async (event, { messages, apiKey, provider, model }) => {
+    const { baseURL } = providers[provider as keyof typeof providers]
     try {
       const openai = new OpenAI({
         apiKey,
