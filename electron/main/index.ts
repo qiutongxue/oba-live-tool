@@ -208,3 +208,14 @@ ipcMain.handle(IPC_CHANNELS.selectChromePath, async () => {
     return path.filePaths[0]
   }
 })
+
+ipcMain.handle(IPC_CHANNELS.toggleDevTools, (_event, enabled: boolean) => {
+  if (win) {
+    if (enabled) {
+      win.webContents.openDevTools()
+    }
+    else {
+      win.webContents.closeDevTools()
+    }
+  }
+})

@@ -1,10 +1,12 @@
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useChromeConfig } from '@/hooks/useChromeConfig'
+import { useDevMode } from '@/hooks/useDevMode'
 import { useLiveControl } from '@/hooks/useLiveControl'
 import { useToast } from '@/hooks/useToast'
 import { CheckIcon, GlobeIcon } from '@radix-ui/react-icons'
 import React, { useEffect, useState } from 'react'
+import { IPC_CHANNELS } from 'shared/ipcChannels'
 
 export default function BrowserControl() {
   const { isConnected, setIsConnected } = useLiveControl()
@@ -12,8 +14,10 @@ export default function BrowserControl() {
   const { toast } = useToast()
 
   const { setPath, path: chromePath } = useChromeConfig()
+  const { enabled: devMode } = useDevMode()
+
   useEffect(() => {
-    const removeListener = window.ipcRenderer.on(window.ipcChannels.setChromePath, (path) => {
+    const removeListener = window.ipcRenderer.on(IPC_CHANNELS.setChromePath, (path) => {
       if (path && !chromePath) {
         setPath(path)
       }
@@ -24,7 +28,11 @@ export default function BrowserControl() {
   const connectLiveControl = async () => {
     try {
       setIsLoading(true)
-      const { success } = await window.ipcRenderer.invoke(window.ipcChannels.tasks.liveControl.connect, chromePath)
+      const { success } = await window.ipcRenderer.invoke(
+        IPC_CHANNELS.tasks.liveControl.connect,
+        { headless: !devMode, chromePath },
+      )
+
       if (success) {
         setIsConnected(true)
         toast.success('已连接到直播控制台')

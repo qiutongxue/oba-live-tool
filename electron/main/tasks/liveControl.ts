@@ -42,10 +42,11 @@ async function saveCookies(context: playwright.BrowserContext) {
 }
 
 (function registerListeners() {
-  ipcMain.handle(IPC_CHANNELS.tasks.liveControl.connect, async (_, path) => {
+  ipcMain.handle(IPC_CHANNELS.tasks.liveControl.connect, async (event, { chromePath: path, headless }) => {
     try {
       chromePath = path
-      const { browser, page } = await connectLiveControl()
+      const { browser, page } = await connectLiveControl({ headless })
+
       // 保存到 PageManager
       pageManager.setBrowser(browser)
       pageManager.setPage(page)
@@ -59,14 +60,14 @@ async function saveCookies(context: playwright.BrowserContext) {
   })
 })()
 
-export async function connectLiveControl() {
+export async function connectLiveControl({ headless = true }) {
   logger.info('启动中……')
   let loginSuccess = false
   let browser: playwright.Browser | null = null
   let page: playwright.Page | null = null
   while (!loginSuccess) {
-  // 1. 先尝试无头模式
-    browser = await createBrowser(true)
+    // 1. 先尝试无头模式
+    browser = await createBrowser(headless)
     let context = await browser.newContext()
     page = await context.newPage()
 
@@ -87,29 +88,34 @@ export async function connectLiveControl() {
     // 2. 检查是否需要登录
     if (page.url().startsWith(LOGIN_URL)) {
       logger.info('需要登录，请在打开的浏览器中完成登录')
-      // 关闭当前浏览器
-      await browser.close()
+      if (headless) {
+        // 关闭当前浏览器
+        await browser.close()
 
-      // 启动有头模式
-      browser = await createBrowser(false)
-      context = await browser.newContext()
-      page = await context.newPage()
+        // 启动有头模式
+        browser = await createBrowser(false)
+        context = await browser.newContext()
+        page = await context.newPage()
 
-      // 直接访问登录页
-      await page.goto(LOGIN_URL)
+        // 直接访问登录页
+        await page.goto(LOGIN_URL)
+      }
 
       // 3. 等待用户登录成功
       await page.waitForSelector(IS_LOGGED_IN_SELECTOR, { timeout: 0 })
 
       // 保存 cookies
       await saveCookies(context)
-      // 关闭有头浏览器
-      await browser.close()
+      if (headless) {
+        // 关闭有头浏览器
+        await browser.close()
+      }
     }
     else {
       loginSuccess = true
     }
   }
+
   // 等待中控台页面加载完成
   await page!.waitForSelector(GOODS_ITEM_SELECTOR, { timeout: 0 })
   logger.success('登录成功')
