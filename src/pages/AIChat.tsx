@@ -1,6 +1,7 @@
 import { APIKeyDialog } from '@/components/ai-chat/APIKeyDialog'
 import { Message } from '@/components/ai-chat/Message'
 import { LoadingIcon } from '@/components/icons/loading'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -10,9 +11,10 @@ import { useToast } from '@/hooks/useToast'
 import { messagesToContext } from '@/lib/utils'
 import { PaperPlaneIcon, TrashIcon } from '@radix-ui/react-icons'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { providers } from 'shared/providers'
 
 export default function AIChat() {
-  const { messages, addMessage, isLoading, setLoading, appendToChat, tryToHandleEmptyMessage, appendToReasoning, clearMessages, provider, apiKeys } = useAIChatStore()
+  const { messages, addMessage, isLoading, setLoading, appendToChat, tryToHandleEmptyMessage, appendToReasoning, clearMessages, config, apiKeys } = useAIChatStore()
   const [input, setInput] = useState('')
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const viewportRef = useRef<HTMLDivElement>(null)
@@ -79,7 +81,12 @@ export default function AIChat() {
 
       // 发送请求
       window.ipcRenderer
-        .invoke(window.ipcChannels.tasks.aiChat.chat, { messages, apiKey: apiKeys[provider], provider })
+        .invoke(window.ipcChannels.tasks.aiChat.chat, {
+          messages,
+          apiKey: apiKeys[config.provider],
+          provider: config.provider,
+          model: config.model,
+        })
         .catch((error) => {
           cleanup()
           reject(error)
@@ -89,14 +96,14 @@ export default function AIChat() {
     }).finally(() => {
       // 使用 openai 的流式请求 OpenRouter 可能会传回空数据
       // 如果是数据，需要手动设置一个消息
-      tryToHandleEmptyMessage('接收到了空数据（注意，这可能是因为 OpenRouter 的流式请求问题，和你没有关系）')
+      tryToHandleEmptyMessage('可能是网络请求超时（DeepSeek），也可能是接收到了空数据（OpenRouter）')
 
       setLoading(false)
     })
   }
 
   const handleSubmit = async () => {
-    if (!apiKeys[provider]) {
+    if (!apiKeys[config.provider]) {
       toast.error('请先配置 API Key')
       return
     }
@@ -139,6 +146,17 @@ export default function AIChat() {
             清空对话
           </Button>
         </div>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <Badge variant="dark" className="gap-1">
+          <span className="text-xs font-medium">服务商:</span>
+          <span>{providers[config.provider].name}</span>
+        </Badge>
+        <Badge variant="outline" className="gap-1">
+          <span className="text-xs font-medium">模型:</span>
+          <span className="font-mono">{config.model}</span>
+        </Badge>
       </div>
 
       <Card className="flex flex-col h-[calc(100vh-20rem)] border-none">

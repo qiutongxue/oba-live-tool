@@ -1,3 +1,4 @@
+import { providers } from 'shared/providers'
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
@@ -11,19 +12,26 @@ export interface ChatMessage {
   isError?: boolean
 }
 
-type AIProvider = 'deepseek' | 'openrouter'
+export type AIProvider = keyof typeof providers
 
-interface APIKeys {
-  deepseek: string
-  openrouter: string
+type APIKeys = {
+  [key in AIProvider]: string
+}
+
+interface ProviderConfig {
+  provider: AIProvider
+  model: string
+  modelPreferences: {
+    [key in AIProvider]: string
+  }
 }
 
 interface AIChat {
   messages: ChatMessage[]
   isLoading: boolean
   apiKeys: APIKeys
-  provider: AIProvider
-  setProvider: (provider: AIProvider) => void
+  config: ProviderConfig
+  setConfig: (config: Partial<ProviderConfig>) => void
   setApiKey: (provider: AIProvider, key: string) => void
   addMessage: (message: Omit<ChatMessage, 'id' | 'timestamp'>) => void
   appendToChat: (chunk: string) => void
@@ -40,19 +48,35 @@ export const useAIChatStore = create<AIChat>()(
       return {
         messages: [],
         isLoading: false,
-        provider: 'deepseek',
+        config: {
+          provider: 'deepseek',
+          model: providers.deepseek.models[0],
+          modelPreferences: {
+            deepseek: providers.deepseek.models[0],
+            openrouter: providers.openrouter.models[0],
+          },
+        },
         apiKeys: {
           deepseek: '',
           openrouter: '',
         },
+        setConfig: (config) => {
+          set((state) => {
+            if (config.provider) {
+              const newModel = config.model || state.config.modelPreferences[config.provider]
+              state.config.provider = config.provider
+              state.config.model = newModel
+              state.config.modelPreferences[config.provider] = newModel
+            }
+            else if (config.model) {
+              state.config.model = config.model
+              state.config.modelPreferences[state.config.provider] = config.model
+            }
+          })
+        },
         setApiKey: (provider, key) => {
           set((state) => {
             state.apiKeys[provider] = key
-          })
-        },
-        setProvider: (provider) => {
-          set((state) => {
-            state.provider = provider
           })
         },
         addMessage: (message) => {
@@ -112,7 +136,7 @@ export const useAIChatStore = create<AIChat>()(
     {
       name: 'ai-chat-storage',
       storage: createJSONStorage(() => localStorage),
-      partialize: state => ({ apiKeys: state.apiKeys, provider: state.provider }),
+      partialize: state => ({ apiKeys: state.apiKeys, config: state.config }),
     },
   ),
 )
