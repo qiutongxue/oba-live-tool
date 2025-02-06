@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import { useTaskConfig } from './useTaskConfig'
@@ -68,7 +69,7 @@ export function useAutoMessage() {
       store.setIsRunning(false)
       toast.error('自动消息已停止')
     }
-    const removeListener = window.ipcRenderer.on(window.ipcChannels.tasks.autoMessage.stop, handleTaskStop)
+    const removeListener = window.ipcRenderer.on(IPC_CHANNELS.tasks.autoMessage.stop, handleTaskStop)
     return () => {
       removeListener()
     }

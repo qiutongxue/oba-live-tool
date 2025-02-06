@@ -1,6 +1,5 @@
 import type { ElectronAPI } from 'shared/electron-api'
 import { contextBridge, ipcRenderer } from 'electron'
-import { IPC_CHANNELS } from 'shared/ipcChannels'
 
 const ipcRendererApi: ElectronAPI['ipcRenderer'] = {
   on(channel: string, listener: (...args: any[]) => void) {
@@ -22,8 +21,6 @@ const ipcRendererApi: ElectronAPI['ipcRenderer'] = {
 
 // --------- Expose some API to the Renderer process ---------
 contextBridge.exposeInMainWorld('ipcRenderer', ipcRendererApi)
-
-contextBridge.exposeInMainWorld('ipcChannels', IPC_CHANNELS)
 
 // --------- Preload scripts loading ---------
 function domReady(condition: DocumentReadyState[] = ['complete', 'interactive']) {

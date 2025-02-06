@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import { useTaskConfig } from './useTaskConfig'
@@ -62,7 +63,7 @@ export function useAutoPopUp() {
       toast.error('自动弹窗已停止')
     }
 
-    const removeListener = window.ipcRenderer.on(window.ipcChannels.tasks.autoPopUp.stop, handleTaskStop)
+    const removeListener = window.ipcRenderer.on(IPC_CHANNELS.tasks.autoPopUp.stop, handleTaskStop)
     return () => {
       removeListener()
     }

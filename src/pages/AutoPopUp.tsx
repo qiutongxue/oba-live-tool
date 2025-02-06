@@ -10,6 +10,7 @@ import { useLiveControl } from '@/hooks/useLiveControl'
 import { useToast } from '@/hooks/useToast'
 import { PlusIcon, TrashIcon } from '@radix-ui/react-icons'
 import React, { useCallback, useState } from 'react'
+import { IPC_CHANNELS } from 'shared/ipcChannels'
 
 export default function AutoPopUp() {
   const { isConnected } = useLiveControl()
@@ -34,11 +35,12 @@ export default function AutoPopUp() {
   const onStartTask = useCallback(async () => {
     if (!configValidator())
       return
-    const result = await window.ipcRenderer.invoke(window.ipcChannels.tasks.autoPopUp.start, store.config)
+    const result = await window.ipcRenderer.invoke(IPC_CHANNELS.tasks.autoPopUp.start, store.config)
     if (result) {
       store.setIsRunning(true)
       toast.success('自动弹窗任务已启动')
     }
+
     else {
       store.setIsRunning(false)
       toast.error('自动弹窗任务启动失败')
@@ -46,7 +48,7 @@ export default function AutoPopUp() {
   }, [store, toast, configValidator])
 
   const onStopTask = useCallback(async () => {
-    const result = await window.ipcRenderer.invoke(window.ipcChannels.tasks.autoPopUp.stop)
+    const result = await window.ipcRenderer.invoke(IPC_CHANNELS.tasks.autoPopUp.stop)
     if (result) {
       store.setIsRunning(false)
       toast.success('自动弹窗任务已停止')

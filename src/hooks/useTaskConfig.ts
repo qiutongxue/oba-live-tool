@@ -1,4 +1,5 @@
 import { useCallback, useEffect } from 'react'
+import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { useAutoMessageStore } from './useAutoMessage'
 import { useAutoPopUpStore } from './useAutoPopUp'
 import { useToast } from './useToast'
@@ -20,7 +21,7 @@ export function useTaskConfig() {
       autoPopUp: autoPopUpConfig,
     }
     try {
-      await window.ipcRenderer.invoke(window.ipcChannels.config.save, config)
+      await window.ipcRenderer.invoke(IPC_CHANNELS.config.save, config)
       toast.success('配置保存成功')
     }
     catch {
@@ -31,7 +32,7 @@ export function useTaskConfig() {
   useEffect(() => {
     const loadConfig = async () => {
       try {
-        const savedConfig = await window.ipcRenderer.invoke(window.ipcChannels.config.load)
+        const savedConfig = await window.ipcRenderer.invoke(IPC_CHANNELS.config.load)
         if (savedConfig) {
           setAutoMessageConfig(savedConfig.autoMessage)
           setAutoPopUpConfig(savedConfig.autoPopUp)

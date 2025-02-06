@@ -4,5 +4,4 @@ export interface ElectronAPI {
     send: (channel: string, ...args: any[]) => void
     invoke: (channel: string, ...args: any[]) => Promise<any>
   }
-  ipcChannels: typeof import('shared/ipcChannels').IPC_CHANNELS
 }

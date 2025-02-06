@@ -11,6 +11,7 @@ import { useLiveControl } from '@/hooks/useLiveControl'
 import { useToast } from '@/hooks/useToast'
 import { PlusIcon, TrashIcon } from '@radix-ui/react-icons'
 import React, { useCallback, useState } from 'react'
+import { IPC_CHANNELS } from 'shared/ipcChannels'
 
 export default function AutoMessage() {
   const { isConnected } = useLiveControl()
@@ -34,11 +35,12 @@ export default function AutoMessage() {
   const onStartTask = useCallback(async () => {
     if (!configValidator())
       return
-    const result = await window.ipcRenderer.invoke(window.ipcChannels.tasks.autoMessage.start, store.config)
+    const result = await window.ipcRenderer.invoke(IPC_CHANNELS.tasks.autoMessage.start, store.config)
     if (result) {
       store.setIsRunning(true)
       toast.success('自动消息任务已启动')
     }
+
     else {
       store.setIsRunning(false)
       toast.error('自动消息任务启动失败')
@@ -46,7 +48,7 @@ export default function AutoMessage() {
   }, [store, toast, configValidator])
 
   const onStopTask = useCallback(async () => {
-    const result = await window.ipcRenderer.invoke(window.ipcChannels.tasks.autoMessage.stop)
+    const result = await window.ipcRenderer.invoke(IPC_CHANNELS.tasks.autoMessage.stop)
     if (result) {
       store.setIsRunning(false)
       toast.success('自动消息任务已停止')

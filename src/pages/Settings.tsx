@@ -3,12 +3,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
+import { Switch } from '@/components/ui/switch'
 import Update from '@/components/update'
 import { useChromeConfig } from '@/hooks/useChromeConfig'
+import { useDevMode } from '@/hooks/useDevMode'
 import { useLiveControl } from '@/hooks/useLiveControl'
 import { useToast } from '@/hooks/useToast'
 import { CodeIcon, MagnifyingGlassIcon } from '@radix-ui/react-icons'
 import { useEffect, useState } from 'react'
+import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { version } from '../../package.json'
 
 export default function Settings() {
@@ -16,10 +19,11 @@ export default function Settings() {
   const { isConnected } = useLiveControl()
   const { toast } = useToast()
   const [isDetecting, setIsDetecting] = useState(false)
+  const { enabled: devMode, setEnabled: setDevMode } = useDevMode()
 
   // 监听主进程发送的 Chrome 路径
   useEffect(() => {
-    const removeListener = window.ipcRenderer.on(window.ipcChannels.setChromePath, (path: string) => {
+    const removeListener = window.ipcRenderer.on(IPC_CHANNELS.setChromePath, (path: string) => {
       if (path)
         setPath(path)
     })
@@ -28,9 +32,10 @@ export default function Settings() {
 
   const handleSelectChrome = async () => {
     try {
-      const path = await window.ipcRenderer.invoke(window.ipcChannels.selectChromePath)
+      const path = await window.ipcRenderer.invoke(IPC_CHANNELS.selectChromePath)
       if (path) {
         setPath(path)
+
         toast.success('Chrome 路径设置成功')
       }
     }
@@ -42,9 +47,10 @@ export default function Settings() {
   const handleAutoDetect = async () => {
     try {
       setIsDetecting(true)
-      const result = await window.ipcRenderer.invoke(window.ipcChannels.getChromePath)
+      const result = await window.ipcRenderer.invoke(IPC_CHANNELS.getChromePath)
       if (result) {
         setPath(result)
+
         toast.success('已自动检测到 Chrome 路径')
       }
       else {
@@ -56,6 +62,18 @@ export default function Settings() {
     }
     finally {
       setIsDetecting(false)
+    }
+  }
+
+  const handleToggleDevMode = async (checked: boolean) => {
+    try {
+      await window.ipcRenderer.invoke(IPC_CHANNELS.toggleDevTools, checked)
+      setDevMode(checked)
+      toast.success(checked ? '已开启开发者模式' : '已关闭开发者模式')
+    }
+
+    catch {
+      toast.error('切换开发者模式失败')
     }
   }
 
@@ -157,17 +175,22 @@ export default function Settings() {
 
         <Card>
           <CardHeader>
-            <CardTitle>外观</CardTitle>
-            <CardDescription>自定义应用程序的外观</CardDescription>
+            <CardTitle>开发者选项</CardTitle>
+            <CardDescription>调试和高级功能</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-1">
-              <h4 className="text-sm font-medium leading-none">主题</h4>
-              <p className="text-sm text-muted-foreground">
-                选择您喜欢的主题样式
-              </p>
+            <div className="flex items-center justify-between space-y-1">
+              <div>
+                <h4 className="text-sm font-medium leading-none mb-2">开发者模式</h4>
+                <p className="text-sm text-muted-foreground">
+                  开启后可以打开控制台调试，直播控制台将关闭无头模式
+                </p>
+              </div>
+              <Switch
+                checked={devMode}
+                onCheckedChange={handleToggleDevMode}
+              />
             </div>
-            {/* 这里可以添加主题切换组件 */}
           </CardContent>
         </Card>
       </div>

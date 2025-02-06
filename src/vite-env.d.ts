@@ -5,6 +5,5 @@ declare global {
   interface Window {
     // expose in the `electron/preload/index.ts`
     ipcRenderer: ElectronAPI['ipcRenderer']
-    ipcChannels: ElectronAPI['ipcChannels']
   }
 }

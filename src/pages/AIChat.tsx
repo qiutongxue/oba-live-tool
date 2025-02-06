@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/useToast'
 import { messagesToContext } from '@/lib/utils'
 import { PaperPlaneIcon, TrashIcon } from '@radix-ui/react-icons'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { providers } from 'shared/providers'
 
 export default function AIChat() {
@@ -43,8 +44,8 @@ export default function AIChat() {
   const trySendMessage = async (messages: { role: string, content: string }[]) => {
     return new Promise((resolve, reject) => {
       setLoading(true)
-      const removeStreamListener = window.ipcRenderer.on(window.ipcChannels.tasks.aiChat.stream, streamListener)
-      const removeErrorHandler = window.ipcRenderer.on(window.ipcChannels.tasks.aiChat.error, errorHandler)
+      const removeStreamListener = window.ipcRenderer.on(IPC_CHANNELS.tasks.aiChat.stream, streamListener)
+      const removeErrorHandler = window.ipcRenderer.on(IPC_CHANNELS.tasks.aiChat.error, errorHandler)
 
       const cleanup = () => {
         removeStreamListener()
@@ -81,7 +82,7 @@ export default function AIChat() {
 
       // 发送请求
       window.ipcRenderer
-        .invoke(window.ipcChannels.tasks.aiChat.chat, {
+        .invoke(IPC_CHANNELS.tasks.aiChat.chat, {
           messages,
           apiKey: apiKeys[config.provider],
           provider: config.provider,

@@ -25,4 +25,5 @@ export const IPC_CHANNELS = {
   getChromePath: 'chromePath:get',
   setChromePath: 'chromePath:set',
   selectChromePath: 'chromePath:select',
+  toggleDevTools: 'toggle-dev-tools',
 } as const
