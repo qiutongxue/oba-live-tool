@@ -4,7 +4,6 @@ import { CheckIcon, PlayIcon, StopIcon } from '@radix-ui/react-icons'
 import React from 'react'
 
 interface TaskOperationButtonsProps {
-  validationError: string | null
   hasChanges: () => boolean
   isConnected: boolean
   isTaskRunning: boolean
@@ -13,7 +12,6 @@ interface TaskOperationButtonsProps {
 }
 
 export function TaskOperationButtons({
-  validationError,
   hasChanges,
   isConnected,
   isTaskRunning,
@@ -25,7 +23,7 @@ export function TaskOperationButtons({
       <Button
         variant="outline"
         onClick={onSave}
-        disabled={!!validationError || !hasChanges()}
+        disabled={!hasChanges()}
       >
         <CheckIcon className="mr-2 h-4 w-4" />
         保存配置
@@ -38,7 +36,7 @@ export function TaskOperationButtons({
               <Button
                 variant={isTaskRunning ? 'destructive' : 'default'}
                 onClick={onStartStop}
-                disabled={!!validationError || !isConnected}
+                disabled={!isConnected}
               >
                 {isTaskRunning
                   ? (

@@ -33,22 +33,23 @@ const DEFAULT_CONFIG: RequiredWith<PopUpConfig, 'scheduler'> = {
     try {
       pageManager.register('autoPopUp', createAutoPopUp, config)
       pageManager.startTask('autoPopUp')
-      return { success: true }
+      return true
     }
     catch (error) {
-      logger.error('启动自动弹窗失败:', error)
+      logger.error('启动自动弹窗失败:', error instanceof Error ? error.message : error)
       // throw error
-      return { success: false }
+      return false
     }
   })
 
   ipcMain.handle(IPC_CHANNELS.tasks.autoPopUp.stop, async () => {
     pageManager.stopTask('autoPopUp')
+    // return true
   })
 })()
 
 export function createAutoPopUp(page: Page, userConfig: Partial<PopUpConfig> = {}): Scheduler {
-  let config = merge(DEFAULT_CONFIG, userConfig)
+  let config = merge({}, DEFAULT_CONFIG, userConfig)
   let currentGoodIndex = 0
 
   async function execute() {
@@ -79,6 +80,9 @@ export function createAutoPopUp(page: Page, userConfig: Partial<PopUpConfig> = {
   function validateConfig() {
     if (config.goodsIds.length === 0) {
       throw new Error('商品配置验证失败: 必须提供至少一个商品ID')
+    }
+    if (config.scheduler.interval[0] > config.scheduler.interval[1]) {
+      throw new Error('配置验证失败：计时器区间设置错误')
     }
     logger.info(`商品配置验证通过，共加载 ${config.goodsIds.length} 个商品`)
   }
@@ -158,7 +162,7 @@ export function createAutoPopUp(page: Page, userConfig: Partial<PopUpConfig> = {
       if (newConfig.scheduler) {
         scheduler.updateConfig(newConfig)
       }
-      config = merge(config, newConfig)
+      config = merge({}, config, newConfig)
     },
 
     get isRunning() {

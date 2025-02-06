@@ -33,17 +33,18 @@ const DEFAULT_CONFIG: RequiredWith<MessageConfig, 'scheduler'> = {
     try {
       pageManager.register('autoMessage', createAutoMessage, config)
       pageManager.startTask('autoMessage')
-      return { success: true }
+      return true
     }
     catch (error) {
-      logger.error('启动自动发言失败:', error)
+      logger.error('启动自动发言失败:', error instanceof Error ? error.message : error)
       // throw error
-      return { success: false }
+      return false
     }
   })
 
   ipcMain.handle(IPC_CHANNELS.tasks.autoMessage.stop, async () => {
     pageManager.stopTask('autoMessage')
+    return true
   })
 })()
 
@@ -112,8 +113,25 @@ export function createAutoMessage(page: Page, userConfig: Partial<MessageConfig>
     }),
   )
 
+  function validateConfig() {
+    if (config.messages.length === 0) {
+      throw new Error('消息配置验证失败: 必须提供至少一条消息')
+    }
+    const badIndex = config.messages.findIndex(msg => msg.length > 50)
+    if (badIndex >= 0) {
+      throw new Error(`消息配置验证失败: 第 ${badIndex + 1} 条消息字数超出 50`)
+    }
+    if (config.scheduler.interval[0] > config.scheduler.interval[1]) {
+      throw new Error('配置验证失败：计时器区间设置错误')
+    }
+    logger.info(`消息配置验证通过，共加载 ${config.messages.length} 条消息`)
+  }
+
+  validateConfig()
+
   return {
     start: () => scheduler.start(),
+
     stop: () => scheduler.stop(),
     updateConfig: (newConfig: Partial<MessageConfig>) => {
       if (newConfig.scheduler) {

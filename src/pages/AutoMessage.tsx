@@ -17,24 +17,9 @@ export default function AutoMessage() {
   const { isConnected } = useLiveControl()
   const { hasChanges, saveConfig, store } = useAutoMessage()
   const { toast } = useToast()
-  const [validationError, setValidationError] = useState<string | null>(null)
-
-  const configValidator = useCallback(() => {
-    if (store.config.enabled && store.config.messages.length === 0) {
-      setValidationError('请至少添加一条消息')
-      return false
-    }
-    if (store.config.messages.some(msg => msg.length > 50)) {
-      setValidationError('消息长度不能超过50个字符')
-      return false
-    }
-    setValidationError(null)
-    return true
-  }, [store.config.messages, store.config.enabled])
+  const [validationError] = useState<string | null>(null)
 
   const onStartTask = useCallback(async () => {
-    if (!configValidator())
-      return
     const result = await window.ipcRenderer.invoke(IPC_CHANNELS.tasks.autoMessage.start, store.config)
     if (result) {
       store.setIsRunning(true)
@@ -45,18 +30,12 @@ export default function AutoMessage() {
       store.setIsRunning(false)
       toast.error('自动消息任务启动失败')
     }
-  }, [store, toast, configValidator])
+  }, [store, toast])
 
   const onStopTask = useCallback(async () => {
-    const result = await window.ipcRenderer.invoke(IPC_CHANNELS.tasks.autoMessage.stop)
-    if (result) {
-      store.setIsRunning(false)
-      toast.success('自动消息任务已停止')
-    }
-    else {
-      toast.error('自动消息任务停止失败')
-    }
-  }, [store, toast])
+    await window.ipcRenderer.invoke(IPC_CHANNELS.tasks.autoMessage.stop)
+    store.setIsRunning(false)
+  }, [store])
 
   const handleMessageChange = (index: number, value: string) => {
     if (value.length > 50)
@@ -234,7 +213,6 @@ export default function AutoMessage() {
       </div>
 
       <TaskOperationButtons
-        validationError={validationError}
         hasChanges={hasChanges}
         isConnected={isConnected}
         isTaskRunning={store.isRunning}

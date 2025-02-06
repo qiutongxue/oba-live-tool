@@ -18,23 +18,7 @@ export default function AutoPopUp() {
   const [validationError, setValidationError] = useState<string | null>(null)
   const { toast } = useToast()
 
-  const configValidator = useCallback(() => {
-    if (store.config.enabled && store.config.goodsIds.length === 0) {
-      setValidationError('请至少添加一个商品ID')
-      return false
-    }
-    const uniqueGoodsIds = new Set(store.config.goodsIds)
-    if (uniqueGoodsIds.size !== store.config.goodsIds.length) {
-      setValidationError('商品ID不能重复！')
-      return false
-    }
-    setValidationError(null)
-    return true
-  }, [store.config.goodsIds, store.config.enabled])
-
   const onStartTask = useCallback(async () => {
-    if (!configValidator())
-      return
     const result = await window.ipcRenderer.invoke(IPC_CHANNELS.tasks.autoPopUp.start, store.config)
     if (result) {
       store.setIsRunning(true)
@@ -45,18 +29,12 @@ export default function AutoPopUp() {
       store.setIsRunning(false)
       toast.error('自动弹窗任务启动失败')
     }
-  }, [store, toast, configValidator])
+  }, [store, toast])
 
   const onStopTask = useCallback(async () => {
-    const result = await window.ipcRenderer.invoke(IPC_CHANNELS.tasks.autoPopUp.stop)
-    if (result) {
-      store.setIsRunning(false)
-      toast.success('自动弹窗任务已停止')
-    }
-    else {
-      toast.error('自动弹窗任务停止失败')
-    }
-  }, [store, toast])
+    await window.ipcRenderer.invoke(IPC_CHANNELS.tasks.autoPopUp.stop)
+    store.setIsRunning(false)
+  }, [store])
 
   const handleGoodsIdChange = (index: number, value: string) => {
     const numValue = Number(value)
@@ -226,7 +204,6 @@ export default function AutoPopUp() {
       </div>
 
       <TaskOperationButtons
-        validationError={validationError}
         hasChanges={hasChanges}
         isConnected={isConnected}
         isTaskRunning={store.isRunning}
