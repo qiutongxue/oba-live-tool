@@ -2,15 +2,7 @@ import { createLogger } from '#/logger'
 import { ipcMain } from 'electron'
 import OpenAI from 'openai'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
-
-const providers = {
-  deepseek: {
-    baseURL: 'https://api.deepseek.com',
-  },
-  openrouter: {
-    baseURL: 'https://openrouter.ai/api/v1',
-  },
-}
+import { providers } from 'shared/providers'
 
 export function setupAIChat() {
   const logger = createLogger('ai对话')
