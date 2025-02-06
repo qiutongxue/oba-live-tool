@@ -1,6 +1,7 @@
 import { createLogger } from '#/logger'
 import { ipcMain } from 'electron'
 import OpenAI from 'openai'
+import { IPC_CHANNELS } from 'shared/ipcChannels'
 
 const providers = {
   deepseek: {
@@ -14,37 +15,67 @@ const providers = {
 }
 
 export function setupAIChat() {
-  const logger = createLogger('aiChat')
+  const logger = createLogger('ai对话')
 
-  ipcMain.handle('ai-chat', async (_, { messages, apiKey, provider }) => {
+  ipcMain.handle(IPC_CHANNELS.tasks.aiChat.chat, async (event, { messages, apiKey, provider }) => {
     const { baseURL, model } = providers[provider as keyof typeof providers]
     try {
       const openai = new OpenAI({
         apiKey,
         baseURL,
       })
-
-      const completion = await openai.chat.completions.create({
+      logger.info('正在向 AI 提问……')
+      const stream = await openai.chat.completions.create({
         model,
         messages,
+        stream: true,
       })
 
-      if (!completion.choices) {
-        throw new Error(JSON.stringify(completion))
+      let chunkCount = 0
+      let isStart = false
+      for await (const chunk of stream) {
+        if (!isStart) {
+          logger.info('AI 开始回答……')
+          isStart = true
+        }
+        const delta = chunk.choices[0]?.delta
+        if (delta) {
+          const { content, reasoning_content } = delta as any
+          if (content) {
+            event.sender.send(IPC_CHANNELS.tasks.aiChat.stream, {
+              chunk: content,
+              type: 'content',
+              index: chunkCount++,
+            })
+          }
+          if (reasoning_content) {
+            event.sender.send(IPC_CHANNELS.tasks.aiChat.stream, {
+              chunk: reasoning_content,
+              type: 'reasoning',
+              index: chunkCount++,
+            })
+          }
+        }
       }
 
-      return {
-        success: true,
-        message: completion.choices[0].message.content,
-      }
+      event.sender.send(IPC_CHANNELS.tasks.aiChat.stream, { done: true })
+      return { success: true }
     }
     catch (error) {
-      logger.error('请求AI失败')
-
-      return {
-        success: false,
-        error: (error as Error).message,
+      logger.error('AI 不想回答')
+      let errorMessage = '请求AI失败'
+      if (error instanceof Error) {
+        errorMessage = error.message
       }
+      else {
+        errorMessage = error as string
+      }
+      event.sender.send(IPC_CHANNELS.tasks.aiChat.error, {
+        error: errorMessage,
+      })
+    }
+    finally {
+      logger.info('AI 回答结束')
     }
   })
 }

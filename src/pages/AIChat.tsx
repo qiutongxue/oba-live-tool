@@ -1,5 +1,6 @@
 import { APIKeyDialog } from '@/components/ai-chat/APIKeyDialog'
 import { Message } from '@/components/ai-chat/Message'
+import { LoadingIcon } from '@/components/icons/loading'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -11,7 +12,7 @@ import { PaperPlaneIcon, TrashIcon } from '@radix-ui/react-icons'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 export default function AIChat() {
-  const { messages, addMessage, isLoading, setLoading, clearMessages, provider, apiKeys } = useAIChatStore()
+  const { messages, addMessage, isLoading, setLoading, appendToChat, tryToHandleEmptyMessage, appendToReasoning, clearMessages, provider, apiKeys } = useAIChatStore()
   const [input, setInput] = useState('')
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const viewportRef = useRef<HTMLDivElement>(null)
@@ -38,26 +39,60 @@ export default function AIChat() {
   }, [messages, scrollToBottom])
 
   const trySendMessage = async (messages: { role: string, content: string }[]) => {
-    try {
+    return new Promise((resolve, reject) => {
       setLoading(true)
-      const response = await window.ipcRenderer.invoke('ai-chat', {
-        messages,
-        apiKey: apiKeys[provider],
-        provider,
-      })
-      if (response.success) {
-        addMessage({ role: 'assistant', content: response.message })
+      const removeStreamListener = window.ipcRenderer.on(window.ipcChannels.tasks.aiChat.stream, streamListener)
+      const removeErrorHandler = window.ipcRenderer.on(window.ipcChannels.tasks.aiChat.error, errorHandler)
+
+      const cleanup = () => {
+        removeStreamListener()
+        removeErrorHandler()
       }
-      else {
-        addMessage({ role: 'assistant', content: response.error, isError: true })
+
+      // 设置流数据监听
+      function streamListener({ chunk, done, type }: { chunk: string, done: boolean, type: string }) {
+        if (done) {
+          cleanup()
+          resolve(true)
+        }
+        else if (chunk) {
+          setLoading(false)
+          // 更新 UI 的逻辑
+          if (type === 'content') {
+            appendToChat(chunk)
+          }
+          else if (type === 'reasoning') {
+            appendToReasoning(chunk)
+          }
+        }
       }
-    }
-    catch {
-      toast.error('发送消息失败')
-    }
-    finally {
+
+      // 设置错误监听
+      function errorHandler({ error }: { error: string }) {
+        cleanup()
+        reject(error)
+      }
+
+      // 注册监听器
+
+      // 清理函数
+
+      // 发送请求
+      window.ipcRenderer
+        .invoke(window.ipcChannels.tasks.aiChat.chat, { messages, apiKey: apiKeys[provider], provider })
+        .catch((error) => {
+          cleanup()
+          reject(error)
+        })
+    }).catch((error) => {
+      addMessage({ role: 'assistant', content: error, isError: true })
+    }).finally(() => {
+      // 使用 openai 的流式请求 OpenRouter 可能会传回空数据
+      // 如果是数据，需要手动设置一个消息
+      tryToHandleEmptyMessage('接收到了空数据（注意，这可能是因为 OpenRouter 的流式请求问题，和你没有关系）')
+
       setLoading(false)
-    }
+    })
   }
 
   const handleSubmit = async () => {
@@ -118,13 +153,14 @@ export default function AIChat() {
               ))}
               {isLoading && (
                 <div className="flex justify-start">
-                  <div className="max-w-[85%] rounded-2xl px-4 py-3 bg-muted">
+                  <LoadingIcon size="sm" />
+                  {/* <div className="max-w-[85%] rounded-2xl px-4 py-3 bg-muted">
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full bg-primary/60 animate-bounce [animation-delay:-0.3s]" />
                       <div className="w-2 h-2 rounded-full bg-primary/60 animate-bounce [animation-delay:-0.15s]" />
                       <div className="w-2 h-2 rounded-full bg-primary/60 animate-bounce" />
                     </div>
-                  </div>
+                  </div> */}
                 </div>
               )}
             </div>

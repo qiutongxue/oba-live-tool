@@ -3,15 +3,17 @@ import { useAIChatStore } from '@/hooks/useAIChat'
 import { ReloadIcon } from '@radix-ui/react-icons'
 import { useCallback } from 'react'
 import { Button } from '../ui/button'
+import { Separator } from '../ui/separator'
 
 export function Message({
   id,
   role,
   content,
+  reasoning_content,
   timestamp,
   isError,
   onRetry,
-}: ChatMessage & { onRetry: (messages: { role: string, content: string }[]) => void }) {
+}: ChatMessage & { onRetry: (messages: { role: string, content: string, reasoning_content?: string }[]) => void }) {
   const { messages, setMessages } = useAIChatStore()
 
   // 判断是否显示重试按钮
@@ -48,28 +50,33 @@ export function Message({
         </Button>
       )}
       <div
-        className={`max-w-[80%] rounded-lg px-4 py-2 break-words shadow-sm ${
-          role === 'user'
-            ? 'bg-primary text-primary-foreground'
-            : isError
-              ? 'bg-destructive text-destructive-foreground'
-              : 'bg-muted hover:bg-muted/80'
+        className={`max-w-[80%] rounded-lg px-4 py-2 break-words shadow-sm ${role === 'user'
+          ? 'bg-primary text-primary-foreground'
+          : isError
+            ? 'bg-destructive text-destructive-foreground'
+            : 'bg-muted hover:bg-muted/80'
         }`}
         style={{ overflowWrap: 'break-word', wordBreak: 'break-word' }}
       >
-        <p className="whitespace-pre-wrap leading-relaxed text-[15px]">
-          {content}
-        </p>
-        <div className={`absolute -bottom-5 select-none ${
-          role === 'user'
-            ? 'right-1'
-            : 'left-1'
+        <div className="whitespace-pre-wrap leading-relaxed text-[15px]">
+          {reasoning_content && (
+            <p className="text-muted-foreground text-[13px]">
+              {reasoning_content}
+            </p>
+          )}
+          {reasoning_content && content && <Separator className="my-2" />}
+          <p>
+            {content}
+          </p>
+        </div>
+        <div className={`absolute -bottom-5 select-none ${role === 'user'
+          ? 'right-1'
+          : 'left-1'
         }`}
         >
-          <span className={`text-[11px] ${
-            role === 'user'
-              ? 'text-primary/70'
-              : 'text-muted-foreground/70'
+          <span className={`text-[11px] ${role === 'user'
+            ? 'text-primary/70'
+            : 'text-muted-foreground/70'
           }`}
           >
             {new Date(timestamp).toLocaleTimeString()}

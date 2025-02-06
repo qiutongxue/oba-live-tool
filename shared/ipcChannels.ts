@@ -12,7 +12,11 @@ export const IPC_CHANNELS = {
       start: 'tasks:autoPopUp:start',
       stop: 'tasks:autoPopUp:stop',
     },
-
+    aiChat: {
+      chat: 'tasks:aiChat:chat',
+      stream: 'tasks:aiChat:stream',
+      error: 'tasks:aiChat:error',
+    },
   },
   config: {
     save: 'config:save',
