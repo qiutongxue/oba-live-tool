@@ -1,6 +1,8 @@
+import type playwright from 'playwright'
 import { pageManager } from '#/taskManager'
 import { ipcMain } from 'electron'
-import playwright from 'playwright'
+import { chromium } from 'playwright-extra'
+import stealth from 'puppeteer-extra-plugin-stealth'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { GOODS_ITEM_SELECTOR, IS_LOGGED_IN_SELECTOR, LIVE_CONTROL_URL, LOGIN_URL, LOGIN_URL_REGEX } from '../constants'
 import { createLogger } from '../logger'
@@ -10,6 +12,8 @@ const logger = createLogger('中控台')
 let chromePath: string | null = null
 let newCookies: string | null = null
 
+chromium.use(stealth())
+
 async function createBrowser(headless = true) {
   // TODO: 这里需要改成从配置文件中读取 appConfig.json
   if (!chromePath) {
@@ -18,7 +22,7 @@ async function createBrowser(headless = true) {
       throw new Error('未找到 Chrome 浏览器')
   }
 
-  return playwright.chromium.launch({
+  return chromium.launch({
     headless,
     executablePath: chromePath,
   })
