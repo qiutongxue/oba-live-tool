@@ -67,7 +67,6 @@ export default function Settings() {
 
   const handleToggleDevMode = async (checked: boolean) => {
     try {
-      await window.ipcRenderer.invoke(IPC_CHANNELS.toggleDevTools, checked)
       setDevMode(checked)
       toast.success(checked ? '已开启开发者模式' : '已关闭开发者模式')
     }

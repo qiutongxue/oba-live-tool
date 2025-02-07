@@ -209,13 +209,14 @@ ipcMain.handle(IPC_CHANNELS.selectChromePath, async () => {
   }
 })
 
-ipcMain.handle(IPC_CHANNELS.toggleDevTools, (_event, enabled: boolean) => {
+ipcMain.handle(IPC_CHANNELS.toggleDevTools, (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender)
   if (win) {
-    if (enabled) {
-      win.webContents.openDevTools()
+    if (win.webContents.isDevToolsOpened()) {
+      win.webContents.closeDevTools()
     }
     else {
-      win.webContents.closeDevTools()
+      win.webContents.openDevTools()
     }
   }
 })
