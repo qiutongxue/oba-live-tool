@@ -10,20 +10,29 @@ import { createLogger } from './logger'
 
 const { autoUpdater }: { autoUpdater: AppUpdater } = createRequire(import.meta.url)('electron-updater')
 
-export function update(win: Electron.BrowserWindow) {
+async function getLatestVersion() {
+  // 从 package.json 获取最新版本号
+  const version = await fetch('https://gh-proxy.com/raw.githubusercontent.com/qiutongxue/oba-live-tool/main/package.json')
+    .then(resp => resp.json())
+    .then(data => data.version)
+  return `v${version}`
+}
+
+export async function update(win: Electron.BrowserWindow) {
   const logger = createLogger('update')
+  const version = await getLatestVersion()
   // When set to false, the update download will be triggered through the API
+  // TODO: 设一个本地服务器模拟一下
+  // autoUpdater.forceDevUpdateConfig = true
+
   autoUpdater.autoDownload = false
   autoUpdater.disableWebInstaller = false
   autoUpdater.allowDowngrade = false
   autoUpdater.setFeedURL({
-    provider: 'github',
-    owner: 'qiutongxue',
-    repo: 'oba-live-tool',
+    provider: 'generic',
+    url: `https://gh-proxy.com/github.com/qiutongxue/oba-live-tool/releases/download/${version}/`,
   })
 
-  // TODO: 设一个本地服务器模拟一下
-  // autoUpdater.forceDevUpdateConfig = true
   // start check
   autoUpdater.on('checking-for-update', () => { })
   // update available
