@@ -6,7 +6,7 @@ import { DownloadIcon, ReloadIcon, RocketIcon } from '@radix-ui/react-icons'
 import { useCallback, useEffect, useState } from 'react'
 import './update.css'
 
-function Update() {
+function Update({ source = 'gh-proxy' }: { source: 'github' | 'gh-proxy' }) {
   const [checking, setChecking] = useState(false)
   const [downloading, setDownloading] = useState(false)
   const [updateAvailable, setUpdateAvailable] = useState(false)
@@ -29,7 +29,7 @@ function Update() {
 
   const checkUpdate = async () => {
     setChecking(true)
-    const result = await window.ipcRenderer.invoke('check-update')
+    const result = await window.ipcRenderer.invoke('check-update', { source })
     setProgressInfo({ percent: 0 })
     setChecking(false)
     setModalOpen(true)
@@ -180,7 +180,14 @@ function Update() {
                     <div className="text-center text-sm text-muted-foreground">
                       {versionInfo?.version === versionInfo?.newVersion
                         ? '您的应用程序已是最新版本！'
-                        : '正在检查更新...'}
+                        : `无可用更新`}
+                      <div className="mt-2 text-xs">
+                        当前版本: v
+                        {versionInfo?.version}
+                        {' '}
+                        | 最新版本: v
+                        {versionInfo?.newVersion}
+                      </div>
                     </div>
                   )}
           </div>
@@ -224,5 +231,4 @@ function Update() {
     </>
   )
 }
-
 export default Update

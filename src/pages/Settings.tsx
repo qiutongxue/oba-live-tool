@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
 import Update from '@/components/update'
@@ -14,12 +15,23 @@ import { useEffect, useState } from 'react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { version } from '../../package.json'
 
+interface UpdateSource {
+  value: 'github' | 'gh-proxy'
+  label: string
+}
+
+const updateSources: UpdateSource[] = [
+  { value: 'github', label: 'GitHub' },
+  { value: 'gh-proxy', label: 'gh-proxy' },
+]
+
 export default function Settings() {
   const { path, setPath } = useChromeConfig()
   const { isConnected } = useLiveControl()
   const { toast } = useToast()
   const [isDetecting, setIsDetecting] = useState(false)
   const { enabled: devMode, setEnabled: setDevMode } = useDevMode()
+  const [updateSource, setUpdateSource] = useState<'github' | 'gh-proxy'>('gh-proxy')
 
   // 监听主进程发送的 Chrome 路径
   useEffect(() => {
@@ -157,7 +169,24 @@ export default function Settings() {
                     检查并安装最新版本的应用程序
                   </p>
                 </div>
-                <Update />
+                <div className="flex items-center gap-3">
+                  <Select
+                    value={updateSource}
+                    onValueChange={(value: 'github' | 'gh-proxy') => setUpdateSource(value)}
+                  >
+                    <SelectTrigger className="w-[140px]">
+                      <SelectValue placeholder="选择更新源" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {updateSources.map(source => (
+                        <SelectItem key={source.value} value={source.value}>
+                          {source.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Update source={updateSource} />
+                </div>
               </div>
               <Separator className="my-6" />
               <div className="flex items-center justify-between">
