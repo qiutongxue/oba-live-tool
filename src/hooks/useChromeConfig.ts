@@ -5,6 +5,8 @@ import { immer } from 'zustand/middleware/immer'
 interface ChromeConfig {
   path: string
   setPath: (path: string) => void
+  cookies: string
+  setCookies: (cookies: string) => void
 }
 
 export const useChromeConfig = create<ChromeConfig>()(
@@ -14,6 +16,12 @@ export const useChromeConfig = create<ChromeConfig>()(
       setPath: (path) => {
         set((state) => {
           state.path = path
+        })
+      },
+      cookies: '',
+      setCookies: (cookies) => {
+        set((state) => {
+          state.cookies = cookies
         })
       },
     })),

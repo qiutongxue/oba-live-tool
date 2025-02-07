@@ -13,7 +13,7 @@ export default function BrowserControl() {
   const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
 
-  const { setPath, path: chromePath } = useChromeConfig()
+  const { setPath, path: chromePath, cookies, setCookies } = useChromeConfig()
   const { enabled: devMode } = useDevMode()
 
   useEffect(() => {
@@ -28,13 +28,14 @@ export default function BrowserControl() {
   const connectLiveControl = async () => {
     try {
       setIsLoading(true)
-      const { success } = await window.ipcRenderer.invoke(
+      const newCookies = await window.ipcRenderer.invoke(
         IPC_CHANNELS.tasks.liveControl.connect,
-        { headless: !devMode, chromePath },
+        { headless: !devMode, chromePath, cookies },
       )
 
-      if (success) {
+      if (newCookies) {
         setIsConnected(true)
+        setCookies(newCookies)
         toast.success('已连接到直播控制台')
       }
       else {

@@ -1,6 +1,5 @@
 import { pageManager } from '#/taskManager'
 import { ipcMain } from 'electron'
-import fs from 'fs-extra'
 import playwright from 'playwright'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { GOODS_ITEM_SELECTOR, IS_LOGGED_IN_SELECTOR, LIVE_CONTROL_URL, LOGIN_URL, LOGIN_URL_REGEX } from '../constants'
@@ -9,6 +8,7 @@ import { findChrome } from '../utils/checkChrome'
 
 const logger = createLogger('中控台')
 let chromePath: string | null = null
+let newCookies: string | null = null
 
 async function createBrowser(headless = true) {
   // TODO: 这里需要改成从配置文件中读取 appConfig.json
@@ -24,9 +24,8 @@ async function createBrowser(headless = true) {
   })
 }
 
-async function loadCookies(context: playwright.BrowserContext) {
+async function loadCookies(context: playwright.BrowserContext, cookiesString: string) {
   try {
-    const cookiesString = await fs.readFile('cookies', 'utf8')
     const cookies = JSON.parse(cookiesString)
     await context.addCookies(cookies)
     return true
@@ -38,43 +37,43 @@ async function loadCookies(context: playwright.BrowserContext) {
 
 async function saveCookies(context: playwright.BrowserContext) {
   const cookies = await context.cookies()
-  await fs.writeFile('cookies', JSON.stringify(cookies))
+  newCookies = JSON.stringify(cookies)
 }
 
 (function registerListeners() {
-  ipcMain.handle(IPC_CHANNELS.tasks.liveControl.connect, async (event, { chromePath: path, headless }) => {
+  ipcMain.handle(IPC_CHANNELS.tasks.liveControl.connect, async (event, { chromePath: path, headless, cookies }) => {
     try {
       chromePath = path
-      const { browser, page } = await connectLiveControl({ headless })
+      const { browser, page } = await connectLiveControl({ headless, cookies })
 
       // 保存到 PageManager
       pageManager.setBrowser(browser)
       pageManager.setPage(page)
 
-      return { success: true }
+      return newCookies
     }
     catch (error) {
       logger.error('连接直播控制台失败:', (error as Error).message)
-      return { success: false }
     }
   })
 })()
 
-export async function connectLiveControl({ headless = true }) {
+export async function connectLiveControl({ headless = true, cookies = '' }) {
   logger.info('启动中……')
   let loginSuccess = false
   let browser: playwright.Browser | null = null
   let page: playwright.Page | null = null
+  let context: playwright.BrowserContext | null = null
   while (!loginSuccess) {
     // 1. 先尝试无头模式
     browser = await createBrowser(headless)
-    let context = await browser.newContext()
+    context = await browser.newContext()
     page = await context.newPage()
 
     // 加载 cookies
-    const hasCookies = await loadCookies(context)
+    const hasCookies = await loadCookies(context, newCookies || cookies)
     if (!hasCookies)
-      logger.debug('读取 cookies 失败')
+      logger.debug('cookies 不存在')
 
     // 访问中控台
     await page.goto(LIVE_CONTROL_URL)
@@ -112,6 +111,7 @@ export async function connectLiveControl({ headless = true }) {
       }
     }
     else {
+      await saveCookies(context)
       loginSuccess = true
     }
   }
