@@ -29,3 +29,10 @@ export const NO_LIVE_SELECTOR = `div[class^="noLiveData"]` as const
 export const COMMENT_BLOCK_SELECTOR = `#input-comment-block-id` as const
 export const COMMENT_TEXTAREA_SELECTOR = `${COMMENT_BLOCK_SELECTOR} textarea` as const
 export const PIN_TOP_SELECTOR = `${COMMENT_BLOCK_SELECTOR} label` as const
+export const SUBMIT_COMMENT_SELECTOR = `${COMMENT_BLOCK_SELECTOR} div[class^="inputSuffix"]`
+
+/**
+ * 直播互动
+ */
+export const COMMENT_LIST_WRAPPER = '#comment-list-wrapper'
+export const COMMENT_LIST_ITEM = `${COMMENT_LIST_WRAPPER} div[class^="commentItem"]`
