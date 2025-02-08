@@ -6,7 +6,7 @@ import { DownloadIcon, ReloadIcon, RocketIcon } from '@radix-ui/react-icons'
 import { useCallback, useEffect, useState } from 'react'
 import './update.css'
 
-function Update({ source = 'gh-proxy' }: { source: 'github' | 'gh-proxy' }) {
+function Update({ source = 'github' }: { source: string }) {
   const [checking, setChecking] = useState(false)
   const [downloading, setDownloading] = useState(false)
   const [updateAvailable, setUpdateAvailable] = useState(false)
@@ -35,7 +35,7 @@ function Update({ source = 'gh-proxy' }: { source: 'github' | 'gh-proxy' }) {
     setModalOpen(true)
     if (result?.error) {
       setUpdateAvailable(false)
-      setUpdateError(result?.error)
+      setUpdateError(result.message)
     }
   }
 
