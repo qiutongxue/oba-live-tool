@@ -33,7 +33,8 @@ class CommentManager {
       return
 
     try {
-      await this.page.exposeFunction('handleNewComment', (comment: string) => {
+      await this.page.exposeFunction('handleNewComment', (comment: CommentData) => {
+        logger.info(`【新评论】<${comment.nickname}>: ${comment.content}`)
         windowManager.sendToWindow('main', IPC_CHANNELS.tasks.autoReply.showComment, comment)
       })
       this.handlerInitialized = true

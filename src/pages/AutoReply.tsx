@@ -1,94 +1,84 @@
-import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Separator } from '@/components/ui/separator'
 import { useAutoReply } from '@/hooks/useAutoReply'
-import { PlayIcon, StopIcon } from '@radix-ui/react-icons'
+import { useLiveControl } from '@/hooks/useLiveControl'
+import { cn } from '@/lib/utils'
+import { useEffect } from 'react'
 
 export default function AutoReply() {
   const {
     isRunning,
     comments,
     startAutoReply,
-    stopAutoReply,
-    formatTime,
+    setIsRunning,
   } = useAutoReply()
+  const { isConnected } = useLiveControl()
+
+  useEffect(() => {
+    if (isConnected && !isRunning) {
+      setIsRunning(true)
+      startAutoReply()
+    }
+  }, [isRunning, isConnected, startAutoReply, setIsRunning])
 
   return (
     <div className="container max-w-4xl py-8">
       <div className="mb-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">自动回复</h1>
-            <p className="text-muted-foreground mt-2">
-              查看直播间的实时评论
-            </p>
-          </div>
-          <Button
-            onClick={isRunning ? stopAutoReply : startAutoReply}
-            variant={isRunning ? 'destructive' : 'default'}
-          >
-            {isRunning
-              ? (
-                  <>
-                    <StopIcon className="mr-2 h-4 w-4" />
-                    停止监听
-                  </>
-                )
-              : (
-                  <>
-                    <PlayIcon className="mr-2 h-4 w-4" />
-                    开始监听
-                  </>
-                )}
-          </Button>
-        </div>
+        <h1 className="text-3xl font-bold tracking-tight">自动回复</h1>
+        <p className="text-muted-foreground mt-2">
+          查看直播间的实时评论
+        </p>
       </div>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="pb-3">
           <CardTitle>评论列表</CardTitle>
-          <CardDescription>显示最近的100条评论</CardDescription>
+          <CardDescription>实时显示直播间的评论内容</CardDescription>
         </CardHeader>
+        <Separator />
         <CardContent>
-          <div className="space-y-4">
-            {comments.length === 0
-              ? (
-                  <div className="text-center text-muted-foreground py-8">
-                    暂无评论数据
-                  </div>
-                )
-              : comments.map((comment, index) => (
-                  <div
-                    key={index}
-                    className="flex items-start gap-4 p-4 rounded-lg border"
-                  >
-                    <div className="flex-1 space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{comment.nickname}</span>
-                        {comment.authorTags.map((tag, i) => (
-                          <span
-                            key={i}
-                            className="px-1.5 py-0.5 rounded text-xs bg-blue-100 text-blue-800"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                        {comment.commentTags.map((tag, i) => (
-                          <span
-                            key={i}
-                            className="px-1.5 py-0.5 rounded text-xs bg-gray-100 text-gray-800"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                      <p className="text-sm">{comment.content}</p>
+          <ScrollArea className="py-2 h-[600px]">
+            <div className="space-y-1">
+              {comments.length === 0
+                ? (
+                    <div className="text-center text-muted-foreground py-8">
+                      暂无评论数据
                     </div>
-                    <time className="text-xs text-muted-foreground">
-                      {formatTime(comment.timestamp)}
-                    </time>
-                  </div>
-                ))}
-          </div>
+                  )
+                : comments.map(comment => (
+                    <div
+                      key={comment.id}
+                      className="group px-3 py-1.5 text-sm hover:bg-muted/50 rounded-lg transition-colors"
+                    >
+                      {/* 标签区域 */}
+                      {[...comment.authorTags, ...comment.commentTags].map(tag => (
+                        <span
+                          key={`${comment.id}-${tag}`}
+                          className={cn(
+                            'mr-1.5 inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium',
+                            // 主播标签
+                            tag === '主播' && 'bg-pink-50 text-pink-700 ring-1 ring-inset ring-pink-700/10',
+                            // 评论标签
+                            comment.commentTags.includes(tag) && 'bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-700/10',
+                            // 其他作者标签
+                            !comment.commentTags.includes(tag) && tag !== '主播' && 'bg-gray-50 text-gray-600 ring-1 ring-inset ring-gray-500/10',
+                          )}
+                        >
+                          {tag}
+                        </span>
+                      ))}
+
+                      {/* 昵称和内容 */}
+                      <span className="font-medium text-gray-900">
+                        {comment.nickname}
+                      </span>
+                      <span className="mx-1.5 text-gray-400">·</span>
+                      <span className="text-gray-700">{comment.content}</span>
+                    </div>
+                  ))}
+            </div>
+          </ScrollArea>
         </CardContent>
       </Card>
     </div>

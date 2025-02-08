@@ -1,8 +1,10 @@
 import { useToast } from '@/hooks/useToast'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback } from 'react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
+import { create } from 'zustand'
 
 export interface Comment {
+  id?: string
   nickname: string
   authorTags: string[]
   commentTags: string[]
@@ -10,34 +12,49 @@ export interface Comment {
   timestamp: string
 }
 
+interface AutoReplyStore {
+  isRunning: boolean
+  comments: Comment[]
+  setIsRunning: (running: boolean) => void
+  addComment: (comment: Comment) => void
+  clearComments: () => void
+}
+
+export const useAutoReplyStore = create<AutoReplyStore>(set => ({
+  isRunning: false,
+  comments: [],
+  setIsRunning: running => set({ isRunning: running }),
+  addComment: comment => set(state => ({
+    comments: [{ ...comment, id: crypto.randomUUID() }, ...state.comments],
+  })),
+  clearComments: () => set({ comments: [] }),
+
+}))
+
 export function useAutoReply() {
-  const [isRunning, setIsRunning] = useState(false)
-  const [comments, setComments] = useState<Comment[]>([])
   const { toast } = useToast()
-
-  // 监听新评论
-  useEffect(() => {
-    const removeListener = window.ipcRenderer.on(
-      IPC_CHANNELS.tasks.autoReply.showComment,
-      (comment: Comment) => {
-        setComments(prev => [comment, ...prev].slice(0, 100)) // 最多保留100条评论
-      },
-    )
-
-    return () => removeListener()
-  }, [])
+  const {
+    isRunning,
+    comments,
+    setIsRunning,
+    clearComments,
+  } = useAutoReplyStore()
 
   // 开始监听
   const startAutoReply = useCallback(async () => {
     try {
-      await window.ipcRenderer.invoke(IPC_CHANNELS.tasks.autoReply.start)
+      const result = await window.ipcRenderer.invoke(
+        IPC_CHANNELS.tasks.autoReply.start,
+      )
+      if (!result)
+        throw new Error('启动自动回复失败')
       setIsRunning(true)
       toast.success('自动回复已启动')
     }
     catch {
       toast.error('启动自动回复失败')
     }
-  }, [toast])
+  }, [toast, setIsRunning])
 
   // 停止监听
   const stopAutoReply = useCallback(async () => {
@@ -49,12 +66,7 @@ export function useAutoReply() {
     catch {
       toast.error('停止自动回复失败')
     }
-  }, [toast])
-
-  // 清空评论列表
-  const clearComments = useCallback(() => {
-    setComments([])
-  }, [])
+  }, [toast, setIsRunning])
 
   // 格式化时间
   const formatTime = useCallback((timestamp: string) => {
@@ -67,6 +79,7 @@ export function useAutoReply() {
 
   return {
     isRunning,
+    setIsRunning,
     comments,
     startAutoReply,
     stopAutoReply,

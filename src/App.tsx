@@ -8,12 +8,14 @@ import { useEffect } from 'react'
 import { Outlet } from 'react-router'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { Header } from './components/Header'
+import { useIpc } from './hooks/useIpc'
 import { useLiveControl } from './hooks/useLiveControl'
 import './App.css'
 
 function App() {
   const { setIsConnected } = useLiveControl()
   const { enabled: devMode } = useDevMode()
+  useIpc()
 
   useEffect(() => {
     const removeListener = window.ipcRenderer.on(IPC_CHANNELS.tasks.liveControl.disconnect, () => {
