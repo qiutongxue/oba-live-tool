@@ -1,5 +1,6 @@
 import { createLogger } from '#/logger'
-import { merge } from 'lodash-es'
+
+const logger = createLogger('Scheduler')
 
 export interface SchedulerConfig {
   readonly name: string
@@ -20,69 +21,81 @@ export interface Scheduler {
   isRunning: boolean
 }
 
+class TaskScheduler implements Scheduler {
+  private timerId: NodeJS.Timeout | null = null
+  private isStopped = true
+  private readonly executor: () => Promise<void>
+  private config: SchedulerConfig
+
+  constructor(executor: () => Promise<void>, config: SchedulerConfig) {
+    this.executor = executor
+    this.config = config
+  }
+
+  private calculateNextInterval(): number {
+    const [min, max] = this.config.interval
+    return Math.floor(Math.random() * (max - min + 1)) + min
+  }
+
+  private clearTimer() {
+    if (this.timerId) {
+      clearTimeout(this.timerId)
+      this.timerId = null
+    }
+  }
+
+  private async executeTask() {
+    try {
+      await this.executor()
+    }
+    catch (error) {
+      logger.error(`执行「${this.config.name}」失败:`, error)
+      this.stop()
+      return
+    }
+
+    if (!this.isStopped) {
+      this.scheduleNext(this.calculateNextInterval())
+    }
+  }
+
+  private scheduleNext(delay: number) {
+    this.clearTimer()
+    logger.info(`下次执行「${this.config.name}」将在 ${delay / 1000} 秒后`)
+    this.timerId = setTimeout(() => this.executeTask(), delay)
+  }
+
+  public start() {
+    if (this.isStopped) {
+      this.isStopped = false
+      this.config.onStart?.()
+      this.scheduleNext(0)
+    }
+  }
+
+  public stop() {
+    this.isStopped = true
+    this.clearTimer()
+    this.config.onStop?.()
+  }
+
+  public updateConfig(newConfig: BaseConfig) {
+    if (newConfig.scheduler) {
+      this.config = {
+        ...this.config,
+        ...newConfig.scheduler,
+      }
+    }
+  }
+
+  public get isRunning() {
+    return !this.isStopped
+  }
+}
+
 export function createScheduler(
   executor: () => Promise<void>,
   config: SchedulerConfig,
 ): Scheduler {
-  const logger = createLogger('Scheduler')
-  let timerId: NodeJS.Timeout | null = null
-  let isStopped = true
-
-  function calculateNextInterval() {
-    const [min, max] = config.interval
-    return Math.floor(Math.random() * (max - min + 1)) + min
-  }
-
-  function clearTimer() {
-    if (timerId) {
-      clearTimeout(timerId)
-      timerId = null
-    }
-  }
-
-  function scheduleNext(delay: number) {
-    clearTimer()
-    logger.info(`下次执行「${config.name}」将在 ${delay / 1000} 秒后`)
-    timerId = setTimeout(async () => {
-      try {
-        await executor()
-      }
-      catch (error) {
-        logger.error(`执行「${config.name}」失败:`, error)
-        stop()
-      }
-      finally {
-        if (!isStopped) {
-          scheduleNext(calculateNextInterval())
-        }
-      }
-    }, delay)
-  }
-  function start() {
-    if (isStopped) {
-      isStopped = false
-      config.onStart?.()
-      scheduleNext(0)
-    }
-  }
-
-  function stop() {
-    isStopped = true
-    clearTimer()
-    config.onStop?.()
-  }
-
-  function updateConfig(newConfig: BaseConfig) {
-    config = merge({}, config, newConfig)
-  }
-
-  return {
-    start,
-    stop,
-    updateConfig,
-
-    get isRunning() {
-      return !isStopped
-    },
-  }
+  return new TaskScheduler(executor, config)
 }

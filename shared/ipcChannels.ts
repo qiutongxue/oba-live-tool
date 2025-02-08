@@ -17,6 +17,11 @@ export const IPC_CHANNELS = {
       stream: 'tasks:aiChat:stream',
       error: 'tasks:aiChat:error',
     },
+    autoReply: {
+      start: 'tasks:autoReply:start',
+      stop: 'tasks:autoReply:stop',
+      showComment: 'tasks:autoReply:showComment',
+    },
   },
   config: {
     save: 'config:save',

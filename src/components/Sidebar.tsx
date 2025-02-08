@@ -38,6 +38,32 @@ export default function Sidebar() {
       ),
     },
     {
+      id: '/auto-reply',
+      name: '自动回复',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            d="M8 12h.01M12 12h.01M16 12h.01M3 17l1.5-3h15a2 2 0 002-2V6a2 2 0 00-2-2H4a2 2 0 00-2 2v8c0 1.1.9 2 2 2h1l-2 3z"
+          />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            d="M17 17l2 2 2-2"
+          />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            d="M19 19v-4"
+          />
+        </svg>
+      ),
+    },
+    {
       id: '/ai-chat',
       name: 'AI 助手',
       icon: (

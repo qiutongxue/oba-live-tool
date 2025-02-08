@@ -4,125 +4,206 @@ import { ipcMain } from 'electron'
 import { chromium } from 'playwright-extra'
 import stealth from 'puppeteer-extra-plugin-stealth'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
-import { GOODS_ITEM_SELECTOR, IS_LOGGED_IN_SELECTOR, LIVE_CONTROL_URL, LOGIN_URL, LOGIN_URL_REGEX } from '../constants'
+import {
+  GOODS_ITEM_SELECTOR,
+  IS_LOGGED_IN_SELECTOR,
+  LIVE_CONTROL_URL,
+  LOGIN_URL,
+  LOGIN_URL_REGEX,
+} from '../constants'
 import { createLogger } from '../logger'
 import { findChrome } from '../utils/checkChrome'
 
-const logger = createLogger('中控台')
-let chromePath: string | null = null
-let newCookies: string | null = null
+const TASK_NAME = '中控台'
+const logger = createLogger(TASK_NAME)
 
-chromium.use(stealth())
-
-async function createBrowser(headless = true) {
-  // TODO: 这里需要改成从配置文件中读取 appConfig.json
-  if (!chromePath) {
-    chromePath = await findChrome()
-    if (!chromePath)
-      throw new Error('未找到 Chrome 浏览器')
-  }
-
-  return chromium.launch({
-    headless,
-    executablePath: chromePath,
-  })
+interface BrowserConfig {
+  headless?: boolean
+  cookies?: string
 }
 
-async function loadCookies(context: playwright.BrowserContext, cookiesString: string) {
-  try {
-    const cookies = JSON.parse(cookiesString)
-    await context.addCookies(cookies)
-    return true
-  }
-  catch {
-    return false
-  }
+interface BrowserSession {
+  browser: playwright.Browser
+  context: playwright.BrowserContext
+  page: playwright.Page
 }
 
-async function saveCookies(context: playwright.BrowserContext) {
-  const cookies = await context.cookies()
-  newCookies = JSON.stringify(cookies)
-}
+class LiveControlManager {
+  private static instance: LiveControlManager
+  private chromePath: string | null = null
+  private newCookies: string | null = null
 
-(function registerListeners() {
-  ipcMain.handle(IPC_CHANNELS.tasks.liveControl.connect, async (event, { chromePath: path, headless, cookies }) => {
+  private constructor() {
+    chromium.use(stealth())
+  }
+
+  public static getInstance(): LiveControlManager {
+    if (!LiveControlManager.instance)
+      LiveControlManager.instance = new LiveControlManager()
+    return LiveControlManager.instance
+  }
+
+  private async initChromePath() {
+    if (!this.chromePath) {
+      this.chromePath = await findChrome()
+      if (!this.chromePath)
+        throw new Error('未找到 Chrome 浏览器')
+    }
+  }
+
+  private async createBrowser(headless = true): Promise<playwright.Browser> {
+    await this.initChromePath()
+    return chromium.launch({
+      headless,
+      executablePath: this.chromePath!,
+    })
+  }
+
+  private async createSession(headless: boolean): Promise<BrowserSession> {
+    const browser = await this.createBrowser(headless)
+    const context = await browser.newContext()
+    const page = await context.newPage()
+    return { browser, context, page }
+  }
+
+  private async loadCookies(context: playwright.BrowserContext, cookiesString: string): Promise<boolean> {
+    if (!cookiesString)
+      return false
+
     try {
-      chromePath = path
-      const { browser, page } = await connectLiveControl({ headless, cookies })
-
-      // 保存到 PageManager
-      pageManager.setBrowser(browser)
-      pageManager.setPage(page)
-
-      return newCookies
+      const cookies = JSON.parse(cookiesString)
+      await context.addCookies(cookies)
+      return true
     }
     catch (error) {
-      logger.error('连接直播控制台失败:', (error as Error).message)
-    }
-  })
-})()
-
-export async function connectLiveControl({ headless = true, cookies = '' }) {
-  logger.info('启动中……')
-  let loginSuccess = false
-  let browser: playwright.Browser | null = null
-  let page: playwright.Page | null = null
-  let context: playwright.BrowserContext | null = null
-  while (!loginSuccess) {
-    // 1. 先尝试无头模式
-    browser = await createBrowser(headless)
-    context = await browser.newContext()
-    page = await context.newPage()
-
-    // 加载 cookies
-    const hasCookies = await loadCookies(context, newCookies || cookies)
-    if (!hasCookies)
-      logger.debug('cookies 不存在')
-
-    // 访问中控台
-    await page.goto(LIVE_CONTROL_URL)
-    await Promise.race([
-      // 登录页面
-      page.waitForURL(LOGIN_URL_REGEX, { timeout: 0 }),
-      // 登录成功后的中控台
-      page.waitForSelector(IS_LOGGED_IN_SELECTOR, { timeout: 0 }),
-    ])
-    logger.debug(`当前的页面为：${page.url()}}`)
-    // 2. 检查是否需要登录
-    if (page.url().startsWith(LOGIN_URL)) {
-      logger.info('需要登录，请在打开的浏览器中完成登录')
-      if (headless) {
-        // 关闭当前浏览器
-        await browser.close()
-
-        // 启动有头模式
-        browser = await createBrowser(false)
-        context = await browser.newContext()
-        page = await context.newPage()
-
-        // 直接访问登录页
-        await page.goto(LOGIN_URL)
-      }
-
-      // 3. 等待用户登录成功
-      await page.waitForSelector(IS_LOGGED_IN_SELECTOR, { timeout: 0 })
-
-      // 保存 cookies
-      await saveCookies(context)
-      if (headless) {
-        // 关闭有头浏览器
-        await browser.close()
-      }
-    }
-    else {
-      await saveCookies(context)
-      loginSuccess = true
+      logger.error('加载 cookies 失败:', error instanceof Error ? error.message : String(error))
+      return false
     }
   }
 
-  // 等待中控台页面加载完成
-  await page!.waitForSelector(GOODS_ITEM_SELECTOR, { timeout: 0 })
-  logger.success('登录成功')
+  private async saveCookies(context: playwright.BrowserContext) {
+    const cookies = await context.cookies()
+    this.newCookies = JSON.stringify(cookies)
+  }
 
-  return { browser: browser!, page: page! }
+  private async handleHeadlessLogin(session: BrowserSession): Promise<BrowserSession> {
+    const { browser } = session
+    logger.info('需要登录，切换到有头模式')
+
+    // 关闭当前浏览器
+    await browser.close()
+
+    // 创建新的有头模式会话
+    const newSession = await this.createSession(false)
+    await newSession.page.goto(LOGIN_URL)
+
+    // 等待用户登录成功
+    await newSession.page.waitForSelector(IS_LOGGED_IN_SELECTOR, { timeout: 0 })
+    await this.saveCookies(newSession.context)
+
+    // 关闭有头浏览器，返回 null 以触发重新连接
+    await newSession.browser.close()
+    return newSession
+  }
+
+  private async handleLogin(session: BrowserSession, headless: boolean): Promise<BrowserSession | null> {
+    if (headless)
+      return this.handleHeadlessLogin(session)
+
+    logger.info('需要登录，请在打开的浏览器中完成登录')
+    await session.page.goto(LOGIN_URL)
+    await session.page.waitForSelector(IS_LOGGED_IN_SELECTOR, { timeout: 0 })
+    await this.saveCookies(session.context)
+    return session
+  }
+
+  public setChromePath(path: string) {
+    this.chromePath = path
+  }
+
+  public async connect({ headless = true, cookies = '' }: BrowserConfig): Promise<{ browser: playwright.Browser, page: playwright.Page }> {
+    logger.info('启动中……')
+
+    let loginSuccess = false
+    let session: BrowserSession | null = null
+
+    while (!loginSuccess) {
+      try {
+        session = await this.createSession(headless)
+
+        // 加载 cookies
+        const hasCookies = await this.loadCookies(session.context, this.newCookies || cookies)
+        if (!hasCookies)
+          logger.debug('cookies 不存在')
+
+        // 访问中控台
+        await session.page.goto(LIVE_CONTROL_URL)
+        await Promise.race([
+          session.page.waitForURL(LOGIN_URL_REGEX, { timeout: 0 }),
+          session.page.waitForSelector(IS_LOGGED_IN_SELECTOR, { timeout: 0 }),
+        ])
+
+        logger.debug(`当前页面: ${session.page.url()}`)
+
+        // 检查是否需要登录
+        if (session.page.url().startsWith(LOGIN_URL)) {
+          const newSession = await this.handleLogin(session, headless)
+          if (!newSession)
+            continue
+          session = newSession
+        }
+
+        await this.saveCookies(session.context)
+        loginSuccess = true
+      }
+      catch (error) {
+        logger.error('连接失败:', error instanceof Error ? error.message : String(error))
+        if (session?.browser)
+          await session.browser.close()
+        throw error
+      }
+    }
+
+    if (!session)
+      throw new Error('会话创建失败')
+
+    // 等待中控台页面加载完成
+    await session.page.waitForSelector(GOODS_ITEM_SELECTOR, { timeout: 0 })
+    logger.success('登录成功')
+
+    return { browser: session.browser, page: session.page }
+  }
+
+  public get cookies() {
+    return this.newCookies
+  }
+}
+
+function setupIpcHandlers() {
+  ipcMain.handle(
+    IPC_CHANNELS.tasks.liveControl.connect,
+    async (_, { chromePath, headless, cookies }) => {
+      try {
+        const manager = LiveControlManager.getInstance()
+        if (chromePath)
+          manager.setChromePath(chromePath)
+        const { browser, page } = await manager.connect({ headless, cookies })
+
+        pageManager.setBrowser(browser)
+        pageManager.setPage(page)
+
+        return manager.cookies
+      }
+      catch (error) {
+        logger.error('连接直播控制台失败:', error instanceof Error ? error.message : String(error))
+        return null
+      }
+    },
+  )
+}
+
+setupIpcHandlers()
+
+export async function connectLiveControl(config: BrowserConfig) {
+  return LiveControlManager.getInstance().connect(config)
 }

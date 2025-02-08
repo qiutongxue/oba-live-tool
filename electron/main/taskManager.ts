@@ -39,6 +39,10 @@ export class TaskManager {
     this.tasks[taskName] = scheduler
   }
 
+  contains(taskName: string) {
+    return this.tasks[taskName] !== undefined
+  }
+
   cleanup() {
     for (const task of Object.values(this.tasks))
       task.stop()

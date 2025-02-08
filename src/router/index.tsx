@@ -1,6 +1,7 @@
 import AIChat from '@/pages/AIChat'
 import AutoMessage from '@/pages/AutoMessage'
 import AutoPopUp from '@/pages/AutoPopUp'
+import AutoReply from '@/pages/AutoReply'
 import BrowserControl from '@/pages/BrowserControl'
 import Settings from '@/pages/Settings'
 import { createHashRouter } from 'react-router'
@@ -30,6 +31,10 @@ export const router = createHashRouter([
       {
         path: '/ai-chat',
         element: <AIChat />,
+      },
+      {
+        path: 'auto-reply',
+        element: <AutoReply />,
       },
     ],
   },
