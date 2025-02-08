@@ -6,7 +6,6 @@ import { useTaskConfig } from './useTaskConfig'
 import { useToast } from './useToast'
 
 interface AutoPopUpConfig {
-  enabled: boolean
   scheduler: {
     interval: [number, number]
   }
@@ -15,12 +14,11 @@ interface AutoPopUpConfig {
 }
 
 const defaultConfig: AutoPopUpConfig = {
-  enabled: false,
   scheduler: {
     interval: [30000, 45000],
   },
   goodsIds: [],
-  random: true,
+  random: false,
 }
 
 interface AutoPopUpStore {
@@ -29,7 +27,6 @@ interface AutoPopUpStore {
   config: AutoPopUpConfig
   originalConfig: AutoPopUpConfig
   setConfig: (config: AutoPopUpConfig) => void
-  setEnabled: (enabled: boolean) => void
   setScheduler: (scheduler: AutoPopUpConfig['scheduler']) => void
   setGoodsIds: (goodsIds: AutoPopUpConfig['goodsIds']) => void
   setRandom: (random: AutoPopUpConfig['random']) => void
@@ -45,7 +42,6 @@ export const useAutoPopUpStore = create<AutoPopUpStore>()(immer((set) => {
       draft.config = config
       draft.originalConfig = config
     }),
-    setEnabled: enabled => set((draft) => { draft.config.enabled = enabled }),
     setScheduler: scheduler => set((draft) => { draft.config.scheduler = scheduler }),
     setGoodsIds: goodsIds => set((draft) => { draft.config.goodsIds = goodsIds }),
     setRandom: random => set((draft) => { draft.config.random = random }),

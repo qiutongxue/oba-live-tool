@@ -62,22 +62,6 @@ export default function AutoMessage() {
       )}
 
       <div className="grid gap-6">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <Label>启用自动发言</Label>
-                <p className="text-sm text-muted-foreground">
-                  开启后将按照设定的规则自动发送消息
-                </p>
-              </div>
-              <Switch
-                checked={store.config.enabled}
-                onCheckedChange={checked => store.setEnabled(checked)}
-              />
-            </div>
-          </CardContent>
-        </Card>
 
         <Card>
           <CardContent className="pt-6">

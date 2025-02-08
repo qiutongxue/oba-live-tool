@@ -6,7 +6,6 @@ import { useTaskConfig } from './useTaskConfig'
 import { useToast } from './useToast'
 
 export interface AutoMessageConfig {
-  enabled: boolean
   scheduler: {
     interval: [number, number] // [最小间隔, 最大间隔]
   }
@@ -16,7 +15,6 @@ export interface AutoMessageConfig {
 }
 
 const defaultConfig: AutoMessageConfig = {
-  enabled: false,
   scheduler: {
     interval: [30000, 60000],
   },
@@ -35,7 +33,6 @@ interface AutoMessageStore {
   setMessages: (messages: AutoMessageConfig['messages']) => void
   setPinTops: (pinTops: AutoMessageConfig['pinTops']) => void
   setRandom: (random: AutoMessageConfig['random']) => void
-  setEnabled: (enabled: AutoMessageConfig['enabled']) => void
 }
 
 export const useAutoMessageStore = create<AutoMessageStore>()(immer((set) => {
@@ -52,7 +49,6 @@ export const useAutoMessageStore = create<AutoMessageStore>()(immer((set) => {
     setMessages: messages => set((draft) => { draft.config.messages = messages }),
     setPinTops: pinTops => set((draft) => { draft.config.pinTops = pinTops }),
     setRandom: random => set((draft) => { draft.config.random = random }),
-    setEnabled: enabled => set((draft) => { draft.config.enabled = enabled }),
   }
 }))
 

@@ -77,25 +77,6 @@ export default function AutoPopUp() {
       )}
 
       <div className="grid gap-6">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <Label>启用自动弹窗</Label>
-                <p className="text-sm text-muted-foreground">
-                  开启后将按照设定的规则自动弹出商品
-                </p>
-              </div>
-              <Switch
-                checked={store.config.enabled}
-                onCheckedChange={checked => store.setConfig({
-                  ...store.config,
-                  enabled: checked,
-                })}
-              />
-            </div>
-          </CardContent>
-        </Card>
 
         <Card>
           <CardContent className="pt-6">
