@@ -4,68 +4,82 @@ import OpenAI from 'openai'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { providers } from 'shared/providers'
 
+const logger = createLogger('ai对话')
+
+interface StreamChunk {
+  chunk: string
+  type: 'content' | 'reasoning'
+  index: number
+}
+
+function createOpenAIClient(apiKey: string, provider: keyof typeof providers) {
+  const { baseURL } = providers[provider]
+  return new OpenAI({ apiKey, baseURL })
+}
+
+async function handleStreamResponse(stream: AsyncIterable<any>, sender: Electron.WebContents) {
+  let chunkCount = 0
+  let isStart = false
+
+  for await (const chunk of stream) {
+    if (!isStart) {
+      logger.info('AI 开始回答……')
+      isStart = true
+    }
+
+    const delta = chunk.choices[0]?.delta
+    if (!delta)
+      continue
+
+    sendStreamChunk(delta, chunkCount++, sender)
+  }
+
+  sender.send(IPC_CHANNELS.tasks.aiChat.stream, { done: true })
+}
+
+function sendStreamChunk(delta: any, index: number, sender: Electron.WebContents) {
+  const { content, reasoning_content } = delta
+
+  if (content) {
+    const chunk: StreamChunk = { chunk: content, type: 'content', index }
+    sender.send(IPC_CHANNELS.tasks.aiChat.stream, chunk)
+  }
+
+  if (reasoning_content) {
+    const chunk: StreamChunk = { chunk: reasoning_content, type: 'reasoning', index }
+    sender.send(IPC_CHANNELS.tasks.aiChat.stream, chunk)
+  }
+}
+
+function handleError(error: unknown, sender: Electron.WebContents) {
+  logger.error('AI 不想回答')
+  const errorMessage = error instanceof Error ? error.message : String(error)
+  sender.send(IPC_CHANNELS.tasks.aiChat.error, { error: errorMessage })
+}
+
 export function setupAIChat() {
-  const logger = createLogger('ai对话')
+  ipcMain.handle(
+    IPC_CHANNELS.tasks.aiChat.chat,
+    async (event, { messages, apiKey, provider, model }) => {
+      try {
+        const openai = createOpenAIClient(apiKey, provider)
+        logger.info('正在向 AI 提问……')
 
-  ipcMain.handle(IPC_CHANNELS.tasks.aiChat.chat, async (event, { messages, apiKey, provider, model }) => {
-    const { baseURL } = providers[provider as keyof typeof providers]
-    try {
-      const openai = new OpenAI({
-        apiKey,
-        baseURL,
-      })
-      logger.info('正在向 AI 提问……')
-      const stream = await openai.chat.completions.create({
-        model,
-        messages,
-        stream: true,
-      })
+        const stream = await openai.chat.completions.create({
+          model,
+          messages,
+          stream: true,
+        })
 
-      let chunkCount = 0
-      let isStart = false
-      for await (const chunk of stream) {
-        if (!isStart) {
-          logger.info('AI 开始回答……')
-          isStart = true
-        }
-        const delta = chunk.choices[0]?.delta
-        if (delta) {
-          const { content, reasoning_content } = delta as any
-          if (content) {
-            event.sender.send(IPC_CHANNELS.tasks.aiChat.stream, {
-              chunk: content,
-              type: 'content',
-              index: chunkCount++,
-            })
-          }
-          if (reasoning_content) {
-            event.sender.send(IPC_CHANNELS.tasks.aiChat.stream, {
-              chunk: reasoning_content,
-              type: 'reasoning',
-              index: chunkCount++,
-            })
-          }
-        }
+        await handleStreamResponse(stream, event.sender)
+        return { success: true }
       }
-
-      event.sender.send(IPC_CHANNELS.tasks.aiChat.stream, { done: true })
-      return { success: true }
-    }
-    catch (error) {
-      logger.error('AI 不想回答')
-      let errorMessage = '请求AI失败'
-      if (error instanceof Error) {
-        errorMessage = error.message
+      catch (error) {
+        handleError(error, event.sender)
       }
-      else {
-        errorMessage = error as string
+      finally {
+        logger.info('AI 回答结束')
       }
-      event.sender.send(IPC_CHANNELS.tasks.aiChat.error, {
-        error: errorMessage,
-      })
-    }
-    finally {
-      logger.info('AI 回答结束')
-    }
-  })
+    },
+  )
 }

@@ -1,6 +1,6 @@
 import type { RequiredWith } from '#/utils'
 import type { ElementHandle, Page } from 'playwright'
-import type { BaseConfig, Scheduler } from './scheduler'
+import type { BaseConfig } from './scheduler'
 import { GOODS_ACTION_SELECTOR, GOODS_ITEM_SELECTOR } from '#/constants'
 import { createLogger } from '#/logger'
 import { pageManager } from '#/taskManager'
@@ -14,7 +14,7 @@ import { createScheduler } from './scheduler'
 const TASK_NAME = '自动弹窗'
 const logger = createLogger(TASK_NAME)
 
-export interface PopUpConfig extends BaseConfig {
+interface PopUpConfig extends BaseConfig {
   goodsIds: number[]
   random?: boolean
 }
@@ -28,105 +28,84 @@ const DEFAULT_CONFIG: RequiredWith<PopUpConfig, 'scheduler'> = {
   random: false,
 }
 
-;(() => {
-  ipcMain.handle(IPC_CHANNELS.tasks.autoPopUp.start, async (_, config: Partial<PopUpConfig>) => {
+class PopUpManager {
+  private currentGoodIndex = 0
+  private config: RequiredWith<PopUpConfig, 'scheduler'>
+  private readonly page: Page
+  private readonly scheduler: ReturnType<typeof createScheduler>
+
+  constructor(page: Page, userConfig: Partial<PopUpConfig> = {}) {
+    this.page = page
+    this.config = merge({}, DEFAULT_CONFIG, userConfig)
+    this.scheduler = this.createTaskScheduler()
+    this.validateConfig()
+  }
+
+  private createTaskScheduler() {
+    return createScheduler(
+      () => this.execute(),
+      merge(this.config.scheduler, {
+        onStart: () => logger.info(`「${TASK_NAME}」开始执行`),
+        onStop: () => {
+          logger.info(`「${TASK_NAME}」停止执行`)
+          windowManager.sendToWindow('main', IPC_CHANNELS.tasks.autoPopUp.stop)
+        },
+      }),
+    )
+  }
+
+  private async execute() {
     try {
-      pageManager.register('autoPopUp', createAutoPopUp, config)
-      pageManager.startTask('autoPopUp')
-      return true
-    }
-    catch (error) {
-      logger.error('启动自动弹窗失败:', error instanceof Error ? error.message : error)
-      // throw error
-      return false
-    }
-  })
-
-  ipcMain.handle(IPC_CHANNELS.tasks.autoPopUp.stop, async () => {
-    pageManager.stopTask('autoPopUp')
-    // return true
-  })
-})()
-
-export function createAutoPopUp(page: Page, userConfig: Partial<PopUpConfig> = {}): Scheduler {
-  let config = merge({}, DEFAULT_CONFIG, userConfig)
-  let currentGoodIndex = 0
-
-  async function execute() {
-    try {
-      const goodsId = getNextGoodsId()
+      const goodsId = this.getNextGoodsId()
       logger.debug(`准备讲解商品 ID: ${goodsId}`)
 
-      const goodsItem = await getGoodsItem(goodsId)
-      await togglePresentation(goodsItem)
+      const goodsItem = await this.getGoodsItem(goodsId)
+      await this.togglePresentation(goodsItem)
     }
     catch (error) {
-      if (error instanceof Error) {
-        logger.error(`「${TASK_NAME}」执行失败: ${error.message}`)
-      }
+      logger.error(`「${TASK_NAME}」执行失败: ${error instanceof Error ? error.message : String(error)}`)
       throw error
     }
   }
-  const scheduler = createScheduler(execute, merge(config.scheduler, {
-    onStart: () => {
-      logger.info(`「${TASK_NAME}」开始执行`)
-    },
-    onStop: () => {
-      logger.info(`「${TASK_NAME}」停止执行`)
-      windowManager.sendToWindow('main', IPC_CHANNELS.tasks.autoPopUp.stop)
-    },
-  }))
 
-  function validateConfig() {
-    if (config.goodsIds.length === 0) {
-      throw new Error('商品配置验证失败: 必须提供至少一个商品ID')
-    }
-    if (config.scheduler.interval[0] > config.scheduler.interval[1]) {
-      throw new Error('配置验证失败：计时器区间设置错误')
-    }
-    logger.info(`商品配置验证通过，共加载 ${config.goodsIds.length} 个商品`)
-  }
-
-  function getNextGoodsId(): number {
-    if (config.random) {
-      currentGoodIndex = randomInt(0, config.goodsIds.length - 1)
+  private getNextGoodsId(): number {
+    if (this.config.random) {
+      this.currentGoodIndex = randomInt(0, this.config.goodsIds.length - 1)
     }
     else {
-      currentGoodIndex = (currentGoodIndex + 1) % config.goodsIds.length
+      this.currentGoodIndex = (this.currentGoodIndex + 1) % this.config.goodsIds.length
     }
-    return config.goodsIds[currentGoodIndex]
+    return this.config.goodsIds[this.currentGoodIndex]
   }
 
-  async function getGoodsItem(id: number) {
-    const items = await page.$$(GOODS_ITEM_SELECTOR)
-    // 商品 ID 从 1 开始
-    // 商品 ID 就是和 items 的索引对应的，所以不用验证 ID 是否对应 item
-    if (id <= 0 || id > items.length) {
+  private async getGoodsItem(id: number) {
+    const items = await this.page.$$(GOODS_ITEM_SELECTOR)
+    if (id <= 0 || id > items.length)
       throw new Error(`商品 ${id} 不存在`)
-    }
+
     return items[id - 1]
   }
 
-  async function togglePresentation(item: ElementHandle) {
+  private async togglePresentation(item: ElementHandle) {
     const actionPanel = await item.$(GOODS_ACTION_SELECTOR)
     const presBtnWrap = actionPanel && await actionPanel.$(`div[class*="wrapper"]:has(button)`)
 
-    if (await isPresenting(presBtnWrap)) {
-      await clickActionButton(presBtnWrap!, '取消讲解')
-      await waitForStateChange(presBtnWrap!)
+    if (await this.isPresenting(presBtnWrap)) {
+      await this.clickActionButton(presBtnWrap!, '取消讲解')
+      await this.waitForStateChange(presBtnWrap!)
     }
 
-    await clickActionButton(presBtnWrap!, '讲解')
+    await this.clickActionButton(presBtnWrap!, '讲解')
   }
 
-  async function isPresenting(element: ElementHandle | null) {
+  private async isPresenting(element: ElementHandle | null) {
     if (!element)
       return false
     const activeBtn = await element.$('button[class*="active"]')
     return !!activeBtn && (await activeBtn.textContent()) === '取消讲解'
   }
 
-  async function clickActionButton(element: ElementHandle, expectedText: string) {
+  private async clickActionButton(element: ElementHandle, expectedText: string) {
     const button = await element.$('button')
     if (!button) {
       logger.error('操作按钮查找失败: 找不到操作按钮')
@@ -134,39 +113,70 @@ export function createAutoPopUp(page: Page, userConfig: Partial<PopUpConfig> = {
     }
 
     const actualText = await button.textContent()
-    if (actualText !== expectedText) {
+    if (actualText !== expectedText)
       throw new Error(`按钮状态不一致，期望: ${expectedText}，实际: ${actualText}`)
-    }
 
     await button.click()
-    logger.success(`${expectedText} 商品 | ID: ${config.goodsIds[currentGoodIndex]} | 总商品数: ${config.goodsIds.length}`)
+    logger.success(`${expectedText} 商品 | ID: ${this.config.goodsIds[this.currentGoodIndex]} | 总商品数: ${this.config.goodsIds.length}`)
   }
 
-  async function waitForStateChange(element: ElementHandle) {
+  private async waitForStateChange(element: ElementHandle) {
     await element.waitForSelector(
-      `button:not([class*="active"])`,
+      'button:not([class*="active"])',
       { timeout: 10000 },
     )
   }
 
-  validateConfig()
+  private validateConfig() {
+    if (this.config.goodsIds.length === 0)
+      throw new Error('商品配置验证失败: 必须提供至少一个商品ID')
 
-  return {
-    start: () => {
-      scheduler.start()
-    },
-    stop: () => {
-      scheduler.stop()
-    },
-    updateConfig: (newConfig: Partial<PopUpConfig>) => {
-      if (newConfig.scheduler) {
-        scheduler.updateConfig(newConfig)
-      }
-      config = merge({}, config, newConfig)
-    },
+    if (this.config.scheduler.interval[0] > this.config.scheduler.interval[1])
+      throw new Error('配置验证失败：计时器区间设置错误')
 
-    get isRunning() {
-      return scheduler.isRunning
-    },
+    logger.info(`商品配置验证通过，共加载 ${this.config.goodsIds.length} 个商品`)
   }
+
+  public start() {
+    this.scheduler.start()
+  }
+
+  public stop() {
+    this.scheduler.stop()
+  }
+
+  public updateConfig(newConfig: Partial<PopUpConfig>) {
+    if (newConfig.scheduler)
+      this.scheduler.updateConfig(newConfig)
+    this.config = merge({}, this.config, newConfig)
+  }
+
+  public get isRunning() {
+    return this.scheduler.isRunning
+  }
+}
+
+// IPC 处理程序
+function setupIpcHandlers() {
+  ipcMain.handle(IPC_CHANNELS.tasks.autoPopUp.start, async (_, config: Partial<PopUpConfig>) => {
+    try {
+      pageManager.register('autoPopUp', page => new PopUpManager(page, config))
+      pageManager.startTask('autoPopUp')
+      return true
+    }
+    catch (error) {
+      logger.error('启动自动弹窗失败:', error instanceof Error ? error.message : error)
+      return false
+    }
+  })
+
+  ipcMain.handle(IPC_CHANNELS.tasks.autoPopUp.stop, async () => {
+    pageManager.stopTask('autoPopUp')
+  })
+}
+
+setupIpcHandlers()
+
+export function createAutoPopUp(page: Page, config: Partial<PopUpConfig> = {}) {
+  return new PopUpManager(page, config)
 }
