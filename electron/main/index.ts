@@ -26,6 +26,7 @@ import windowManager from './windowManager'
 import './tasks/liveControl'
 import './tasks/autoMessage'
 import './tasks/autoPopUp'
+import './tasks/autoReply'
 
 const _require = createRequire(import.meta.url)
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
