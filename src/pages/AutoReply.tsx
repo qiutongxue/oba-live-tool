@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
-import { useAutoReply } from '@/hooks/useAutoReply'
+import { useComment } from '@/hooks/useComment'
 import { useLiveControl } from '@/hooks/useLiveControl'
 import { cn } from '@/lib/utils'
 import { useEffect } from 'react'
@@ -10,15 +10,15 @@ export default function AutoReply() {
   const {
     isRunning,
     comments,
-    startAutoReply,
-  } = useAutoReply()
+    startCommentListener,
+  } = useComment()
   const { isConnected } = useLiveControl()
 
   useEffect(() => {
     if (isConnected && !isRunning) {
-      startAutoReply()
+      startCommentListener()
     }
-  }, [isRunning, isConnected, startAutoReply])
+  }, [isRunning, isConnected, startCommentListener])
 
   return (
     <div className="container max-w-4xl py-8">
