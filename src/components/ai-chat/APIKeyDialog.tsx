@@ -31,8 +31,9 @@ export function APIKeyDialog() {
 
   const handleSave = () => {
     setConfig(tempConfig)
-    setApiKey('deepseek', tempKeys.deepseek)
-    setApiKey('openrouter', tempKeys.openrouter)
+    Object.keys(providers).forEach((key) => {
+      setApiKey(key as AIProvider, tempKeys[key as AIProvider])
+    })
     setOpen(false)
   }
 
