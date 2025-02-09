@@ -6,14 +6,12 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { useAutoPopUp } from '@/hooks/useAutoPopUp'
-import { useLiveControl } from '@/hooks/useLiveControl'
 import { useToast } from '@/hooks/useToast'
 import { PlusIcon, TrashIcon } from '@radix-ui/react-icons'
 import React, { useCallback, useState } from 'react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 
 export default function AutoPopUp() {
-  const { isConnected } = useLiveControl()
   const { store, saveConfig, hasChanges } = useAutoPopUp()
   const [validationError, setValidationError] = useState<string | null>(null)
   const { toast } = useToast()
@@ -186,7 +184,6 @@ export default function AutoPopUp() {
 
       <TaskOperationButtons
         hasChanges={hasChanges}
-        isConnected={isConnected}
         isTaskRunning={store.isRunning}
         onSave={saveConfig}
         onStartStop={store.isRunning ? onStopTask : onStartTask}

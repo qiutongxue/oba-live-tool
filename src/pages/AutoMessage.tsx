@@ -7,14 +7,12 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { useAutoMessage } from '@/hooks/useAutoMessage'
-import { useLiveControl } from '@/hooks/useLiveControl'
 import { useToast } from '@/hooks/useToast'
 import { PlusIcon, TrashIcon } from '@radix-ui/react-icons'
 import React, { useCallback, useState } from 'react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 
 export default function AutoMessage() {
-  const { isConnected } = useLiveControl()
   const { hasChanges, saveConfig, store } = useAutoMessage()
   const { toast } = useToast()
   const [validationError] = useState<string | null>(null)
@@ -198,7 +196,6 @@ export default function AutoMessage() {
 
       <TaskOperationButtons
         hasChanges={hasChanges}
-        isConnected={isConnected}
         isTaskRunning={store.isRunning}
         onSave={saveConfig}
         onStartStop={store.isRunning ? onStopTask : onStartTask}
