@@ -11,16 +11,14 @@ export default function AutoReply() {
     isRunning,
     comments,
     startAutoReply,
-    setIsRunning,
   } = useAutoReply()
   const { isConnected } = useLiveControl()
 
   useEffect(() => {
     if (isConnected && !isRunning) {
-      setIsRunning(true)
       startAutoReply()
     }
-  }, [isRunning, isConnected, startAutoReply, setIsRunning])
+  }, [isRunning, isConnected, startAutoReply])
 
   return (
     <div className="container max-w-4xl py-8">
@@ -73,7 +71,7 @@ export default function AutoReply() {
                       <span className="font-medium text-gray-900">
                         {comment.nickname}
                       </span>
-                      <span className="mx-1.5 text-gray-400">·</span>
+                      <span className="mx-1.5 text-gray-400">: </span>
                       <span className="text-gray-700">{comment.content}</span>
                     </div>
                   ))}

@@ -8,18 +8,14 @@ export function useIpc() {
   const { addComment } = useAutoReplyStore()
 
   useEffect(() => {
-    console.warn('useIpc')
-    const removeListeners: (() => void)[] = []
-
-    removeListeners.push(
+    const removeListeners: (() => void)[] = [
       window.ipcRenderer.on(
         IPC_CHANNELS.tasks.autoReply.showComment,
         (comment: Comment) => {
           addComment(comment)
         },
-
       ),
-    )
+    ]
 
     return () => {
       removeListeners.forEach(removeListener => removeListener())
