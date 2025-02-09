@@ -29,7 +29,7 @@ const DEFAULT_CONFIG: RequiredWith<MessageConfig, 'scheduler'> = {
 }
 
 class MessageManager {
-  private currentMessageIndex = 0
+  private currentMessageIndex = -1
   private readonly config: RequiredWith<MessageConfig, 'scheduler'>
   private readonly page: Page
   private readonly scheduler: ReturnType<typeof createScheduler>
@@ -140,7 +140,10 @@ class MessageManager {
   }
 
   public get currentMessage() {
-    return this.config.messages[this.currentMessageIndex]
+    if (this.config.messages.length === 0) {
+      return ''
+    }
+    return this.config.messages[Math.max(0, this.currentMessageIndex)]
   }
 
   public get isRunning() {
