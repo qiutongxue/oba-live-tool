@@ -157,39 +157,63 @@ class CommentManager {
   }
 
   public async start() {
-    if (this.isRunning)
-      return
-
-    const commentListWrapper = await this.page.$(COMMENT_LIST_WRAPPER)
-    if (!commentListWrapper) {
-      logger.error('未找到直播互动内容，可能未开播')
+    logger.debug('开始启动自动回复，当前状态:', this.isRunning)
+    if (this.isRunning) {
+      logger.warn('自动回复已在运行中')
       return
     }
-
-    // 在启动时设置处理函数
-    await this.setupCommentHandler()
-    await this.setupCommentObserver()
-
-    // 处理已存在的评论
-    await this.processExistingComments()
-
+    // 立即设置为 true，如果在 start 完成时再设置，下面异步任务执行的过程中有可能会被再次调用 start，导致执行两遍
     this.isRunning = true
+
+    try {
+      const commentListWrapper = await this.page.$(COMMENT_LIST_WRAPPER)
+      if (!commentListWrapper) {
+        logger.error('未找到直播互动内容，可能未开播')
+        this.isRunning = false // 确保状态正确
+        return
+      }
+
+      // 在启动时设置处理函数
+      await this.setupCommentHandler()
+      await this.setupCommentObserver()
+
+      // 处理已存在的评论
+      await this.processExistingComments()
+
+      logger.success('自动回复启动成功')
+    }
+    catch (error) {
+      logger.error('启动自动回复失败:', error instanceof Error ? error.message : String(error))
+      // 确保出错时状态正确
+      this.isRunning = false
+      throw error
+    }
   }
 
   public async stop() {
-    if (!this.isRunning)
+    logger.debug('停止自动回复，当前状态:', this.isRunning)
+    if (!this.isRunning) {
+      logger.warn('自动回复已经停止')
       return
+    }
 
-    // 调用页面中的清理函数
-    await this.page.evaluate(() => {
-      if ((window as any).cleanupAutoReply) {
-        (window as any).cleanupAutoReply()
-        delete (window as any).cleanupAutoReply
-      }
-    })
+    try {
+      // 调用页面中的清理函数
+      await this.page.evaluate(() => {
+        if ((window as any).cleanupAutoReply) {
+          (window as any).cleanupAutoReply()
+          delete (window as any).cleanupAutoReply
+          delete (window as any).parseComment
+        }
+      })
 
-    this.isRunning = false
-    logger.info('自动回复已停止')
+      this.isRunning = false
+      logger.success('自动回复已停止')
+    }
+    catch (error) {
+      logger.error('停止自动回复失败:', error instanceof Error ? error.message : String(error))
+      throw error
+    }
   }
 
   public get running() {
@@ -204,21 +228,29 @@ class CommentManager {
 function setupIpcHandlers() {
   ipcMain.handle(IPC_CHANNELS.tasks.autoReply.start, async () => {
     try {
-      if (!pageManager.contains('autoReply'))
+      if (!pageManager.contains('autoReply')) {
+        logger.debug('注册自动回复任务')
         pageManager.register('autoReply', page => new CommentManager(page))
+      }
 
       pageManager.startTask('autoReply')
       return true
     }
     catch (error) {
-      logger.error('启动自动回复失败:', error instanceof Error ? error.message : error)
+      logger.error('启动自动回复失败:', error instanceof Error ? error.message : String(error))
       return false
     }
   })
 
   ipcMain.handle(IPC_CHANNELS.tasks.autoReply.stop, async () => {
-    pageManager.stopTask('autoReply')
-    return true
+    try {
+      pageManager.stopTask('autoReply')
+      return true
+    }
+    catch (error) {
+      logger.error('停止自动回复失败:', error instanceof Error ? error.message : String(error))
+      return false
+    }
   })
 }
 

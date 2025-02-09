@@ -35,6 +35,16 @@ export class TaskManager {
   }
 
   register(taskName: string, creator: (args: any, userConfig?: BaseConfig) => Scheduler, userConfig?: BaseConfig) {
+    if (this.tasks[taskName]?.isRunning) {
+      this.logger.warn(`Task ${taskName} is already running`)
+      return
+    }
+
+    if (this.tasks[taskName]) {
+      this.tasks[taskName].stop()
+      delete this.tasks[taskName]
+    }
+
     const scheduler = creator(this.page, userConfig)
     this.tasks[taskName] = scheduler
   }
@@ -52,12 +62,17 @@ export class TaskManager {
   startTask(taskName: string) {
     if (!this.tasks[taskName])
       throw new Error(`Task ${taskName} not found`)
+    if (this.tasks[taskName].isRunning)
+      return
+
+    this.logger.info(`Starting task ${taskName}`)
     this.tasks[taskName].start()
   }
 
   stopTask(taskName: string) {
     if (!this.tasks[taskName])
       throw new Error(`Task ${taskName} not found`)
+    this.logger.info(`Stopping task ${taskName}`)
     this.tasks[taskName].stop()
   }
 }
