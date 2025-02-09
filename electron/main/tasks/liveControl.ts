@@ -1,5 +1,6 @@
 import type playwright from 'playwright'
 import { pageManager } from '#/taskManager'
+import windowManager from '#/windowManager'
 import { ipcMain } from 'electron'
 import { chromium } from 'playwright-extra'
 import stealth from 'puppeteer-extra-plugin-stealth'
@@ -121,7 +122,7 @@ class LiveControlManager {
     this.chromePath = path
   }
 
-  public async connect({ headless = true, cookies = '' }: BrowserConfig): Promise<{ browser: playwright.Browser, page: playwright.Page }> {
+  public async connect({ headless = true, cookies = '' }: BrowserConfig): Promise<BrowserSession> {
     logger.info('启动中……')
 
     let loginSuccess = false
@@ -170,8 +171,7 @@ class LiveControlManager {
     // 等待中控台页面加载完成
     await session.page.waitForSelector(GOODS_ITEM_SELECTOR, { timeout: 0 })
     logger.success('登录成功')
-
-    return { browser: session.browser, page: session.page }
+    return session
   }
 
   public get cookies() {
@@ -191,6 +191,10 @@ function setupIpcHandlers() {
 
         pageManager.setBrowser(browser)
         pageManager.setPage(page)
+
+        page.on('close', () => {
+          windowManager.sendToWindow('main', IPC_CHANNELS.tasks.liveControl.disconnect)
+        })
 
         return manager.cookies
       }
