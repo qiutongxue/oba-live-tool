@@ -45,21 +45,25 @@ interface AIChat {
 export const useAIChatStore = create<AIChat>()(
   persist(
     immer((set) => {
+      const modelPreferences = Object.keys(providers).reduce((acc, provider) => {
+        acc[provider as AIProvider] = providers[provider as AIProvider].models[0]
+        return acc
+      }, {} as Record<AIProvider, string>)
+
+      const apiKeys = Object.keys(providers).reduce((acc, provider) => {
+        acc[provider as AIProvider] = ''
+        return acc
+      }, {} as Record<AIProvider, string>)
+
       return {
         messages: [],
         isLoading: false,
         config: {
           provider: 'deepseek',
           model: providers.deepseek.models[0],
-          modelPreferences: {
-            deepseek: providers.deepseek.models[0],
-            openrouter: providers.openrouter.models[0],
-          },
+          modelPreferences,
         },
-        apiKeys: {
-          deepseek: '',
-          openrouter: '',
-        },
+        apiKeys,
         setConfig: (config) => {
           set((state) => {
             if (config.provider) {
