@@ -1,5 +1,5 @@
 import type { Page } from 'playwright'
-import { COMMENT_LIST_WRAPPER } from '#/constants'
+import { COMMENT_LIST_WRAPPER, COMMENT_TEXTAREA_SELECTOR, SUBMIT_COMMENT_SELECTOR } from '#/constants'
 import { createLogger } from '#/logger'
 import { pageManager } from '#/taskManager'
 import windowManager from '#/windowManager'
@@ -10,6 +10,7 @@ const TASK_NAME = '自动回复'
 const logger = createLogger(TASK_NAME)
 
 interface CommentData {
+  id: string
   nickname: string | undefined
   authorTags: (string | undefined)[]
   commentTags: (string | undefined)[]
@@ -19,6 +20,7 @@ interface CommentData {
 
 class CommentManager {
   private readonly page: Page
+
   public isRunning = false
   private handlerInitialized = false
 
@@ -96,6 +98,7 @@ class CommentManager {
           .replace(/\s+/g, ' ') || ''
 
         return {
+          id: crypto.randomUUID(),
           nickname,
           authorTags,
           commentTags,
@@ -226,14 +229,14 @@ class CommentManager {
 
 // IPC 处理程序
 function setupIpcHandlers() {
-  ipcMain.handle(IPC_CHANNELS.tasks.autoReply.start, async () => {
+  ipcMain.handle(IPC_CHANNELS.tasks.autoReply.startCommentListener, async () => {
     try {
-      if (!pageManager.contains('autoReply')) {
+      if (!pageManager.contains('commentListener')) {
         logger.debug('注册自动回复任务')
-        pageManager.register('autoReply', page => new CommentManager(page))
+        pageManager.register('commentListener', page => new CommentManager(page))
       }
 
-      pageManager.startTask('autoReply')
+      pageManager.startTask('commentListener')
       return true
     }
     catch (error) {
@@ -242,15 +245,32 @@ function setupIpcHandlers() {
     }
   })
 
-  ipcMain.handle(IPC_CHANNELS.tasks.autoReply.stop, async () => {
+  ipcMain.handle(IPC_CHANNELS.tasks.autoReply.stopCommentListener, async () => {
     try {
-      pageManager.stopTask('autoReply')
+      pageManager.stopTask('commentListener')
       return true
     }
+
     catch (error) {
       logger.error('停止自动回复失败:', error instanceof Error ? error.message : String(error))
       return false
     }
+  })
+
+  ipcMain.handle(IPC_CHANNELS.tasks.autoReply.sendReply, async (_, message) => {
+    const page = pageManager.getPage()
+    const textarea = await page.$(COMMENT_TEXTAREA_SELECTOR)
+    if (!textarea) {
+      throw new Error('找不到评论框，请检查是否开播 | 页面是否在直播中控台')
+    }
+
+    await textarea.fill(message)
+    const submit_btn = await page.$(SUBMIT_COMMENT_SELECTOR)
+    if (!submit_btn || (await submit_btn.getAttribute('class'))?.includes('isDisabled')) {
+      throw new Error('无法点击发布按钮')
+    }
+    logger.info(`成功发送 AI 回复：${message}`)
+    await submit_btn.click()
   })
 }
 

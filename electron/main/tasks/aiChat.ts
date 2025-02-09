@@ -82,4 +82,28 @@ export function setupAIChat() {
       }
     },
   )
+
+  ipcMain.handle(
+    IPC_CHANNELS.tasks.aiChat.normalChat,
+    async (event, { messages, apiKey, provider, model }) => {
+      try {
+        const openai = createOpenAIClient(apiKey, provider)
+        logger.debug('[normal] AI 回答开始')
+        const response = await openai.chat.completions.create({
+          model,
+          messages,
+        })
+        const reply = response.choices?.[0]?.message?.content
+        logger.info(`[normal] ${reply}`)
+        return reply
+      }
+      catch (error) {
+        logger.error('[normal] AI 拒绝回答')
+        handleError(error, event.sender)
+      }
+      finally {
+        logger.debug('[normal] AI 回答结束')
+      }
+    },
+  )
 }

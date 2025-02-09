@@ -4,7 +4,7 @@ import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { create } from 'zustand'
 
 export interface Comment {
-  id?: string
+  id: string
   nickname: string
   authorTags: string[]
   commentTags: string[]
@@ -26,7 +26,7 @@ export const useCommentStore = create<CommentStore>(set => ({
 
   setIsRunning: running => set({ isRunning: running }),
   addComment: comment => set(state => ({
-    comments: [{ ...comment, id: crypto.randomUUID() }, ...state.comments],
+    comments: [{ ...comment }, ...state.comments],
   })),
   clearComments: () => set({ comments: [] }),
 
@@ -46,7 +46,7 @@ export function useComment() {
   const startCommentListener = useCallback(async () => {
     try {
       const result = await window.ipcRenderer.invoke(
-        IPC_CHANNELS.tasks.autoReply.start,
+        IPC_CHANNELS.tasks.autoReply.startCommentListener,
       )
       if (!result)
         throw new Error('启动自动回复失败')
@@ -61,7 +61,7 @@ export function useComment() {
   // 停止监听
   const stopCommentListener = useCallback(async () => {
     try {
-      await window.ipcRenderer.invoke(IPC_CHANNELS.tasks.autoReply.stop)
+      await window.ipcRenderer.invoke(IPC_CHANNELS.tasks.autoReply.stopCommentListener)
       setIsRunning(false)
       toast.success('自动回复已停止')
     }
@@ -87,6 +87,5 @@ export function useComment() {
     stopCommentListener,
     clearComments,
     formatTime,
-
   }
 }
