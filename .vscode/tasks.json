@@ -13,7 +13,7 @@
         "fileLocation": "relative",
         "pattern": {
           // TODO: correct "regexp"
-          "regexp": "^([a-zA-Z]\\:\/?([\\w\\-]\/?)+\\.\\w+):(\\d+):(\\d+): (ERROR|WARNING)\\: (.*)$",
+          "regexp": "^([a-zA-Z]\\:\\/?([\\w\\-]\\/?)+\\.\\w+):(\\d+):(\\d+): (ERROR|WARNING)\\: (.*)$",
           "file": 1,
           "line": 3,
           "column": 4,
