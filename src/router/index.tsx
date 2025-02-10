@@ -3,7 +3,7 @@ import AutoMessage from '@/pages/AutoMessage'
 import AutoPopUp from '@/pages/AutoPopUp'
 import AutoReply from '@/pages/AutoReply'
 import BrowserControl from '@/pages/BrowserControl'
-import Settings from '@/pages/Settings'
+import Settings from '@/pages/SettingsPage'
 import { createHashRouter } from 'react-router'
 import App from '../App'
 
