@@ -1,8 +1,8 @@
 import { useEffect } from 'react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
-import { useTaskConfig } from './useTaskConfig'
 import { useToast } from './useToast'
 
 export interface AutoMessageConfig {
@@ -26,7 +26,6 @@ const defaultConfig: AutoMessageConfig = {
 interface AutoMessageStore {
   config: AutoMessageConfig
   setConfig: (config: AutoMessageConfig) => void
-  originalConfig: AutoMessageConfig
   isRunning: boolean
   setIsRunning: (running: boolean) => void
   setScheduler: (scheduler: AutoMessageConfig['scheduler']) => void
@@ -35,31 +34,36 @@ interface AutoMessageStore {
   setRandom: (random: AutoMessageConfig['random']) => void
 }
 
-export const useAutoMessageStore = create<AutoMessageStore>()(immer((set) => {
-  return {
-    config: defaultConfig,
-    originalConfig: defaultConfig,
-    isRunning: false,
-    setConfig: config => set((draft) => {
-      draft.config = config
-      draft.originalConfig = config
+export const useAutoMessageStore = create<AutoMessageStore>()(
+  persist(
+    immer((set) => {
+      return {
+        config: defaultConfig,
+        isRunning: false,
+        setConfig: config => set((draft) => {
+          draft.config = config
+        }),
+        setIsRunning: running => set((draft) => { draft.isRunning = running }),
+        setScheduler: scheduler => set((draft) => { draft.config.scheduler = scheduler }),
+        setMessages: messages => set((draft) => { draft.config.messages = messages }),
+        setPinTops: pinTops => set((draft) => { draft.config.pinTops = pinTops }),
+        setRandom: random => set((draft) => { draft.config.random = random }),
+      }
     }),
-    setIsRunning: running => set((draft) => { draft.isRunning = running }),
-    setScheduler: scheduler => set((draft) => { draft.config.scheduler = scheduler }),
-    setMessages: messages => set((draft) => { draft.config.messages = messages }),
-    setPinTops: pinTops => set((draft) => { draft.config.pinTops = pinTops }),
-    setRandom: random => set((draft) => { draft.config.random = random }),
-  }
-}))
+    {
+      name: 'auto-message-storage',
+      partialize: state => ({
+        config: state.config,
+        originalConfig: state.config,
+      }),
+    },
+  ),
+)
 
 export function useAutoMessage() {
   const store = useAutoMessageStore()
-  const { saveConfig } = useTaskConfig()
   const { toast } = useToast()
 
-  const hasChanges = () => {
-    return JSON.stringify(store.config) !== JSON.stringify(store.originalConfig)
-  }
   useEffect(() => {
     const handleTaskStop = () => {
       store.setIsRunning(false)
@@ -71,11 +75,6 @@ export function useAutoMessage() {
     }
   }, [store, toast])
   return {
-    hasChanges,
-    saveConfig: async () => {
-      store.setConfig(store.config)
-      await saveConfig()
-    },
     store,
   }
 }

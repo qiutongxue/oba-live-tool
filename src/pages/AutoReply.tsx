@@ -1,6 +1,7 @@
 import { APIKeyDialog } from '@/components/ai-chat/APIKeyDialog'
 import { PromptCard } from '@/components/auto-reply/PromptCard'
-import { TaskButton } from '@/components/TaskButton'
+import { TaskButton } from '@/components/common/TaskButton'
+import { Title } from '@/components/common/Title'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -51,13 +52,10 @@ export default function AutoReply() {
 
   return (
     <div className="container py-8 space-y-4">
-      <div className="mb-8">
+      <div className="mb-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">自动回复</h1>
-            <p className="text-muted-foreground mt-2">
-              查看直播间的实时评论并自动回复
-            </p>
+            <Title title="自动回复" description="查看直播间的实时评论并自动回复" />
           </div>
           <div className="flex items-center gap-2">
             <APIKeyDialog />

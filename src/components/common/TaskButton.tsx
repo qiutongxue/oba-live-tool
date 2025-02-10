@@ -1,7 +1,7 @@
 import { useLiveControlStore } from '@/hooks/useLiveControl'
 import { PlayIcon, StopIcon } from '@radix-ui/react-icons'
-import { Button } from './ui/button'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip'
+import { Button } from '../ui/button'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip'
 
 export function TaskButton({
   isTaskRunning,

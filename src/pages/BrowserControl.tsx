@@ -1,3 +1,4 @@
+import { Title } from '@/components/common/Title'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useChromeConfig } from '@/hooks/useChromeConfig'
@@ -51,12 +52,9 @@ export default function BrowserControl() {
   }
 
   return (
-    <div className="container py-8 space-y-8">
+    <div className="container py-8 space-y-4">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">直播控制台</h1>
-        <p className="text-muted-foreground mt-2">
-          连接并管理您的直播控制台。
-        </p>
+        <Title title="直播控制台" description="连接并管理您的直播控制台" />
       </div>
 
       <div className="space-y-8">

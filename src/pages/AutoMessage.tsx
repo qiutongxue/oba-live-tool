@@ -1,4 +1,5 @@
-import { TaskOperationButtons } from '@/components/TaskOperationButtons'
+import { TaskButton } from '@/components/common/TaskButton'
+import { Title } from '@/components/common/Title'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -13,7 +14,7 @@ import React, { useCallback, useState } from 'react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 
 export default function AutoMessage() {
-  const { hasChanges, saveConfig, store } = useAutoMessage()
+  const { store } = useAutoMessage()
   const { toast } = useToast()
   const [validationError] = useState<string | null>(null)
 
@@ -35,6 +36,15 @@ export default function AutoMessage() {
     store.setIsRunning(false)
   }, [store])
 
+  const handleTaskButtonClick = () => {
+    if (!store.isRunning) {
+      onStartTask()
+    }
+    else {
+      onStopTask()
+    }
+  }
+
   const handleMessageChange = (index: number, value: string) => {
     if (value.length > 50)
       return // 不允许输入超过50个字符
@@ -45,12 +55,14 @@ export default function AutoMessage() {
   }
 
   return (
-    <div className="container py-8 space-y-6">
-      <div className="space-y-0.5">
-        <h1 className="text-3xl font-bold tracking-tight">自动发言</h1>
-        <p className="text-muted-foreground">
-          配置自动发送消息的规则。
-        </p>
+    <div className="container py-8 space-y-4">
+      <div className="flex items-center justify-between">
+        <Title title="自动发言" description="配置自动发送消息的规则" />
+        <TaskButton
+          isTaskRunning={store.isRunning}
+          onStartStop={handleTaskButtonClick}
+        />
+
       </div>
 
       {validationError && (
@@ -194,12 +206,6 @@ export default function AutoMessage() {
         </Card>
       </div>
 
-      <TaskOperationButtons
-        hasChanges={hasChanges}
-        isTaskRunning={store.isRunning}
-        onSave={saveConfig}
-        onStartStop={store.isRunning ? onStopTask : onStartTask}
-      />
     </div>
   )
 }
