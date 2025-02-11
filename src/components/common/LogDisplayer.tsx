@@ -12,6 +12,14 @@ interface ParsedLog {
   message: string
 }
 
+interface LogMessage {
+  logId: string
+  date: Date
+  scope?: string
+  level: string
+  data: string[]
+}
+
 const MAX_LOG_MESSAGES = 200 // 仅展示最近的 200 条日志
 
 export default function LogDisplayer() {
@@ -27,17 +35,17 @@ export default function LogDisplayer() {
     }
   }, [autoScroll])
 
-  const parseLogMessage = (log: string): ParsedLog | null => {
+  const parseLogMessage = (log: LogMessage): ParsedLog | null => {
     // 匹配格式：[时间] [模块] » 级别 消息
-    const match = log.match(/\[(.*?)\] \[(.*?)\] » (\w+)\s+(.*)/)
-    if (!match)
+    if (!log.data[0]) {
       return null
+    }
     return {
       id: crypto.randomUUID(),
-      timestamp: match[1],
-      module: match[2],
-      level: match[3],
-      message: match[4],
+      timestamp: log.date.toLocaleString(),
+      module: log.scope ?? '',
+      level: log.level.toUpperCase(),
+      message: log.data[0],
     }
   }
 
@@ -67,7 +75,7 @@ export default function LogDisplayer() {
 
   useEffect(() => {
     let timer: NodeJS.Timeout | null = null
-    const handleLogMessage = (message: string) => {
+    const handleLogMessage = (message: LogMessage) => {
       const parsed = parseLogMessage(message)
       if (parsed)
         setLogMessages(prev => [...prev.slice(-MAX_LOG_MESSAGES), parsed])

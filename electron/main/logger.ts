@@ -1,72 +1,28 @@
-import type { SignaleOptions } from 'signale'
-import process from 'node:process'
-import { Writable } from 'node:stream'
-import chalk from 'chalk'
-import signale from 'signale'
+import electronLog from 'electron-log'
 import windowManager from './windowManager'
 
-// 创建自定义流处理日志
-const logStream = new Writable({
-  write(chunk, encoding, callback) {
-    const logEntry = chunk.toString().trim()
-    windowManager.sendToWindow('main', 'log', logEntry)
-    callback()
-  },
-}) as NodeJS.WriteStream
-
-const options: SignaleOptions = {
-  stream: [process.stdout, logStream],
-  types: {
-    debug: {
-      color: 'gray',
-      badge: '⚒️',
-      label: chalk.bold.gray('DEBUG'),
-    },
-    info: {
-      color: 'blue',
-      badge: 'ℹ️',
-      label: chalk.bold.blue('INFO'),
-    },
-    success: {
-      color: 'green',
-      badge: '✅',
-      label: chalk.bold.green('SUCCESS'),
-    },
-    warn: {
-      color: 'yellow',
-      badge: '⚠️',
-      label: chalk.bold.yellow('WARN'),
-    },
-    error: {
-      color: 'red',
-      badge: '❌',
-      label: chalk.bold.red('ERROR'),
-    },
-    fatal: {
-      color: 'magenta',
-      badge: '💣',
-      label: chalk.bold.magenta('FATAL'),
-    },
-    note: {
-      color: 'cyan',
-      badge: '📝',
-      label: chalk.bold.cyan('NOTE'),
-    },
-  },
+// [2025-02-11 07:30:03.037] [中控台] » INFO         启动中……
+electronLog.transports.console.format = ({ data, level, message }) => {
+  const text = data.join('\n')
+  return [
+    `[${message.date.toLocaleString()}]`,
+    message.scope ? `[${message.scope}]` : '',
+    '»',
+    `${level.toUpperCase()}`,
+    `\t${text}`,
+  ]
 }
-
-const logger = new signale.Signale(options)
-logger.config({
-  displayDate: true,
-  displayTimestamp: true,
-  displayScope: true,
-  displayLabel: true,
-  displayBadge: false,
-  underlineLabel: false,
+electronLog.scope.labelPadding = false
+electronLog.addLevel('success', 3)
+electronLog.hooks.push((message, transport) => {
+  if (transport === electronLog.transports.console) {
+    windowManager.sendToWindow('main', 'log', message)
+  }
+  return message
 })
 
 export function createLogger(name: string) {
-  return logger.scope(name)
+  return electronLog.scope(name)
 }
 
-export default logger
+export default electronLog
