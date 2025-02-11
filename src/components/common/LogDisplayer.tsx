@@ -148,7 +148,6 @@ export default function LogDisplayer() {
                     [
                     {log.timestamp}
                     ]
-                    v
                   </span>
                   <span className="text-foreground/70 shrink-0">
                     [
