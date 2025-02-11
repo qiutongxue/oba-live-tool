@@ -22,6 +22,7 @@ import { useAIChatStore } from '@/hooks/useAIChat'
 import { GearIcon } from '@radix-ui/react-icons'
 import { useState } from 'react'
 import { providers } from 'shared/providers'
+import { ScrollArea } from '../ui/scroll-area'
 
 export function APIKeyDialog() {
   const { apiKeys, config, setConfig, setApiKey } = useAIChatStore()
@@ -97,11 +98,13 @@ export function APIKeyDialog() {
                   <SelectValue placeholder="选择模型" />
                 </SelectTrigger>
                 <SelectContent>
-                  {providers[tempConfig.provider].models.map(model => (
-                    <SelectItem key={model} value={model}>
-                      {model}
-                    </SelectItem>
-                  ))}
+                  <ScrollArea className="h-[200px]">
+                    {providers[tempConfig.provider].models.map(model => (
+                      <SelectItem key={model} value={model}>
+                        {model}
+                      </SelectItem>
+                    ))}
+                  </ScrollArea>
                 </SelectContent>
               </Select>
             </div>
