@@ -1,11 +1,13 @@
 import { useAutoMessage } from '@/hooks/useAutoMessage'
 import { useAutoPopUp } from '@/hooks/useAutoPopUp'
+import { useAutoReplyStore } from '@/hooks/useAutoReply'
 import { cn } from '@/lib/utils'
 import { NavLink } from 'react-router'
 
 export default function Sidebar() {
-  const { store: messageStore } = useAutoMessage()
-  const { store: popupStore } = useAutoPopUp()
+  const { store: { isRunning: isAutoMessageRunning } } = useAutoMessage()
+  const { store: { isRunning: isAutoPopupRunning } } = useAutoPopUp()
+  const { isRunning: isAutoReplyRunning } = useAutoReplyStore()
 
   const tabs = [
     {
@@ -20,7 +22,7 @@ export default function Sidebar() {
     {
       id: '/auto-message',
       name: '自动发言',
-      isRunning: messageStore.isRunning,
+      isRunning: isAutoMessageRunning,
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
@@ -30,7 +32,7 @@ export default function Sidebar() {
     {
       id: '/auto-popup',
       name: '自动弹窗',
-      isRunning: popupStore.isRunning,
+      isRunning: isAutoPopupRunning,
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
@@ -40,6 +42,7 @@ export default function Sidebar() {
     {
       id: '/auto-reply',
       name: '自动回复',
+      isRunning: isAutoReplyRunning,
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
