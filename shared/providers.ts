@@ -15,7 +15,7 @@ export const providers = {
     name: '硅基流动',
     baseURL: 'https://api.siliconflow.cn/v1',
     apiUrl: 'https://cloud.siliconflow.cn/account/ak',
-    models: ['deepseek-ai/DeepSeek-R1', 'Pro/deepseek-ai/DeepSeek-R1', 'deepseek-ai/DeepSeek-V3', 'Pro/deepseek-ai/DeepSeek-V3'],
+    models: ['deepseek-ai/DeepSeek-R1', 'Pro/deepseek-ai/DeepSeek-R1', 'deepseek-ai/DeepSeek-V3', 'Pro/deepseek-ai/DeepSeek-V3', 'deepseek-ai/DeepSeek-R1-Distill-Llama-70B', 'deepseek-ai/DeepSeek-R1-Distill-Qwen-32B', 'deepseek-ai/DeepSeek-R1-Distill-Qwen-14B', 'deepseek-ai/DeepSeek-R1-Distill-Llama-8B', 'deepseek-ai/DeepSeek-R1-Distill-Qwen-7B', 'deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B', 'Pro/deepseek-ai/DeepSeek-R1-Distill-Llama-8B', 'Pro/deepseek-ai/DeepSeek-R1-Distill-Qwen-7B', 'Pro/deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B'],
   },
 
 } as const
