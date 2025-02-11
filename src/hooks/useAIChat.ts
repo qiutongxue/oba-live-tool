@@ -26,9 +26,10 @@ interface ProviderConfig {
   }
 }
 
+type Status = 'ready' | 'waiting' | 'replying'
 interface AIChat {
   messages: ChatMessage[]
-  isLoading: boolean
+  status: Status
   apiKeys: APIKeys
   config: ProviderConfig
   setConfig: (config: Partial<ProviderConfig>) => void
@@ -38,7 +39,7 @@ interface AIChat {
   appendToReasoning: (chunk: string) => void
   tryToHandleEmptyMessage: (message: string) => void
   setMessages: (messages: ChatMessage[]) => void
-  setLoading: (loading: boolean) => void
+  setStatus: (status: Status) => void
   clearMessages: () => void
 }
 
@@ -57,7 +58,7 @@ export const useAIChatStore = create<AIChat>()(
 
       return {
         messages: [],
-        isLoading: false,
+        status: 'ready',
         config: {
           provider: 'deepseek',
           model: providers.deepseek.models[0],
@@ -125,9 +126,9 @@ export const useAIChatStore = create<AIChat>()(
             state.messages = messages
           })
         },
-        setLoading: (loading) => {
+        setStatus: (status) => {
           set((state) => {
-            state.isLoading = loading
+            state.status = status
           })
         },
         clearMessages: () => {

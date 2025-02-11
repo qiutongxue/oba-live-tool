@@ -15,7 +15,7 @@ import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { providers } from 'shared/providers'
 
 export default function AIChat() {
-  const { messages, addMessage, isLoading, setLoading, appendToChat, tryToHandleEmptyMessage, appendToReasoning, clearMessages, config, apiKeys } = useAIChatStore()
+  const { messages, addMessage, status, setStatus, appendToChat, tryToHandleEmptyMessage, appendToReasoning, clearMessages, config, apiKeys } = useAIChatStore()
   const [input, setInput] = useState('')
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const viewportRef = useRef<HTMLDivElement>(null)
@@ -43,7 +43,7 @@ export default function AIChat() {
 
   const trySendMessage = async (messages: { role: string, content: string }[]) => {
     return new Promise((resolve, reject) => {
-      setLoading(true)
+      setStatus('waiting')
       const removeStreamListener = window.ipcRenderer.on(IPC_CHANNELS.tasks.aiChat.stream, streamListener)
       const removeErrorHandler = window.ipcRenderer.on(IPC_CHANNELS.tasks.aiChat.error, errorHandler)
 
@@ -59,7 +59,7 @@ export default function AIChat() {
           resolve(true)
         }
         else if (chunk) {
-          setLoading(false)
+          setStatus('replying')
           // 更新 UI 的逻辑
           if (type === 'content') {
             appendToChat(chunk)
@@ -98,8 +98,7 @@ export default function AIChat() {
       // 使用 openai 的流式请求 OpenRouter 可能会传回空数据
       // 如果是数据，需要手动设置一个消息
       tryToHandleEmptyMessage('可能是网络请求超时（DeepSeek），也可能是接收到了空数据（OpenRouter）')
-
-      setLoading(false)
+      setStatus('ready')
     })
   }
 
@@ -108,7 +107,7 @@ export default function AIChat() {
       toast.error('请先配置 API Key')
       return
     }
-    if (!input.trim() || isLoading)
+    if (!input.trim() || status !== 'ready')
       return
 
     const userMessage = input.trim()
@@ -170,7 +169,7 @@ export default function AIChat() {
               {messages.map(message => (
                 <Message key={message.id} {...message} onRetry={trySendMessage} />
               ))}
-              {isLoading && (
+              {status === 'waiting' && (
                 <div className="flex justify-start">
                   <LoadingIcon size="sm" />
                   {/* <div className="max-w-[85%] rounded-2xl px-4 py-3 bg-muted">
@@ -198,7 +197,7 @@ export default function AIChat() {
               size="icon"
               className="px-8 h-auto bg-primary hover:bg-primary/90"
               onClick={handleSubmit}
-              disabled={!input.trim() || isLoading}
+              disabled={!input.trim() || status !== 'ready'}
             >
               <PaperPlaneIcon className="h-5 w-5" />
             </Button>
