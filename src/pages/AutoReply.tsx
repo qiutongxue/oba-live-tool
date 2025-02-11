@@ -5,7 +5,6 @@ import { PromptCard } from '@/components/auto-reply/PromptCard'
 import { TaskButton } from '@/components/common/TaskButton'
 import { Title } from '@/components/common/Title'
 import { useAutoReplyStore } from '@/hooks/useAutoReply'
-
 import { useState } from 'react'
 
 export default function AutoReply() {
@@ -38,7 +37,8 @@ export default function AutoReply() {
         </div>
       </div>
 
-      {/* Prompt 配置卡片 */}
+      {/* Prompt 配置 Drawer */}
+
       <PromptCard />
 
       {/* 评论和回复区域 */}
