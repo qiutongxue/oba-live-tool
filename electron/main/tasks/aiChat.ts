@@ -52,8 +52,8 @@ function sendStreamChunk(delta: any, index: number, sender: Electron.WebContents
 }
 
 function handleError(error: unknown, sender: Electron.WebContents) {
-  logger.error('AI 不想回答')
   const errorMessage = error instanceof Error ? error.message : String(error)
+  logger.error(`AI 不想回答：${errorMessage}`)
   sender.send(IPC_CHANNELS.tasks.aiChat.error, { error: errorMessage })
 }
 
@@ -98,7 +98,6 @@ export function setupAIChat() {
         return reply
       }
       catch (error) {
-        logger.error('[normal] AI 拒绝回答')
         handleError(error, event.sender)
       }
       finally {
