@@ -194,12 +194,12 @@ ipcMain.handle(IPC_CHANNELS.config.load, async () => {
 })
 
 // 添加新的 IPC 处理函数
-ipcMain.handle(IPC_CHANNELS.getChromePath, async () => {
+ipcMain.handle(IPC_CHANNELS.chrome.getPath, async () => {
   const path = await findChrome()
   return path
 })
 
-ipcMain.handle(IPC_CHANNELS.selectChromePath, async () => {
+ipcMain.handle(IPC_CHANNELS.chrome.selectPath, async () => {
   // 打开文件选择器，选择 chrome.exe
   const path = await dialog.showOpenDialog({
     properties: ['openFile'],
@@ -210,7 +210,7 @@ ipcMain.handle(IPC_CHANNELS.selectChromePath, async () => {
   }
 })
 
-ipcMain.handle(IPC_CHANNELS.toggleDevTools, (event) => {
+ipcMain.handle(IPC_CHANNELS.chrome.toggleDevTools, (event) => {
   const win = BrowserWindow.fromWebContents(event.sender)
   if (win) {
     if (win.webContents.isDevToolsOpened()) {

@@ -20,7 +20,7 @@ export function BrowserSetting() {
 
   // 监听主进程发送的 Chrome 路径
   useEffect(() => {
-    const removeListener = window.ipcRenderer.on(IPC_CHANNELS.setChromePath, (path: string) => {
+    const removeListener = window.ipcRenderer.on(IPC_CHANNELS.chrome.setPath, (path: string) => {
       if (path)
         setPath(path)
     })
@@ -34,7 +34,7 @@ export function BrowserSetting() {
 
   const handleSelectChrome = async () => {
     try {
-      const path = await window.ipcRenderer.invoke(IPC_CHANNELS.selectChromePath)
+      const path = await window.ipcRenderer.invoke(IPC_CHANNELS.chrome.selectPath)
       if (path) {
         setPath(path)
 
@@ -49,7 +49,7 @@ export function BrowserSetting() {
   const handleAutoDetect = async () => {
     try {
       setIsDetecting(true)
-      const result = await window.ipcRenderer.invoke(IPC_CHANNELS.getChromePath)
+      const result = await window.ipcRenderer.invoke(IPC_CHANNELS.chrome.getPath)
       if (result) {
         setPath(result)
 

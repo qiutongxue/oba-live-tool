@@ -7,10 +7,12 @@ export const IPC_CHANNELS = {
     autoMessage: {
       start: 'tasks:autoMessage:start',
       stop: 'tasks:autoMessage:stop',
+      updateConfig: 'tasks:autoMessage:updateConfig',
     },
     autoPopUp: {
       start: 'tasks:autoPopUp:start',
       stop: 'tasks:autoPopUp:stop',
+      updateConfig: 'tasks:autoPopUp:updateConfig',
     },
     aiChat: {
       chat: 'tasks:aiChat:chat',
@@ -32,8 +34,19 @@ export const IPC_CHANNELS = {
     save: 'config:save',
     load: 'config:load',
   },
-  getChromePath: 'chromePath:get',
-  setChromePath: 'chromePath:set',
-  selectChromePath: 'chromePath:select',
-  toggleDevTools: 'toggle-dev-tools',
+  chrome: {
+    getPath: 'chrome:getPath',
+    setPath: 'chrome:setPath',
+    selectPath: 'chrome:selectPath',
+    toggleDevTools: 'chrome:toggleDevTools',
+  },
+  updater: {
+    checkUpdate: 'updater:checkUpdate',
+    updateAvailable: 'updater:updateAvailable',
+    startDownload: 'updater:startDownload',
+    downloadProgress: 'updater:downloadProgress',
+    updateError: 'updater:updateError',
+    updateDownloaded: 'updater:updateDownloaded',
+    quitAndInstall: 'updater:quitAndInstall',
+  },
 } as const

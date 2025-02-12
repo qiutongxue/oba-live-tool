@@ -6,6 +6,7 @@ import type {
 } from 'electron-updater'
 import { createRequire } from 'node:module'
 import { app, ipcMain } from 'electron'
+import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { createLogger } from './logger'
 
 const { autoUpdater }: { autoUpdater: AppUpdater } = createRequire(import.meta.url)('electron-updater')
@@ -34,7 +35,7 @@ export async function update(win: Electron.BrowserWindow) {
   })
 
   // Checking for updates
-  ipcMain.handle('check-update', async (_, { source = 'github' }: { source: string }) => {
+  ipcMain.handle(IPC_CHANNELS.updater.checkUpdate, async (_, { source = 'github' }: { source: string }) => {
     if (!autoUpdater.forceDevUpdateConfig && !app.isPackaged) {
       const error = new Error('The update feature is only available after the package.')
       return { message: error.message, error }
@@ -91,28 +92,28 @@ export async function update(win: Electron.BrowserWindow) {
   })
 
   // Start downloading and feedback on progress
-  ipcMain.handle('start-download', (event: Electron.IpcMainInvokeEvent) => {
+  ipcMain.handle(IPC_CHANNELS.updater.startDownload, (event: Electron.IpcMainInvokeEvent) => {
     startDownload(
       (error, progressInfo) => {
         if (error) {
           logger.error('下载错误: ', error.message)
           // feedback download error message
-          event.sender.send('update-error', { message: error.message, error })
+          event.sender.send(IPC_CHANNELS.updater.updateError, { message: error.message, error })
         }
         else {
           // feedback update progress message
-          event.sender.send('download-progress', progressInfo)
+          event.sender.send(IPC_CHANNELS.updater.downloadProgress, progressInfo)
         }
       },
       () => {
         // feedback update downloaded message
-        event.sender.send('update-downloaded')
+        event.sender.send(IPC_CHANNELS.updater.updateDownloaded)
       },
     )
   })
 
   // Install now
-  ipcMain.handle('quit-and-install', () => {
+  ipcMain.handle(IPC_CHANNELS.updater.quitAndInstall, () => {
     autoUpdater.quitAndInstall(false, true)
   })
 }

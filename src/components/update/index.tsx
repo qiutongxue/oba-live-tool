@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Progress } from '@/components/ui/progress'
 import { DownloadIcon, ReloadIcon, RocketIcon } from '@radix-ui/react-icons'
 import { useCallback, useEffect, useState } from 'react'
+import { IPC_CHANNELS } from 'shared/ipcChannels'
 import './update.css'
 
 function Update({ source = 'github' }: { source: string }) {
@@ -23,13 +24,13 @@ function Update({ source = 'github' }: { source: string }) {
         onCancel: () => setModalOpen(false),
         onOk: () => {
           setDownloading(true)
-          window.ipcRenderer.invoke('start-download')
+          window.ipcRenderer.invoke(IPC_CHANNELS.updater.startDownload)
         },
       })
 
   const checkUpdate = async () => {
     setChecking(true)
-    const result = await window.ipcRenderer.invoke('check-update', { source })
+    const result = await window.ipcRenderer.invoke(IPC_CHANNELS.updater.checkUpdate, { source })
     setProgressInfo({ percent: 0 })
     setChecking(false)
     setModalOpen(true)
@@ -50,7 +51,7 @@ function Update({ source = 'github' }: { source: string }) {
         okText: '立即更新',
         onOk: () => {
           setDownloading(true)
-          window.ipcRenderer.invoke('start-download')
+          window.ipcRenderer.invoke(IPC_CHANNELS.updater.startDownload)
         },
       }))
       setUpdateAvailable(true)
@@ -77,7 +78,7 @@ function Update({ source = 'github' }: { source: string }) {
       ...state,
       cancelText: '稍后安装',
       okText: '马上安装',
-      onOk: () => window.ipcRenderer.invoke('quit-and-install'),
+      onOk: () => window.ipcRenderer.invoke(IPC_CHANNELS.updater.quitAndInstall),
     }))
   }, [])
 
@@ -107,10 +108,10 @@ function Update({ source = 'github' }: { source: string }) {
   }
 
   useEffect(() => {
-    const removeUpdateCanAvailable = window.ipcRenderer.on('update-can-available', onUpdateCanAvailable)
-    const removeUpdateError = window.ipcRenderer.on('update-error', onUpdateError)
-    const removeDownloadProgress = window.ipcRenderer.on('download-progress', onDownloadProgress)
-    const removeUpdateDownloaded = window.ipcRenderer.on('update-downloaded', onUpdateDownloaded)
+    const removeUpdateCanAvailable = window.ipcRenderer.on(IPC_CHANNELS.updater.updateAvailable, onUpdateCanAvailable)
+    const removeUpdateError = window.ipcRenderer.on(IPC_CHANNELS.updater.updateError, onUpdateError)
+    const removeDownloadProgress = window.ipcRenderer.on(IPC_CHANNELS.updater.downloadProgress, onDownloadProgress)
+    const removeUpdateDownloaded = window.ipcRenderer.on(IPC_CHANNELS.updater.updateDownloaded, onUpdateDownloaded)
 
     return () => {
       removeUpdateCanAvailable()
