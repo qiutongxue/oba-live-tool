@@ -1,14 +1,14 @@
 import type { Page } from 'playwright'
 import type { BaseConfig } from './scheduler'
-import { COMMENT_TEXTAREA_SELECTOR, PIN_TOP_SELECTOR, SUBMIT_COMMENT_SELECTOR } from '#/constants'
 import { createLogger } from '#/logger'
 import { pageManager } from '#/taskManager'
-import { randomInt, type RequiredWith } from '#/utils'
+import { randomInt } from '#/utils'
 import windowManager from '#/windowManager'
 import { ipcMain } from 'electron'
 import { merge } from 'lodash-es'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
-import { createScheduler } from './scheduler'
+import { LiveController } from './Controller'
+import { TaskScheduler } from './scheduler'
 
 const TASK_NAME = '自动发言'
 const logger = createLogger(TASK_NAME)
@@ -19,32 +19,24 @@ interface MessageConfig extends BaseConfig {
   random?: boolean
 }
 
-const DEFAULT_CONFIG: RequiredWith<MessageConfig, 'scheduler'> = {
-  scheduler: {
-    name: TASK_NAME,
-    interval: [30000, 60000],
-  },
-  messages: [],
-  random: false,
-}
-
 class MessageManager {
   private currentMessageIndex = -1
-  private readonly config: RequiredWith<MessageConfig, 'scheduler'>
-  private readonly page: Page
-  private readonly scheduler: ReturnType<typeof createScheduler>
+  private config: MessageConfig
+  private readonly scheduler: TaskScheduler
+  private controller: LiveController
 
-  constructor(page: Page, userConfig: Partial<MessageConfig> = {}) {
-    this.page = page
-    this.config = merge({}, DEFAULT_CONFIG, userConfig)
+  constructor(page: Page, userConfig: MessageConfig) {
+    this.validateConfig(userConfig)
+    this.config = userConfig
     this.scheduler = this.createTaskScheduler()
-    this.validateConfig()
+    this.controller = new LiveController(page)
   }
 
   private createTaskScheduler() {
-    return createScheduler(
+    return new TaskScheduler(
+      TASK_NAME,
       () => this.execute(),
-      merge(this.config.scheduler, {
+      merge({}, this.config.scheduler, {
         onStart: () => logger.info(`「${TASK_NAME}」开始执行`),
         onStop: () => {
           logger.info(`「${TASK_NAME}」停止执行`)
@@ -67,7 +59,8 @@ class MessageManager {
   private async execute() {
     try {
       const message = this.getNextMessage()
-      await this.sendMessage(message)
+      const isPinTop = this.config.pinTops === true || (Array.isArray(this.config.pinTops) && this.config.pinTops.includes(this.currentMessageIndex))
+      await this.controller.sendMessage(message, isPinTop)
     }
     catch (e) {
       logger.error(`「${TASK_NAME}」执行失败: ${e instanceof Error ? e.message : String(e)}`)
@@ -75,41 +68,8 @@ class MessageManager {
     }
   }
 
-  private async sendMessage(message: string) {
-    const textarea = await this.page.$(COMMENT_TEXTAREA_SELECTOR)
-    if (!textarea) {
-      throw new Error('找不到评论框，请检查是否开播 | 页面是否在直播中控台')
-    }
-
-    await textarea.fill(message)
-    const isPinTop = await this.handlePinTop()
-    await this.submitMessage()
-    logger.success(`发送${isPinTop ? '「置顶」' : ''}消息: ${message}`)
-  }
-
-  private async handlePinTop(): Promise<boolean> {
-    const { pinTops } = this.config
-    if (pinTops === true || (Array.isArray(pinTops) && pinTops.includes(this.currentMessageIndex))) {
-      const pinTopLabel = await this.page.$(PIN_TOP_SELECTOR)
-      if (!pinTopLabel) {
-        throw new Error('找不到置顶按钮，请检查是否开播 | 页面是否在直播中控台')
-      }
-      await pinTopLabel.click()
-      return true
-    }
-    return false
-  }
-
-  private async submitMessage() {
-    const submit_btn = await this.page.$(SUBMIT_COMMENT_SELECTOR)
-    if (!submit_btn || (await submit_btn.getAttribute('class'))?.includes('isDisabled')) {
-      throw new Error('无法点击发布按钮')
-    }
-    await submit_btn.click()
-  }
-
-  private validateConfig() {
-    if (this.config.messages.length === 0) {
+  private validateConfig(userConfig: MessageConfig) {
+    if (userConfig.messages.length === 0) {
       throw new Error('消息配置验证失败: 必须提供至少一条消息')
     }
 
@@ -134,9 +94,12 @@ class MessageManager {
   }
 
   public updateConfig(newConfig: Partial<MessageConfig>) {
-    if (newConfig.scheduler) {
-      this.scheduler.updateConfig(newConfig)
+    const config = merge({}, this.config, newConfig)
+    this.validateConfig(config)
+    if (config.scheduler) {
+      this.scheduler.updateConfig({ scheduler: config.scheduler })
     }
+    this.config = config
   }
 
   public get currentMessage() {
@@ -155,8 +118,8 @@ class MessageManager {
 function setupIpcHandlers() {
   ipcMain.handle(IPC_CHANNELS.tasks.autoMessage.start, async (_, config) => {
     try {
-      pageManager.register('autoMessage', page => new MessageManager(page, config))
-      pageManager.startTask('autoMessage')
+      pageManager.register(TASK_NAME, page => new MessageManager(page, config))
+      pageManager.startTask(TASK_NAME)
       return true
     }
     catch (error) {
@@ -166,13 +129,13 @@ function setupIpcHandlers() {
   })
 
   ipcMain.handle(IPC_CHANNELS.tasks.autoMessage.stop, async () => {
-    pageManager.stopTask('autoMessage')
+    pageManager.stopTask(TASK_NAME)
     return true
+  })
+
+  ipcMain.handle(IPC_CHANNELS.tasks.autoMessage.updateConfig, async (_, newConfig) => {
+    pageManager.updateTaskConfig(TASK_NAME, newConfig)
   })
 }
 
 setupIpcHandlers()
-
-export function createAutoMessage(page: Page, config: Partial<MessageConfig> = {}) {
-  return new MessageManager(page, config)
-}

@@ -3,7 +3,6 @@ import { createLogger } from '#/logger'
 const logger = createLogger('Scheduler')
 
 export interface SchedulerConfig {
-  readonly name: string
   interval: [number, number]
   maxRetries?: number
   onStart?: () => void
@@ -11,7 +10,7 @@ export interface SchedulerConfig {
 }
 
 export interface BaseConfig {
-  scheduler?: SchedulerConfig
+  scheduler: SchedulerConfig
 }
 
 export interface Scheduler {
@@ -21,13 +20,15 @@ export interface Scheduler {
   isRunning: boolean
 }
 
-class TaskScheduler implements Scheduler {
+export class TaskScheduler implements Scheduler {
   private timerId: NodeJS.Timeout | null = null
   private isStopped = true
   private readonly executor: () => Promise<void>
   private config: SchedulerConfig
+  private readonly name: string
 
-  constructor(executor: () => Promise<void>, config: SchedulerConfig) {
+  constructor(name: string, executor: () => Promise<void>, config: SchedulerConfig) {
+    this.name = name
     this.executor = executor
     this.config = config
   }
@@ -49,7 +50,7 @@ class TaskScheduler implements Scheduler {
       await this.executor()
     }
     catch (error) {
-      logger.error(`执行「${this.config.name}」失败:`, error)
+      logger.error(`执行「${this.name}」失败:`, error)
       this.stop()
       return
     }
@@ -61,7 +62,7 @@ class TaskScheduler implements Scheduler {
 
   private scheduleNext(delay: number) {
     this.clearTimer()
-    logger.info(`下次执行「${this.config.name}」将在 ${delay / 1000} 秒后`)
+    logger.info(`下次执行「${this.name}」将在 ${delay / 1000} 秒后`)
     this.timerId = setTimeout(() => this.executeTask(), delay)
   }
 
@@ -91,11 +92,4 @@ class TaskScheduler implements Scheduler {
   public get isRunning() {
     return !this.isStopped
   }
-}
-
-export function createScheduler(
-  executor: () => Promise<void>,
-  config: SchedulerConfig,
-): Scheduler {
-  return new TaskScheduler(executor, config)
 }

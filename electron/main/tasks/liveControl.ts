@@ -181,7 +181,7 @@ function setupIpcHandlers() {
           manager.setChromePath(chromePath)
         const { browser, context, page } = await manager.connect({ headless, cookies })
 
-        pageManager.setSession({ browser, browserContext: context, page })
+        pageManager.setContext({ browser, browserContext: context, page })
 
         page.on('close', () => {
           windowManager.sendToWindow('main', IPC_CHANNELS.tasks.liveControl.disconnect)

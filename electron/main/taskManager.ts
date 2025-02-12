@@ -1,80 +1,116 @@
-import type { Browser, Page } from 'playwright'
-import type { createAutoMessage } from './tasks/autoMessage'
-import type { createAutoPopUp } from './tasks/autoPopUp'
+import type { Browser, BrowserContext, Page } from 'playwright'
 import type { BaseConfig, Scheduler } from './tasks/scheduler'
 import { createLogger } from './logger'
 
-export class TaskManager {
-  private static instance: TaskManager
-  private browser: Browser | null = null
-  private page: Page | null = null
+interface Context {
+  page: Page
+  browser: Browser
+  browserContext: BrowserContext
+  tasks: Record<string, Scheduler>
+}
+
+export class PageManager {
+  private static instance: PageManager
+  private contexts: Map<string, Context> = new Map()
+  private currentId: string = 'default'
   private logger = createLogger('PageManager')
-  private autoMessage: ReturnType<typeof createAutoMessage> | null = null
-  private autoPopUp: ReturnType<typeof createAutoPopUp> | null = null
-  private tasks: Record<string, Scheduler> = {}
   private constructor() {}
 
   static getInstance() {
-    if (!TaskManager.instance)
-      TaskManager.instance = new TaskManager()
-    return TaskManager.instance
+    if (!PageManager.instance)
+      PageManager.instance = new PageManager()
+    return PageManager.instance
   }
 
-  setBrowser(browser: Browser) {
-    this.browser = browser
+  switchContext(id: string) {
+    this.currentId = id
+    this.logger.info(`Switched to context <${id}>`)
   }
 
-  setPage(page: Page) {
-    this.page = page
+  setContext(context: Omit<Context, 'tasks'>) {
+    const previousContext = this.contexts.get(this.currentId) ?? { ...context, tasks: {} }
+    this.contexts.set(this.currentId, { ...previousContext, ...context })
+    this.logger.info(`Set context <${this.currentId}>`)
+  }
+
+  getContext() {
+    return this.contexts.get(this.currentId)
   }
 
   getPage() {
-    if (!this.page)
+    const context = this.contexts.get(this.currentId)
+    if (!context)
+      throw new Error('Context not initialized')
+    if (!context.page)
       throw new Error('Page not initialized')
-    return this.page
+    return context.page
   }
 
   register(taskName: string, creator: (args: any, userConfig?: BaseConfig) => Scheduler, userConfig?: BaseConfig) {
-    if (this.tasks[taskName]?.isRunning) {
-      this.logger.warn(`Task ${taskName} is already running`)
+    const context = this.contexts.get(this.currentId)
+    if (!context)
+      throw new Error('Context not initialized')
+    if (context.tasks[taskName]?.isRunning) {
+      this.logger.warn(`Task ${taskName} is already running - <${this.currentId}>`)
       return
     }
 
-    if (this.tasks[taskName]) {
-      this.tasks[taskName].stop()
-      delete this.tasks[taskName]
+    if (context.tasks[taskName]) {
+      context.tasks[taskName].stop()
+      delete context.tasks[taskName]
     }
 
-    const scheduler = creator(this.page, userConfig)
-    this.tasks[taskName] = scheduler
+    const scheduler = creator(context.page, userConfig)
+    context.tasks[taskName] = scheduler
   }
 
   contains(taskName: string) {
-    return this.tasks[taskName] !== undefined
+    const context = this.contexts.get(this.currentId)
+    if (!context)
+      throw new Error('Context not initialized')
+    return context.tasks[taskName] !== undefined
   }
 
   cleanup() {
-    for (const task of Object.values(this.tasks))
+    const context = this.contexts.get(this.currentId)
+    if (!context)
+      throw new Error('Context not initialized')
+    for (const task of Object.values(context.tasks))
       task.stop()
-    this.tasks = {}
+    context.tasks = {}
   }
 
   startTask(taskName: string) {
-    if (!this.tasks[taskName])
+    const context = this.contexts.get(this.currentId)
+    if (!context)
+      throw new Error('Context not initialized')
+    if (!context.tasks[taskName])
       throw new Error(`Task ${taskName} not found`)
-    if (this.tasks[taskName].isRunning)
+    if (context.tasks[taskName].isRunning)
       return
 
-    this.logger.info(`Starting task ${taskName}`)
-    this.tasks[taskName].start()
+    this.logger.info(`Starting task ${taskName} - <${this.currentId}>`)
+    context.tasks[taskName].start()
   }
 
   stopTask(taskName: string) {
-    if (!this.tasks[taskName])
+    const context = this.contexts.get(this.currentId)
+    if (!context)
+      throw new Error('Context not initialized')
+    if (!context.tasks[taskName])
       throw new Error(`Task ${taskName} not found`)
-    this.logger.info(`Stopping task ${taskName}`)
-    this.tasks[taskName].stop()
+    this.logger.info(`Stopping task ${taskName} - (${this.currentId})`)
+    context.tasks[taskName].stop()
+  }
+
+  updateTaskConfig(taskName: string, newConfig: BaseConfig) {
+    const context = this.contexts.get(this.currentId)
+    if (!context)
+      throw new Error('Context not initialized')
+    if (!context.tasks[taskName])
+      throw new Error(`Task ${taskName} not found`)
+    context.tasks[taskName].updateConfig(newConfig)
   }
 }
 
-export const pageManager = TaskManager.getInstance()
+export const pageManager = PageManager.getInstance()

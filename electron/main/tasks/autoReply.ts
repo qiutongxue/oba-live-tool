@@ -1,12 +1,13 @@
 import type { Page } from 'playwright'
-import { COMMENT_LIST_WRAPPER, COMMENT_TEXTAREA_SELECTOR, SUBMIT_COMMENT_SELECTOR } from '#/constants'
+import { COMMENT_LIST_WRAPPER } from '#/constants'
 import { createLogger } from '#/logger'
 import { pageManager } from '#/taskManager'
 import windowManager from '#/windowManager'
 import { ipcMain } from 'electron'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
+import { LiveController } from './Controller'
 
-const TASK_NAME = '自动回复'
+const TASK_NAME = '监听评论'
 const logger = createLogger(TASK_NAME)
 
 interface CommentData {
@@ -160,9 +161,8 @@ class CommentManager {
   }
 
   public async start() {
-    logger.debug('开始启动自动回复，当前状态:', this.isRunning)
     if (this.isRunning) {
-      logger.warn('自动回复已在运行中')
+      logger.warn('评论监听已在运行中')
       return
     }
     // 立即设置为 true，如果在 start 完成时再设置，下面异步任务执行的过程中有可能会被再次调用 start，导致执行两遍
@@ -183,10 +183,10 @@ class CommentManager {
       // 处理已存在的评论
       await this.processExistingComments()
 
-      logger.success('自动回复启动成功')
+      logger.success('评论监听启动成功')
     }
     catch (error) {
-      logger.error('启动自动回复失败:', error instanceof Error ? error.message : String(error))
+      logger.error('启动评论监听失败:', error instanceof Error ? error.message : String(error))
       // 确保出错时状态正确
       this.isRunning = false
       throw error
@@ -194,9 +194,8 @@ class CommentManager {
   }
 
   public async stop() {
-    logger.debug('停止自动回复，当前状态:', this.isRunning)
     if (!this.isRunning) {
-      logger.warn('自动回复已经停止')
+      logger.warn('评论监听已经停止')
       return
     }
 
@@ -211,16 +210,12 @@ class CommentManager {
       })
 
       this.isRunning = false
-      logger.success('自动回复已停止')
+      logger.success('评论监听已停止')
     }
     catch (error) {
-      logger.error('停止自动回复失败:', error instanceof Error ? error.message : String(error))
+      logger.error('停止评论监听失败:', error instanceof Error ? error.message : String(error))
       throw error
     }
-  }
-
-  public get running() {
-    return this.isRunning
   }
 
   // 为了保持与其他任务管理器接口一致
@@ -231,51 +226,43 @@ class CommentManager {
 function setupIpcHandlers() {
   ipcMain.handle(IPC_CHANNELS.tasks.autoReply.startCommentListener, async () => {
     try {
-      if (!pageManager.contains('commentListener')) {
-        logger.debug('注册自动回复任务')
-        pageManager.register('commentListener', page => new CommentManager(page))
+      if (!pageManager.contains(TASK_NAME)) {
+        logger.debug('注册监听评论任务')
+        pageManager.register(TASK_NAME, page => new CommentManager(page))
       }
 
-      pageManager.startTask('commentListener')
+      pageManager.startTask(TASK_NAME)
       return true
     }
     catch (error) {
-      logger.error('启动自动回复失败:', error instanceof Error ? error.message : String(error))
+      logger.error('启动监听评论失败:', error instanceof Error ? error.message : String(error))
       return false
     }
   })
 
   ipcMain.handle(IPC_CHANNELS.tasks.autoReply.stopCommentListener, async () => {
     try {
-      pageManager.stopTask('commentListener')
+      pageManager.stopTask(TASK_NAME)
       return true
     }
 
     catch (error) {
-      logger.error('停止自动回复失败:', error instanceof Error ? error.message : String(error))
+      logger.error('停止监听评论失败:', error instanceof Error ? error.message : String(error))
       return false
     }
   })
 
   ipcMain.handle(IPC_CHANNELS.tasks.autoReply.sendReply, async (_, message) => {
-    const page = pageManager.getPage()
-    const textarea = await page.$(COMMENT_TEXTAREA_SELECTOR)
-    if (!textarea) {
-      throw new Error('找不到评论框，请检查是否开播 | 页面是否在直播中控台')
+    try {
+      const page = pageManager.getPage()
+      const controller = new LiveController(page)
+      await controller.sendMessage(message)
     }
-
-    await textarea.fill(message)
-    const submit_btn = await page.$(SUBMIT_COMMENT_SELECTOR)
-    if (!submit_btn || (await submit_btn.getAttribute('class'))?.includes('isDisabled')) {
-      throw new Error('无法点击发布按钮')
+    catch (error) {
+      logger.error('发送回复失败:', error instanceof Error ? error.message : String(error))
+      throw error
     }
-    logger.info(`成功发送 AI 回复：${message}`)
-    await submit_btn.click()
   })
 }
 
 setupIpcHandlers()
-
-export function createAutoReply(page: Page) {
-  return new CommentManager(page)
-}
