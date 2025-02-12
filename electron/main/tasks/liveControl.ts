@@ -30,18 +30,11 @@ interface BrowserSession {
 }
 
 class LiveControlManager {
-  private static instance: LiveControlManager
   private chromePath: string | null = null
   private newCookies: string | null = null
 
-  private constructor() {
+  constructor() {
     chromium.use(stealth())
-  }
-
-  public static getInstance(): LiveControlManager {
-    if (!LiveControlManager.instance)
-      LiveControlManager.instance = new LiveControlManager()
-    return LiveControlManager.instance
   }
 
   private async initChromePath() {
@@ -68,8 +61,10 @@ class LiveControlManager {
   }
 
   private async loadCookies(context: playwright.BrowserContext, cookiesString: string): Promise<boolean> {
-    if (!cookiesString)
+    if (!cookiesString) {
+      logger.debug('cookies 不存在')
       return false
+    }
 
     try {
       const cookies = JSON.parse(cookiesString)
@@ -87,24 +82,22 @@ class LiveControlManager {
     this.newCookies = JSON.stringify(cookies)
   }
 
-  private async handleHeadlessLogin(session: BrowserSession): Promise<BrowserSession> {
+  private async handleHeadlessLogin(session: BrowserSession): Promise<BrowserSession | null> {
     const { browser } = session
     logger.info('需要登录，切换到有头模式')
-
     // 关闭当前浏览器
     await browser.close()
-
     // 创建新的有头模式会话
     const newSession = await this.createSession(false)
     await newSession.page.goto(LOGIN_URL)
 
     // 等待用户登录成功
     await newSession.page.waitForSelector(IS_LOGGED_IN_SELECTOR, { timeout: 0 })
+    // 保存 cookies
     await this.saveCookies(newSession.context)
-
     // 关闭有头浏览器，返回 null 以触发重新连接
     await newSession.browser.close()
-    return newSession
+    return null
   }
 
   private async handleLogin(session: BrowserSession, headless: boolean): Promise<BrowserSession | null> {
@@ -133,9 +126,7 @@ class LiveControlManager {
         session = await this.createSession(headless)
 
         // 加载 cookies
-        const hasCookies = await this.loadCookies(session.context, this.newCookies || cookies)
-        if (!hasCookies)
-          logger.debug('cookies 不存在')
+        await this.loadCookies(session.context, this.newCookies || cookies)
 
         // 访问中控台
         await session.page.goto(LIVE_CONTROL_URL)
@@ -149,11 +140,12 @@ class LiveControlManager {
         // 检查是否需要登录
         if (session.page.url().startsWith(LOGIN_URL)) {
           const newSession = await this.handleLogin(session, headless)
+          // 对于无头模式，需要重新连接
           if (!newSession)
             continue
           session = newSession
         }
-
+        // 每次连接都保存一次 cookies
         await this.saveCookies(session.context)
         loginSuccess = true
       }
@@ -184,13 +176,12 @@ function setupIpcHandlers() {
     IPC_CHANNELS.tasks.liveControl.connect,
     async (_, { chromePath, headless, cookies }) => {
       try {
-        const manager = LiveControlManager.getInstance()
+        const manager = new LiveControlManager()
         if (chromePath)
           manager.setChromePath(chromePath)
-        const { browser, page } = await manager.connect({ headless, cookies })
+        const { browser, context, page } = await manager.connect({ headless, cookies })
 
-        pageManager.setBrowser(browser)
-        pageManager.setPage(page)
+        pageManager.setSession({ browser, browserContext: context, page })
 
         page.on('close', () => {
           windowManager.sendToWindow('main', IPC_CHANNELS.tasks.liveControl.disconnect)
@@ -207,7 +198,3 @@ function setupIpcHandlers() {
 }
 
 setupIpcHandlers()
-
-export async function connectLiveControl(config: BrowserConfig) {
-  return LiveControlManager.getInstance().connect(config)
-}
