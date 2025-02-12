@@ -73,16 +73,16 @@ class MessageManager {
       throw new Error('消息配置验证失败: 必须提供至少一条消息')
     }
 
-    const badIndex = this.config.messages.findIndex(msg => msg.length > 50)
+    const badIndex = userConfig.messages.findIndex(msg => msg.length > 50)
     if (badIndex >= 0) {
       throw new Error(`消息配置验证失败: 第 ${badIndex + 1} 条消息字数超出 50`)
     }
 
-    if (this.config.scheduler.interval[0] > this.config.scheduler.interval[1]) {
+    if (userConfig.scheduler.interval[0] > userConfig.scheduler.interval[1]) {
       throw new Error('配置验证失败：计时器区间设置错误')
     }
 
-    logger.info(`消息配置验证通过，共加载 ${this.config.messages.length} 条消息`)
+    logger.info(`消息配置验证通过，共加载 ${userConfig.messages.length} 条消息`)
   }
 
   public start() {
