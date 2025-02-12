@@ -11,24 +11,27 @@ import { Separator } from '../ui/separator'
 import { Switch } from '../ui/switch'
 
 export default function CommentList({ highlight: highlightedCommentId }: { highlight: string | null }) {
-  const { comments } = useAutoReplyStore()
+  const comments = useAutoReplyStore(state => state.comments)
+  const isListening = useAutoReplyStore(state => state.isListening)
+  const setIsListening = useAutoReplyStore(state => state.setIsListening)
   const { isConnected } = useLiveControl()
   const { toast } = useToast()
   const [hideHost, setHideHost] = useState(false)
 
   useEffect(() => {
-    if (isConnected) {
+    if (isConnected && !isListening) {
       window.ipcRenderer.invoke(
         IPC_CHANNELS.tasks.autoReply.startCommentListener,
       ).then((result) => {
         if (!result)
           throw new Error('监听评论失败')
         toast.success('监听评论成功')
+        setIsListening(true)
       }).catch(() => {
         toast.error('监听评论失败')
       })
     }
-  }, [isConnected, toast])
+  }, [isConnected, isListening, setIsListening, toast])
 
   const filteredComments = hideHost
     ? comments.filter(comment => comment.authorTags.length === 0)

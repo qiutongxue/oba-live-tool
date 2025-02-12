@@ -20,12 +20,17 @@ export interface Comment {
   timestamp: string
 }
 
-interface AutoReplyStore {
+interface AutoReplyState {
   isRunning: boolean
-  setIsRunning: (isRunning: boolean) => void
+  isListening: boolean
   replies: ReplyPreview[]
   comments: Comment[]
   prompt: string
+}
+
+interface AutoReplyAction {
+  setIsRunning: (isRunning: boolean) => void
+  setIsListening: (isListening: boolean) => void
   setPrompt: (prompt: string) => void
   addComment: (comment: Comment) => void
   addReply: (commentId: string, nickname: string, content: string) => void
@@ -35,14 +40,16 @@ interface AutoReplyStore {
 // nickname -> contextId
 // const contextMap = new Map<string, number>()
 
-export const useAutoReplyStore = create<AutoReplyStore>()(
+export const useAutoReplyStore = create<AutoReplyState & AutoReplyAction>()(
   immer((set) => {
     // 从 localStorage 读取保存的 prompt
     const savedPrompt = localStorage.getItem('autoReplyPrompt')
 
     return {
       isRunning: false,
+      isListening: false,
       setIsRunning: isRunning => set({ isRunning }),
+      setIsListening: isListening => set({ isListening }),
       replies: [],
       comments: [],
       // 设置默认 prompt 或使用保存的值
