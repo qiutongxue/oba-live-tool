@@ -16,7 +16,7 @@ export function LoadingIcon({ size = 'md', color = 'text-primary', className }: 
   return (
     <div className={cn('flex items-center justify-center', className)} role="status">
       <div
-        className={cn('animate-spin rounded-full border-t-transparent', 'shadow-sm', sizeClasses[size], color)}
+        className={cn('animate-spin rounded-full border-gray-400 border-t-transparent', 'shadow-sm', sizeClasses[size], color)}
         style={{
           animationDuration: '0.6s',
         }}
