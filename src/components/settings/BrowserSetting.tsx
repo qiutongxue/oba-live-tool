@@ -5,13 +5,15 @@ import { MagnifyingGlassIcon } from '@radix-ui/react-icons'
 import { CodeIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog'
 import { Button } from '../ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
 import { Input } from '../ui/input'
 import { Label } from '../ui/label'
+import { Separator } from '../ui/separator'
 
 export function BrowserSetting() {
-  const { path, setPath } = useChromeConfig()
+  const { path, setPath, setCookies } = useChromeConfig()
   const { isConnected } = useLiveControl()
   const [isDetecting, setIsDetecting] = useState(false)
   const { toast } = useToast()
@@ -24,6 +26,11 @@ export function BrowserSetting() {
     })
     return () => removeListener()
   }, [setPath])
+
+  const handleCookiesReset = () => {
+    setCookies('')
+    toast.success('登录状态已重置')
+  }
 
   const handleSelectChrome = async () => {
     try {
@@ -113,6 +120,43 @@ export function BrowserSetting() {
                 ? '请确保路径正确，并重新连接直播控制台'
                 : '请选择 Chrome 浏览器的安装路径（chrome.exe）'}
           </p>
+        </div>
+
+        <Separator />
+
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <h4 className="text-sm font-medium leading-none">
+              重置登录状态
+            </h4>
+            <p className="text-sm text-muted-foreground">
+              清除已保存的登录信息，下次启动时需要重新登录
+            </p>
+          </div>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive">
+                重置
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>确认重置登录状态？</AlertDialogTitle>
+                <AlertDialogDescription>
+                  此操作将清除已保存的登录信息，您需要在下次启动时重新登录。此操作无法撤销。
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>取消</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleCookiesReset}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  确认重置
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </CardContent>
     </Card>
