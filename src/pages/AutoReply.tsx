@@ -4,12 +4,16 @@ import PreviewList from '@/components/auto-reply/PreviewList'
 import { PromptCard } from '@/components/auto-reply/PromptCard'
 import { TaskButton } from '@/components/common/TaskButton'
 import { Title } from '@/components/common/Title'
+import { Badge } from '@/components/ui/badge'
+import { useAIChatStore } from '@/hooks/useAIChat'
 import { useAutoReplyStore } from '@/hooks/useAutoReply'
 import { useState } from 'react'
+import { providers } from 'shared/providers'
 
 export default function AutoReply() {
   const { isRunning: autoReplyEnabled, setIsRunning: setAutoReplyEnabled } = useAutoReplyStore()
   const [highlightedCommentId, setHighlightedCommentId] = useState<string | null>(null)
+  const aiConfig = useAIChatStore(state => state.config)
 
   const handleAutoReplyToggle = async () => {
     try {
@@ -37,6 +41,16 @@ export default function AutoReply() {
         </div>
       </div>
 
+      <div className="flex items-center gap-2">
+        <Badge variant="dark" className="gap-1">
+          <span className="text-xs font-medium">服务商:</span>
+          <span>{providers[aiConfig.provider].name}</span>
+        </Badge>
+        <Badge variant="outline" className="gap-1">
+          <span className="text-xs font-medium">模型:</span>
+          <span className="font-mono">{aiConfig.model}</span>
+        </Badge>
+      </div>
       {/* Prompt 配置 Drawer */}
 
       <PromptCard />
