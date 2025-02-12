@@ -29,7 +29,7 @@ function App() {
   }
 
   const handleToggleDevTools = async () => {
-    await window.ipcRenderer.invoke(IPC_CHANNELS.toggleDevTools)
+    await window.ipcRenderer.invoke(IPC_CHANNELS.chrome.toggleDevTools)
   }
 
   return (

@@ -18,7 +18,7 @@ export default function BrowserControl() {
   const { enabled: devMode } = useDevMode()
 
   useEffect(() => {
-    const removeListener = window.ipcRenderer.on(IPC_CHANNELS.setChromePath, (path) => {
+    const removeListener = window.ipcRenderer.on(IPC_CHANNELS.chrome.setPath, (path) => {
       if (path && !chromePath) {
         setPath(path)
       }
