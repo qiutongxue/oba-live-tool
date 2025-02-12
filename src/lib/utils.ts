@@ -7,7 +7,16 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function messagesToContext(messages: ChatMessage[], userMessage: string) {
-  const context = messages.filter(message => !message.isError).map(message => ({ role: message.role, content: message.content }))
+  const newMessages = []
+  for (let i = 0; i < messages.length; i++) {
+    // 这里用户发出的消息返回错误了，也就是说用户的消息并未参与到实际的对话中
+    // 所以要跳过当前消息，当然同时也要跳过下一个错误消息
+    if (messages[i].role === 'user' && i < messages.length - 1 && messages[i + 1].isError) {
+      i++
+      continue
+    }
+    newMessages.push({ role: messages[i].role, content: messages[i].content })
+  }
   // 64k token 限制
-  return [...context.slice(-100), { role: 'user', content: userMessage }]
+  return [...newMessages.slice(-100), { role: 'user', content: userMessage }]
 }
