@@ -115,7 +115,7 @@ export default function AutoPopUp() {
 
               <div className="space-y-4">
                 {store.config.goodsIds.map((id, index) => (
-                  <div key={id} className="flex gap-3 items-center group">
+                  <div key={index} className="flex gap-3 items-center group">
                     <Input
                       type="number"
                       value={id}
