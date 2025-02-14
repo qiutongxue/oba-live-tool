@@ -26,12 +26,12 @@ export async function update(win: Electron.BrowserWindow) {
   // update available
   autoUpdater.on('update-available', (arg: UpdateInfo) => {
     logger.info(`有可用更新！当前版本：${app.getVersion()}，新版本：${arg?.version}`)
-    win.webContents.send('update-can-available', { update: true, version: app.getVersion(), newVersion: arg?.version })
+    win.webContents.send(IPC_CHANNELS.updater.updateAvailable, { update: true, version: app.getVersion(), newVersion: arg?.version })
   })
   // update not available
   autoUpdater.on('update-not-available', (arg: UpdateInfo) => {
     logger.info(`无可用更新。当前版本：${app.getVersion()}，新版本：${arg?.version}`)
-    win.webContents.send('update-can-available', { update: false, version: app.getVersion(), newVersion: arg?.version })
+    win.webContents.send(IPC_CHANNELS.updater.updateAvailable, { update: false, version: app.getVersion(), newVersion: arg?.version })
   })
 
   // Checking for updates
@@ -59,23 +59,6 @@ export async function update(win: Electron.BrowserWindow) {
         autoUpdater.setFeedURL({
           provider: 'generic',
           url,
-          requestHeaders: {
-            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-            'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-            'accept-language': 'zh-CN,zh;q=0.9',
-            'accept-encoding': 'gzip, deflate, br, zstd',
-            'cache-control': 'max-age=0',
-            'priority': 'u=0, i',
-            'sec-ch-ua-platform': '"Windows"',
-            'sec-ch-ua-mobile': '?0',
-            'sec-ch-ua': '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
-            'upgrade-insecure-requests': '1',
-            'sec-fetch-dest': 'document',
-            'sec-fetch-mode': 'navigate',
-            'sec-fetch-site': 'none',
-            'sec-fetch-user': '?1',
-            'sec-gpc': '1',
-          },
         })
       }
 
