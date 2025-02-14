@@ -6,6 +6,7 @@ import { chromium } from 'playwright-extra'
 import stealth from 'puppeteer-extra-plugin-stealth'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import {
+  ACCOUNT_NAME_SELECTOR,
   GOODS_ITEM_SELECTOR,
   IS_LOGGED_IN_SELECTOR,
   LIVE_CONTROL_URL,
@@ -115,7 +116,7 @@ class LiveControlManager {
     this.chromePath = path
   }
 
-  public async connect({ headless = true, cookies = '' }: BrowserConfig): Promise<BrowserSession> {
+  public async connect({ headless = true, cookies = '' }: BrowserConfig): Promise<BrowserSession & { accountName: string | null }> {
     logger.info('启动中……')
 
     let loginSuccess = false
@@ -162,8 +163,13 @@ class LiveControlManager {
 
     // 等待中控台页面加载完成
     await session.page.waitForSelector(GOODS_ITEM_SELECTOR, { timeout: 0 })
-    logger.success('登录成功')
-    return session
+    // 获取当前登录的账号
+    const accountName = await session.page.$(ACCOUNT_NAME_SELECTOR).then(el => el?.textContent())
+    logger.success(`登录成功，当前账号为「${accountName}」`)
+    return {
+      ...session,
+      accountName: accountName || null,
+    }
   }
 
   public get cookies() {
@@ -179,7 +185,7 @@ function setupIpcHandlers() {
         const manager = new LiveControlManager()
         if (chromePath)
           manager.setChromePath(chromePath)
-        const { browser, context, page } = await manager.connect({ headless, cookies })
+        const { browser, context, page, accountName } = await manager.connect({ headless, cookies })
 
         pageManager.setContext({ browser, browserContext: context, page })
 
@@ -187,7 +193,10 @@ function setupIpcHandlers() {
           windowManager.sendToWindow('main', IPC_CHANNELS.tasks.liveControl.disconnect)
         })
 
-        return manager.cookies
+        return {
+          cookies: manager.cookies,
+          accountName,
+        }
       }
       catch (error) {
         logger.error('连接直播控制台失败:', error instanceof Error ? error.message : String(error))

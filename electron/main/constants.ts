@@ -1,12 +1,17 @@
+// export const BUYIN_LIVE_CONTROL_URL = 'https://buyin.jinritemai.com/dashboard/live/control' as const
 export const LIVE_CONTROL_URL = 'https://fxg.jinritemai.com/ffa/buyin/dashboard/live/control' as const
-export const LOGIN_URL = 'https://fxg.jinritemai.com/login/common'
+// export const BUYIN_LOGIN_URL = 'https://buyin.jinritemai.com/login/common' as const
+export const LOGIN_URL = 'https://fxg.jinritemai.com/login/common' as const
 export const LOGIN_URL_REGEX = /.*fxg\.jinritemai\.com\/login\/common.*/
+
+export const ACCOUNT_NAME_SELECTOR = `[class^="index_userName"]` as const
 /**
  * 这里根据【直播管理】标签的存在与否判断是否登录成功，因为只有登录状态下才
  * 但是【巨量百应】和【抖音小店】的左侧菜单栏不一样，所以这边需要修改
  */
-// FIXME: 需要找到抖店和百应都具备的，也许直接找中控台的元素就行？
-export const IS_LOGGED_IN_SELECTOR = `a[href="/ffa/creative/shop-live"]` as const
+// FIXME: 需要找到抖店和百应都具备的，也许直接找中控台的元素就行？[class^="goodsPanel"]
+export const IS_LOGGED_IN_SELECTOR = ACCOUNT_NAME_SELECTOR
+// export const IS_LOGGED_IN_SELECTOR = `a[href="/ffa/creative/shop-live"]` as const
 /**
  * 【直播商品】
  */

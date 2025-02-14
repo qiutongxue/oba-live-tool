@@ -10,11 +10,11 @@ import React, { useEffect, useState } from 'react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 
 export default function BrowserControl() {
-  const { isConnected, setIsConnected } = useLiveControl()
+  const { isConnected, setIsConnected, accountName, setAccountName } = useLiveControl()
   const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
 
-  const { setPath, path: chromePath, cookies, setCookies } = useChromeConfig()
+  const { setPath, path: chromePath, cookies: oldCookies, setCookies } = useChromeConfig()
   const { enabled: devMode } = useDevMode()
 
   useEffect(() => {
@@ -29,14 +29,15 @@ export default function BrowserControl() {
   const connectLiveControl = async () => {
     try {
       setIsLoading(true)
-      const newCookies = await window.ipcRenderer.invoke(
+      const result = await window.ipcRenderer.invoke(
         IPC_CHANNELS.tasks.liveControl.connect,
-        { headless: !devMode, chromePath, cookies },
+        { headless: !devMode, chromePath, cookies: oldCookies },
       )
 
-      if (newCookies) {
+      if (result?.cookies) {
         setIsConnected(true)
-        setCookies(newCookies)
+        setAccountName(result.accountName || '')
+        setCookies(result.cookies)
         toast.success('已连接到直播控制台')
       }
       else {
@@ -68,7 +69,7 @@ export default function BrowserControl() {
               <div className="flex items-center gap-4">
                 <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-gray-300'}`} />
                 <span className="text-sm text-muted-foreground">
-                  {isConnected ? '已连接' : '未连接'}
+                  {isConnected ? `已连接${accountName ? ` (${accountName})` : ''}` : '未连接'}
                 </span>
               </div>
               <Button
