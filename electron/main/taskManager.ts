@@ -72,12 +72,11 @@ export class PageManager {
   }
 
   cleanup() {
-    const context = this.contexts.get(this.currentId)
-    if (!context)
-      throw new Error('Context not initialized')
-    for (const task of Object.values(context.tasks))
-      task.stop()
-    context.tasks = {}
+    for (const context of this.contexts.values()) {
+      for (const task of Object.values(context.tasks))
+        task.stop()
+      context.tasks = {}
+    }
   }
 
   startTask(taskName: string) {
