@@ -2,7 +2,7 @@ import { eventEmitter, EVENTS } from '@/utils/events'
 import { useEffect } from 'react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { create } from 'zustand'
-import { createJSONStorage, persist } from 'zustand/middleware'
+import { persist } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
 import { useAccounts } from './useAccounts'
 import { useToast } from './useToast'
@@ -73,37 +73,35 @@ export const useAutoMessageStore = create<AutoMessageStore>()(
     }),
     {
       name: 'auto-message-storage',
-      storage: createJSONStorage(() => localStorage, {
-        reviver: (key, value) => {
-          if (key === 'state') {
-            const oldState = value as { config: AutoMessageConfig }
-            // 检查是否是旧版本的数据结构（通过检查是否存在 config 字段）
-            let messages = oldState.config.messages as unknown[]
-            if (typeof messages[0] === 'string') {
-              // 旧的 messages 是字符串，迁移到新的数据结构
-              messages = messages.map(message => ({
-                id: crypto.randomUUID(),
-                content: message as string,
-                pinTop: false,
-              }))
-            }
-            if (oldState && oldState.config && !('contexts' in oldState)) {
-              // 迁移到新的数据结构
-              return {
-                contexts: {
-                  default: {
-                    config: {
-                      ...oldState.config,
-                      messages,
-                    },
-                  },
-                },
-              }
+      version: 1,
+      migrate: (persistedState, version) => {
+        if (version === 0) {
+          const persisted = persistedState as {
+            config: {
+              scheduler: { interval: [number, number] }
+              messages: string[]
+              pinTops: number[]
+              random: boolean
             }
           }
-          return value
-        },
-      }),
+          const messages = persisted.config.messages.map((message, index) => ({
+            id: crypto.randomUUID(),
+            content: message as string,
+            pinTop: persisted.config.pinTops.includes(index),
+          }))
+          return {
+            contexts: {
+              default: {
+                config: {
+                  scheduler: persisted.config.scheduler,
+                  messages,
+                  random: persisted.config.random,
+                },
+              },
+            },
+          }
+        }
+      },
       partialize: state => ({
         contexts: Object.fromEntries(
           // [default, { isRunning: x }]
