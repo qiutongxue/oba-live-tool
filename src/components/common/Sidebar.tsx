@@ -5,8 +5,8 @@ import { cn } from '@/lib/utils'
 import { NavLink } from 'react-router'
 
 export default function Sidebar() {
-  const { store: { isRunning: isAutoMessageRunning } } = useAutoMessage()
-  const { store: { isRunning: isAutoPopupRunning } } = useAutoPopUp()
+  const { isRunning: isAutoMessageRunning } = useAutoMessage()
+  const { isRunning: isAutoPopupRunning } = useAutoPopUp()
   const { isRunning: isAutoReplyRunning } = useAutoReplyStore()
 
   const tabs = [
