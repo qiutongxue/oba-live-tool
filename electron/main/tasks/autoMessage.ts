@@ -13,8 +13,14 @@ import { TaskScheduler } from './scheduler'
 const TASK_NAME = '自动发言'
 const logger = createLogger(TASK_NAME)
 
+interface Message {
+  id: string
+  content: string
+  pinTop: boolean
+}
+
 interface MessageConfig extends BaseConfig {
-  messages: string[]
+  messages: Message[]
   pinTops?: boolean | number[]
   random?: boolean
 }
@@ -46,7 +52,7 @@ class MessageManager {
     )
   }
 
-  private getNextMessage(): string {
+  private getNextMessage(): Message {
     if (this.config.random) {
       this.currentMessageIndex = randomInt(0, this.config.messages.length - 1)
     }
@@ -59,8 +65,8 @@ class MessageManager {
   private async execute() {
     try {
       const message = this.getNextMessage()
-      const isPinTop = this.config.pinTops === true || (Array.isArray(this.config.pinTops) && this.config.pinTops.includes(this.currentMessageIndex))
-      await this.controller.sendMessage(message, isPinTop)
+      const isPinTop = message.pinTop
+      await this.controller.sendMessage(message.content, isPinTop)
     }
     catch (e) {
       logger.error(`「${TASK_NAME}」执行失败: ${e instanceof Error ? e.message : String(e)}`)
@@ -73,9 +79,9 @@ class MessageManager {
       throw new Error('消息配置验证失败: 必须提供至少一条消息')
     }
 
-    const badIndex = userConfig.messages.findIndex(msg => msg.length > 50)
+    const badIndex = userConfig.messages.findIndex(msg => msg.content.length > 50)
     if (badIndex >= 0) {
-      throw new Error(`消息配置验证失败: 第 ${badIndex + 1} 条消息字数超出 50`)
+      throw new Error(`消息配置验证失败: 第 ${badIndex + 1} 条消息字数超出 50 字`)
     }
 
     if (userConfig.scheduler.interval[0] > userConfig.scheduler.interval[1]) {

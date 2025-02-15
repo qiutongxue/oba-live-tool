@@ -13,35 +13,32 @@ import React, { useCallback, useState } from 'react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 
 export default function AutoPopUp() {
-  const { store } = useAutoPopUp()
+  const { isRunning, config, setGoodsIds, setScheduler, setRandom, setIsRunning } = useAutoPopUp()
   const [validationError, setValidationError] = useState<string | null>(null)
   const { toast } = useToast()
 
   const onStartTask = useCallback(async () => {
-    const result = await window.ipcRenderer.invoke(IPC_CHANNELS.tasks.autoPopUp.start, store.config)
+    const result = await window.ipcRenderer.invoke(IPC_CHANNELS.tasks.autoPopUp.start, config)
     if (result) {
-      store.setIsRunning(true)
+      setIsRunning(true)
       toast.success('自动弹窗任务已启动')
     }
-
     else {
-      store.setIsRunning(false)
+      setIsRunning(false)
       toast.error('自动弹窗任务启动失败')
     }
-  }, [store, toast])
+  }, [setIsRunning, config, toast])
 
   const onStopTask = useCallback(async () => {
     await window.ipcRenderer.invoke(IPC_CHANNELS.tasks.autoPopUp.stop)
-    store.setIsRunning(false)
-  }, [store])
+    setIsRunning(false)
+  }, [setIsRunning])
 
   const handleTaskButtonClick = () => {
-    if (!store.isRunning) {
+    if (!isRunning)
       onStartTask()
-    }
-    else {
+    else
       onStopTask()
-    }
   }
 
   const handleGoodsIdChange = (index: number, value: string) => {
@@ -50,7 +47,7 @@ export default function AutoPopUp() {
       setValidationError('请输入有效的商品ID')
       return
     }
-    const newIds = [...store.config.goodsIds]
+    const newIds = [...config.goodsIds]
     if (newIds.includes(numValue)) {
       setValidationError('商品ID不能重复！')
       return
@@ -58,16 +55,15 @@ export default function AutoPopUp() {
     newIds[index] = numValue
 
     setValidationError(null)
-    store.setGoodsIds(newIds)
+    setGoodsIds(newIds)
   }
 
   const addGoodsId = useCallback(() => {
     let id = 1
-    while (store.config.goodsIds.includes(id)) {
+    while (config.goodsIds.includes(id))
       id += 1
-    }
-    store.setGoodsIds([...store.config.goodsIds, id])
-  }, [store])
+    setGoodsIds([...config.goodsIds, id])
+  }, [config.goodsIds, setGoodsIds])
 
   return (
     <div className="container py-8 space-y-4">
@@ -76,13 +72,10 @@ export default function AutoPopUp() {
 
         <div>
           <TaskButton
-
-            isTaskRunning={store.isRunning}
+            isTaskRunning={isRunning}
             onStartStop={handleTaskButtonClick}
           />
-
         </div>
-
       </div>
 
       {validationError && (
@@ -92,7 +85,6 @@ export default function AutoPopUp() {
       )}
 
       <div className="grid gap-6">
-
         <Card>
           <CardContent className="pt-6">
             <div className="space-y-6">
@@ -114,7 +106,7 @@ export default function AutoPopUp() {
               </div>
 
               <div className="space-y-4">
-                {store.config.goodsIds.map((id, index) => (
+                {config.goodsIds.map((id, index) => (
                   <div key={index} className="flex gap-3 items-center group">
                     <Input
                       type="number"
@@ -128,8 +120,8 @@ export default function AutoPopUp() {
                       variant="ghost"
                       size="icon"
                       onClick={() => {
-                        const newGoodsIds = store.config.goodsIds.filter((_, i) => i !== index)
-                        store.setGoodsIds(newGoodsIds)
+                        const newGoodsIds = config.goodsIds.filter((_, i) => i !== index)
+                        setGoodsIds(newGoodsIds)
                       }}
                       className="opacity-0 group-hover:opacity-100"
                     >
@@ -155,8 +147,8 @@ export default function AutoPopUp() {
                 <div className="flex items-center space-x-2">
                   <Switch
                     id="random"
-                    checked={store.config.random}
-                    onCheckedChange={checked => store.setRandom(checked)}
+                    checked={config.random}
+                    onCheckedChange={checked => setRandom(checked)}
                   />
                   <Label htmlFor="random" className="cursor-pointer">
                     随机弹窗
@@ -169,9 +161,9 @@ export default function AutoPopUp() {
                 <div className="flex items-center space-x-2">
                   <Input
                     type="number"
-                    value={store.config.scheduler.interval[0] / 1000}
-                    onChange={e => store.setScheduler({
-                      interval: [Number(e.target.value) * 1000, store.config.scheduler.interval[1]],
+                    value={config.scheduler.interval[0] / 1000}
+                    onChange={e => setScheduler({
+                      interval: [Number(e.target.value) * 1000, config.scheduler.interval[1]],
                     })}
                     className="w-24"
                     min="1"
@@ -180,9 +172,9 @@ export default function AutoPopUp() {
                   <span className="text-sm text-muted-foreground">至</span>
                   <Input
                     type="number"
-                    value={store.config.scheduler.interval[1] / 1000}
-                    onChange={e => store.setScheduler({
-                      interval: [store.config.scheduler.interval[0], Number(e.target.value) * 1000],
+                    value={config.scheduler.interval[1] / 1000}
+                    onChange={e => setScheduler({
+                      interval: [config.scheduler.interval[0], Number(e.target.value) * 1000],
                     })}
                     className="w-24"
                     min="1"
@@ -198,7 +190,6 @@ export default function AutoPopUp() {
           </CardContent>
         </Card>
       </div>
-
     </div>
   )
 }

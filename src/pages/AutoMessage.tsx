@@ -1,57 +1,50 @@
+import type { Message } from '@/hooks/useAutoMessage'
+import MessageComp from '@/components/auto-message/MessageComp'
 import { TaskButton } from '@/components/common/TaskButton'
 import { Title } from '@/components/common/Title'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { useAutoMessage } from '@/hooks/useAutoMessage'
 import { useToast } from '@/hooks/useToast'
-import { PlusIcon, TrashIcon } from '@radix-ui/react-icons'
+import { PlusIcon } from '@radix-ui/react-icons'
 import React, { useCallback, useState } from 'react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 
 export default function AutoMessage() {
-  const { store } = useAutoMessage()
+  const { isRunning, config, setMessages, setRandom, setScheduler, setIsRunning } = useAutoMessage()
   const { toast } = useToast()
   const [validationError] = useState<string | null>(null)
 
   const onStartTask = useCallback(async () => {
-    const result = await window.ipcRenderer.invoke(IPC_CHANNELS.tasks.autoMessage.start, store.config)
+    const result = await window.ipcRenderer.invoke(IPC_CHANNELS.tasks.autoMessage.start, config)
     if (result) {
-      store.setIsRunning(true)
+      setIsRunning(true)
       toast.success('自动消息任务已启动')
     }
-
     else {
-      store.setIsRunning(false)
+      setIsRunning(false)
       toast.error('自动消息任务启动失败')
     }
-  }, [store, toast])
+  }, [config, toast, setIsRunning])
 
   const onStopTask = useCallback(async () => {
     await window.ipcRenderer.invoke(IPC_CHANNELS.tasks.autoMessage.stop)
-    store.setIsRunning(false)
-  }, [store])
+    setIsRunning(false)
+  }, [setIsRunning])
 
   const handleTaskButtonClick = () => {
-    if (!store.isRunning) {
+    if (!isRunning)
       onStartTask()
-    }
-    else {
+    else
       onStopTask()
-    }
   }
 
-  const handleMessageChange = (index: number, value: string) => {
-    if (value.length > 50)
-      return // 不允许输入超过50个字符
-
-    const newMessages = [...store.config.messages]
-    newMessages[index] = value
-    store.setMessages(newMessages)
+  const handleMessageChange = (message: Message) => {
+    setMessages(config.messages.map(m => m.id === message.id ? message : m))
   }
 
   return (
@@ -59,10 +52,9 @@ export default function AutoMessage() {
       <div className="flex items-center justify-between">
         <Title title="自动发言" description="配置自动发送消息的规则" />
         <TaskButton
-          isTaskRunning={store.isRunning}
+          isTaskRunning={isRunning}
           onStartStop={handleTaskButtonClick}
         />
-
       </div>
 
       {validationError && (
@@ -72,7 +64,6 @@ export default function AutoMessage() {
       )}
 
       <div className="grid gap-6">
-
         <Card>
           <CardContent className="pt-6">
             <div className="space-y-6">
@@ -86,7 +77,11 @@ export default function AutoMessage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => store.setMessages([...store.config.messages, ''])}
+                  onClick={() => setMessages([...config.messages, {
+                    id: crypto.randomUUID(),
+                    content: '',
+                    pinTop: false,
+                  }])}
                 >
                   <PlusIcon className="mr-2 h-4 w-4" />
                   添加消息
@@ -94,55 +89,13 @@ export default function AutoMessage() {
               </div>
 
               <div className="space-y-4">
-                {store.config.messages.map((message, index) => (
-                  <div key={index} className="flex gap-3 items-start group">
-                    <div className="flex-1 space-y-2">
-                      <Input
-                        value={message}
-                        onChange={e => handleMessageChange(index, e.target.value)}
-                        className={message.length > 50 ? 'border-destructive' : ''}
-                        placeholder="输入消息内容"
-                      />
-                      <div className="flex items-center justify-between px-1">
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`pin-${index}`}
-                            checked={store.config.pinTops.includes(index)}
-                            onCheckedChange={(checked) => {
-                              const newPinTops = checked
-                                ? [...store.config.pinTops, index]
-                                : store.config.pinTops.filter(i => i !== index)
-                              store.setPinTops(newPinTops)
-                            }}
-                          />
-                          <label
-                            htmlFor={`pin-${index}`}
-                            className="text-sm text-muted-foreground cursor-pointer select-none"
-                          >
-                            置顶此消息
-                          </label>
-                        </div>
-                        <span className={`text-xs ${
-                          message.length > 50 ? 'text-destructive' : 'text-muted-foreground'
-                        }`}
-                        >
-                          {message.length}
-                          /50
-                        </span>
-                      </div>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => {
-                        const newMessages = store.config.messages.filter((_, i) => i !== index)
-                        store.setMessages(newMessages)
-                      }}
-                      className="opacity-0 group-hover:opacity-100 self-start"
-                    >
-                      <TrashIcon className="h-4 w-4" />
-                    </Button>
-                  </div>
+                {config.messages.map(message => (
+                  <MessageComp
+                    key={message.id}
+                    message={message}
+                    onChange={handleMessageChange}
+                    onDelete={id => setMessages(config.messages.filter(m => m.id !== id))}
+                  />
                 ))}
               </div>
             </div>
@@ -162,8 +115,8 @@ export default function AutoMessage() {
                 <div className="flex items-center space-x-2">
                   <Switch
                     id="random"
-                    checked={store.config.random}
-                    onCheckedChange={checked => store.setRandom(checked)}
+                    checked={config.random}
+                    onCheckedChange={checked => setRandom(checked)}
                   />
                   <Label htmlFor="random" className="cursor-pointer">
                     随机发送
@@ -176,9 +129,9 @@ export default function AutoMessage() {
                 <div className="flex items-center space-x-2">
                   <Input
                     type="number"
-                    value={store.config.scheduler.interval[0] / 1000}
-                    onChange={e => store.setScheduler({
-                      interval: [Number(e.target.value) * 1000, store.config.scheduler.interval[1]],
+                    value={config.scheduler.interval[0] / 1000}
+                    onChange={e => setScheduler({
+                      interval: [Number(e.target.value) * 1000, config.scheduler.interval[1]],
                     })}
                     className="w-24"
                     min="1"
@@ -187,9 +140,9 @@ export default function AutoMessage() {
                   <span className="text-sm text-muted-foreground">至</span>
                   <Input
                     type="number"
-                    value={store.config.scheduler.interval[1] / 1000}
-                    onChange={e => store.setScheduler({
-                      interval: [store.config.scheduler.interval[0], Number(e.target.value) * 1000],
+                    value={config.scheduler.interval[1] / 1000}
+                    onChange={e => setScheduler({
+                      interval: [config.scheduler.interval[0], Number(e.target.value) * 1000],
                     })}
                     className="w-24"
                     min="1"
@@ -205,7 +158,6 @@ export default function AutoMessage() {
           </CardContent>
         </Card>
       </div>
-
     </div>
   )
 }
