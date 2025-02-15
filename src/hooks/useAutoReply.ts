@@ -1,5 +1,6 @@
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { create } from 'zustand'
+import { createJSONStorage, persist } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
 import { type ChatMessage, useAIChatStore } from './useAIChat'
 
@@ -37,51 +38,68 @@ interface AutoReplyAction {
   removeReply: (commentId: string) => void
 }
 
+const defaultPrompt = '你是一个直播间的助手，负责回复观众的评论。请用简短友好的语气回复，不要超过50个字。'
 // nickname -> contextId
 // const contextMap = new Map<string, number>()
 
 export const useAutoReplyStore = create<AutoReplyState & AutoReplyAction>()(
-  immer((set) => {
+  persist(
+    immer((set) => {
     // 从 localStorage 读取保存的 prompt
-    const savedPrompt = localStorage.getItem('autoReplyPrompt')
+      // const savedPrompt = localStorage.getItem('autoReplyPrompt')
 
-    return {
-      isRunning: false,
-      isListening: false,
-      setIsRunning: isRunning => set({ isRunning }),
-      setIsListening: isListening => set({ isListening }),
-      replies: [],
-      comments: [],
-      // 设置默认 prompt 或使用保存的值
-      prompt: savedPrompt || '你是一个直播间的助手，负责回复观众的评论。请用简短友好的语气回复，不要超过50个字。',
-      setPrompt: (prompt: string) => {
-        set({ prompt })
-        // 保存到 localStorage
-        localStorage.setItem('autoReplyPrompt', prompt)
-      },
-      addComment: (comment: Comment) => {
-        set((state) => {
-          state.comments = [{ ...comment }, ...state.comments]
-        })
-      },
-      addReply: (commentId: string, nickname: string, content: string) => {
-        set((state) => {
-          state.replies = [{
-            id: crypto.randomUUID(),
-            commentId,
-            replyContent: content,
-            replyFor: nickname,
-            timestamp: new Date().toISOString(),
-          }, ...state.replies]
-        })
-      },
-      removeReply: (commentId: string) => {
-        set((state) => {
-          state.replies = state.replies.filter(reply => reply.commentId !== commentId)
-        })
-      },
-    }
-  }),
+      return {
+        isRunning: false,
+        isListening: false,
+        setIsRunning: isRunning => set({ isRunning }),
+        setIsListening: isListening => set({ isListening }),
+        replies: [],
+        comments: [],
+        // 设置默认 prompt 或使用保存的值
+        prompt: defaultPrompt,
+        setPrompt: (prompt: string) => {
+          set({ prompt })
+          // 保存到 localStorage
+          // localStorage.setItem('autoReplyPrompt', prompt)
+        },
+        addComment: (comment: Comment) => {
+          set((state) => {
+            state.comments = [{ ...comment }, ...state.comments]
+          })
+        },
+        addReply: (commentId: string, nickname: string, content: string) => {
+          set((state) => {
+            state.replies = [{
+              id: crypto.randomUUID(),
+              commentId,
+              replyContent: content,
+              replyFor: nickname,
+              timestamp: new Date().toISOString(),
+            }, ...state.replies]
+          })
+        },
+        removeReply: (commentId: string) => {
+          set((state) => {
+            state.replies = state.replies.filter(reply => reply.commentId !== commentId)
+          })
+        },
+      }
+    }),
+    {
+      name: 'autoReply',
+      storage: createJSONStorage(() => localStorage, {
+        reviver: (key, value) => {
+          if (key === 'prompt') {
+            return value || defaultPrompt
+          }
+          return value
+        },
+      }),
+      partialize: state => ({
+        prompt: state.prompt,
+      }),
+    },
+  ),
 )
 
 function generateMessages(comments: Comment[], replies: ReplyPreview[]) {
@@ -136,12 +154,13 @@ export function useAutoReply() {
       return
     }
 
-    // 发送消息给 AI
+    // 先根据评论和回复生成 ai 需要的格式
     const plainMessages = generateMessages(
       [comment, ...comments].filter(cmt => cmt.nickname === comment.nickname),
       replies.filter(reply => reply.replyFor === comment.nickname),
     )
 
+    // 开头加上系统提示词
     const systemPrompt = `你将接收到一组JSON数据，数据代表的是直播间用户的评论内容，nickname 为用户的昵称，commentTags 为用户的标签，content 为用户的评论内容，请你分析这组数据，并按照下面的提示词进行回复：\n${prompt}`
     const messages = [
       {
