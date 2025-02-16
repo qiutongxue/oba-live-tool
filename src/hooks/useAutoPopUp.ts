@@ -2,7 +2,7 @@ import { eventEmitter, EVENTS } from '@/utils/events'
 import { useEffect } from 'react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { create } from 'zustand'
-import { createJSONStorage, persist } from 'zustand/middleware'
+import { persist } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
 import { useAccounts } from './useAccounts'
 import { useToast } from './useToast'
@@ -66,29 +66,25 @@ export const useAutoPopUpStore = create<AutoPopUpStore>()(
     }),
     {
       name: 'auto-popup-storage',
-      storage: createJSONStorage(() => localStorage, {
-        reviver: (key, value) => {
-          if (key === 'state') {
-            const oldState = value as { config: AutoPopUpConfig }
-            // 检查是否是旧版本的数据结构（通过检查是否存在 config 字段）
-            if (oldState && oldState.config && !('contexts' in oldState)) {
-              // 迁移到新的数据结构
-              return {
-                contexts: {
-                  default: oldState.config, // 将旧配置迁移到默认账号
-                },
-              }
-            }
+      version: 1,
+      migrate: (persistedState, version) => {
+        if (version === 0) {
+          const persisted = persistedState as { config: AutoPopUpConfig }
+          return {
+            contexts: {
+              default: {
+                config: persisted.config,
+              },
+            },
           }
-          return value
-        },
-      }),
+        }
+      },
       partialize: state => ({
         contexts: Object.fromEntries(
-          // [default, { isRunning: x }]
-          Object.entries(state.contexts).map(([key, value]) => [
-            key,
-            Object.fromEntries(Object.entries(value).filter(([key]) => key !== 'isRunning')),
+          Object.entries(state.contexts).map(([accountId, context]) => [
+            // [accountId, context { isRunning, config }]
+            accountId,
+            Object.fromEntries(Object.entries(context).filter(([key]) => key !== 'isRunning')),
           ]),
         ),
       }),
@@ -102,7 +98,6 @@ export function useAutoPopUp() {
   const { currentAccountId } = useAccounts()
 
   const context = store.contexts[currentAccountId] || defaultContext
-
   const updateConfig = (newConfig: Partial<AutoPopUpConfig>) => {
     store.setConfig(currentAccountId, newConfig)
   }
