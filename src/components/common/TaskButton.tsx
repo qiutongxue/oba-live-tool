@@ -1,4 +1,4 @@
-import { useLiveControlStore } from '@/hooks/useLiveControl'
+import { useLiveControl } from '@/hooks/useLiveControl'
 import { PlayIcon, StopIcon } from '@radix-ui/react-icons'
 import { useDebounceFn } from 'ahooks'
 import { Button } from '../ui/button'
@@ -11,7 +11,7 @@ export function TaskButton({
   isTaskRunning: boolean
   onStartStop: () => void
 }) {
-  const { isConnected } = useLiveControlStore()
+  const { isConnected } = useLiveControl()
   const debouncedFn = useDebounceFn(onStartStop, { wait: 500, leading: true, trailing: false })
   return (
     <TooltipProvider>
