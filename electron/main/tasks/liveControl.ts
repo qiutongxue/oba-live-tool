@@ -204,6 +204,13 @@ function setupIpcHandlers() {
       }
     },
   )
+
+  ipcMain.handle(
+    IPC_CHANNELS.tasks.liveControl.disconnect,
+    async () => {
+      await pageManager.getPage()?.close()
+    },
+  )
 }
 
 setupIpcHandlers()

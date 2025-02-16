@@ -5,13 +5,14 @@ import { useChromeConfig } from '@/hooks/useChromeConfig'
 import { useDevMode } from '@/hooks/useDevMode'
 import { useLiveControl } from '@/hooks/useLiveControl'
 import { useToast } from '@/hooks/useToast'
-import { CheckIcon, GlobeIcon } from '@radix-ui/react-icons'
+import { CheckIcon, Cross2Icon, GlobeIcon } from '@radix-ui/react-icons'
 import React, { useEffect, useState } from 'react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 
 export default function BrowserControl() {
   const { isConnected, setIsConnected, accountName, setAccountName } = useLiveControl()
   const [isLoading, setIsLoading] = useState(false)
+  const [isHovered, setIsHovered] = useState(false)
   const { toast } = useToast()
 
   const { setPath, path: chromePath, cookies: oldCookies, setCookies } = useChromeConfig()
@@ -52,6 +53,31 @@ export default function BrowserControl() {
     }
   }
 
+  const disconnectLiveControl = async () => {
+    try {
+      setIsLoading(true)
+      await window.ipcRenderer.invoke(IPC_CHANNELS.tasks.liveControl.disconnect)
+      setIsConnected(false)
+      setAccountName('')
+      toast.success('已断开连接')
+    }
+    catch {
+      toast.error('断开连接失败')
+    }
+    finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleButtonClick = () => {
+    if (isConnected) {
+      disconnectLiveControl()
+    }
+    else {
+      connectLiveControl()
+    }
+  }
+
   return (
     <div className="container py-8 space-y-4">
       <div>
@@ -74,15 +100,28 @@ export default function BrowserControl() {
               </div>
               <Button
                 variant={isConnected ? 'secondary' : 'default'}
-                onClick={connectLiveControl}
-                disabled={isLoading || isConnected}
+                onClick={handleButtonClick}
+                disabled={isLoading}
                 size="sm"
+                onMouseEnter={() => setIsHovered(true)}
+                onMouseLeave={() => setIsHovered(false)}
               >
                 {isConnected
                   ? (
                       <>
-                        <CheckIcon className="mr-2 h-4 w-4" />
-                        已连接
+                        {isHovered
+                          ? (
+                              <>
+                                <Cross2Icon className="mr-2 h-4 w-4" />
+                                断开连接
+                              </>
+                            )
+                          : (
+                              <>
+                                <CheckIcon className="mr-2 h-4 w-4" />
+                                已连接
+                              </>
+                            )}
                       </>
                     )
                   : (
