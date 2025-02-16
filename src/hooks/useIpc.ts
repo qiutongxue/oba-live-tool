@@ -1,14 +1,14 @@
 import { useEffect } from 'react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { type Comment, useAutoReply } from './useAutoReply'
-import { useLiveControlStore } from './useLiveControl'
+import { useLiveControl } from './useLiveControl'
 import { useToast } from './useToast'
 
 // 需要全局监听的 ipc 事件
 
 export function useIpc() {
   const { handleComment } = useAutoReply()
-  const { setIsConnected } = useLiveControlStore()
+  const { setIsConnected } = useLiveControl()
   const { toast } = useToast()
 
   useEffect(() => {

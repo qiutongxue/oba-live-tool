@@ -1,27 +1,43 @@
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
+import { useAccounts } from './useAccounts'
 
 interface ChromeConfig {
   path: string
-  setPath: (path: string) => void
   cookies: string
-  setCookies: (cookies: string) => void
+}
+interface ChromeConfigStore {
+  contexts: Record<string, ChromeConfig>
+  setPath: (accountId: string, path: string) => void
+  setCookies: (accountId: string, cookies: string) => void
 }
 
-export const useChromeConfig = create<ChromeConfig>()(
+const defaultContext: ChromeConfig = {
+  path: '',
+  cookies: '',
+}
+
+export const useChromeConfigStore = create<ChromeConfigStore>()(
   persist(
     immer(set => ({
-      path: '',
-      setPath: (path) => {
+      contexts: {
+        default: defaultContext,
+      },
+      setPath: (accountId, path) => {
         set((state) => {
-          state.path = path
+          if (!state.contexts[accountId]) {
+            state.contexts[accountId] = defaultContext
+          }
+          state.contexts[accountId].path = path
         })
       },
-      cookies: '',
-      setCookies: (cookies) => {
+      setCookies: (accountId, cookies) => {
         set((state) => {
-          state.cookies = cookies
+          if (!state.contexts[accountId]) {
+            state.contexts[accountId] = defaultContext
+          }
+          state.contexts[accountId].cookies = cookies
         })
       },
     })),
@@ -31,3 +47,17 @@ export const useChromeConfig = create<ChromeConfig>()(
     },
   ),
 )
+
+export function useChromeConfig() {
+  const { contexts, setPath, setCookies } = useChromeConfigStore()
+
+  const currentAccountId = useAccounts(state => state.currentAccountId)
+  const context = contexts[currentAccountId] || defaultContext
+
+  return {
+    path: context.path,
+    cookies: context.cookies,
+    setPath: (path: string) => setPath(currentAccountId, path),
+    setCookies: (cookies: string) => setCookies(currentAccountId, cookies),
+  }
+}
