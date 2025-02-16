@@ -1,7 +1,10 @@
+import { useMemoizedFn } from 'ahooks'
+import { useMemo } from 'react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
+import { useAccounts } from './useAccounts'
 import { type ChatMessage, useAIChatStore } from './useAIChat'
 
 interface ReplyPreview {
@@ -21,7 +24,7 @@ export interface Comment {
   timestamp: string
 }
 
-interface AutoReplyState {
+interface AutoReplyContext {
   isRunning: boolean
   isListening: boolean
   replies: ReplyPreview[]
@@ -29,18 +32,27 @@ interface AutoReplyState {
   prompt: string
 }
 
+interface AutoReplyState {
+  contexts: Record<string, AutoReplyContext>
+}
 interface AutoReplyAction {
-  setIsRunning: (isRunning: boolean) => void
-  setIsListening: (isListening: boolean) => void
-  setPrompt: (prompt: string) => void
-  addComment: (comment: Comment) => void
-  addReply: (commentId: string, nickname: string, content: string) => void
-  removeReply: (commentId: string) => void
+  setIsRunning: (accountId: string, isRunning: boolean) => void
+  setIsListening: (accountId: string, isListening: boolean) => void
+  setPrompt: (accountId: string, prompt: string) => void
+  addComment: (accountId: string, comment: Comment) => void
+  addReply: (accountId: string, commentId: string, nickname: string, content: string) => void
+  removeReply: (accountId: string, commentId: string) => void
 }
 
 const defaultPrompt = '你是一个直播间的助手，负责回复观众的评论。请用简短友好的语气回复，不要超过50个字。'
-// nickname -> contextId
-// const contextMap = new Map<string, number>()
+
+const defaultContext: AutoReplyContext = {
+  isRunning: false,
+  isListening: false,
+  replies: [],
+  comments: [],
+  prompt: defaultPrompt,
+}
 
 export const useAutoReplyStore = create<AutoReplyState & AutoReplyAction>()(
   persist(
@@ -52,46 +64,81 @@ export const useAutoReplyStore = create<AutoReplyState & AutoReplyAction>()(
       }
 
       return {
-        isRunning: false,
-        isListening: false,
-        setIsRunning: isRunning => set({ isRunning }),
-        setIsListening: isListening => set({ isListening }),
-        replies: [],
-        comments: [],
-        // 设置默认 prompt 或使用保存的值
-        prompt: previousPrompt || defaultPrompt,
-        setPrompt: (prompt: string) => {
-          set({ prompt })
+        contexts: {
+          default: { ...defaultContext, prompt: previousPrompt || defaultPrompt },
         },
-        addComment: (comment: Comment) => {
-          set((state) => {
-            state.comments = [{ ...comment }, ...state.comments]
-          })
-        },
-        addReply: (commentId: string, nickname: string, content: string) => {
-          set((state) => {
-            state.replies = [{
-              id: crypto.randomUUID(),
-              commentId,
-              replyContent: content,
-              replyFor: nickname,
-              timestamp: new Date().toISOString(),
-            }, ...state.replies]
-          })
-        },
-        removeReply: (commentId: string) => {
-          set((state) => {
-            state.replies = state.replies.filter(reply => reply.commentId !== commentId)
-          })
-        },
+        setIsRunning: (accountId, isRunning) => set((state) => {
+          if (!state.contexts[accountId]) {
+            state.contexts[accountId] = defaultContext
+          }
+          state.contexts[accountId].isRunning = isRunning
+        }),
+        setIsListening: (accountId, isListening) => set((state) => {
+          if (!state.contexts[accountId]) {
+            state.contexts[accountId] = defaultContext
+          }
+          state.contexts[accountId].isListening = isListening
+        }),
+        setPrompt: (accountId, prompt) => set((state) => {
+          if (!state.contexts[accountId]) {
+            state.contexts[accountId] = defaultContext
+          }
+          state.contexts[accountId].prompt = prompt
+        }),
+        addComment: (accountId, comment) => set((state) => {
+          if (!state.contexts[accountId]) {
+            state.contexts[accountId] = defaultContext
+          }
+          state.contexts[accountId].comments = [{ ...comment }, ...state.contexts[accountId].comments]
+        }),
+        addReply: (accountId, commentId, nickname, content) => set((state) => {
+          if (!state.contexts[accountId]) {
+            state.contexts[accountId] = defaultContext
+          }
+          state.contexts[accountId].replies = [{
+            id: crypto.randomUUID(),
+            commentId,
+            replyContent: content,
+            replyFor: nickname,
+            timestamp: new Date().toISOString(),
+          }, ...state.contexts[accountId].replies]
+        }),
+        removeReply: (accountId, commentId) => set((state) => {
+          if (!state.contexts[accountId]) {
+            state.contexts[accountId] = defaultContext
+          }
+          state.contexts[accountId].replies = state.contexts[accountId].replies.filter(reply => reply.commentId !== commentId)
+        }),
       }
     }),
     {
-      name: 'autoReply',
+      name: 'auto-reply',
       version: 1,
-      partialize: state => ({
-        prompt: state.prompt,
-      }),
+      partialize: (state) => {
+        return {
+        // 只存 prompt
+          contexts: Object.fromEntries(
+            Object.entries(state.contexts).map(([accountId, context]) => [
+            // [accountId, context { prompt }]
+              accountId,
+              { prompt: context.prompt },
+            ]),
+          ),
+        }
+      },
+      merge: (persistedState, currentState) => {
+        const persisted = persistedState as AutoReplyState
+        return {
+          ...currentState,
+          ...persisted,
+          contexts: Object.fromEntries(
+            Object.entries(persisted.contexts || {}).map(([accountId, context]) => [
+              accountId,
+              { ...defaultContext, ...context }, // 用默认值补全字段
+            ]),
+          ),
+        }
+      },
     },
   ),
 )
@@ -138,11 +185,18 @@ function generateMessages(comments: Comment[], replies: ReplyPreview[]) {
 }
 
 export function useAutoReply() {
-  const { isRunning, comments, replies, addReply, addComment, prompt } = useAutoReplyStore()
+  const { addReply, addComment, contexts, setIsRunning, setIsListening, setPrompt } = useAutoReplyStore()
+  const { currentAccountId } = useAccounts()
   const aiStore = useAIChatStore()
 
-  const handleComment = (comment: Comment) => {
-    addComment(comment)
+  const context = useMemo(() => contexts[currentAccountId] || defaultContext, [contexts, currentAccountId])
+  const { isRunning, isListening, comments, replies, prompt } = context
+
+  const handleComment = useMemoizedFn((comment: Comment, accountId: string) => {
+    const context = contexts[accountId] || defaultContext
+    const { isRunning, comments, replies, prompt } = context
+
+    addComment(accountId, comment)
     // 如果是主播评论就跳过
     if (!isRunning || comment.authorTags.length > 0) {
       return
@@ -155,7 +209,7 @@ export function useAutoReply() {
     )
 
     // 开头加上系统提示词
-    const systemPrompt = `你将接收到一组JSON数据，数据代表的是直播间用户的评论内容，nickname 为用户的昵称，commentTags 为用户的标签，content 为用户的评论内容，请你分析这组数据，并按照下面的提示词进行回复：\n${prompt}`
+    const systemPrompt = `你将接收到一组或多组JSON数据，每组数据代表的是直播间用户的评论内容，nickname 为用户的昵称，commentTags 为用户的标签，content 为用户的评论内容，请你分析这组数据，如果是多组数据，把多组数据合并成一个回复，并按照下面的提示词进行回复：\n${prompt}`
     const messages = [
       {
         role: 'system',
@@ -172,12 +226,12 @@ export function useAutoReply() {
       apiKey: aiStore.apiKeys[aiStore.config.provider],
     }).then((reply) => {
       if (reply && typeof reply === 'string') {
-        addReply(comment.id, comment.nickname, reply)
+        addReply(accountId, comment.id, comment.nickname, reply)
       }
     }).catch((err) => {
       console.error('生成回复失败:', err)
     })
-  }
+  })
 
-  return { handleComment }
+  return { handleComment, isRunning, isListening, comments, replies, prompt, setIsRunning: (isRunning: boolean) => setIsRunning(currentAccountId, isRunning), setIsListening: (isListening: boolean) => setIsListening(currentAccountId, isListening), setPrompt: (prompt: string) => setPrompt(currentAccountId, prompt) }
 }

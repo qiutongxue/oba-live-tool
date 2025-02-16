@@ -24,12 +24,14 @@ class CommentManager {
   private controller: LiveController
   public isRunning = false
   private handlerInitialized = false
+  private accountId: string
 
-  constructor(page: Page) {
+  constructor(page: Page, accountId: string) {
     if (!page)
       throw new Error('Page not initialized')
     this.page = page
     this.controller = new LiveController(page)
+    this.accountId = accountId
   }
 
   private async setupCommentHandler() {
@@ -39,7 +41,11 @@ class CommentManager {
     try {
       await this.page.exposeFunction('handleNewComment', (comment: CommentData) => {
         logger.info(`【新评论】<${comment.nickname}>: ${comment.content}`)
-        windowManager.sendToWindow('main', IPC_CHANNELS.tasks.autoReply.showComment, comment)
+        windowManager.sendToWindow(
+          'main',
+          IPC_CHANNELS.tasks.autoReply.showComment,
+          { comment, accountId: this.accountId },
+        )
       })
       this.handlerInitialized = true
     }
@@ -234,7 +240,7 @@ function setupIpcHandlers() {
     try {
       if (!pageManager.contains(TASK_NAME)) {
         logger.debug('注册监听评论任务')
-        pageManager.register(TASK_NAME, page => new CommentManager(page))
+        pageManager.register(TASK_NAME, (page, _, accountId) => new CommentManager(page, accountId))
       }
 
       pageManager.startTask(TASK_NAME)
