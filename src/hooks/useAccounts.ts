@@ -6,8 +6,6 @@ import { immer } from 'zustand/middleware/immer'
 interface Account {
   id: string
   name: string
-  cookies: string
-  config: Record<string, any>
 }
 
 interface AccountsStore {
@@ -16,9 +14,8 @@ interface AccountsStore {
   addAccount: (name: string) => void
   removeAccount: (id: string) => void
   switchAccount: (id: string) => void
-  updateAccountCookies: (cookies: string) => void
-  updateAccountConfig: (config: Partial<Record<string, any>>) => void
   getCurrentAccount: () => Account | undefined
+  updateAccountName: (id: string, name: string) => void
 }
 
 export const useAccounts = create<AccountsStore>()(
@@ -33,8 +30,6 @@ export const useAccounts = create<AccountsStore>()(
           state.accounts.push({
             id: newId,
             name,
-            cookies: '',
-            config: {},
           })
           eventEmitter.emit(EVENTS.ACCOUNT_ADDED, newId, name)
         })
@@ -57,26 +52,18 @@ export const useAccounts = create<AccountsStore>()(
         })
       },
 
-      updateAccountCookies: (cookies: string) => {
-        set((state) => {
-          const account = state.accounts.find(acc => acc.id === state.currentAccountId)
-          if (account) {
-            account.cookies = cookies
-          }
-        })
-      },
-
-      updateAccountConfig: (config: Partial<Record<string, any>>) => {
-        set((state) => {
-          const account = state.accounts.find(acc => acc.id === state.currentAccountId)
-          if (account) {
-            account.config = { ...account.config, ...config }
-          }
-        })
-      },
-
       getCurrentAccount: () => {
         return get().accounts.find(acc => acc.id === get().currentAccountId)
+      },
+
+      updateAccountName: (id: string, name: string) => {
+        set((state) => {
+          const account = state.accounts.find(acc => acc.id === id)
+          if (account) {
+            account.name = name
+            // eventEmitter.emit(EVENTS.ACCOUNT_UPDATED, id, name)
+          }
+        })
       },
     })),
     {
