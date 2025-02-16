@@ -1,5 +1,5 @@
 import { Textarea } from '@/components/ui/textarea'
-import { useAutoReplyStore } from '@/hooks/useAutoReply'
+import { useAutoReply } from '@/hooks/useAutoReply'
 import { Settings } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Button } from '../ui/button'
@@ -10,7 +10,7 @@ interface PromptCardProps {
 }
 
 export function PromptCard({ onSave }: PromptCardProps) {
-  const { prompt, setPrompt } = useAutoReplyStore()
+  const { prompt, setPrompt } = useAutoReply()
   const [tempPrompt, setTempPrompt] = useState(prompt)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
 

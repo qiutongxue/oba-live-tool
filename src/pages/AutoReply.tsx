@@ -6,18 +6,18 @@ import { TaskButton } from '@/components/common/TaskButton'
 import { Title } from '@/components/common/Title'
 import { Badge } from '@/components/ui/badge'
 import { useAIChatStore } from '@/hooks/useAIChat'
-import { useAutoReplyStore } from '@/hooks/useAutoReply'
+import { useAutoReply } from '@/hooks/useAutoReply'
 import { useState } from 'react'
 import { providers } from 'shared/providers'
 
 export default function AutoReply() {
-  const { isRunning: autoReplyEnabled, setIsRunning: setAutoReplyEnabled } = useAutoReplyStore()
+  const { isRunning, setIsRunning } = useAutoReply()
   const [highlightedCommentId, setHighlightedCommentId] = useState<string | null>(null)
   const aiConfig = useAIChatStore(state => state.config)
 
   const handleAutoReplyToggle = async () => {
     try {
-      setAutoReplyEnabled(!autoReplyEnabled)
+      setIsRunning(!isRunning)
     }
     catch (error) {
       console.error('切换自动回复失败:', error)
@@ -34,7 +34,7 @@ export default function AutoReply() {
           <div className="flex items-center gap-2">
             <APIKeyDialog />
             <TaskButton
-              isTaskRunning={autoReplyEnabled}
+              isTaskRunning={isRunning}
               onStartStop={handleAutoReplyToggle}
             />
           </div>

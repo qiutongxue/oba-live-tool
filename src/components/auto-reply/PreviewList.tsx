@@ -1,4 +1,4 @@
-import { useAutoReplyStore } from '@/hooks/useAutoReply'
+import { useAutoReply } from '@/hooks/useAutoReply'
 import { SendHorizontalIcon } from 'lucide-react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { Button } from '../ui/button'
@@ -8,7 +8,7 @@ import { ScrollArea } from '../ui/scroll-area'
 import { Separator } from '../ui/separator'
 
 export default function PreviewList({ setHighLight }: { setHighLight: (commentId: string | null) => void }) {
-  const { replies, comments } = useAutoReplyStore()
+  const { replies, comments } = useAutoReply()
 
   const handleSendReply = async (replyContent: string, _commentId: string) => {
     try {

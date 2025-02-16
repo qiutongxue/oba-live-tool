@@ -11,10 +11,16 @@ interface Context {
   tasks: Record<string, Scheduler>
 }
 
+interface Account {
+  name: string
+  id: string
+}
+
 export class PageManager {
   private static instance: PageManager
   private contexts: Map<string, Context> = new Map()
   private currentId: string = 'default'
+  private accountNames: Account[] = []
   private logger = createLogger('PageManager')
   private constructor() {}
 
@@ -26,13 +32,21 @@ export class PageManager {
 
   switchContext(id: string) {
     this.currentId = id
-    this.logger.info(`Switched to context <${id}>`)
+    this.logger.info(`Switched to context <${this.currentAccountName}>`)
+  }
+
+  updateAccountNames(names: Account[]) {
+    this.accountNames = names
+  }
+
+  get currentAccountName() {
+    return this.accountNames.find(name => name.id === this.currentId)?.name || ''
   }
 
   setContext(context: Omit<Context, 'tasks'>) {
     const previousContext = this.contexts.get(this.currentId) ?? { ...context, tasks: {} }
     this.contexts.set(this.currentId, { ...previousContext, ...context })
-    this.logger.info(`Set context <${this.currentId}>`)
+    this.logger.info(`Set context <${this.currentAccountName}>`)
   }
 
   getContext() {
@@ -48,10 +62,13 @@ export class PageManager {
     return context.page
   }
 
-  register(taskName: string, creator: (page: Page, accountId: string, userConfig?: BaseConfig) => Scheduler, userConfig?: BaseConfig) {
+  register(
+    taskName: string,
+    creator: (page: Page, accountName: string, accountId: string) => Scheduler,
+  ) {
     const context = this.contexts.get(this.currentId)
     if (!context)
-      throw new Error('Context not initialized')
+      throw new Error(`Context <${this.currentId}> not initialized`)
     if (context.tasks[taskName]?.isRunning) {
       this.logger.warn(`Task ${taskName} is already running - <${this.currentId}>`)
       return
@@ -62,14 +79,18 @@ export class PageManager {
       delete context.tasks[taskName]
     }
 
-    const scheduler = creator(context.page, this.currentId, userConfig)
+    const scheduler = creator(
+      context.page,
+      this.currentAccountName,
+      this.currentId,
+    )
     context.tasks[taskName] = scheduler
   }
 
   contains(taskName: string) {
     const context = this.contexts.get(this.currentId)
     if (!context)
-      throw new Error('Context not initialized')
+      throw new Error(`Context <${this.currentId}> not initialized`)
     return context.tasks[taskName] !== undefined
   }
 
@@ -84,7 +105,7 @@ export class PageManager {
   startTask(taskName: string) {
     const context = this.contexts.get(this.currentId)
     if (!context)
-      throw new Error('Context not initialized')
+      throw new Error(`Context <${this.currentId}> not initialized`)
     if (!context.tasks[taskName])
       throw new Error(`Task ${taskName} not found`)
     if (context.tasks[taskName].isRunning)
@@ -97,7 +118,7 @@ export class PageManager {
   stopTask(taskName: string) {
     const context = this.contexts.get(this.currentId)
     if (!context)
-      throw new Error('Context not initialized')
+      throw new Error(`Context <${this.currentId}> not initialized`)
     if (!context.tasks[taskName])
       throw new Error(`Task ${taskName} not found`)
     this.logger.info(`Stopping task ${taskName} - (${this.currentId})`)
@@ -107,7 +128,7 @@ export class PageManager {
   updateTaskConfig(taskName: string, newConfig: BaseConfig) {
     const context = this.contexts.get(this.currentId)
     if (!context)
-      throw new Error('Context not initialized')
+      throw new Error(`Context <${this.currentId}> not initialized`)
     if (!context.tasks[taskName])
       throw new Error(`Task ${taskName} not found`)
     context.tasks[taskName].updateConfig(newConfig)
@@ -116,6 +137,7 @@ export class PageManager {
 
 export const pageManager = PageManager.getInstance()
 
-ipcMain.handle(IPC_CHANNELS.account.switch, async (_, accountId: string) => {
+ipcMain.handle(IPC_CHANNELS.account.switch, async (_, { accountId, accountNames }: { accountId: string, accountNames: Account[] }) => {
   pageManager.switchContext(accountId)
+  pageManager.updateAccountNames(accountNames)
 })

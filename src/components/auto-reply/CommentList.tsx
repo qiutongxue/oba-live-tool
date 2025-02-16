@@ -1,4 +1,4 @@
-import { useAutoReplyStore } from '@/hooks/useAutoReply'
+import { useAutoReply } from '@/hooks/useAutoReply'
 import { useLiveControl } from '@/hooks/useLiveControl'
 import { useToast } from '@/hooks/useToast'
 import { cn } from '@/lib/utils'
@@ -11,9 +11,7 @@ import { Separator } from '../ui/separator'
 import { Switch } from '../ui/switch'
 
 export default function CommentList({ highlight: highlightedCommentId }: { highlight: string | null }) {
-  const comments = useAutoReplyStore(state => state.comments)
-  const isListening = useAutoReplyStore(state => state.isListening)
-  const setIsListening = useAutoReplyStore(state => state.setIsListening)
+  const { comments, isListening, setIsListening } = useAutoReply()
   const { isConnected } = useLiveControl()
   const { toast } = useToast()
   const [hideHost, setHideHost] = useState(false)
