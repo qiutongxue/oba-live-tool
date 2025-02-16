@@ -104,10 +104,10 @@ export const useAutoMessageStore = create<AutoMessageStore>()(
       },
       partialize: state => ({
         contexts: Object.fromEntries(
-          // [default, { isRunning: x }]
-          Object.entries(state.contexts).map(([key, value]) =>
-            [key, Object.fromEntries(
-              Object.entries(value).filter(([key]) => key !== 'isRunning'),
+          Object.entries(state.contexts).map(([accountId, context]) =>
+            // [accountId, context { isRunning, config }]
+            [accountId, Object.fromEntries(
+              Object.entries(context).filter(([key]) => key !== 'isRunning'),
             )],
           ),
         ),
