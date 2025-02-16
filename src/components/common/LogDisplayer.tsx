@@ -45,7 +45,7 @@ export default function LogDisplayer() {
       timestamp: log.date.toLocaleString(),
       module: log.scope ?? '',
       level: log.level.toUpperCase(),
-      message: log.data[0],
+      message: log.data.join(' '),
     }
   }
 

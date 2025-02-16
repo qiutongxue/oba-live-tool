@@ -3,7 +3,7 @@ import windowManager from './windowManager'
 
 // [2025-02-11 07:30:03.037] [中控台] » INFO         启动中……
 electronLog.transports.console.format = ({ data, level, message }) => {
-  const text = data.join('\n')
+  const text = data.join(' ')
   return [
     `[${message.date.toLocaleString()}]`,
     message.scope ? `[${message.scope}]` : '',
