@@ -41,3 +41,8 @@ export const SUBMIT_COMMENT_SELECTOR = `${COMMENT_BLOCK_SELECTOR} div[class^="in
  */
 export const COMMENT_LIST_WRAPPER = '#comment-list-wrapper'
 export const COMMENT_LIST_ITEM = `${COMMENT_LIST_WRAPPER} div[class^="commentItem"]`
+
+/**
+ * 恢复直播按钮
+ */
+export const RECOVERY_BUTTON_SELECTOR = `div.auxo-modal-content > div > div > div.auxo-modal-confirm-btns > button.auxo-btn.auxo-btn-primary`

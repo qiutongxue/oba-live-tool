@@ -21,7 +21,7 @@ interface CommentData {
 
 class CommentManager {
   private readonly page: Page
-
+  private controller: LiveController
   public isRunning = false
   private handlerInitialized = false
 
@@ -29,6 +29,7 @@ class CommentManager {
     if (!page)
       throw new Error('Page not initialized')
     this.page = page
+    this.controller = new LiveController(page)
   }
 
   private async setupCommentHandler() {
@@ -182,6 +183,11 @@ class CommentManager {
 
       // 处理已存在的评论
       await this.processExistingComments()
+
+      // 5分钟检查一次是否弹出了保护窗口
+      setInterval(() => {
+        this.controller.recoveryLive()
+      }, 5 * 60 * 1000)
 
       logger.success('评论监听启动成功')
     }

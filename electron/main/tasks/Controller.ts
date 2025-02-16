@@ -1,5 +1,5 @@
 import type { Page } from 'playwright'
-import { COMMENT_TEXTAREA_SELECTOR, GOODS_ACTION_SELECTOR, GOODS_ITEM_SELECTOR, PIN_TOP_SELECTOR, SUBMIT_COMMENT_SELECTOR } from '#/constants'
+import { COMMENT_TEXTAREA_SELECTOR, GOODS_ACTION_SELECTOR, GOODS_ITEM_SELECTOR, PIN_TOP_SELECTOR, RECOVERY_BUTTON_SELECTOR, SUBMIT_COMMENT_SELECTOR } from '#/constants'
 import { createLogger } from '#/logger'
 
 const logger = createLogger('LiveController')
@@ -12,6 +12,7 @@ export class LiveController {
   }
 
   public async sendMessage(message: string, pinTop?: boolean) {
+    await this.recoveryLive()
     const textarea = await this.page.$(COMMENT_TEXTAREA_SELECTOR)
     if (!textarea) {
       throw new Error('找不到评论框')
@@ -26,12 +27,20 @@ export class LiveController {
   }
 
   public async popUp(id: number) {
+    await this.recoveryLive()
     // 不用什么 waitFor 了，直接轮询，暴力的才是最好的
     while (await this.clickPopUpButton(id) === '取消讲解') {
       logger.info(`商品 ${id} 取消讲解`)
       await new Promise(resolve => setTimeout(resolve, 1000))
     }
     logger.success(`商品 ${id} 讲解成功`)
+  }
+
+  public async recoveryLive() {
+    const recoveryButton = await this.page.$(RECOVERY_BUTTON_SELECTOR)
+    if (recoveryButton) {
+      await recoveryButton.click()
+    }
   }
 
   private async clickPopUpButton(id: number): Promise<'讲解' | '取消讲解'> {
