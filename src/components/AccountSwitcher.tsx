@@ -26,6 +26,11 @@ export function AccountSwitcher() {
       return
     }
 
+    if (accounts.some(account => account.name === newAccountName)) {
+      toast.error('账号名称已存在')
+      return
+    }
+
     addAccount(newAccountName)
     setIsAddDialogOpen(false)
     setNewAccountName('')
@@ -37,6 +42,14 @@ export function AccountSwitcher() {
       return
     if (!editingAccount.name.trim()) {
       toast.error('请输入账号名称')
+      return
+    }
+
+    if (accounts.some(
+      account => account.name === editingAccount.name
+        && account.id !== editingAccount.id,
+    )) {
+      toast.error('账号名称已存在')
       return
     }
 
