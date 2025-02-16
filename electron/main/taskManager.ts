@@ -1,5 +1,7 @@
 import type { Browser, BrowserContext, Page } from 'playwright'
 import type { BaseConfig, Scheduler } from './tasks/scheduler'
+import { ipcMain } from 'electron'
+import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { createLogger } from './logger'
 
 interface Context {
@@ -46,7 +48,7 @@ export class PageManager {
     return context.page
   }
 
-  register(taskName: string, creator: (args: any, userConfig?: BaseConfig) => Scheduler, userConfig?: BaseConfig) {
+  register(taskName: string, creator: (page: Page, accountId: string, userConfig?: BaseConfig) => Scheduler, userConfig?: BaseConfig) {
     const context = this.contexts.get(this.currentId)
     if (!context)
       throw new Error('Context not initialized')
@@ -60,7 +62,7 @@ export class PageManager {
       delete context.tasks[taskName]
     }
 
-    const scheduler = creator(context.page, userConfig)
+    const scheduler = creator(context.page, this.currentId, userConfig)
     context.tasks[taskName] = scheduler
   }
 
@@ -113,3 +115,7 @@ export class PageManager {
 }
 
 export const pageManager = PageManager.getInstance()
+
+ipcMain.handle(IPC_CHANNELS.account.switch, async (_, accountId: string) => {
+  pageManager.switchContext(accountId)
+})

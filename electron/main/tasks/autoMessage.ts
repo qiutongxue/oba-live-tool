@@ -30,8 +30,10 @@ class MessageManager {
   private config: MessageConfig
   private readonly scheduler: TaskScheduler
   private controller: LiveController
+  private accountId: string
 
-  constructor(page: Page, userConfig: MessageConfig) {
+  constructor(page: Page, accountId: string, userConfig: MessageConfig) {
+    this.accountId = accountId
     this.validateConfig(userConfig)
     this.config = userConfig
     this.scheduler = this.createTaskScheduler()
@@ -46,7 +48,7 @@ class MessageManager {
         onStart: () => logger.info(`「${TASK_NAME}」开始执行`),
         onStop: () => {
           logger.info(`「${TASK_NAME}」停止执行`)
-          windowManager.sendToWindow('main', IPC_CHANNELS.tasks.autoMessage.stop)
+          windowManager.sendToWindow('main', IPC_CHANNELS.tasks.autoMessage.stop, this.accountId)
         },
       }),
     )
@@ -124,7 +126,7 @@ class MessageManager {
 function setupIpcHandlers() {
   ipcMain.handle(IPC_CHANNELS.tasks.autoMessage.start, async (_, config) => {
     try {
-      pageManager.register(TASK_NAME, page => new MessageManager(page, config))
+      pageManager.register(TASK_NAME, (page, accountId) => new MessageManager(page, accountId, config))
       pageManager.startTask(TASK_NAME)
       return true
     }

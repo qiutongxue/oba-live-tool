@@ -49,4 +49,7 @@ export const IPC_CHANNELS = {
     updateDownloaded: 'updater:updateDownloaded',
     quitAndInstall: 'updater:quitAndInstall',
   },
+  account: {
+    switch: 'account:switch',
+  },
 } as const

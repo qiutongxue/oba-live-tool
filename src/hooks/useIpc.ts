@@ -1,5 +1,6 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
+import { useAccounts } from './useAccounts'
 import { type Comment, useAutoReply } from './useAutoReply'
 import { useLiveControl } from './useLiveControl'
 import { useToast } from './useToast'
@@ -9,7 +10,19 @@ import { useToast } from './useToast'
 export function useIpc() {
   const { handleComment } = useAutoReply()
   const { setIsConnected } = useLiveControl()
+  const { accounts, currentAccountId } = useAccounts()
   const { toast } = useToast()
+
+  const currentAccountName = useMemo(
+    () => accounts.find(account => account.id === currentAccountId)?.name,
+    [accounts, currentAccountId],
+  )
+
+  useEffect(() => {
+    if (currentAccountName) {
+      window.ipcRenderer.invoke(IPC_CHANNELS.account.switch, currentAccountName)
+    }
+  }, [currentAccountName])
 
   useEffect(() => {
     const removeListeners: (() => void)[] = [

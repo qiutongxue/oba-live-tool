@@ -70,7 +70,6 @@ export const useAccounts = create<AccountsStore>()(
       name: 'accounts-storage',
       partialize: state => ({
         accounts: state.accounts,
-        currentAccountId: state.currentAccountId,
       }),
     },
   ),
