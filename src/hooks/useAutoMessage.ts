@@ -76,29 +76,38 @@ export const useAutoMessageStore = create<AutoMessageStore>()(
       version: 1,
       migrate: (persistedState, version) => {
         if (version === 0) {
-          const persisted = persistedState as {
-            config: {
-              scheduler: { interval: [number, number] }
-              messages: string[]
-              pinTops: number[]
-              random: boolean
+          try {
+            const persisted = persistedState as {
+              config: {
+                scheduler: { interval: [number, number] }
+                messages: string[]
+                pinTops: number[]
+                random: boolean
+              }
             }
-          }
-          const messages = persisted.config.messages.map((message, index) => ({
-            id: crypto.randomUUID(),
-            content: message as string,
-            pinTop: persisted.config.pinTops.includes(index),
-          }))
-          return {
-            contexts: {
-              default: {
-                config: {
-                  scheduler: persisted.config.scheduler,
-                  messages,
-                  random: persisted.config.random,
+            const messages = persisted.config.messages.map((message, index) => ({
+              id: crypto.randomUUID(),
+              content: message as string,
+              pinTop: persisted.config.pinTops.includes(index),
+            }))
+            return {
+              contexts: {
+                default: {
+                  config: {
+                    scheduler: persisted.config.scheduler,
+                    messages,
+                    random: persisted.config.random,
+                  },
                 },
               },
-            },
+            }
+          }
+          catch {
+            return {
+              contexts: {
+                default: defaultContext,
+              },
+            }
           }
         }
       },

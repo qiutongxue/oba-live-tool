@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { createJSONStorage, persist } from 'zustand/middleware'
+import { persist } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
 import { useAccounts } from './useAccounts'
 
@@ -43,7 +43,16 @@ export const useChromeConfigStore = create<ChromeConfigStore>()(
     })),
     {
       name: 'chrome-config',
-      storage: createJSONStorage(() => localStorage),
+      version: 1,
+      migrate: (persistedState, version) => {
+        if (version === 0) {
+          return {
+            contexts: {
+              default: persistedState,
+            },
+          }
+        }
+      },
     },
   ),
 )
