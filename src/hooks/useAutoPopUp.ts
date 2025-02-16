@@ -69,13 +69,25 @@ export const useAutoPopUpStore = create<AutoPopUpStore>()(
       version: 1,
       migrate: (persistedState, version) => {
         if (version === 0) {
-          const persisted = persistedState as { config: AutoPopUpConfig }
-          return {
-            contexts: {
-              default: {
-                config: persisted.config,
+          try {
+            const persisted = persistedState as { config: AutoPopUpConfig }
+            if (!persisted.config) {
+              throw new Error('config is required')
+            }
+            return {
+              contexts: {
+                default: {
+                  config: persisted.config,
+                },
               },
-            },
+            }
+          }
+          catch {
+            return {
+              contexts: {
+                default: defaultContext,
+              },
+            }
           }
         }
       },

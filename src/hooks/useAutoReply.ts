@@ -1,6 +1,6 @@
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { create } from 'zustand'
-import { createJSONStorage, persist } from 'zustand/middleware'
+import { persist } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
 import { type ChatMessage, useAIChatStore } from './useAIChat'
 
@@ -45,8 +45,11 @@ const defaultPrompt = '你是一个直播间的助手，负责回复观众的评
 export const useAutoReplyStore = create<AutoReplyState & AutoReplyAction>()(
   persist(
     immer((set) => {
-    // 从 localStorage 读取保存的 prompt
-      // const savedPrompt = localStorage.getItem('autoReplyPrompt')
+      // 迁移之前版本设置的 prompt
+      const previousPrompt = localStorage.getItem('autoReplyPrompt')
+      if (previousPrompt) {
+        localStorage.removeItem('autoReplyPrompt')
+      }
 
       return {
         isRunning: false,
@@ -56,11 +59,9 @@ export const useAutoReplyStore = create<AutoReplyState & AutoReplyAction>()(
         replies: [],
         comments: [],
         // 设置默认 prompt 或使用保存的值
-        prompt: defaultPrompt,
+        prompt: previousPrompt || defaultPrompt,
         setPrompt: (prompt: string) => {
           set({ prompt })
-          // 保存到 localStorage
-          // localStorage.setItem('autoReplyPrompt', prompt)
         },
         addComment: (comment: Comment) => {
           set((state) => {
@@ -87,14 +88,7 @@ export const useAutoReplyStore = create<AutoReplyState & AutoReplyAction>()(
     }),
     {
       name: 'autoReply',
-      storage: createJSONStorage(() => localStorage, {
-        reviver: (key, value) => {
-          if (key === 'prompt') {
-            return value || defaultPrompt
-          }
-          return value
-        },
-      }),
+      version: 1,
       partialize: state => ({
         prompt: state.prompt,
       }),
