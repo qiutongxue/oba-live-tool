@@ -73,15 +73,22 @@ pnpm build
 
 想要使用 AI 功能，需要先设置 API KEY。
 
-软件目前只支持以下三个提供商的 deepseek 文生文模型（~~其实理论上兼容 openai 库的都能用，但是我还没搞自定义~~）：
+软件目前只支持以下四个提供商的文生文模型（~~其实理论上兼容 openai 库的都能用，但是我还没搞自定义~~）：
 
 - [DeepSeek](https://platform.deepseek.com/)
 - [OpenRouter](https://openrouter.ai/)
 - [硅基流动](https://www.siliconflow.cn/)
+- [火山引擎](https://console.volcengine.com/ark/)
 
 在 「AI 助手」或「自动回复」的页面，点击「配置 API Key」按钮，就能选择自己需要的提供商和模型了。
 
 **注意:** 有的（大多数）模型是收费的，使用 AI 功能前请一定要先了解清楚，使用收费模型时请确保自己在提供商的账户有能够消耗的额度。
+
+#### 火山引擎
+
+火山引擎的设置方式和其它提供商有些微区别，除了需要 API KEY 之外，还需要 [创建接入点](https://console.volcengine.com/ark/region:ark+cn-beijing/endpoint)。创建成功后，将接入点的 id 复制到原先选择模型的位置中即可使用。
+
+![火山引擎接入点](./screenshot/volc_endpoint.png)
 
 ### 自动回复
 
