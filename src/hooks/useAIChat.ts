@@ -1,6 +1,6 @@
 import { providers } from 'shared/providers'
 import { create } from 'zustand'
-import { createJSONStorage, persist } from 'zustand/middleware'
+import { persist } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
 
 export interface ChatMessage {
@@ -18,7 +18,7 @@ type APIKeys = {
   [key in AIProvider]: string
 }
 
-interface ProviderConfig {
+export interface ProviderConfig {
   provider: AIProvider
   model: string
   modelPreferences: {
@@ -47,7 +47,7 @@ export const useAIChatStore = create<AIChat>()(
   persist(
     immer((set) => {
       const modelPreferences = Object.keys(providers).reduce((acc, provider) => {
-        acc[provider as AIProvider] = providers[provider as AIProvider].models[0]
+        acc[provider as AIProvider] = providers[provider as AIProvider].models[0] || ''
         return acc
       }, {} as Record<AIProvider, string>)
 
@@ -140,7 +140,6 @@ export const useAIChatStore = create<AIChat>()(
     }),
     {
       name: 'ai-chat-storage',
-      storage: createJSONStorage(() => localStorage),
       partialize: state => ({ apiKeys: state.apiKeys, config: state.config }),
     },
   ),

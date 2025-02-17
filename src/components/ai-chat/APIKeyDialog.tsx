@@ -1,4 +1,4 @@
-import type { AIProvider } from '@/hooks/useAIChat'
+import type { AIProvider, ProviderConfig } from '@/hooks/useAIChat'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -23,6 +23,73 @@ import { GearIcon } from '@radix-ui/react-icons'
 import { useState } from 'react'
 import { providers } from 'shared/providers'
 import { ScrollArea } from '../ui/scroll-area'
+
+function ModelSelector({ tempConfig, setTempConfig }: {
+  tempConfig: ProviderConfig
+  setTempConfig: React.Dispatch<React.SetStateAction<ProviderConfig>>
+}) {
+  if (tempConfig.provider === 'volcengine') {
+    return (
+      <div className="space-y-2">
+        <Label>接入点名称</Label>
+        <Input
+          value={tempConfig.model}
+          onChange={e => setTempConfig(prev => ({
+            ...prev,
+            model: e.target.value,
+            modelPreferences: {
+              ...prev.modelPreferences,
+              [prev.provider]: e.target.value,
+            },
+          }))}
+          placeholder="请输入火山引擎的接入点名称"
+        />
+        <p className="text-xs text-muted-foreground">
+          您可以在
+          <a
+            href="https://console.volcengine.com/ark/region:ark+cn-beijing/endpoint"
+            rel="noreferrer"
+            target="_blank"
+            className="px-1 text-primary hover:underline"
+          >
+            火山引擎控制台
+          </a>
+          获取接入点名称。
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-2">
+      <Label>选择模型</Label>
+      <Select
+        value={tempConfig.model}
+        onValueChange={model => setTempConfig(prev => ({
+          ...prev,
+          model,
+          modelPreferences: {
+            ...prev.modelPreferences,
+            [prev.provider]: model,
+          },
+        }))}
+      >
+        <SelectTrigger>
+          <SelectValue placeholder="选择模型" />
+        </SelectTrigger>
+        <SelectContent>
+          <ScrollArea className="h-[200px]">
+            {providers[tempConfig.provider].models.map(model => (
+              <SelectItem key={model} value={model}>
+                {model}
+              </SelectItem>
+            ))}
+          </ScrollArea>
+        </SelectContent>
+      </Select>
+    </div>
+  )
+}
 
 export function APIKeyDialog() {
   const { apiKeys, config, setConfig, setApiKey } = useAIChatStore()
@@ -50,13 +117,13 @@ export function APIKeyDialog() {
         <DialogHeader>
           <DialogTitle>API Key 配置</DialogTitle>
           <DialogDescription className="py-1">
-            选择并配置您想要使用的 AI 服务商。
+            选择并配置您想要使用的 AI 提供商。
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-6 py-4">
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>选择服务商</Label>
+              <Label>选择提供商</Label>
               <Select
                 value={tempConfig.provider}
                 onValueChange={(value) => {
@@ -81,33 +148,7 @@ export function APIKeyDialog() {
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label>选择模型</Label>
-              <Select
-                value={tempConfig.model}
-                onValueChange={model => setTempConfig(prev => ({
-                  ...prev,
-                  model,
-                  modelPreferences: {
-                    ...prev.modelPreferences,
-                    [prev.provider]: model,
-                  },
-                }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="选择模型" />
-                </SelectTrigger>
-                <SelectContent>
-                  <ScrollArea className="h-[200px]">
-                    {providers[tempConfig.provider].models.map(model => (
-                      <SelectItem key={model} value={model}>
-                        {model}
-                      </SelectItem>
-                    ))}
-                  </ScrollArea>
-                </SelectContent>
-              </Select>
-            </div>
+            <ModelSelector tempConfig={tempConfig} setTempConfig={setTempConfig} />
           </div>
 
           <div className="space-y-4">
