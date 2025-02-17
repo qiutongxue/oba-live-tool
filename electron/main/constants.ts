@@ -10,7 +10,9 @@ export const ACCOUNT_NAME_SELECTOR = `[class^="index_userName"]` as const
  * 但是【巨量百应】和【抖音小店】的左侧菜单栏不一样，所以这边需要修改
  */
 // FIXME: 需要找到抖店和百应都具备的，也许直接找中控台的元素就行？[class^="goodsPanel"]
-export const IS_LOGGED_IN_SELECTOR = ACCOUNT_NAME_SELECTOR
+// 有可能会碰到右上角显示不出登录信息或左边sidebar没显示的情况，所以直接采用主页面内的元素：直播中控四个大字
+export const IS_LOGGED_IN_SELECTOR = `[class^="username"]`
+// export const IS_LOGGED_IN_SELECTOR = ACCOUNT_NAME_SELECTOR
 // export const IS_LOGGED_IN_SELECTOR = `a[href="/ffa/creative/shop-live"]` as const
 /**
  * 【直播商品】
