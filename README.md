@@ -2,7 +2,7 @@
 
   <img src="./public/favicon.png" alt="logo" width="256px" height="auto">
   <h1> oba live tool </h1>
-  <p> 抖音小店直播小工具 </p>
+  <p> 抖音小店/巨量百应直播小工具 </p>
   <br>
 
 ![GitHub Release][github release badge]
@@ -23,6 +23,8 @@
 
 ## ✨ 功能
 
+🍟 **多账号管理**：支持多组账号配置，针对不同直播间使用不同的配置
+
 🎯 **智能消息助手**：自动发送消息，告别重复机械喊话
 
 📦 **商品自动讲解**：自动商品弹窗，随心所欲弹讲解
@@ -37,7 +39,7 @@
 
 - 操作系统：Windows 10 及以上
 - 浏览器：电脑上需要安装 Chrome 浏览器
-- 抖音小店：账号需要能正常进入中控台
+- 抖音小店/巨量百应：账号需要能正常进入中控台
 
 ### 下载安装
 
@@ -95,7 +97,6 @@ pnpm build
 在使用自动回复功能前，请先
 
 1. 设置好你的 API KEY 及模型，确保可用。
-
 2. 在「提示词配置」中设置好相关的提示词。
   > 提示词决定了 AI 会扮演什么样的角色，以及 AI 会如何回答用户的问题，会计入 token 消耗。
 
@@ -148,4 +149,4 @@ pnpm build
 
 [github release date badge]: https://img.shields.io/github/release-date/qiutongxue/oba-live-tool?style=for-the-badge
 
-[github license badge]: https://img.shields.io/github/license/qiutongxue/oba-live-tool?style=for-the-badge
+[github license badge]: https://img.shields.io/badge/license-MIT-yellow?style=for-the-badge
