@@ -33,7 +33,7 @@ export class PageManager {
 
   switchContext(id: string) {
     this.currentId = id
-    this.logger.info(`Switched to context <${this.currentAccountName}>`)
+    this.logger.info(`切换到账号 <${this.currentAccountName}>`)
   }
 
   updateAccountNames(names: Account[]) {
@@ -51,7 +51,7 @@ export class PageManager {
     })
     const previousContext = this.contexts.get(this.currentId) ?? { ...context, tasks: {} }
     this.contexts.set(this.currentId, { ...previousContext, ...context })
-    this.logger.info(`Set context <${this.currentAccountName}>`)
+    this.logger.info(`更新任务 <${this.currentAccountName}>`)
   }
 
   getContext() {
@@ -61,9 +61,9 @@ export class PageManager {
   getPage() {
     const context = this.contexts.get(this.currentId)
     if (!context)
-      throw new Error('Context not initialized')
+      throw new Error('无法获取 Page - Context not initialized')
     if (!context.page)
-      throw new Error('Page not initialized')
+      throw new Error('无法获取 Page - Page not initialized')
     return context.page
   }
 
@@ -73,9 +73,9 @@ export class PageManager {
   ) {
     const context = this.contexts.get(this.currentId)
     if (!context)
-      throw new Error(`Context <${this.currentId}> not initialized`)
+      throw new Error(`无法获取 <${this.currentAccountName}> 的任务环境`)
     if (context.tasks[taskName]?.isRunning) {
-      this.logger.warn(`Task ${taskName} is already running - <${this.currentId}>`)
+      this.logger.warn(`任务 <${taskName}> 正在运行中 - <${this.currentAccountName}>`)
       return
     }
 
@@ -97,7 +97,7 @@ export class PageManager {
   contains(taskName: string) {
     const context = this.contexts.get(this.currentId)
     if (!context)
-      throw new Error(`Context <${this.currentId}> not initialized`)
+      throw new Error(`无法获取 <${this.currentAccountName}> 的任务环境`)
     return context.tasks[taskName] !== undefined
   }
 
@@ -112,32 +112,32 @@ export class PageManager {
   startTask(taskName: string) {
     const context = this.contexts.get(this.currentId)
     if (!context)
-      throw new Error(`Context <${this.currentId}> not initialized`)
+      throw new Error(`无法获取 <${this.currentAccountName}> 的任务环境`)
     if (!context.tasks[taskName])
-      throw new Error(`Task ${taskName} not found`)
+      throw new Error(`无法获取 <${this.currentAccountName}> 的任务 <${taskName}>`)
     if (context.tasks[taskName].isRunning)
       return
 
-    this.logger.info(`Starting task ${taskName} - <${this.currentId}>`)
+    this.logger.info(`启动任务 <${taskName}> - <${this.currentAccountName}>`)
     context.tasks[taskName].start()
   }
 
   stopTask(taskName: string) {
     const context = this.contexts.get(this.currentId)
     if (!context)
-      throw new Error(`Context <${this.currentId}> not initialized`)
+      throw new Error(`无法获取 <${this.currentAccountName}> 的任务环境`)
     if (!context.tasks[taskName])
-      throw new Error(`Task ${taskName} not found`)
-    this.logger.info(`Stopping task ${taskName} - (${this.currentId})`)
+      throw new Error(`无法获取 <${this.currentAccountName}> 的任务 <${taskName}>`)
+    this.logger.info(`停止任务 <${taskName}> - <${this.currentAccountName}>`)
     context.tasks[taskName].stop()
   }
 
   updateTaskConfig(taskName: string, newConfig: BaseConfig) {
     const context = this.contexts.get(this.currentId)
     if (!context)
-      throw new Error(`Context <${this.currentId}> not initialized`)
+      throw new Error(`无法获取 <${this.currentAccountName}> 的任务环境`)
     if (!context.tasks[taskName])
-      throw new Error(`Task ${taskName} not found`)
+      throw new Error(`无法获取 <${this.currentAccountName}> 的任务 <${taskName}>`)
     context.tasks[taskName].updateConfig(newConfig)
   }
 }
