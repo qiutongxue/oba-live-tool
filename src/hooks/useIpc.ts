@@ -2,14 +2,14 @@ import { useEffect } from 'react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { useAccounts } from './useAccounts'
 import { type Comment, useAutoReply } from './useAutoReply'
-import { useLiveControl } from './useLiveControl'
+import { useLiveControlStore } from './useLiveControl'
 import { useToast } from './useToast'
 
 // 需要全局监听的 ipc 事件
 
 export function useIpc() {
   const { handleComment } = useAutoReply()
-  const { setIsConnected } = useLiveControl()
+  const { setIsConnected } = useLiveControlStore()
   const { accounts, currentAccountId } = useAccounts()
   const { toast } = useToast()
 
@@ -30,8 +30,8 @@ export function useIpc() {
       ),
       window.ipcRenderer.on(
         IPC_CHANNELS.tasks.liveControl.disconnect,
-        () => {
-          setIsConnected(false)
+        (id: string) => {
+          setIsConnected(id, false)
           toast.error('直播控制台已断开连接')
         },
       ),
