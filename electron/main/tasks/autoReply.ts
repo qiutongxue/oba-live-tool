@@ -1,3 +1,4 @@
+import type { Account } from '#/taskManager'
 import type { Page } from 'playwright'
 import { COMMENT_LIST_WRAPPER } from '#/constants'
 import { createLogger } from '#/logger'
@@ -20,18 +21,14 @@ interface CommentData {
 }
 
 class CommentManager {
-  private readonly page: Page
   private controller: LiveController
   public isRunning = false
   private handlerInitialized = false
-  private accountId: string
 
-  constructor(page: Page, accountId: string) {
+  constructor(private readonly page: Page, private account: Account) {
     if (!page)
       throw new Error('Page not initialized')
-    this.page = page
     this.controller = new LiveController(page)
-    this.accountId = accountId
   }
 
   private async setupCommentHandler() {
@@ -44,7 +41,7 @@ class CommentManager {
         windowManager.sendToWindow(
           'main',
           IPC_CHANNELS.tasks.autoReply.showComment,
-          { comment, accountId: this.accountId },
+          { comment, accountId: this.account.id },
         )
       })
       this.handlerInitialized = true
@@ -240,7 +237,7 @@ function setupIpcHandlers() {
     try {
       if (!pageManager.contains(TASK_NAME)) {
         logger.debug('注册监听评论任务')
-        pageManager.register(TASK_NAME, (page, _, accountId) => new CommentManager(page, accountId))
+        pageManager.register(TASK_NAME, (page, account) => new CommentManager(page, account))
       }
 
       pageManager.startTask(TASK_NAME)
