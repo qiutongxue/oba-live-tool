@@ -3,6 +3,7 @@ import type { BaseConfig, Scheduler } from './tasks/scheduler'
 import { ipcMain } from 'electron'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { createLogger } from './logger'
+import windowManager from './windowManager'
 
 interface Context {
   page: Page
@@ -44,6 +45,10 @@ export class PageManager {
   }
 
   setContext(context: Omit<Context, 'tasks'>) {
+    const idSnapShot = this.currentId
+    context.page.on('close', () => {
+      windowManager.sendToWindow('main', IPC_CHANNELS.tasks.liveControl.disconnect, idSnapShot)
+    })
     const previousContext = this.contexts.get(this.currentId) ?? { ...context, tasks: {} }
     this.contexts.set(this.currentId, { ...previousContext, ...context })
     this.logger.info(`Set context <${this.currentAccountName}>`)
