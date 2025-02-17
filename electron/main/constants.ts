@@ -1,17 +1,40 @@
-// export const BUYIN_LIVE_CONTROL_URL = 'https://buyin.jinritemai.com/dashboard/live/control' as const
-export const LIVE_CONTROL_URL = 'https://fxg.jinritemai.com/ffa/buyin/dashboard/live/control' as const
-// export const BUYIN_LOGIN_URL = 'https://buyin.jinritemai.com/login/common' as const
-export const LOGIN_URL = 'https://fxg.jinritemai.com/login/common' as const
-export const LOGIN_URL_REGEX = /.*fxg\.jinritemai\.com\/login\/common.*/
+export interface LoginConstants {
+  liveControlUrl: string
+  loginUrl: string
+  loginUrlRegex: RegExp
+  isLoggedInSelector: string
+  isInLiveControlSelector: string
+  accountNameSelector: string
+}
 
-export const ACCOUNT_NAME_SELECTOR = `[class^="index_userName"]` as const
+export const loginConstants = {
+  buyin: {
+    liveControlUrl: 'https://buyin.jinritemai.com/dashboard/live/control',
+    loginUrl: 'https://buyin.jinritemai.com/mpa/account/login?log_out=1&type=24',
+    loginUrlRegex: /douyinec\.com/,
+    isLoggedInSelector: `[class^="header"]`,
+    isInLiveControlSelector: `[class^="goodsPanel"]`,
+    accountNameSelector: `span.btn-item-role-exchange-name__title`,
+  },
+  douyin: {
+    liveControlUrl: 'https://fxg.jinritemai.com/ffa/buyin/dashboard/live/control',
+    loginUrl: 'https://fxg.jinritemai.com/login/common',
+    loginUrlRegex: /.*fxg\.jinritemai\.com\/login\/common.*/,
+    isLoggedInSelector: `[class^="username"]`,
+    isInLiveControlSelector: `[class^="goodsPanel"]`,
+    accountNameSelector: `[class^="index_userName"]`,
+  },
+} as const
+// export const BUYIN_LIVE_CONTROL_URL = 'https://buyin.jinritemai.com/dashboard/live/control' as const
+// export const BUYIN_LOGIN_URL = 'https://buyin.jinritemai.com/login/common' as const
+// export const ACCOUNT_NAME_SELECTOR = `[class^="index_userName"]` as const
 /**
  * 这里根据【直播管理】标签的存在与否判断是否登录成功，因为只有登录状态下才
  * 但是【巨量百应】和【抖音小店】的左侧菜单栏不一样，所以这边需要修改
  */
 // FIXME: 需要找到抖店和百应都具备的，也许直接找中控台的元素就行？[class^="goodsPanel"]
 // 有可能会碰到右上角显示不出登录信息或左边sidebar没显示的情况，所以直接采用主页面内的元素：直播中控四个大字
-export const IS_LOGGED_IN_SELECTOR = `[class^="username"]`
+// export const IS_LOGGED_IN_SELECTOR = `[class^="username"]`
 // export const IS_LOGGED_IN_SELECTOR = ACCOUNT_NAME_SELECTOR
 // export const IS_LOGGED_IN_SELECTOR = `a[href="/ffa/creative/shop-live"]` as const
 /**

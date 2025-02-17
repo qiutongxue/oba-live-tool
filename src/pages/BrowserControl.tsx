@@ -1,6 +1,13 @@
 import { Title } from '@/components/common/Title'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { useChromeConfig } from '@/hooks/useChromeConfig'
 import { useDevMode } from '@/hooks/useDevMode'
 import { useLiveControl } from '@/hooks/useLiveControl'
@@ -9,8 +16,13 @@ import { CheckIcon, Cross2Icon, GlobeIcon } from '@radix-ui/react-icons'
 import React, { useEffect, useState } from 'react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 
+const platforms = {
+  douyin: '抖音小店',
+  buyin: '巨量百应',
+} as const
+
 export default function BrowserControl() {
-  const { isConnected, setIsConnected, accountName, setAccountName } = useLiveControl()
+  const { isConnected, setIsConnected, accountName, setAccountName, platform, setPlatform } = useLiveControl()
   const [isLoading, setIsLoading] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
   const { toast } = useToast()
@@ -32,7 +44,7 @@ export default function BrowserControl() {
       setIsLoading(true)
       const result = await window.ipcRenderer.invoke(
         IPC_CHANNELS.tasks.liveControl.connect,
-        { headless: !devMode, chromePath, cookies: oldCookies },
+        { headless: !devMode, chromePath, cookies: oldCookies, platform },
       )
 
       if (result?.cookies) {
@@ -98,39 +110,57 @@ export default function BrowserControl() {
                   {isConnected ? `已连接${accountName ? ` (${accountName})` : ''}` : '未连接'}
                 </span>
               </div>
-              <Button
-                variant={isConnected ? 'secondary' : 'default'}
-                onClick={handleButtonClick}
-                disabled={isLoading}
-                size="sm"
-                onMouseEnter={() => setIsHovered(true)}
-                onMouseLeave={() => setIsHovered(false)}
-              >
-                {isConnected
-                  ? (
-                      <>
-                        {isHovered
-                          ? (
-                              <>
-                                <Cross2Icon className="mr-2 h-4 w-4" />
-                                断开连接
-                              </>
-                            )
-                          : (
-                              <>
-                                <CheckIcon className="mr-2 h-4 w-4" />
-                                已连接
-                              </>
-                            )}
-                      </>
-                    )
-                  : (
-                      <>
-                        <GlobeIcon className="mr-2 h-4 w-4" />
-                        {isLoading ? '连接中...' : '连接直播控制台'}
-                      </>
-                    )}
-              </Button>
+              <div className="flex items-center gap-2">
+                <Select
+                  value={platform}
+                  onValueChange={(value: keyof typeof platforms) => setPlatform(value)}
+                  disabled={isConnected || isLoading}
+                >
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="选择平台" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(platforms).map(([key, name]) => (
+                      <SelectItem key={key} value={key}>
+                        {name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant={isConnected ? 'secondary' : 'default'}
+                  onClick={handleButtonClick}
+                  disabled={isLoading}
+                  size="sm"
+                  onMouseEnter={() => setIsHovered(true)}
+                  onMouseLeave={() => setIsHovered(false)}
+                >
+                  {isConnected
+                    ? (
+                        <>
+                          {isHovered
+                            ? (
+                                <>
+                                  <Cross2Icon className="mr-2 h-4 w-4" />
+                                  断开连接
+                                </>
+                              )
+                            : (
+                                <>
+                                  <CheckIcon className="mr-2 h-4 w-4" />
+                                  已连接
+                                </>
+                              )}
+                        </>
+                      )
+                    : (
+                        <>
+                          <GlobeIcon className="mr-2 h-4 w-4" />
+                          {isLoading ? '连接中...' : '连接直播控制台'}
+                        </>
+                      )}
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -147,7 +177,7 @@ export default function BrowserControl() {
                   <span className="text-sm font-medium text-primary">1</span>
                 </div>
                 <p className="text-sm text-muted-foreground leading-6">
-                  点击"连接直播控制台"按钮，等待登录抖音小店
+                  选择平台并点击"连接直播控制台"按钮，等待登录
                 </p>
               </div>
               <div className="flex gap-3">

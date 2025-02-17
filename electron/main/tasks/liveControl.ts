@@ -1,17 +1,15 @@
 import type playwright from 'playwright'
+import type {
+  LoginConstants,
+} from '../constants'
 import { pageManager } from '#/taskManager'
-import windowManager from '#/windowManager'
 import { ipcMain } from 'electron'
 import { chromium } from 'playwright-extra'
 import stealth from 'puppeteer-extra-plugin-stealth'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import {
-  ACCOUNT_NAME_SELECTOR,
   GOODS_ITEM_SELECTOR,
-  IS_LOGGED_IN_SELECTOR,
-  LIVE_CONTROL_URL,
-  LOGIN_URL,
-  LOGIN_URL_REGEX,
+  loginConstants,
 } from '../constants'
 import { createLogger } from '../logger'
 import { findChrome } from '../utils/checkChrome'
@@ -33,8 +31,10 @@ interface BrowserSession {
 class LiveControlManager {
   private chromePath: string | null = null
   private newCookies: string | null = null
+  private loginConstants: LoginConstants
 
-  constructor() {
+  constructor(private platform: keyof typeof loginConstants) {
+    this.loginConstants = loginConstants[platform] || loginConstants.douyin
     chromium.use(stealth())
   }
 
@@ -90,10 +90,10 @@ class LiveControlManager {
     await browser.close()
     // 创建新的有头模式会话
     const newSession = await this.createSession(false)
-    await newSession.page.goto(LOGIN_URL)
+    await newSession.page.goto(this.loginConstants.loginUrl)
 
     // 等待用户登录成功
-    await newSession.page.waitForSelector(IS_LOGGED_IN_SELECTOR, { timeout: 0 })
+    await newSession.page.waitForSelector(this.loginConstants.isLoggedInSelector, { timeout: 0 })
     // 保存 cookies
     await this.saveCookies(newSession.context)
     // 关闭有头浏览器，返回 null 以触发重新连接
@@ -106,9 +106,13 @@ class LiveControlManager {
       return this.handleHeadlessLogin(session)
 
     logger.info('需要登录，请在打开的浏览器中完成登录')
-    await session.page.goto(LOGIN_URL)
-    await session.page.waitForSelector(IS_LOGGED_IN_SELECTOR, { timeout: 0 })
+    await session.page.goto(this.loginConstants.loginUrl)
+    await session.page.waitForSelector(this.loginConstants.isLoggedInSelector, { timeout: 0 })
     await this.saveCookies(session.context)
+    if (this.platform === 'buyin') {
+      // 百应登录之后不会跳转到中控台，需要手动跳转
+      await session.page.goto(this.loginConstants.liveControlUrl)
+    }
     return session
   }
 
@@ -130,16 +134,18 @@ class LiveControlManager {
         await this.loadCookies(session.context, this.newCookies || cookies)
 
         // 访问中控台
-        await session.page.goto(LIVE_CONTROL_URL)
+        await session.page.goto(this.loginConstants.liveControlUrl)
         await Promise.race([
-          session.page.waitForURL(LOGIN_URL_REGEX, { timeout: 0 }),
-          session.page.waitForSelector(IS_LOGGED_IN_SELECTOR, { timeout: 0 }),
+          // 需要登录
+          session.page.waitForURL(this.loginConstants.loginUrlRegex, { timeout: 0 }),
+          // 成功进入了中控台
+          session.page.waitForSelector(this.loginConstants.isInLiveControlSelector, { timeout: 0 }),
         ])
 
         logger.debug(`当前页面: ${session.page.url()}`)
 
         // 检查是否需要登录
-        if (session.page.url().startsWith(LOGIN_URL)) {
+        if (this.loginConstants.loginUrlRegex.test(session.page.url())) {
           const newSession = await this.handleLogin(session, headless)
           // 对于无头模式，需要重新连接
           if (!newSession)
@@ -164,7 +170,7 @@ class LiveControlManager {
     // 等待中控台页面加载完成
     await session.page.waitForSelector(GOODS_ITEM_SELECTOR, { timeout: 0 })
     // 获取当前登录的账号
-    const accountName = await session.page.$(ACCOUNT_NAME_SELECTOR).then(el => el?.textContent())
+    const accountName = await session.page.$(this.loginConstants.accountNameSelector).then(el => el?.textContent())
     logger.success(`登录成功，当前账号为「${accountName}」`)
     return {
       ...session,
@@ -180,18 +186,19 @@ class LiveControlManager {
 function setupIpcHandlers() {
   ipcMain.handle(
     IPC_CHANNELS.tasks.liveControl.connect,
-    async (_, { chromePath, headless, cookies }) => {
+    async (_, { chromePath, headless, cookies, platform = 'douyin' }: {
+      chromePath?: string
+      headless?: boolean
+      cookies?: string
+      platform?: keyof typeof loginConstants
+    }) => {
       try {
-        const manager = new LiveControlManager()
+        const manager = new LiveControlManager(platform || 'douyin')
         if (chromePath)
           manager.setChromePath(chromePath)
         const { browser, context, page, accountName } = await manager.connect({ headless, cookies })
 
         pageManager.setContext({ browser, browserContext: context, page })
-
-        page.on('close', () => {
-          windowManager.sendToWindow('main', IPC_CHANNELS.tasks.liveControl.disconnect)
-        })
 
         return {
           cookies: manager.cookies,
