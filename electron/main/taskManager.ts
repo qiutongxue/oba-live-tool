@@ -11,7 +11,7 @@ interface Context {
   tasks: Record<string, Scheduler>
 }
 
-interface Account {
+export interface Account {
   name: string
   id: string
 }
@@ -64,7 +64,7 @@ export class PageManager {
 
   register(
     taskName: string,
-    creator: (page: Page, accountName: string, accountId: string) => Scheduler,
+    creator: (page: Page, account: Account) => Scheduler,
   ) {
     const context = this.contexts.get(this.currentId)
     if (!context)
@@ -81,8 +81,10 @@ export class PageManager {
 
     const scheduler = creator(
       context.page,
-      this.currentAccountName,
-      this.currentId,
+      {
+        id: this.currentId,
+        name: this.currentAccountName,
+      },
     )
     context.tasks[taskName] = scheduler
   }

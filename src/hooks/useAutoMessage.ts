@@ -138,8 +138,8 @@ export function useAutoMessage() {
   }
 
   useEffect(() => {
-    const handleTaskStop = () => {
-      store.setIsRunning(currentAccountId, false)
+    const handleTaskStop = (accountId: string) => {
+      store.setIsRunning(accountId, false)
       toast.error('自动发言已停止')
     }
 
@@ -147,7 +147,7 @@ export function useAutoMessage() {
     return () => {
       removeListener()
     }
-  }, [store, currentAccountId, toast])
+  }, [store, toast])
 
   return {
     isRunning: context.isRunning,

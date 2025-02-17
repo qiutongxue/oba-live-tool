@@ -1,3 +1,4 @@
+import type { Account } from '#/taskManager'
 import type { ElementHandle, Page } from 'playwright'
 import type { BaseConfig } from './scheduler'
 import { createLogger } from '#/logger'
@@ -23,10 +24,8 @@ class PopUpManager {
   private config: PopUpConfig
   private readonly scheduler: TaskScheduler
   private controller: LiveController
-  private accountId: string
 
-  constructor(page: Page, accountId: string, userConfig: PopUpConfig) {
-    this.accountId = accountId
+  constructor(private readonly page: Page, private account: Account, userConfig: PopUpConfig) {
     this.validateConfig(userConfig)
     this.config = userConfig
     this.scheduler = this.createTaskScheduler()
@@ -41,7 +40,7 @@ class PopUpManager {
         onStart: () => logger.info(`「${TASK_NAME}」开始执行`),
         onStop: () => {
           logger.info(`「${TASK_NAME}」停止执行`)
-          windowManager.sendToWindow('main', IPC_CHANNELS.tasks.autoPopUp.stop, this.accountId)
+          windowManager.sendToWindow('main', IPC_CHANNELS.tasks.autoPopUp.stop, this.account.id)
         },
       }),
     )
@@ -117,7 +116,7 @@ class PopUpManager {
 function setupIpcHandlers() {
   ipcMain.handle(IPC_CHANNELS.tasks.autoPopUp.start, async (_, config: PopUpConfig) => {
     try {
-      pageManager.register(TASK_NAME, (page, accountId) => new PopUpManager(page, accountId, config))
+      pageManager.register(TASK_NAME, (page, account) => new PopUpManager(page, account, config))
       pageManager.startTask(TASK_NAME)
       return true
     }
