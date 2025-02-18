@@ -1,11 +1,8 @@
 import { eventEmitter, EVENTS } from '@/utils/events'
-import { useEffect } from 'react'
-import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
 import { useAccounts } from './useAccounts'
-import { useToast } from './useToast'
 
 interface AutoPopUpConfig {
   scheduler: {
@@ -106,25 +103,12 @@ export const useAutoPopUpStore = create<AutoPopUpStore>()(
 
 export function useAutoPopUp() {
   const store = useAutoPopUpStore()
-  const { toast } = useToast()
   const { currentAccountId } = useAccounts()
 
   const context = store.contexts[currentAccountId] || defaultContext
   const updateConfig = (newConfig: Partial<AutoPopUpConfig>) => {
     store.setConfig(currentAccountId, newConfig)
   }
-
-  useEffect(() => {
-    const handleTaskStop = (accountId: string) => {
-      store.setIsRunning(accountId, false)
-      toast.error('自动弹窗已停止')
-    }
-
-    const removeListener = window.ipcRenderer.on(IPC_CHANNELS.tasks.autoPopUp.stop, handleTaskStop)
-    return () => {
-      removeListener()
-    }
-  }, [store, toast])
 
   return {
     isRunning: context.isRunning,

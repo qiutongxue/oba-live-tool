@@ -1,7 +1,8 @@
 import { Textarea } from '@/components/ui/textarea'
 import { useAutoReply } from '@/hooks/useAutoReply'
+import { useMemoizedFn } from 'ahooks'
 import { Settings } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Button } from '../ui/button'
 import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from '../ui/drawer'
 
@@ -14,14 +15,10 @@ export function PromptCard({ onSave }: PromptCardProps) {
   const [tempPrompt, setTempPrompt] = useState(prompt)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
 
-  useEffect(() => {
-    setTempPrompt(prompt)
-  }, [prompt])
-
-  const handleSave = () => {
+  const handleSave = useMemoizedFn(() => {
     setPrompt(tempPrompt)
     onSave?.()
-  }
+  })
 
   return (
     <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>

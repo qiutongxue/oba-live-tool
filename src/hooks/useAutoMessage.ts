@@ -1,11 +1,8 @@
 import { eventEmitter, EVENTS } from '@/utils/events'
-import { useEffect } from 'react'
-import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
 import { useAccounts } from './useAccounts'
-import { useToast } from './useToast'
 
 export interface Message {
   id: string
@@ -127,7 +124,6 @@ export const useAutoMessageStore = create<AutoMessageStore>()(
 
 export function useAutoMessage() {
   const store = useAutoMessageStore()
-  const { toast } = useToast()
   const { currentAccountId } = useAccounts()
 
   // 获取当前账号的完整状态
@@ -136,18 +132,6 @@ export function useAutoMessage() {
   const updateConfig = (newConfig: Partial<AutoMessageConfig>) => {
     store.setConfig(currentAccountId, newConfig)
   }
-
-  useEffect(() => {
-    const handleTaskStop = (accountId: string) => {
-      store.setIsRunning(accountId, false)
-      toast.error('自动发言已停止')
-    }
-
-    const removeListener = window.ipcRenderer.on(IPC_CHANNELS.tasks.autoMessage.stop, handleTaskStop)
-    return () => {
-      removeListener()
-    }
-  }, [store, toast])
 
   return {
     isRunning: context.isRunning,
