@@ -175,9 +175,7 @@ class CommentManager {
     try {
       const commentListWrapper = await this.page.$(COMMENT_LIST_WRAPPER)
       if (!commentListWrapper) {
-        logger.error('未找到直播互动内容，可能未开播')
-        this.isRunning = false // 确保状态正确
-        return
+        throw new Error('未找到直播互动内容，可能未开播')
       }
 
       // 在启动时设置处理函数
@@ -195,7 +193,6 @@ class CommentManager {
       logger.success('评论监听启动成功')
     }
     catch (error) {
-      logger.error('启动评论监听失败:', error instanceof Error ? error.message : String(error))
       // 确保出错时状态正确
       this.isRunning = false
       throw error
@@ -210,15 +207,19 @@ class CommentManager {
 
     try {
       // 调用页面中的清理函数
-      await this.page.evaluate(() => {
-        if ((window as any).cleanupAutoReply) {
-          (window as any).cleanupAutoReply()
-          delete (window as any).cleanupAutoReply
-          delete (window as any).parseComment
-        }
-      })
+      // await this.page.evaluate(() => {
+      //   if ((window as any).cleanupAutoReply) {
+      //     (window as any).cleanupAutoReply()
+      //     delete (window as any).cleanupAutoReply
+      //     delete (window as any).parseComment
+      //   }
+      // })
 
       this.isRunning = false
+      windowManager.sendToWindow(
+        'main',
+        IPC_CHANNELS.tasks.autoReply.stopCommentListener,
+      )
       logger.success('评论监听已停止')
     }
     catch (error) {
@@ -244,7 +245,7 @@ function setupIpcHandlers() {
       return true
     }
     catch (error) {
-      logger.error('启动监听评论失败:', error instanceof Error ? error.message : String(error))
+      logger.error('启动评论监听失败:', error instanceof Error ? error.message : String(error))
       return false
     }
   })

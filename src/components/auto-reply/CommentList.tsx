@@ -31,6 +31,18 @@ export default function CommentList({ highlight: highlightedCommentId }: { highl
     }
   }, [isConnected, isListening, setIsListening, toast])
 
+  useEffect(() => {
+    const removeListener = window.ipcRenderer.on(
+      IPC_CHANNELS.tasks.autoReply.stopCommentListener,
+      () => {
+        setIsListening(false)
+      },
+    )
+    return () => {
+      removeListener()
+    }
+  }, [setIsListening])
+
   const filteredComments = hideHost
     ? comments.filter(comment => comment.authorTags.length === 0)
     : comments
