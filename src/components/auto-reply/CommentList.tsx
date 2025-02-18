@@ -17,15 +17,18 @@ export default function CommentList({ highlight: highlightedCommentId }: { highl
   const [hideHost, setHideHost] = useState(false)
 
   useEffect(() => {
-    if (isConnected && !isListening) {
+    if (isConnected && isListening === 'stopped') {
+      // 防止并发
+      setIsListening('waiting')
       window.ipcRenderer.invoke(
         IPC_CHANNELS.tasks.autoReply.startCommentListener,
       ).then((result) => {
         if (!result)
           throw new Error('监听评论失败')
         toast.success('监听评论成功')
-        setIsListening(true)
+        setIsListening('listening')
       }).catch(() => {
+        setIsListening('stopped')
         toast.error('监听评论失败')
       })
     }
@@ -35,7 +38,7 @@ export default function CommentList({ highlight: highlightedCommentId }: { highl
     const removeListener = window.ipcRenderer.on(
       IPC_CHANNELS.tasks.autoReply.stopCommentListener,
       () => {
-        setIsListening(false)
+        setIsListening('stopped')
       },
     )
     return () => {

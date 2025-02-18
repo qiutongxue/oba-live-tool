@@ -24,9 +24,11 @@ export interface Comment {
   timestamp: string
 }
 
+type ListeningStatus = 'waiting' | 'listening' | 'stopped'
+
 interface AutoReplyContext {
   isRunning: boolean
-  isListening: boolean
+  isListening: ListeningStatus
   replies: ReplyPreview[]
   comments: Comment[]
   prompt: string
@@ -37,7 +39,7 @@ interface AutoReplyState {
 }
 interface AutoReplyAction {
   setIsRunning: (accountId: string, isRunning: boolean) => void
-  setIsListening: (accountId: string, isListening: boolean) => void
+  setIsListening: (accountId: string, isListening: ListeningStatus) => void
   setPrompt: (accountId: string, prompt: string) => void
   addComment: (accountId: string, comment: Comment) => void
   addReply: (accountId: string, commentId: string, nickname: string, content: string) => void
@@ -48,7 +50,7 @@ const defaultPrompt = '你是一个直播间的助手，负责回复观众的评
 
 const defaultContext: AutoReplyContext = {
   isRunning: false,
-  isListening: false,
+  isListening: 'stopped',
   replies: [],
   comments: [],
   prompt: defaultPrompt,
@@ -233,5 +235,5 @@ export function useAutoReply() {
     })
   })
 
-  return { handleComment, isRunning, isListening, comments, replies, prompt, setIsRunning: (isRunning: boolean) => setIsRunning(currentAccountId, isRunning), setIsListening: (isListening: boolean) => setIsListening(currentAccountId, isListening), setPrompt: (prompt: string) => setPrompt(currentAccountId, prompt) }
+  return { handleComment, isRunning, isListening, comments, replies, prompt, setIsRunning: (isRunning: boolean) => setIsRunning(currentAccountId, isRunning), setIsListening: (isListening: ListeningStatus) => setIsListening(currentAccountId, isListening), setPrompt: (prompt: string) => setPrompt(currentAccountId, prompt) }
 }
