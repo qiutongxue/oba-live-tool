@@ -47,6 +47,11 @@ export class PageManager {
   setContext(context: Omit<Context, 'tasks'>) {
     const idSnapShot = this.currentId
     context.page.on('close', () => {
+      // 把当前 id 所有任务都停了
+      for (const task of Object.values(this.contexts.get(this.currentId)?.tasks || {})) {
+        task.stop()
+      }
+      this.contexts.delete(this.currentId)
       windowManager.sendToWindow('main', IPC_CHANNELS.tasks.liveControl.disconnect, idSnapShot)
     })
     const previousContext = this.contexts.get(this.currentId) ?? { ...context, tasks: {} }
