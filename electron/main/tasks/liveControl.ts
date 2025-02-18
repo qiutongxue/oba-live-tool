@@ -85,7 +85,6 @@ class LiveControlManager {
 
   private async handleHeadlessLogin(session: BrowserSession): Promise<BrowserSession | null> {
     const { browser } = session
-    logger.info('需要登录，切换到有头模式')
     // 关闭当前浏览器
     await browser.close()
     // 创建新的有头模式会话
@@ -102,10 +101,10 @@ class LiveControlManager {
   }
 
   private async handleLogin(session: BrowserSession, headless: boolean): Promise<BrowserSession | null> {
+    logger.info('需要登录，请在打开的浏览器中完成登录')
     if (headless)
       return this.handleHeadlessLogin(session)
 
-    logger.info('需要登录，请在打开的浏览器中完成登录')
     await session.page.goto(this.loginConstants.loginUrl)
     await session.page.waitForSelector(this.loginConstants.isLoggedInSelector, { timeout: 0 })
     await this.saveCookies(session.context)

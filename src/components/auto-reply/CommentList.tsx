@@ -17,7 +17,7 @@ export default function CommentList({ highlight: highlightedCommentId }: { highl
   const [hideHost, setHideHost] = useState(false)
 
   useEffect(() => {
-    if (isConnected && isListening === 'stopped') {
+    if (isConnected === 'connected' && isListening === 'stopped') {
       // 防止并发
       setIsListening('waiting')
       window.ipcRenderer.invoke(

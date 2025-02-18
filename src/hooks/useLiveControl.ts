@@ -2,21 +2,23 @@ import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import { useAccounts } from './useAccounts'
 
+type ConnectionStatus = 'connecting' | 'connected' | 'disconnected'
+
 interface LiveControlContext {
-  isConnected: boolean
+  isConnected: ConnectionStatus
   accountName: string | null
   platform: 'buyin' | 'douyin'
 }
 
 interface LiveControlStore {
   contexts: Record<string, LiveControlContext>
-  setIsConnected: (accountId: string, connected: boolean) => void
+  setIsConnected: (accountId: string, connected: ConnectionStatus) => void
   setAccountName: (accountId: string, name: string | null) => void
   setPlatform: (accountId: string, platform: 'buyin' | 'douyin') => void
 }
 
 const defaultContext: LiveControlContext = {
-  isConnected: false,
+  isConnected: 'disconnected',
   accountName: null,
   platform: 'douyin',
 }
@@ -57,7 +59,7 @@ export function useLiveControl() {
     isConnected: context.isConnected,
     accountName: context.accountName,
     platform: context.platform,
-    setIsConnected: (connected: boolean) => setIsConnected(currentAccountId, connected),
+    setIsConnected: (connected: ConnectionStatus) => setIsConnected(currentAccountId, connected),
     setAccountName: (name: string | null) => setAccountName(currentAccountId, name),
     setPlatform: (platform: 'buyin' | 'douyin') => setPlatform(currentAccountId, platform),
   }

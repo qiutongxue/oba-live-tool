@@ -21,7 +21,7 @@ export function TaskButton({
             <Button
               variant={isTaskRunning ? 'destructive' : 'default'}
               onClick={() => debouncedFn.run()}
-              disabled={!isConnected}
+              disabled={isConnected !== 'connected'}
             >
               {isTaskRunning
                 ? (
@@ -39,7 +39,7 @@ export function TaskButton({
             </Button>
           </span>
         </TooltipTrigger>
-        {!isConnected && (
+        {isConnected !== 'connected' && (
           <TooltipContent>
             <p>请先连接直播控制台</p>
           </TooltipContent>

@@ -114,7 +114,7 @@ export function BrowserSetting() {
             </Button>
           </div>
           <p className="text-sm text-muted-foreground">
-            {isConnected
+            {isConnected === 'connected'
               ? '已成功连接到 Chrome'
               : path
                 ? '请确保路径正确，并重新连接直播控制台'

@@ -1,4 +1,5 @@
 import { useAccounts } from '@/hooks/useAccounts'
+import { useLiveControl } from '@/hooks/useLiveControl'
 import { useToast } from '@/hooks/useToast'
 import { Pencil1Icon, PlusIcon } from '@radix-ui/react-icons'
 import { useState } from 'react'
@@ -9,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 
 export function AccountSwitcher() {
   const { accounts, currentAccountId, addAccount, switchAccount, updateAccountName } = useAccounts()
+  const { isConnected } = useLiveControl()
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [newAccountName, setNewAccountName] = useState('')
@@ -77,7 +79,7 @@ export function AccountSwitcher() {
       >
         <Pencil1Icon className="h-4 w-4" />
       </Button>
-      <Select value={currentAccountId} onValueChange={handleAccountSwitch}>
+      <Select disabled={isConnected === 'connecting'} value={currentAccountId} onValueChange={handleAccountSwitch}>
         <SelectTrigger className="w-[180px]">
           <SelectValue placeholder="选择账号" />
         </SelectTrigger>

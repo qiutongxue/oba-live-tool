@@ -31,7 +31,7 @@ export function useIpc() {
       window.ipcRenderer.on(
         IPC_CHANNELS.tasks.liveControl.disconnect,
         (id: string) => {
-          setIsConnected(id, false)
+          setIsConnected(id, 'disconnected')
           toast.error('直播控制台已断开连接')
         },
       ),

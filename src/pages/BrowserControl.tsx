@@ -41,6 +41,7 @@ export default function BrowserControl() {
 
   const connectLiveControl = async () => {
     try {
+      setIsConnected('connecting')
       setIsLoading(true)
       const result = await window.ipcRenderer.invoke(
         IPC_CHANNELS.tasks.liveControl.connect,
@@ -48,17 +49,18 @@ export default function BrowserControl() {
       )
 
       if (result?.cookies) {
-        setIsConnected(true)
+        setIsConnected('connected')
         setAccountName(result.accountName || '')
         setCookies(result.cookies)
         toast.success('已连接到直播控制台')
       }
       else {
-        toast.error('连接直播控制台失败')
+        throw new Error('找不到 cookies')
       }
     }
-    catch {
-      toast.error('连接直播控制台失败')
+    catch (error) {
+      setIsConnected('disconnected')
+      toast.error(error instanceof Error ? error.message : '连接直播控制台失败')
     }
     finally {
       setIsLoading(false)
@@ -69,20 +71,20 @@ export default function BrowserControl() {
     try {
       setIsLoading(true)
       await window.ipcRenderer.invoke(IPC_CHANNELS.tasks.liveControl.disconnect)
-      setIsConnected(false)
       setAccountName('')
       toast.success('已断开连接')
     }
-    catch {
-      toast.error('断开连接失败')
+    catch (error) {
+      toast.error(error instanceof Error ? error.message : '断开连接失败')
     }
     finally {
+      setIsConnected('disconnected')
       setIsLoading(false)
     }
   }
 
   const handleButtonClick = () => {
-    if (isConnected) {
+    if (isConnected === 'connected') {
       disconnectLiveControl()
     }
     else {
@@ -105,16 +107,16 @@ export default function BrowserControl() {
           <CardContent>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-gray-300'}`} />
+                <div className={`w-2 h-2 rounded-full ${isConnected === 'connected' ? 'bg-green-500' : 'bg-gray-300'}`} />
                 <span className="text-sm text-muted-foreground">
-                  {isConnected ? `已连接${accountName ? ` (${accountName})` : ''}` : '未连接'}
+                  {isConnected === 'connected' ? `已连接${accountName ? ` (${accountName})` : ''}` : '未连接'}
                 </span>
               </div>
               <div className="flex items-center gap-2">
                 <Select
                   value={platform}
                   onValueChange={(value: keyof typeof platforms) => setPlatform(value)}
-                  disabled={isConnected || isLoading}
+                  disabled={isConnected === 'connecting' || isLoading}
                 >
                   <SelectTrigger className="w-[140px]">
                     <SelectValue placeholder="选择平台" />
@@ -128,14 +130,14 @@ export default function BrowserControl() {
                   </SelectContent>
                 </Select>
                 <Button
-                  variant={isConnected ? 'secondary' : 'default'}
+                  variant={isConnected === 'connected' ? 'secondary' : 'default'}
                   onClick={handleButtonClick}
                   disabled={isLoading}
                   size="sm"
                   onMouseEnter={() => setIsHovered(true)}
                   onMouseLeave={() => setIsHovered(false)}
                 >
-                  {isConnected
+                  {isConnected === 'connected'
                     ? (
                         <>
                           {isHovered
