@@ -43,7 +43,7 @@
 
 ### 下载安装
 
-访问 [Releases]([releases/latest](https://github.com/qiutongxue/oba-live-tool/releases/latest)) 页面下载最新版本安装包
+访问 [Releases](https://github.com/qiutongxue/oba-live-tool/releases/latest) 页面下载最新版本安装包
 
 ### 源码构建
 
