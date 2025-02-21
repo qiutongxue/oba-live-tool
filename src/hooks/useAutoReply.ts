@@ -24,7 +24,7 @@ export interface Comment {
   timestamp: string
 }
 
-type ListeningStatus = 'waiting' | 'listening' | 'stopped'
+type ListeningStatus = 'waiting' | 'listening' | 'stopped' | 'error'
 
 interface AutoReplyContext {
   isRunning: boolean

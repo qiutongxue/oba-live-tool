@@ -241,7 +241,7 @@ function setupIpcHandlers() {
         pageManager.register(TASK_NAME, (page, account) => new CommentManager(page, account))
       }
 
-      pageManager.startTask(TASK_NAME)
+      await pageManager.startTask(TASK_NAME)
       return true
     }
     catch (error) {

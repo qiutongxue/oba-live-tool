@@ -114,7 +114,7 @@ export class PageManager {
     }
   }
 
-  startTask(taskName: string) {
+  async startTask(taskName: string) {
     const context = this.contexts.get(this.currentId)
     if (!context)
       throw new Error(`无法获取 <${this.currentAccountName}> 的任务环境`)
@@ -124,7 +124,7 @@ export class PageManager {
       return
 
     this.logger.info(`启动任务 <${taskName}> - <${this.currentAccountName}>`)
-    context.tasks[taskName].start()
+    await context.tasks[taskName].start()
   }
 
   stopTask(taskName: string) {
