@@ -1,7 +1,7 @@
 {
   "name": "oba-live-tool",
   "type": "module",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "private": true,
   "description": "抖音直播工具，用于直播带货，能自动弹窗，自动发言",
   "author": "OBA Douyin Live Streaming Department",
@@ -64,6 +64,7 @@
     "@types/signale": "^1.4.7",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
+    "biome": "^0.3.3",
     "builder-util-runtime": "^9.2.10",
     "bumpp": "^10.0.1",
     "electron": "^34.0.2",

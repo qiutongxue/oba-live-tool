@@ -2,8 +2,10 @@ import { useAutoReply } from '@/hooks/useAutoReply'
 import { useLiveControl } from '@/hooks/useLiveControl'
 import { useToast } from '@/hooks/useToast'
 import { cn } from '@/lib/utils'
+import { RefreshCcw } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
+import { Button } from '../ui/button'
 import {
   Card,
   CardContent,
@@ -36,7 +38,7 @@ export default function CommentList({
           setIsListening('listening')
         })
         .catch(() => {
-          setIsListening('stopped')
+          setIsListening('error')
           toast.error('监听评论失败')
         })
     }
@@ -60,20 +62,32 @@ export default function CommentList({
 
   return (
     <Card>
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle>评论列表</CardTitle>
-            <CardDescription>实时显示直播间的评论内容</CardDescription>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="hide-host"
-              checked={hideHost}
-              onCheckedChange={setHideHost}
-            />
-            <Label htmlFor="hide-host">用户评论</Label>
-          </div>
+      <CardHeader className="pb-3 relative">
+        <CardTitle>评论列表</CardTitle>
+        <CardDescription>实时显示直播间的评论内容</CardDescription>
+        <div className="flex items-center space-x-2 absolute right-4 ">
+          {isConnected === 'connected' &&
+            (isListening === 'error' ? (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsListening('stopped')}
+                className="-translate-y-1/4"
+              >
+                <RefreshCcw className="h-4 w-4" />
+              </Button>
+            ) : (
+              isListening === 'listening' && (
+                <>
+                  <Switch
+                    id="hide-host"
+                    checked={hideHost}
+                    onCheckedChange={setHideHost}
+                  />
+                  <Label htmlFor="hide-host">用户评论</Label>
+                </>
+              )
+            ))}
         </div>
       </CardHeader>
       <Separator />

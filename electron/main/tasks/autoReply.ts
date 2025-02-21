@@ -269,7 +269,7 @@ function setupIpcHandlers() {
           )
         }
 
-        pageManager.startTask(TASK_NAME)
+        await pageManager.startTask(TASK_NAME)
         return true
       } catch (error) {
         logger.error(
