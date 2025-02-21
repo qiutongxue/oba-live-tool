@@ -8,13 +8,17 @@ export default function MessageComp({
   message,
   onChange,
   onDelete,
-}: { message: Message, onChange: (message: Message) => void, onDelete: (id: string) => void }) {
+}: {
+  message: Message
+  onChange: (message: Message) => void
+  onDelete: (id: string) => void
+}) {
   return (
     <div className="flex gap-3 items-start group">
       <div className="flex-1 space-y-2">
         <Input
           value={message.content}
-          onChange={(e) => {
+          onChange={e => {
             if (e.target.value.length > 50) {
               return
             }
@@ -28,7 +32,7 @@ export default function MessageComp({
             <Checkbox
               id={`pin-${message.id}`}
               checked={message.pinTop}
-              onCheckedChange={(checked) => {
+              onCheckedChange={checked => {
                 onChange({ ...message, pinTop: !!checked })
               }}
             />
@@ -39,9 +43,12 @@ export default function MessageComp({
               置顶此消息
             </label>
           </div>
-          <span className={`text-xs ${
-            message.content.length > 50 ? 'text-destructive' : 'text-muted-foreground'
-          }`}
+          <span
+            className={`text-xs ${
+              message.content.length > 50
+                ? 'text-destructive'
+                : 'text-muted-foreground'
+            }`}
           >
             {message.content.length}
             /50

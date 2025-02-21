@@ -1,8 +1,8 @@
-import { createLogger } from '#/logger'
 import { ipcMain } from 'electron'
 import OpenAI from 'openai'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { providers } from 'shared/providers'
+import { createLogger } from '#/logger'
 
 const logger = createLogger('ai对话')
 
@@ -17,7 +17,10 @@ function createOpenAIClient(apiKey: string, provider: keyof typeof providers) {
   return new OpenAI({ apiKey, baseURL })
 }
 
-async function handleStreamResponse(stream: AsyncIterable<any>, sender: Electron.WebContents) {
+async function handleStreamResponse(
+  stream: AsyncIterable<OpenAI.Chat.ChatCompletionChunk>,
+  sender: Electron.WebContents,
+) {
   let chunkCount = 0
   let isStart = false
 
@@ -28,8 +31,7 @@ async function handleStreamResponse(stream: AsyncIterable<any>, sender: Electron
     }
 
     const delta = chunk.choices[0]?.delta
-    if (!delta)
-      continue
+    if (!delta) continue
 
     sendStreamChunk(delta, chunkCount++, sender)
   }
@@ -37,7 +39,13 @@ async function handleStreamResponse(stream: AsyncIterable<any>, sender: Electron
   sender.send(IPC_CHANNELS.tasks.aiChat.stream, { done: true })
 }
 
-function sendStreamChunk(delta: any, index: number, sender: Electron.WebContents) {
+function sendStreamChunk(
+  delta: OpenAI.Chat.ChatCompletionChunk['choices'][0]['delta'] & {
+    reasoning_content?: string
+  },
+  index: number,
+  sender: Electron.WebContents,
+) {
   const { content, reasoning_content } = delta
 
   if (content) {
@@ -46,7 +54,11 @@ function sendStreamChunk(delta: any, index: number, sender: Electron.WebContents
   }
 
   if (reasoning_content) {
-    const chunk: StreamChunk = { chunk: reasoning_content, type: 'reasoning', index }
+    const chunk: StreamChunk = {
+      chunk: reasoning_content,
+      type: 'reasoning',
+      index,
+    }
     sender.send(IPC_CHANNELS.tasks.aiChat.stream, chunk)
   }
 }
@@ -73,11 +85,9 @@ export function setupAIChat() {
 
         await handleStreamResponse(stream, event.sender)
         return { success: true }
-      }
-      catch (error) {
+      } catch (error) {
         handleError(error, event.sender)
-      }
-      finally {
+      } finally {
         logger.info('AI 回答结束')
       }
     },
@@ -96,11 +106,9 @@ export function setupAIChat() {
         const reply = response.choices?.[0]?.message?.content
         logger.info(`[normal] ${reply}`)
         return reply
-      }
-      catch (error) {
+      } catch (error) {
         handleError(error, event.sender)
-      }
-      finally {
+      } finally {
         logger.debug('[normal] AI 回答结束')
       }
     },

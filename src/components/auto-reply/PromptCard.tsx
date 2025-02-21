@@ -4,7 +4,16 @@ import { useMemoizedFn } from 'ahooks'
 import { Settings } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '../ui/button'
-import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from '../ui/drawer'
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from '../ui/drawer'
 
 interface PromptCardProps {
   onSave?: () => void
@@ -32,9 +41,7 @@ export function PromptCard({ onSave }: PromptCardProps) {
         <div className="mx-auto w-full px-8">
           <DrawerHeader>
             <DrawerTitle>提示词配置</DrawerTitle>
-            <DrawerDescription>
-              配置 AI 助手的角色和回复风格
-            </DrawerDescription>
+            <DrawerDescription>配置 AI 助手的角色和回复风格</DrawerDescription>
           </DrawerHeader>
           <div className="p-6">
             <div className="space-y-4">
@@ -44,14 +51,10 @@ export function PromptCard({ onSave }: PromptCardProps) {
                 placeholder="请输入提示词..."
                 className="min-h-[200px] font-mono text-sm"
               />
-
             </div>
           </div>
           <DrawerFooter>
-            <Button
-              onClick={handleSave}
-              disabled={tempPrompt === prompt}
-            >
+            <Button onClick={handleSave} disabled={tempPrompt === prompt}>
               保存配置
             </Button>
             <DrawerClose asChild>
@@ -61,6 +64,5 @@ export function PromptCard({ onSave }: PromptCardProps) {
         </div>
       </DrawerContent>
     </Drawer>
-
   )
 }

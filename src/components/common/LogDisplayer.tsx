@@ -2,7 +2,10 @@ import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Switch } from '@/components/ui/switch'
 import { cn } from '@/lib/utils'
+import { useMemoizedFn } from 'ahooks'
+import type { LogMessage } from 'electron-log'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { IPC_CHANNELS } from 'shared/ipcChannels'
 
 interface ParsedLog {
   id: string
@@ -12,13 +15,13 @@ interface ParsedLog {
   message: string
 }
 
-interface LogMessage {
-  logId: string
-  date: Date
-  scope?: string
-  level: string
-  data: string[]
-}
+// interface LogMessage {
+//   logId: string
+//   date: Date
+//   scope?: string
+//   level: string
+//   data: string[]
+// }
 
 const MAX_LOG_MESSAGES = 200 // 仅展示最近的 200 条日志
 
@@ -35,46 +38,36 @@ export default function LogDisplayer() {
     }
   }, [autoScroll])
 
-  const parseLogMessage = (log: LogMessage): ParsedLog | null => {
-    // 匹配格式：[时间] [模块] » 级别 消息
-    if (!log.data[0]) {
-      return null
-    }
-    return {
-      id: crypto.randomUUID(),
-      timestamp: log.date.toLocaleString(),
-      module: log.scope ?? '',
-      level: log.level.toUpperCase(),
-      message: log.data.join(' '),
-    }
-  }
-
-  const getLevelColor = (level: string): string => {
-    switch (level.toUpperCase()) {
-      case 'ERROR': return 'text-destructive font-medium'
-      case 'FATAL': return 'text-destructive font-bold'
-      case 'WARN': return 'text-warning font-medium'
-      case 'DEBUG': return 'text-blue-600'
-      case 'INFO': return 'text-muted-foreground'
-      case 'SUCCESS': return 'text-emerald-600'
-      case 'NOTE': return 'text-purple-600'
-      default: return 'text-muted-foreground'
-    }
-  }
-
   useEffect(() => {
     // 监听 ScrollArea 的 viewport 元素
     if (scrollAreaRef.current) {
-      const viewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]')
+      const viewport = scrollAreaRef.current.querySelector(
+        '[data-radix-scroll-area-viewport]',
+      )
       if (viewport instanceof HTMLDivElement) {
         // 使用 MutableRefObject 来避免只读属性错误
-        (viewportRef as { current: HTMLDivElement | null }).current = viewport
+        ;(viewportRef as { current: HTMLDivElement | null }).current = viewport
       }
     }
   }, [])
 
   useEffect(() => {
     let timer: NodeJS.Timeout | null = null
+
+    const parseLogMessage = (log: LogMessage): ParsedLog | null => {
+      // 匹配格式：[时间] [模块] » 级别 消息
+      if (!log.data[0]) {
+        return null
+      }
+      return {
+        id: crypto.randomUUID(),
+        timestamp: log.date.toLocaleString(),
+        module: log.scope ?? '',
+        level: log.level.toUpperCase(),
+        message: log.data.join(' '),
+      }
+    }
+
     const handleLogMessage = (message: LogMessage) => {
       const parsed = parseLogMessage(message)
       if (parsed)
@@ -87,7 +80,10 @@ export default function LogDisplayer() {
       }
     }
 
-    const removeListener = window.ipcRenderer.on('log', handleLogMessage)
+    const removeListener = window.ipcRenderer.on(
+      IPC_CHANNELS.log,
+      handleLogMessage,
+    )
 
     return () => {
       removeListener()
@@ -102,9 +98,7 @@ export default function LogDisplayer() {
         <div className="flex items-center gap-2">
           <h3 className="font-medium">运行日志</h3>
           <span className="text-xs text-muted-foreground">
-            {logMessages.length}
-            {' '}
-            条记录
+            {logMessages.length} 条记录
           </span>
         </div>
         <div className="flex items-center gap-4">
@@ -137,42 +131,52 @@ export default function LogDisplayer() {
       </div>
 
       {/* 日志内容 */}
-      <ScrollArea
-        ref={scrollAreaRef}
-        className="flex-1"
-      >
+      <ScrollArea ref={scrollAreaRef} className="flex-1">
         <div className="p-4 font-mono text-sm">
-          {useMemo(() =>
-            logMessages.map((log, index) => {
-              return (
-                <div
-                  key={log.id}
-                  className={cn(
-                    'flex gap-2 items-start py-1 whitespace-nowrap',
-                    index % 2 === 0 ? 'bg-muted/40' : 'bg-background',
-                  )}
-                >
-                  <span className="text-muted-foreground shrink-0">
-                    [
-                    {log.timestamp}
-                    ]
-                  </span>
-                  <span className="text-foreground/70 shrink-0">
-                    [
-                    {log.module}
-                    ]
-                  </span>
-                  <span className={cn('shrink-0', getLevelColor(log.level))}>
-                    {log.level}
-                  </span>
-                  <span className="text-foreground truncate">
-                    {log.message}
-                  </span>
-                </div>
-              )
-            }), [logMessages])}
+          {logMessages.map((log, index) => (
+            <LogItem key={log.id} log={log} index={index} />
+          ))}
         </div>
       </ScrollArea>
+    </div>
+  )
+}
+
+function LogItem({ log, index }: { log: ParsedLog; index: number }) {
+  const getLevelColor = useMemoizedFn((level: string): string => {
+    switch (level.toUpperCase()) {
+      case 'ERROR':
+        return 'text-destructive font-medium'
+      case 'FATAL':
+        return 'text-destructive font-bold'
+      case 'WARN':
+        return 'text-warning font-medium'
+      case 'DEBUG':
+        return 'text-blue-600'
+      case 'INFO':
+        return 'text-muted-foreground'
+      case 'SUCCESS':
+        return 'text-emerald-600'
+      case 'NOTE':
+        return 'text-purple-600'
+      default:
+        return 'text-muted-foreground'
+    }
+  })
+  return (
+    <div
+      key={log.id}
+      className={cn(
+        'flex gap-2 items-start py-1 whitespace-nowrap',
+        index % 2 === 0 ? 'bg-muted/40' : 'bg-background',
+      )}
+    >
+      <span className="text-muted-foreground shrink-0">[{log.timestamp}]</span>
+      <span className="text-foreground/70 shrink-0">[{log.module}]</span>
+      <span className={cn('shrink-0', getLevelColor(log.level))}>
+        {log.level}
+      </span>
+      <span className="text-foreground truncate">{log.message}</span>
     </div>
   )
 }

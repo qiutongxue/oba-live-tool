@@ -1,4 +1,3 @@
-import type { AIProvider, ProviderConfig } from '@/hooks/useAIChat'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -18,13 +17,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import type { AIProvider, ProviderConfig } from '@/hooks/useAIChat'
 import { useAIChatStore } from '@/hooks/useAIChat'
 import { GearIcon } from '@radix-ui/react-icons'
 import { useState } from 'react'
 import { providers } from 'shared/providers'
 import { ScrollArea } from '../ui/scroll-area'
 
-function ModelSelector({ tempConfig, setTempConfig }: {
+function ModelSelector({
+  tempConfig,
+  setTempConfig,
+}: {
   tempConfig: ProviderConfig
   setTempConfig: React.Dispatch<React.SetStateAction<ProviderConfig>>
 }) {
@@ -34,14 +37,16 @@ function ModelSelector({ tempConfig, setTempConfig }: {
         <Label>接入点名称</Label>
         <Input
           value={tempConfig.model}
-          onChange={e => setTempConfig(prev => ({
-            ...prev,
-            model: e.target.value,
-            modelPreferences: {
-              ...prev.modelPreferences,
-              [prev.provider]: e.target.value,
-            },
-          }))}
+          onChange={e =>
+            setTempConfig(prev => ({
+              ...prev,
+              model: e.target.value,
+              modelPreferences: {
+                ...prev.modelPreferences,
+                [prev.provider]: e.target.value,
+              },
+            }))
+          }
           placeholder="请输入火山引擎的接入点名称"
         />
         <p className="text-xs text-muted-foreground">
@@ -65,14 +70,16 @@ function ModelSelector({ tempConfig, setTempConfig }: {
       <Label>选择模型</Label>
       <Select
         value={tempConfig.model}
-        onValueChange={model => setTempConfig(prev => ({
-          ...prev,
-          model,
-          modelPreferences: {
-            ...prev.modelPreferences,
-            [prev.provider]: model,
-          },
-        }))}
+        onValueChange={model =>
+          setTempConfig(prev => ({
+            ...prev,
+            model,
+            modelPreferences: {
+              ...prev.modelPreferences,
+              [prev.provider]: model,
+            },
+          }))
+        }
       >
         <SelectTrigger>
           <SelectValue placeholder="选择模型" />
@@ -99,9 +106,9 @@ export function APIKeyDialog() {
 
   const handleSave = () => {
     setConfig(tempConfig)
-    Object.keys(providers).forEach((key) => {
+    for (const key of Object.keys(providers)) {
       setApiKey(key as AIProvider, tempKeys[key as AIProvider])
-    })
+    }
     setOpen(false)
   }
 
@@ -126,7 +133,7 @@ export function APIKeyDialog() {
               <Label>选择提供商</Label>
               <Select
                 value={tempConfig.provider}
-                onValueChange={(value) => {
+                onValueChange={value => {
                   const provider = value as AIProvider
                   setTempConfig(prev => ({
                     ...prev,
@@ -139,7 +146,9 @@ export function APIKeyDialog() {
                   <SelectValue placeholder="选择服务商" />
                 </SelectTrigger>
                 <SelectContent>
-                  {(Object.keys(providers) as Array<keyof typeof providers>).map(key => (
+                  {(
+                    Object.keys(providers) as Array<keyof typeof providers>
+                  ).map(key => (
                     <SelectItem key={key} value={key}>
                       {providers[key].name}
                     </SelectItem>
@@ -148,7 +157,10 @@ export function APIKeyDialog() {
               </Select>
             </div>
 
-            <ModelSelector tempConfig={tempConfig} setTempConfig={setTempConfig} />
+            <ModelSelector
+              tempConfig={tempConfig}
+              setTempConfig={setTempConfig}
+            />
           </div>
 
           <div className="space-y-4">
@@ -157,10 +169,12 @@ export function APIKeyDialog() {
               <Input
                 type="password"
                 value={tempKeys[tempConfig.provider]}
-                onChange={e => setTempKeys(prev => ({
-                  ...prev,
-                  [tempConfig.provider]: e.target.value,
-                }))}
+                onChange={e =>
+                  setTempKeys(prev => ({
+                    ...prev,
+                    [tempConfig.provider]: e.target.value,
+                  }))
+                }
                 placeholder={`请输入您的 ${providers[tempConfig.provider].name} API Key`}
                 className="font-mono"
               />
@@ -168,6 +182,7 @@ export function APIKeyDialog() {
                 您可以在
                 <a
                   href={providers[tempConfig.provider].apiUrl}
+                  rel="noreferrer"
                   target="_blank"
                   className="px-1 text-primary hover:underline"
                 >

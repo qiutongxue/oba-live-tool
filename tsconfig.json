@@ -2,25 +2,15 @@
   "compilerOptions": {
     "target": "ESNext",
     "jsx": "react-jsx",
-    "lib": [
-      "DOM",
-      "DOM.Iterable",
-      "ESNext"
-    ],
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
     "useDefineForClassFields": true,
     "baseUrl": "./",
     "module": "ESNext",
     "moduleResolution": "Node",
     "paths": {
-      "@/*": [
-        "src/*"
-      ],
-      "#/*": [
-        "electron/main/*"
-      ],
-      "shared/*": [
-        "./shared/*"
-      ]
+      "@/*": ["src/*"],
+      "#/*": ["electron/main/*"],
+      "shared/*": ["./shared/*"]
     },
     "resolveJsonModule": true,
     "allowJs": false,
@@ -37,9 +27,5 @@
       "path": "./tsconfig.node.json"
     }
   ],
-  "include": [
-    "src",
-    "electron",
-    "shared"
-  ]
+  "include": ["src", "electron", "shared"]
 }

@@ -5,9 +5,25 @@ import { MagnifyingGlassIcon } from '@radix-ui/react-icons'
 import { CodeIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '../ui/alert-dialog'
 import { Button } from '../ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '../ui/card'
 import { Input } from '../ui/input'
 import { Label } from '../ui/label'
 import { Separator } from '../ui/separator'
@@ -20,10 +36,12 @@ export function BrowserSetting() {
 
   // 监听主进程发送的 Chrome 路径
   useEffect(() => {
-    const removeListener = window.ipcRenderer.on(IPC_CHANNELS.chrome.setPath, (path: string) => {
-      if (path)
-        setPath(path)
-    })
+    const removeListener = window.ipcRenderer.on(
+      IPC_CHANNELS.chrome.setPath,
+      (path: string) => {
+        if (path) setPath(path)
+      },
+    )
     return () => removeListener()
   }, [setPath])
 
@@ -34,14 +52,15 @@ export function BrowserSetting() {
 
   const handleSelectChrome = async () => {
     try {
-      const path = await window.ipcRenderer.invoke(IPC_CHANNELS.chrome.selectPath)
+      const path = await window.ipcRenderer.invoke(
+        IPC_CHANNELS.chrome.selectPath,
+      )
       if (path) {
         setPath(path)
 
         toast.success('Chrome 路径设置成功')
       }
-    }
-    catch {
+    } catch {
       toast.error('选择 Chrome 路径失败')
     }
   }
@@ -49,20 +68,19 @@ export function BrowserSetting() {
   const handleAutoDetect = async () => {
     try {
       setIsDetecting(true)
-      const result = await window.ipcRenderer.invoke(IPC_CHANNELS.chrome.getPath)
+      const result = await window.ipcRenderer.invoke(
+        IPC_CHANNELS.chrome.getPath,
+      )
       if (result) {
         setPath(result)
 
         toast.success('已自动检测到 Chrome 路径')
-      }
-      else {
+      } else {
         toast.error('未检测到 Chrome，请确保 Chrome 已打开')
       }
-    }
-    catch {
+    } catch {
       toast.error('检测 Chrome 路径失败')
-    }
-    finally {
+    } finally {
       setIsDetecting(false)
     }
   }
@@ -77,7 +95,9 @@ export function BrowserSetting() {
         <div className="rounded-lg border bg-card p-4">
           <div className="flex items-start justify-between gap-4">
             <div className="space-y-1">
-              <h4 className="text-sm font-medium leading-none">自动检测 Chrome</h4>
+              <h4 className="text-sm font-medium leading-none">
+                自动检测 Chrome
+              </h4>
               <p className="text-sm text-muted-foreground">
                 <strong>打开 Chrome 浏览器后</strong>
                 点击检测，自动获取安装路径
@@ -89,7 +109,9 @@ export function BrowserSetting() {
               disabled={isDetecting}
               className="flex-shrink-0"
             >
-              <MagnifyingGlassIcon className={`mr-2 h-4 w-4 ${isDetecting ? 'animate-spin' : ''}`} />
+              <MagnifyingGlassIcon
+                className={`mr-2 h-4 w-4 ${isDetecting ? 'animate-spin' : ''}`}
+              />
               {isDetecting ? '检测中...' : '开始检测'}
             </Button>
           </div>
@@ -105,10 +127,7 @@ export function BrowserSetting() {
               placeholder="请选择或输入 Chrome 浏览器路径"
               className="font-mono"
             />
-            <Button
-              variant="outline"
-              onClick={handleSelectChrome}
-            >
+            <Button variant="outline" onClick={handleSelectChrome}>
               <CodeIcon className="mr-2 h-4 w-4" />
               浏览
             </Button>
@@ -126,18 +145,14 @@ export function BrowserSetting() {
 
         <div className="flex items-center justify-between">
           <div className="space-y-1">
-            <h4 className="text-sm font-medium leading-none">
-              重置登录状态
-            </h4>
+            <h4 className="text-sm font-medium leading-none">重置登录状态</h4>
             <p className="text-sm text-muted-foreground">
               清除已保存的登录信息，下次启动时需要重新登录
             </p>
           </div>
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="destructive">
-                重置
-              </Button>
+              <Button variant="destructive">重置</Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>

@@ -3,10 +3,7 @@
   "typescript.tsc.autoDetect": "off",
   "json.schemas": [
     {
-      "fileMatch": [
-        "/*electron-builder.json5",
-        "/*electron-builder.json"
-      ],
+      "fileMatch": ["/*electron-builder.json5", "/*electron-builder.json"],
       "url": "https://json.schemastore.org/electron-builder"
     }
   ],
@@ -18,6 +15,7 @@
     "source.fixAll.eslint": "explicit",
     "source.organizeImports": "never"
   },
+  "editor.defaultFormatter": "biomejs.biome",
   // Silent the stylistic rules in you IDE, but still auto fix them
   "eslint.rules.customizations": [
     {
@@ -94,5 +92,8 @@
     "scss",
     "pcss",
     "postcss"
-  ]
+  ],
+  "[typescript]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  }
 }

@@ -1,4 +1,5 @@
 import electronLog from 'electron-log'
+import { IPC_CHANNELS } from 'shared/ipcChannels'
 import windowManager from './windowManager'
 
 // [2025-02-11 07:30:03.037] [中控台] » INFO         启动中……
@@ -16,7 +17,7 @@ electronLog.scope.labelPadding = false
 electronLog.addLevel('success', 3)
 electronLog.hooks.push((message, transport) => {
   if (transport === electronLog.transports.console) {
-    windowManager.sendToWindow('main', 'log', message)
+    windowManager.sendToWindow('main', IPC_CHANNELS.log, message)
   }
   return message
 })

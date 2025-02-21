@@ -1,4 +1,4 @@
-import { eventEmitter, EVENTS } from '@/utils/events'
+import { EVENTS, eventEmitter } from '@/utils/events'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
@@ -42,30 +42,32 @@ interface AutoMessageStore {
 
 export const useAutoMessageStore = create<AutoMessageStore>()(
   persist(
-    immer((set) => {
+    immer(set => {
       eventEmitter.on(EVENTS.ACCOUNT_REMOVED, (accountId: string) => {
-        set((state) => {
+        set(state => {
           delete state.contexts[accountId]
         })
       })
 
       return {
         contexts: { default: defaultContext },
-        setIsRunning: (accountId, running) => set((state) => {
-          if (!state.contexts[accountId]) {
-            state.contexts[accountId] = defaultContext
-          }
-          state.contexts[accountId].isRunning = running
-        }),
-        setConfig: (accountId, config) => set((state) => {
-          if (!state.contexts[accountId]) {
-            state.contexts[accountId] = defaultContext
-          }
-          state.contexts[accountId].config = {
-            ...state.contexts[accountId].config,
-            ...config,
-          }
-        }),
+        setIsRunning: (accountId, running) =>
+          set(state => {
+            if (!state.contexts[accountId]) {
+              state.contexts[accountId] = defaultContext
+            }
+            state.contexts[accountId].isRunning = running
+          }),
+        setConfig: (accountId, config) =>
+          set(state => {
+            if (!state.contexts[accountId]) {
+              state.contexts[accountId] = defaultContext
+            }
+            state.contexts[accountId].config = {
+              ...state.contexts[accountId].config,
+              ...config,
+            }
+          }),
       }
     }),
     {
@@ -82,11 +84,13 @@ export const useAutoMessageStore = create<AutoMessageStore>()(
                 random: boolean
               }
             }
-            const messages = persisted.config.messages.map((message, index) => ({
-              id: crypto.randomUUID(),
-              content: message as string,
-              pinTop: persisted.config.pinTops.includes(index),
-            }))
+            const messages = persisted.config.messages.map(
+              (message, index) => ({
+                id: crypto.randomUUID(),
+                content: message as string,
+                pinTop: persisted.config.pinTops.includes(index),
+              }),
+            )
             return {
               contexts: {
                 default: {
@@ -98,8 +102,7 @@ export const useAutoMessageStore = create<AutoMessageStore>()(
                 },
               },
             }
-          }
-          catch {
+          } catch {
             return {
               contexts: {
                 default: defaultContext,
@@ -112,9 +115,12 @@ export const useAutoMessageStore = create<AutoMessageStore>()(
         contexts: Object.fromEntries(
           Object.entries(state.contexts).map(([accountId, context]) =>
             // [accountId, context { isRunning, config }]
-            [accountId, Object.fromEntries(
-              Object.entries(context).filter(([key]) => key !== 'isRunning'),
-            )],
+            [
+              accountId,
+              Object.fromEntries(
+                Object.entries(context).filter(([key]) => key !== 'isRunning'),
+              ),
+            ],
           ),
         ),
       }),
@@ -136,12 +142,11 @@ export function useAutoMessage() {
   return {
     isRunning: context.isRunning,
     config: context.config,
-    setIsRunning: (running: boolean) => store.setIsRunning(currentAccountId, running),
+    setIsRunning: (running: boolean) =>
+      store.setIsRunning(currentAccountId, running),
     setScheduler: (scheduler: AutoMessageConfig['scheduler']) =>
       updateConfig({ scheduler }),
-    setMessages: (messages: Message[]) =>
-      updateConfig({ messages }),
-    setRandom: (random: boolean) =>
-      updateConfig({ random }),
+    setMessages: (messages: Message[]) => updateConfig({ messages }),
+    setRandom: (random: boolean) => updateConfig({ random }),
   }
 }

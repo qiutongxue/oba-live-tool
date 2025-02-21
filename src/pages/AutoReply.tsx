@@ -12,14 +12,15 @@ import { providers } from 'shared/providers'
 
 export default function AutoReply() {
   const { isRunning, setIsRunning } = useAutoReply()
-  const [highlightedCommentId, setHighlightedCommentId] = useState<string | null>(null)
+  const [highlightedCommentId, setHighlightedCommentId] = useState<
+    string | null
+  >(null)
   const aiConfig = useAIChatStore(state => state.config)
 
   const handleAutoReplyToggle = async () => {
     try {
       setIsRunning(!isRunning)
-    }
-    catch (error) {
+    } catch (error) {
       console.error('切换自动回复失败:', error)
     }
   }
@@ -29,7 +30,10 @@ export default function AutoReply() {
       <div className="mb-6">
         <div className="flex items-center justify-between">
           <div>
-            <Title title="自动回复" description="查看直播间的实时评论并自动回复" />
+            <Title
+              title="自动回复"
+              description="查看直播间的实时评论并自动回复"
+            />
           </div>
           <div className="flex items-center gap-2">
             <APIKeyDialog />

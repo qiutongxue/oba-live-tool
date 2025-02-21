@@ -1,6 +1,12 @@
 import LogDisplayer from '@/components/common/LogDisplayer'
 import Sidebar from '@/components/common/Sidebar'
-import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator, ContextMenuTrigger } from '@/components/ui/context-menu'
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from '@/components/ui/context-menu'
 import { Toaster } from '@/components/ui/toaster'
 import { useDevMode } from '@/hooks/useDevMode'
 import { RefreshCwIcon, TerminalIcon } from 'lucide-react'

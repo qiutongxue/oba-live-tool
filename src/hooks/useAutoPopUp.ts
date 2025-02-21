@@ -1,4 +1,4 @@
-import { eventEmitter, EVENTS } from '@/utils/events'
+import { EVENTS, eventEmitter } from '@/utils/events'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
@@ -36,29 +36,31 @@ interface AutoPopUpStore {
 
 export const useAutoPopUpStore = create<AutoPopUpStore>()(
   persist(
-    immer((set) => {
+    immer(set => {
       eventEmitter.on(EVENTS.ACCOUNT_REMOVED, (accountId: string) => {
-        set((state) => {
+        set(state => {
           delete state.contexts[accountId]
         })
       })
       return {
         contexts: { default: defaultContext },
-        setIsRunning: (accountId, running) => set((state) => {
-          if (!state.contexts[accountId]) {
-            state.contexts[accountId] = defaultContext
-          }
-          state.contexts[accountId].isRunning = running
-        }),
-        setConfig: (accountId, config) => set((state) => {
-          if (!state.contexts[accountId]) {
-            state.contexts[accountId] = defaultContext
-          }
-          state.contexts[accountId].config = {
-            ...state.contexts[accountId].config,
-            ...config,
-          }
-        }),
+        setIsRunning: (accountId, running) =>
+          set(state => {
+            if (!state.contexts[accountId]) {
+              state.contexts[accountId] = defaultContext
+            }
+            state.contexts[accountId].isRunning = running
+          }),
+        setConfig: (accountId, config) =>
+          set(state => {
+            if (!state.contexts[accountId]) {
+              state.contexts[accountId] = defaultContext
+            }
+            state.contexts[accountId].config = {
+              ...state.contexts[accountId].config,
+              ...config,
+            }
+          }),
       }
     }),
     {
@@ -78,8 +80,7 @@ export const useAutoPopUpStore = create<AutoPopUpStore>()(
                 },
               },
             }
-          }
-          catch {
+          } catch {
             return {
               contexts: {
                 default: defaultContext,
@@ -93,7 +94,9 @@ export const useAutoPopUpStore = create<AutoPopUpStore>()(
           Object.entries(state.contexts).map(([accountId, context]) => [
             // [accountId, context { isRunning, config }]
             accountId,
-            Object.fromEntries(Object.entries(context).filter(([key]) => key !== 'isRunning')),
+            Object.fromEntries(
+              Object.entries(context).filter(([key]) => key !== 'isRunning'),
+            ),
           ]),
         ),
       }),
@@ -113,12 +116,12 @@ export function useAutoPopUp() {
   return {
     isRunning: context.isRunning,
     config: context.config,
-    setIsRunning: (running: boolean) => store.setIsRunning(currentAccountId, running),
+    setIsRunning: (running: boolean) =>
+      store.setIsRunning(currentAccountId, running),
     setScheduler: (scheduler: AutoPopUpConfig['scheduler']) =>
       updateConfig({ scheduler }),
     setGoodsIds: (goodsIds: AutoPopUpConfig['goodsIds']) =>
       updateConfig({ goodsIds }),
-    setRandom: (random: boolean) =>
-      updateConfig({ random }),
+    setRandom: (random: boolean) => updateConfig({ random }),
   }
 }

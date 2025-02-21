@@ -1,14 +1,14 @@
-import type { Account } from '#/taskManager'
+import { ipcMain } from 'electron'
+import { merge } from 'lodash-es'
 import type { Page } from 'playwright'
-import type { BaseConfig } from './scheduler'
+import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { createLogger } from '#/logger'
+import type { Account } from '#/taskManager'
 import { pageManager } from '#/taskManager'
 import { randomInt } from '#/utils'
 import windowManager from '#/windowManager'
-import { ipcMain } from 'electron'
-import { merge } from 'lodash-es'
-import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { LiveController } from './Controller'
+import type { BaseConfig } from './scheduler'
 import { TaskScheduler } from './scheduler'
 
 const TASK_NAME = '自动发言'
@@ -32,7 +32,11 @@ class MessageManager {
   private readonly scheduler: TaskScheduler
   private controller: LiveController
 
-  constructor(private readonly page: Page, private account: Account, userConfig: MessageConfig) {
+  constructor(
+    private readonly page: Page,
+    private account: Account,
+    userConfig: MessageConfig,
+  ) {
     this.validateConfig(userConfig)
     this.config = userConfig
     this.scheduler = this.createTaskScheduler()
@@ -47,7 +51,11 @@ class MessageManager {
         onStart: () => logger.info(`「${TASK_NAME}」开始执行`),
         onStop: () => {
           logger.info(`「${TASK_NAME}」停止执行`)
-          windowManager.sendToWindow('main', IPC_CHANNELS.tasks.autoMessage.stop, this.account.id)
+          windowManager.sendToWindow(
+            'main',
+            IPC_CHANNELS.tasks.autoMessage.stop,
+            this.account.id,
+          )
         },
       }),
     )
@@ -56,9 +64,9 @@ class MessageManager {
   private getNextMessage(): Message {
     if (this.config.random) {
       this.currentMessageIndex = randomInt(0, this.config.messages.length - 1)
-    }
-    else {
-      this.currentMessageIndex = (this.currentMessageIndex + 1) % this.config.messages.length
+    } else {
+      this.currentMessageIndex =
+        (this.currentMessageIndex + 1) % this.config.messages.length
     }
     return this.config.messages[this.currentMessageIndex]
   }
@@ -68,9 +76,10 @@ class MessageManager {
       const message = this.getNextMessage()
       const isPinTop = message.pinTop
       await this.controller.sendMessage(message.content, isPinTop)
-    }
-    catch (e) {
-      logger.error(`「${TASK_NAME}」执行失败: ${e instanceof Error ? e.message : String(e)}`)
+    } catch (e) {
+      logger.error(
+        `「${TASK_NAME}」执行失败: ${e instanceof Error ? e.message : String(e)}`,
+      )
       throw e
     }
   }
@@ -80,9 +89,13 @@ class MessageManager {
       throw new Error('消息配置验证失败: 必须提供至少一条消息')
     }
 
-    const badIndex = userConfig.messages.findIndex(msg => msg.content.length > 50)
+    const badIndex = userConfig.messages.findIndex(
+      msg => msg.content.length > 50,
+    )
     if (badIndex >= 0) {
-      throw new Error(`消息配置验证失败: 第 ${badIndex + 1} 条消息字数超出 50 字`)
+      throw new Error(
+        `消息配置验证失败: 第 ${badIndex + 1} 条消息字数超出 50 字`,
+      )
     }
 
     if (userConfig.scheduler.interval[0] > userConfig.scheduler.interval[1]) {
@@ -125,12 +138,17 @@ class MessageManager {
 function setupIpcHandlers() {
   ipcMain.handle(IPC_CHANNELS.tasks.autoMessage.start, async (_, config) => {
     try {
-      pageManager.register(TASK_NAME, (page, account) => new MessageManager(page, account, config))
+      pageManager.register(
+        TASK_NAME,
+        (page, account) => new MessageManager(page, account, config),
+      )
       pageManager.startTask(TASK_NAME)
       return true
-    }
-    catch (error) {
-      logger.error('启动自动发言失败:', error instanceof Error ? error.message : error)
+    } catch (error) {
+      logger.error(
+        '启动自动发言失败:',
+        error instanceof Error ? error.message : error,
+      )
       return false
     }
   })
@@ -140,9 +158,12 @@ function setupIpcHandlers() {
     return true
   })
 
-  ipcMain.handle(IPC_CHANNELS.tasks.autoMessage.updateConfig, async (_, newConfig) => {
-    pageManager.updateTaskConfig(TASK_NAME, newConfig)
-  })
+  ipcMain.handle(
+    IPC_CHANNELS.tasks.autoMessage.updateConfig,
+    async (_, newConfig) => {
+      pageManager.updateTaskConfig(TASK_NAME, newConfig)
+    },
+  )
 }
 
 setupIpcHandlers()

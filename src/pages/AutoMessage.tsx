@@ -1,4 +1,3 @@
-import type { Message } from '@/hooks/useAutoMessage'
 import MessageComp from '@/components/auto-message/MessageComp'
 import { TaskButton } from '@/components/common/TaskButton'
 import { Title } from '@/components/common/Title'
@@ -8,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
+import type { Message } from '@/hooks/useAutoMessage'
 import { useAutoMessage } from '@/hooks/useAutoMessage'
 import { useToast } from '@/hooks/useToast'
 import { PlusIcon } from '@radix-ui/react-icons'
@@ -15,17 +15,26 @@ import React, { useCallback, useState } from 'react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 
 export default function AutoMessage() {
-  const { isRunning, config, setMessages, setRandom, setScheduler, setIsRunning } = useAutoMessage()
+  const {
+    isRunning,
+    config,
+    setMessages,
+    setRandom,
+    setScheduler,
+    setIsRunning,
+  } = useAutoMessage()
   const { toast } = useToast()
   const [validationError] = useState<string | null>(null)
 
   const onStartTask = useCallback(async () => {
-    const result = await window.ipcRenderer.invoke(IPC_CHANNELS.tasks.autoMessage.start, config)
+    const result = await window.ipcRenderer.invoke(
+      IPC_CHANNELS.tasks.autoMessage.start,
+      config,
+    )
     if (result) {
       setIsRunning(true)
       toast.success('自动消息任务已启动')
-    }
-    else {
+    } else {
       setIsRunning(false)
       toast.error('自动消息任务启动失败')
     }
@@ -37,14 +46,12 @@ export default function AutoMessage() {
   }, [setIsRunning])
 
   const handleTaskButtonClick = () => {
-    if (!isRunning)
-      onStartTask()
-    else
-      onStopTask()
+    if (!isRunning) onStartTask()
+    else onStopTask()
   }
 
   const handleMessageChange = (message: Message) => {
-    setMessages(config.messages.map(m => m.id === message.id ? message : m))
+    setMessages(config.messages.map(m => (m.id === message.id ? message : m)))
   }
 
   return (
@@ -77,11 +84,16 @@ export default function AutoMessage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setMessages([...config.messages, {
-                    id: crypto.randomUUID(),
-                    content: '',
-                    pinTop: false,
-                  }])}
+                  onClick={() =>
+                    setMessages([
+                      ...config.messages,
+                      {
+                        id: crypto.randomUUID(),
+                        content: '',
+                        pinTop: false,
+                      },
+                    ])
+                  }
                 >
                   <PlusIcon className="mr-2 h-4 w-4" />
                   添加消息
@@ -94,7 +106,9 @@ export default function AutoMessage() {
                     key={message.id}
                     message={message}
                     onChange={handleMessageChange}
-                    onDelete={id => setMessages(config.messages.filter(m => m.id !== id))}
+                    onDelete={id =>
+                      setMessages(config.messages.filter(m => m.id !== id))
+                    }
                   />
                 ))}
               </div>
@@ -130,9 +144,14 @@ export default function AutoMessage() {
                   <Input
                     type="number"
                     value={config.scheduler.interval[0] / 1000}
-                    onChange={e => setScheduler({
-                      interval: [Number(e.target.value) * 1000, config.scheduler.interval[1]],
-                    })}
+                    onChange={e =>
+                      setScheduler({
+                        interval: [
+                          Number(e.target.value) * 1000,
+                          config.scheduler.interval[1],
+                        ],
+                      })
+                    }
                     className="w-24"
                     min="1"
                     placeholder="最小"
@@ -141,9 +160,14 @@ export default function AutoMessage() {
                   <Input
                     type="number"
                     value={config.scheduler.interval[1] / 1000}
-                    onChange={e => setScheduler({
-                      interval: [config.scheduler.interval[0], Number(e.target.value) * 1000],
-                    })}
+                    onChange={e =>
+                      setScheduler({
+                        interval: [
+                          config.scheduler.interval[0],
+                          Number(e.target.value) * 1000,
+                        ],
+                      })
+                    }
                     className="w-24"
                     min="1"
                     placeholder="最大"

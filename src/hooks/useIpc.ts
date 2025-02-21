@@ -17,17 +17,17 @@ export function useIpc() {
   const { toast } = useToast()
 
   useEffect(() => {
-    window.ipcRenderer.invoke(
-      IPC_CHANNELS.account.switch,
-      { accountId: currentAccountId, accountNames: accounts },
-    )
+    window.ipcRenderer.invoke(IPC_CHANNELS.account.switch, {
+      accountId: currentAccountId,
+      accountNames: accounts,
+    })
   }, [accounts, currentAccountId])
 
   useEffect(() => {
     const removeListeners: (() => void)[] = [
       window.ipcRenderer.on(
         IPC_CHANNELS.tasks.autoReply.showComment,
-        ({ comment, accountId }: { comment: Comment, accountId: string }) => {
+        ({ comment, accountId }: { comment: Comment; accountId: string }) => {
           handleComment(comment, accountId)
         },
       ),
@@ -38,10 +38,13 @@ export function useIpc() {
           toast.error('直播控制台已断开连接')
         },
       ),
-      window.ipcRenderer.on(IPC_CHANNELS.tasks.autoMessage.stop, (id: string) => {
-        setIsRunningAutoMessage(id, false)
-        toast.error('自动发言已停止')
-      }),
+      window.ipcRenderer.on(
+        IPC_CHANNELS.tasks.autoMessage.stop,
+        (id: string) => {
+          setIsRunningAutoMessage(id, false)
+          toast.error('自动发言已停止')
+        },
+      ),
       window.ipcRenderer.on(IPC_CHANNELS.tasks.autoPopUp.stop, (id: string) => {
         setIsRunningAutoPopUp(id, false)
         toast.error('自动弹窗已停止')
@@ -49,7 +52,15 @@ export function useIpc() {
     ]
 
     return () => {
-      removeListeners.forEach(removeListener => removeListener())
+      for (const removeListener of removeListeners) {
+        removeListener()
+      }
     }
-  }, [setIsConnected, setIsRunningAutoMessage, setIsRunningAutoPopUp, toast, handleComment])
+  }, [
+    setIsConnected,
+    setIsRunningAutoMessage,
+    setIsRunningAutoPopUp,
+    toast,
+    handleComment,
+  ])
 }

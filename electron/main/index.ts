@@ -13,7 +13,7 @@ import path from 'node:path'
 //
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
-import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
+import { BrowserWindow, app, dialog, ipcMain, shell } from 'electron'
 
 import fs from 'fs-extra'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
@@ -44,12 +44,10 @@ process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL
 app.commandLine.appendSwitch('remote-debugging-port', '9222')
 
 // Disable GPU Acceleration for Windows 7
-if (os.release().startsWith('6.1'))
-  app.disableHardwareAcceleration()
+if (os.release().startsWith('6.1')) app.disableHardwareAcceleration()
 
 // Set application name for Windows 10+ notifications
-if (process.platform === 'win32')
-  app.setAppUserModelId(app.getName())
+if (process.platform === 'win32') app.setAppUserModelId(app.getName())
 
 if (!app.requestSingleInstanceLock()) {
   app.quit()
@@ -80,12 +78,12 @@ async function createWindow() {
 
   windowManager.registerWindow('main', win)
 
-  if (VITE_DEV_SERVER_URL) { // #298
+  if (VITE_DEV_SERVER_URL) {
+    // #298
     win.loadURL(VITE_DEV_SERVER_URL)
     // Open devTool if the app is not packaged
     win.webContents.openDevTools()
-  }
-  else {
+  } else {
     win.loadFile(indexHtml)
   }
 
@@ -96,8 +94,7 @@ async function createWindow() {
 
   // Make all links open with the browser, not with the application
   win.webContents.setWindowOpenHandler(({ url }) => {
-    if (url.startsWith('https:'))
-      shell.openExternal(url)
+    if (url.startsWith('https:')) shell.openExternal(url)
     return { action: 'deny' }
   })
 
@@ -111,15 +108,13 @@ app.whenReady().then(createWindow)
 app.on('window-all-closed', async () => {
   win = null
   pageManager.cleanup()
-  if (process.platform !== 'darwin')
-    app.quit()
+  if (process.platform !== 'darwin') app.quit()
 })
 
 app.on('second-instance', () => {
   if (win) {
     // Focus on the main window if the user tried to open another
-    if (win.isMinimized())
-      win.restore()
+    if (win.isMinimized()) win.restore()
     win.focus()
   }
 })
@@ -128,8 +123,7 @@ app.on('activate', () => {
   const allWindows = BrowserWindow.getAllWindows()
   if (allWindows.length) {
     allWindows[0].focus()
-  }
-  else {
+  } else {
     createWindow()
   }
 })
@@ -146,54 +140,11 @@ ipcMain.handle('open-win', (_, arg) => {
 
   if (VITE_DEV_SERVER_URL) {
     childWindow.loadURL(`${VITE_DEV_SERVER_URL}#${arg}`)
-  }
-  else {
+  } else {
     childWindow.loadFile(indexHtml, { hash: arg })
   }
 })
 
-// 添加配置验证函数
-function validateConfig(config: any) {
-  // 根据需要添加验证逻辑
-  if (!config)
-    throw new Error('配置不能为空')
-  return true
-}
-
-// 添加配置路径常量
-const CONFIG_PATH = path.join(app.getPath('userData'), 'config.json')
-
-const logger = createLogger('main')
-
-// 保存配置
-ipcMain.handle(IPC_CHANNELS.config.save, async (_, config) => {
-  try {
-    validateConfig(config)
-    await fs.writeFile(CONFIG_PATH, JSON.stringify(config, null, 2))
-    return true
-  }
-  catch (error) {
-    logger.error('保存配置失败:', error)
-    throw error
-  }
-})
-
-// 加载配置
-ipcMain.handle(IPC_CHANNELS.config.load, async () => {
-  try {
-    if (await fs.pathExists(CONFIG_PATH)) {
-      const configStr = await fs.readFile(CONFIG_PATH, 'utf-8')
-      return JSON.parse(configStr)
-    }
-    return null
-  }
-  catch (error) {
-    logger.error('加载配置失败:', error)
-    throw error
-  }
-})
-
-// 添加新的 IPC 处理函数
 ipcMain.handle(IPC_CHANNELS.chrome.getPath, async () => {
   const path = await findChrome()
   return path
@@ -210,13 +161,12 @@ ipcMain.handle(IPC_CHANNELS.chrome.selectPath, async () => {
   }
 })
 
-ipcMain.handle(IPC_CHANNELS.chrome.toggleDevTools, (event) => {
+ipcMain.handle(IPC_CHANNELS.chrome.toggleDevTools, event => {
   const win = BrowserWindow.fromWebContents(event.sender)
   if (win) {
     if (win.webContents.isDevToolsOpened()) {
       win.webContents.closeDevTools()
-    }
-    else {
+    } else {
       win.webContents.openDevTools()
     }
   }

@@ -18,7 +18,7 @@ export default defineConfig(({ command }) => {
     resolve: {
       alias: {
         '@': path.join(__dirname, 'src'),
-        'shared': path.join(__dirname, 'shared'),
+        shared: path.join(__dirname, 'shared'),
       },
     },
     plugins: [
@@ -29,9 +29,10 @@ export default defineConfig(({ command }) => {
           entry: 'electron/main/index.ts',
           onstart(args) {
             if (process.env.VSCODE_DEBUG) {
-              console.log(/* For `.vscode/.debug.script.mjs` */'[startup] Electron App')
-            }
-            else {
+              console.log(
+                /* For `.vscode/.debug.script.mjs` */ '[startup] Electron App',
+              )
+            } else {
               args.startup()
             }
           },
@@ -49,7 +50,7 @@ export default defineConfig(({ command }) => {
             resolve: {
               alias: {
                 '#': path.join(__dirname, 'electron/main'),
-                'shared': path.join(__dirname, 'shared'),
+                shared: path.join(__dirname, 'shared'),
               },
             },
           },
@@ -82,13 +83,15 @@ export default defineConfig(({ command }) => {
         renderer: {},
       }),
     ],
-    server: process.env.VSCODE_DEBUG && (() => {
-      const url = new URL(pkg.debug.env.VITE_DEV_SERVER_URL)
-      return {
-        host: url.hostname,
-        port: +url.port,
-      }
-    })(),
+    server:
+      process.env.VSCODE_DEBUG &&
+      (() => {
+        const url = new URL(pkg.debug.env.VITE_DEV_SERVER_URL)
+        return {
+          host: url.hostname,
+          port: +url.port,
+        }
+      })(),
     clearScreen: false,
   }
 })
