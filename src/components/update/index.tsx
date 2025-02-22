@@ -13,8 +13,10 @@ import type { ProgressInfo } from 'electron-updater'
 import { useCallback, useEffect, useState } from 'react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import './update.css'
+import { useToast } from '@/hooks/useToast'
 
 function Update({ source = 'github' }: { source: string }) {
+  const { toast } = useToast()
   const [checking, setChecking] = useState(false)
   const [downloading, setDownloading] = useState(false)
   const [updateAvailable, setUpdateAvailable] = useState(false)
@@ -22,6 +24,7 @@ function Update({ source = 'github' }: { source: string }) {
   const [updateError, setUpdateError] = useState<ErrorType>()
   const [progressInfo, setProgressInfo] = useState<Partial<ProgressInfo>>()
   const [modalOpen, setModalOpen] = useState<boolean>(false)
+  const [downloadURL, setDownloadURL] = useState<string>()
   const [modalBtn, setModalBtn] = useState<{
     cancelText?: string
     okText?: string
@@ -36,6 +39,17 @@ function Update({ source = 'github' }: { source: string }) {
   })
 
   const checkUpdate = async () => {
+    // 先验证 source 正确性
+    if (source !== 'github') {
+      try {
+        const url = new URL(source)
+        url.pathname = '/'
+        source = url.toString()
+      } catch {
+        toast.error('更新源格式错误，请检查')
+        return
+      }
+    }
     setChecking(true)
     const result = await window.ipcRenderer.invoke(
       IPC_CHANNELS.updater.checkUpdate,
@@ -47,6 +61,9 @@ function Update({ source = 'github' }: { source: string }) {
     if ('error' in result) {
       setUpdateAvailable(false)
       setUpdateError(result)
+      if ('downloadURL' in result && result.downloadURL) {
+        setDownloadURL(result.downloadURL)
+      }
     }
   }
 
@@ -91,6 +108,11 @@ function Update({ source = 'github' }: { source: string }) {
         window.ipcRenderer.invoke(IPC_CHANNELS.updater.quitAndInstall),
     }))
   }, [])
+
+  const openDownloadURL = useCallback(() => {
+    setModalOpen(false)
+    window.open(downloadURL, '_blank')
+  }, [downloadURL])
 
   const getUpdateButtonContent = () => {
     if (downloading) {
@@ -217,6 +239,12 @@ function Update({ source = 'github' }: { source: string }) {
               <Button onClick={modalBtn?.onOk} disabled={downloading}>
                 {getUpdateButtonContent()}
               </Button>
+            </DialogFooter>
+          )}
+
+          {updateError && downloadURL && (
+            <DialogFooter>
+              <Button onClick={openDownloadURL}>手动下载</Button>
             </DialogFooter>
           )}
         </DialogContent>

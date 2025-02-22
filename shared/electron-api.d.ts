@@ -77,6 +77,7 @@ interface MainReturnTypeMapping {
     | {
         message: string
         error: Error
+        downloadURL?: string
       }
     | UpdateCheckResult
   [IPC_CHANNELS.updater.startDownload]: undefined

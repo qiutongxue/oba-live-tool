@@ -48,6 +48,36 @@ export async function update(win: Electron.BrowserWindow) {
     })
   })
 
+  async function checkUpdateForGithub() {
+    autoUpdater.setFeedURL({
+      provider: 'github',
+      owner: 'qiutongxue',
+      repo: 'oba-live-tool',
+    })
+    return await autoUpdater.checkForUpdatesAndNotify()
+  }
+
+  async function checkUpdateForGhProxy(source: string) {
+    const version = await getLatestVersion()
+    const assetsUrl = `https://github.com/qiutongxue/oba-live-tool/releases/download/v${version}/`
+    const src = ensureURL(source)
+    if (!src) {
+      const msg = `更新源设置错误，你的更新源为 ${source}`
+      return { message: msg, error: new Error(msg) }
+    }
+    // 自定义更新源
+    const url = `${src}${assetsUrl}`
+    autoUpdater.setFeedURL({
+      provider: 'generic',
+      url,
+    })
+    return await autoUpdater.checkForUpdatesAndNotify().catch(error => {
+      const message = `网络错误: ${error instanceof Error ? error.message.split('\n')[0] : (error as string)}`
+      const downloadURL = `${src}${assetsUrl}oba-live-tool_${version}.exe`
+      return { message, error, downloadURL }
+    })
+  }
+
   // Checking for updates
   ipcMain.handle(
     IPC_CHANNELS.updater.checkUpdate,
@@ -59,33 +89,15 @@ export async function update(win: Electron.BrowserWindow) {
         return { message: error.message, error }
       }
       logger.info(`检查更新中…… (更新源: ${source})`)
+
       try {
         if (source === 'github') {
-          autoUpdater.setFeedURL({
-            provider: 'github',
-            owner: 'qiutongxue',
-            repo: 'oba-live-tool',
-          })
-        } else {
-          if (source[source.length - 1] !== '/') source = `${source}/`
-          // 自定义更新源
-          const version = await getLatestVersion()
-          const suffixUrl = `github.com/qiutongxue/oba-live-tool/releases/download/${version}/`
-          const url = `${source}${suffixUrl}`
-          autoUpdater.setFeedURL({
-            provider: 'generic',
-            url,
-          })
+          return await checkUpdateForGithub()
         }
-
-        return await autoUpdater.checkForUpdatesAndNotify()
+        return await checkUpdateForGhProxy(source)
       } catch (error: unknown) {
-        if (error instanceof Error) {
-          logger.error(error.message)
-          return { message: `网络错误: ${error.message}`, error }
-        }
-        logger.error(`什么错误${error}`)
-        return { message: '网络错误', error }
+        const message = `网络错误: ${error instanceof Error ? error.message : (error as string)}`
+        return { message, error }
       }
     },
   )
@@ -144,7 +156,18 @@ async function getLatestVersion() {
   )
     .then(resp => resp.json())
     .then(data => data.version)
-  logger.debug(`从 package.json 获取到的版本为 v${version}`)
+  logger.debug(`从 package.json 获取到的版本为 ${version}`)
 
-  return `v${version}`
+  return `${version}`
+}
+
+function ensureURL(source: string) {
+  // 确保链接的正确性
+  try {
+    const url = new URL(source)
+    url.pathname = '/'
+    return url.toString()
+  } catch {
+    return null
+  }
 }
