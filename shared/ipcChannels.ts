@@ -52,4 +52,5 @@ export const IPC_CHANNELS = {
   account: {
     switch: 'account:switch',
   },
+  log: 'log',
 } as const

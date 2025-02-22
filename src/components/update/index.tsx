@@ -1,8 +1,15 @@
-import type { ProgressInfo } from 'electron-updater'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Progress } from '@/components/ui/progress'
 import { DownloadIcon, ReloadIcon, RocketIcon } from '@radix-ui/react-icons'
+import type { ProgressInfo } from 'electron-updater'
 import { useCallback, useEffect, useState } from 'react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import './update.css'
@@ -21,22 +28,25 @@ function Update({ source = 'github' }: { source: string }) {
     onCancel?: () => void
     onOk?: () => void
   }>({
-        onCancel: () => setModalOpen(false),
-        onOk: () => {
-          setDownloading(true)
-          window.ipcRenderer.invoke(IPC_CHANNELS.updater.startDownload)
-        },
-      })
+    onCancel: () => setModalOpen(false),
+    onOk: () => {
+      setDownloading(true)
+      window.ipcRenderer.invoke(IPC_CHANNELS.updater.startDownload)
+    },
+  })
 
   const checkUpdate = async () => {
     setChecking(true)
-    const result = await window.ipcRenderer.invoke(IPC_CHANNELS.updater.checkUpdate, { source })
+    const result = await window.ipcRenderer.invoke(
+      IPC_CHANNELS.updater.checkUpdate,
+      { source },
+    )
     setProgressInfo({ percent: 0 })
     setChecking(false)
     setModalOpen(true)
-    if (result?.error) {
+    if ('error' in result) {
       setUpdateAvailable(false)
-      setUpdateError(result.message)
+      setUpdateError(result)
     }
   }
 
@@ -55,8 +65,7 @@ function Update({ source = 'github' }: { source: string }) {
         },
       }))
       setUpdateAvailable(true)
-    }
-    else {
+    } else {
       setUpdateAvailable(false)
     }
   }, [])
@@ -78,7 +87,8 @@ function Update({ source = 'github' }: { source: string }) {
       ...state,
       cancelText: '稍后安装',
       okText: '马上安装',
-      onOk: () => window.ipcRenderer.invoke(IPC_CHANNELS.updater.quitAndInstall),
+      onOk: () =>
+        window.ipcRenderer.invoke(IPC_CHANNELS.updater.quitAndInstall),
     }))
   }, [])
 
@@ -108,10 +118,22 @@ function Update({ source = 'github' }: { source: string }) {
   }
 
   useEffect(() => {
-    const removeUpdateCanAvailable = window.ipcRenderer.on(IPC_CHANNELS.updater.updateAvailable, onUpdateCanAvailable)
-    const removeUpdateError = window.ipcRenderer.on(IPC_CHANNELS.updater.updateError, onUpdateError)
-    const removeDownloadProgress = window.ipcRenderer.on(IPC_CHANNELS.updater.downloadProgress, onDownloadProgress)
-    const removeUpdateDownloaded = window.ipcRenderer.on(IPC_CHANNELS.updater.updateDownloaded, onUpdateDownloaded)
+    const removeUpdateCanAvailable = window.ipcRenderer.on(
+      IPC_CHANNELS.updater.updateAvailable,
+      onUpdateCanAvailable,
+    )
+    const removeUpdateError = window.ipcRenderer.on(
+      IPC_CHANNELS.updater.updateError,
+      onUpdateError,
+    )
+    const removeDownloadProgress = window.ipcRenderer.on(
+      IPC_CHANNELS.updater.downloadProgress,
+      onDownloadProgress,
+    )
+    const removeUpdateDownloaded = window.ipcRenderer.on(
+      IPC_CHANNELS.updater.updateDownloaded,
+      onUpdateDownloaded,
+    )
 
     return () => {
       removeUpdateCanAvailable()
@@ -119,11 +141,19 @@ function Update({ source = 'github' }: { source: string }) {
       removeDownloadProgress()
       removeUpdateDownloaded()
     }
-  }, [onUpdateCanAvailable, onUpdateError, onDownloadProgress, onUpdateDownloaded])
+  }, [
+    onUpdateCanAvailable,
+    onUpdateError,
+    onDownloadProgress,
+    onUpdateDownloaded,
+  ])
 
   return (
     <>
-      <Dialog open={modalOpen} onOpenChange={open => !open && modalBtn?.onCancel?.()}>
+      <Dialog
+        open={modalOpen}
+        onOpenChange={open => !open && modalBtn?.onCancel?.()}
+      >
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>软件更新</DialogTitle>
@@ -137,60 +167,46 @@ function Update({ source = 'github' }: { source: string }) {
           </DialogHeader>
 
           <div className="py-4">
-            {updateError
-              ? (
-                  <div className="text-sm text-destructive">
-                    <p>
-                      错误信息：
-                      {updateError.message}
-                    </p>
+            {updateError ? (
+              <div className="text-sm text-destructive">
+                <p>
+                  错误信息：
+                  {updateError.message}
+                </p>
+              </div>
+            ) : updateAvailable ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">当前版本</span>
+                  <span className="font-medium">v{versionInfo?.version}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">最新版本</span>
+                  <span className="font-medium">
+                    v{versionInfo?.newVersion}
+                  </span>
+                </div>
+                {progressInfo?.percent !== undefined && (
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">下载进度</span>
+                      <span>{Math.round(progressInfo.percent)}%</span>
+                    </div>
+                    <Progress value={progressInfo.percent} />
                   </div>
-                )
-              : updateAvailable
-                ? (
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">当前版本</span>
-                        <span className="font-medium">
-                          v
-                          {versionInfo?.version}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">最新版本</span>
-                        <span className="font-medium">
-                          v
-                          {versionInfo?.newVersion}
-                        </span>
-                      </div>
-                      {progressInfo?.percent !== undefined && (
-                        <div className="space-y-2">
-                          <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">下载进度</span>
-                            <span>
-                              {Math.round(progressInfo.percent)}
-                              %
-                            </span>
-                          </div>
-                          <Progress value={progressInfo.percent} />
-                        </div>
-                      )}
-                    </div>
-                  )
-                : (
-                    <div className="text-center text-sm text-muted-foreground">
-                      {versionInfo?.version === versionInfo?.newVersion
-                        ? '您的应用程序已是最新版本！'
-                        : `无可用更新`}
-                      <div className="mt-2 text-xs">
-                        当前版本: v
-                        {versionInfo?.version}
-                        {' '}
-                        | 最新版本: v
-                        {versionInfo?.newVersion}
-                      </div>
-                    </div>
-                  )}
+                )}
+              </div>
+            ) : (
+              <div className="text-center text-sm text-muted-foreground">
+                {versionInfo?.version === versionInfo?.newVersion
+                  ? '您的应用程序已是最新版本！'
+                  : '无可用更新'}
+                <div className="mt-2 text-xs">
+                  当前版本: v{versionInfo?.version} | 最新版本: v
+                  {versionInfo?.newVersion}
+                </div>
+              </div>
+            )}
           </div>
 
           {updateAvailable && (
@@ -198,10 +214,7 @@ function Update({ source = 'github' }: { source: string }) {
               <Button variant="outline" onClick={modalBtn?.onCancel}>
                 {modalBtn?.cancelText || '稍后再说'}
               </Button>
-              <Button
-                onClick={modalBtn?.onOk}
-                disabled={downloading}
-              >
+              <Button onClick={modalBtn?.onOk} disabled={downloading}>
                 {getUpdateButtonContent()}
               </Button>
             </DialogFooter>
@@ -215,19 +228,17 @@ function Update({ source = 'github' }: { source: string }) {
         onClick={checkUpdate}
         size="sm"
       >
-        {checking
-          ? (
-              <>
-                <ReloadIcon className="mr-2 h-4 w-4 animate-spin" />
-                检查更新中
-              </>
-            )
-          : (
-              <>
-                <ReloadIcon className="mr-2 h-4 w-4" />
-                检查更新
-              </>
-            )}
+        {checking ? (
+          <>
+            <ReloadIcon className="mr-2 h-4 w-4 animate-spin" />
+            检查更新中
+          </>
+        ) : (
+          <>
+            <ReloadIcon className="mr-2 h-4 w-4" />
+            检查更新
+          </>
+        )}
       </Button>
     </>
   )

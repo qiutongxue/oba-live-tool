@@ -1,9 +1,13 @@
-import type { ElectronAPI } from 'shared/electron-api'
 import { contextBridge, ipcRenderer } from 'electron'
+import type { ElectronAPI, RendererParamsMapping } from 'shared/electron-api'
 
 const ipcRendererApi: ElectronAPI['ipcRenderer'] = {
-  on(channel: string, listener: (...args: any[]) => void) {
-    const subscription = (_event: any, ...args: any[]) => listener(...args)
+  on<K extends keyof RendererParamsMapping>(
+    channel: K,
+    listener: (...args: RendererParamsMapping[K]) => void,
+  ): () => void {
+    const subscription = (_event: unknown, ...args: RendererParamsMapping[K]) =>
+      listener(...args)
     ipcRenderer.on(channel, subscription)
     return () => {
       ipcRenderer.off(channel, subscription)
@@ -23,12 +27,13 @@ const ipcRendererApi: ElectronAPI['ipcRenderer'] = {
 contextBridge.exposeInMainWorld('ipcRenderer', ipcRendererApi)
 
 // --------- Preload scripts loading ---------
-function domReady(condition: DocumentReadyState[] = ['complete', 'interactive']) {
-  return new Promise((resolve) => {
+function domReady(
+  condition: DocumentReadyState[] = ['complete', 'interactive'],
+) {
+  return new Promise(resolve => {
     if (condition.includes(document.readyState)) {
       resolve(true)
-    }
-    else {
+    } else {
       document.addEventListener('readystatechange', () => {
         if (condition.includes(document.readyState)) {
           resolve(true)
@@ -58,7 +63,7 @@ const safeDOM = {
  * https://matejkustec.github.io/SpinThatShit
  */
 function useLoading() {
-  const className = `loaders-css__square-spin`
+  const className = 'loaders-css__square-spin'
   const styleContent = `
 @keyframes square-spin {
   25% { transform: perspective(100px) rotateX(180deg) rotateY(0); }
@@ -112,7 +117,7 @@ function useLoading() {
 const { appendLoading, removeLoading } = useLoading()
 domReady().then(appendLoading)
 
-window.onmessage = (ev) => {
+window.onmessage = ev => {
   ev.data.payload === 'removeLoading' && removeLoading()
 }
 

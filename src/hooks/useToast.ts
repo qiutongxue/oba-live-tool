@@ -1,9 +1,6 @@
 'use client'
 
-import type {
-  ToastActionElement,
-  ToastProps,
-} from '@/components/ui/toast'
+import type { ToastActionElement, ToastProps } from '@/components/ui/toast'
 
 // Inspired by react-hot-toast library
 import * as React from 'react'
@@ -37,21 +34,21 @@ type ActionType = typeof actionTypes
 
 type Action =
   | {
-    type: ActionType['ADD_TOAST']
-    toast: ToasterToast
-  }
+      type: ActionType['ADD_TOAST']
+      toast: ToasterToast
+    }
   | {
-    type: ActionType['UPDATE_TOAST']
-    toast: Partial<ToasterToast>
-  }
+      type: ActionType['UPDATE_TOAST']
+      toast: Partial<ToasterToast>
+    }
   | {
-    type: ActionType['DISMISS_TOAST']
-    toastId?: ToasterToast['id']
-  }
+      type: ActionType['DISMISS_TOAST']
+      toastId?: ToasterToast['id']
+    }
   | {
-    type: ActionType['REMOVE_TOAST']
-    toastId?: ToasterToast['id']
-  }
+      type: ActionType['REMOVE_TOAST']
+      toastId?: ToasterToast['id']
+    }
 
 interface State {
   toasts: ToasterToast[]
@@ -98,11 +95,10 @@ export function reducer(state: State, action: Action): State {
       // but I'll keep it here for simplicity
       if (toastId) {
         addToRemoveQueue(toastId)
-      }
-      else {
-        state.toasts.forEach((toast) => {
+      } else {
+        for (const toast of state.toasts) {
           addToRemoveQueue(toast.id)
-        })
+        }
       }
 
       return {
@@ -137,9 +133,9 @@ let memoryState: State = { toasts: [] }
 
 function dispatch(action: Action) {
   memoryState = reducer(memoryState, action)
-  listeners.forEach((listener) => {
+  for (const listener of listeners) {
     listener(memoryState)
-  })
+  }
 }
 
 type Toast = Omit<ToasterToast, 'id'>
@@ -160,9 +156,8 @@ function toast({ ...props }: Toast) {
       ...props,
       id,
       open: true,
-      onOpenChange: (open) => {
-        if (!open)
-          dismiss()
+      onOpenChange: open => {
+        if (!open) dismiss()
       },
     },
   })
@@ -175,19 +170,22 @@ function toast({ ...props }: Toast) {
 }
 
 const toasty = {
-  success: (message: string) => toast({
-    variant: 'default',
-    description: message,
-  }),
-  error: (message: string) => toast({
-    variant: 'destructive',
-    description: message,
-  }),
+  success: (message: string) =>
+    toast({
+      variant: 'default',
+      description: message,
+    }),
+  error: (message: string) =>
+    toast({
+      variant: 'destructive',
+      description: message,
+    }),
 }
 
 function useToast() {
   const [state, setState] = React.useState<State>(memoryState)
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   React.useEffect(() => {
     listeners.push(setState)
     return () => {

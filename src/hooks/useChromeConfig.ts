@@ -20,7 +20,11 @@ interface ChromeConfig {
 interface ChromeConfigStore {
   contexts: Record<string, ChromeConfig>
   setPath: (accountId: string, path: string) => void
-  setCookies: (accountId: string, platform: keyof ChromeConfig['cookies'], cookies: string) => void
+  setCookies: (
+    accountId: string,
+    platform: keyof ChromeConfig['cookies'],
+    cookies: string,
+  ) => void
 }
 
 const defaultContext: ChromeConfig = {
@@ -38,7 +42,7 @@ export const useChromeConfigStore = create<ChromeConfigStore>()(
         default: defaultContext,
       },
       setPath: (accountId, path) => {
-        set((state) => {
+        set(state => {
           if (!state.contexts[accountId]) {
             state.contexts[accountId] = defaultContext
           }
@@ -46,7 +50,7 @@ export const useChromeConfigStore = create<ChromeConfigStore>()(
         })
       },
       setCookies: (accountId, platform, cookies) => {
-        set((state) => {
+        set(state => {
           if (!state.contexts[accountId]) {
             state.contexts[accountId] = defaultContext
           }
@@ -73,16 +77,21 @@ export const useChromeConfigStore = create<ChromeConfigStore>()(
           }
         }
         if (version === 1) {
-          const persisted = persistedState as { contexts: Record<string, ChromeConfigV1> }
+          const persisted = persistedState as {
+            contexts: Record<string, ChromeConfigV1>
+          }
           return {
             contexts: Object.fromEntries(
-              Object.entries(persisted.contexts).map(([accountId, context]) => [accountId, {
-                ...context,
-                cookies: {
-                  buyin: '',
-                  douyin: context.cookies,
+              Object.entries(persisted.contexts).map(([accountId, context]) => [
+                accountId,
+                {
+                  ...context,
+                  cookies: {
+                    buyin: '',
+                    douyin: context.cookies,
+                  },
                 },
-              }]),
+              ]),
             ),
           }
         }
@@ -101,6 +110,7 @@ export function useChromeConfig() {
     path: context.path,
     cookies: context.cookies[platform],
     setPath: (path: string) => setPath(currentAccountId, path),
-    setCookies: (cookies: string) => setCookies(currentAccountId, platform, cookies),
+    setCookies: (cookies: string) =>
+      setCookies(currentAccountId, platform, cookies),
   }
 }

@@ -10,15 +10,18 @@ export interface LoginConstants {
 export const loginConstants = {
   buyin: {
     liveControlUrl: 'https://buyin.jinritemai.com/dashboard/live/control',
-    loginUrl: 'https://buyin.jinritemai.com/mpa/account/login?log_out=1&type=24',
+    loginUrl:
+      'https://buyin.jinritemai.com/mpa/account/login?log_out=1&type=24',
     loginUrlRegex: /douyinec\.com/,
     isLoggedInSelector: `[class^="header"]`,
     isInLiveControlSelector: `[class^="goodsPanel"]`,
-    accountNameSelector: `span.btn-item-role-exchange-name__title`,
+    accountNameSelector: 'span.btn-item-role-exchange-name__title',
   },
   douyin: {
-    liveControlUrl: 'https://fxg.jinritemai.com/ffa/buyin/dashboard/live/control',
-    loginUrl: 'https://fxg.jinritemai.com/login/common?extra=%7B%22target_url%22%3A%22https%3A%2F%2Ffxg.jinritemai.com%2Fffa%2Fbuyin%2Fdashboard%2Flive%2Fcontrol%22%7D',
+    liveControlUrl:
+      'https://fxg.jinritemai.com/ffa/buyin/dashboard/live/control',
+    loginUrl:
+      'https://fxg.jinritemai.com/login/common?extra=%7B%22target_url%22%3A%22https%3A%2F%2Ffxg.jinritemai.com%2Fffa%2Fbuyin%2Fdashboard%2Flive%2Fcontrol%22%7D',
     loginUrlRegex: /.*fxg\.jinritemai\.com\/login\/common.*/,
     isLoggedInSelector: `[class^="username"]`,
     isInLiveControlSelector: `[class^="goodsPanel"]`,
@@ -56,8 +59,9 @@ export const NO_LIVE_SELECTOR = `div[class^="noLiveData"]` as const
 /**
  * 直播时【直播互动】下方的发送评论区域
  */
-export const COMMENT_BLOCK_SELECTOR = `#input-comment-block-id` as const
-export const COMMENT_TEXTAREA_SELECTOR = `${COMMENT_BLOCK_SELECTOR} textarea` as const
+export const COMMENT_BLOCK_SELECTOR = '#input-comment-block-id' as const
+export const COMMENT_TEXTAREA_SELECTOR =
+  `${COMMENT_BLOCK_SELECTOR} textarea` as const
 export const PIN_TOP_SELECTOR = `${COMMENT_BLOCK_SELECTOR} label` as const
 export const SUBMIT_COMMENT_SELECTOR = `${COMMENT_BLOCK_SELECTOR} div[class^="inputSuffix"]`
 
@@ -70,4 +74,5 @@ export const COMMENT_LIST_ITEM = `${COMMENT_LIST_WRAPPER} div[class^="commentIte
 /**
  * 恢复直播按钮
  */
-export const RECOVERY_BUTTON_SELECTOR = `div.auxo-modal-content > div > div > div.auxo-modal-confirm-btns > button.auxo-btn.auxo-btn-primary`
+export const RECOVERY_BUTTON_SELECTOR =
+  'div.auxo-modal-content > div > div > div.auxo-modal-confirm-btns > button.auxo-btn.auxo-btn-primary'

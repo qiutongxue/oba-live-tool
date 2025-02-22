@@ -1,8 +1,8 @@
-import type { Browser, BrowserContext, Page } from 'playwright'
-import type { BaseConfig, Scheduler } from './tasks/scheduler'
 import { ipcMain } from 'electron'
+import type { Browser, BrowserContext, Page } from 'playwright'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { createLogger } from './logger'
+import type { BaseConfig, Scheduler } from './tasks/scheduler'
 import windowManager from './windowManager'
 
 interface Context {
@@ -20,14 +20,13 @@ export interface Account {
 export class PageManager {
   private static instance: PageManager
   private contexts: Map<string, Context> = new Map()
-  private currentId: string = 'default'
+  private currentId = 'default'
   private accountNames: Account[] = []
   private logger = createLogger('PageManager')
   private constructor() {}
 
   static getInstance() {
-    if (!PageManager.instance)
-      PageManager.instance = new PageManager()
+    if (!PageManager.instance) PageManager.instance = new PageManager()
     return PageManager.instance
   }
 
@@ -41,20 +40,31 @@ export class PageManager {
   }
 
   get currentAccountName() {
-    return this.accountNames.find(name => name.id === this.currentId)?.name || ''
+    return (
+      this.accountNames.find(name => name.id === this.currentId)?.name || ''
+    )
   }
 
   setContext(context: Omit<Context, 'tasks'>) {
     const idSnapShot = this.currentId
     context.page.on('close', () => {
       // 把当前 id 所有任务都停了
-      for (const task of Object.values(this.contexts.get(this.currentId)?.tasks || {})) {
+      for (const task of Object.values(
+        this.contexts.get(this.currentId)?.tasks || {},
+      )) {
         task.stop()
       }
       this.contexts.delete(this.currentId)
-      windowManager.sendToWindow('main', IPC_CHANNELS.tasks.liveControl.disconnect, idSnapShot)
+      windowManager.sendToWindow(
+        'main',
+        IPC_CHANNELS.tasks.liveControl.disconnect,
+        idSnapShot,
+      )
     })
-    const previousContext = this.contexts.get(this.currentId) ?? { ...context, tasks: {} }
+    const previousContext = this.contexts.get(this.currentId) ?? {
+      ...context,
+      tasks: {},
+    }
     this.contexts.set(this.currentId, { ...previousContext, ...context })
     this.logger.info(`更新任务 <${this.currentAccountName}>`)
   }
@@ -65,10 +75,8 @@ export class PageManager {
 
   getPage() {
     const context = this.contexts.get(this.currentId)
-    if (!context)
-      throw new Error('无法获取 Page - Context not initialized')
-    if (!context.page)
-      throw new Error('无法获取 Page - Page not initialized')
+    if (!context) throw new Error('无法获取 Page - Context not initialized')
+    if (!context.page) throw new Error('无法获取 Page - Page not initialized')
     return context.page
   }
 
@@ -80,7 +88,9 @@ export class PageManager {
     if (!context)
       throw new Error(`无法获取 <${this.currentAccountName}> 的任务环境`)
     if (context.tasks[taskName]?.isRunning) {
-      this.logger.warn(`任务 <${taskName}> 正在运行中 - <${this.currentAccountName}>`)
+      this.logger.warn(
+        `任务 <${taskName}> 正在运行中 - <${this.currentAccountName}>`,
+      )
       return
     }
 
@@ -89,13 +99,10 @@ export class PageManager {
       delete context.tasks[taskName]
     }
 
-    const scheduler = creator(
-      context.page,
-      {
-        id: this.currentId,
-        name: this.currentAccountName,
-      },
-    )
+    const scheduler = creator(context.page, {
+      id: this.currentId,
+      name: this.currentAccountName,
+    })
     context.tasks[taskName] = scheduler
   }
 
@@ -108,8 +115,7 @@ export class PageManager {
 
   cleanup() {
     for (const context of this.contexts.values()) {
-      for (const task of Object.values(context.tasks))
-        task.stop()
+      for (const task of Object.values(context.tasks)) task.stop()
       context.tasks = {}
     }
   }
@@ -119,9 +125,10 @@ export class PageManager {
     if (!context)
       throw new Error(`无法获取 <${this.currentAccountName}> 的任务环境`)
     if (!context.tasks[taskName])
-      throw new Error(`无法获取 <${this.currentAccountName}> 的任务 <${taskName}>`)
-    if (context.tasks[taskName].isRunning)
-      return
+      throw new Error(
+        `无法获取 <${this.currentAccountName}> 的任务 <${taskName}>`,
+      )
+    if (context.tasks[taskName].isRunning) return
 
     this.logger.info(`启动任务 <${taskName}> - <${this.currentAccountName}>`)
     await context.tasks[taskName].start()
@@ -132,7 +139,9 @@ export class PageManager {
     if (!context)
       throw new Error(`无法获取 <${this.currentAccountName}> 的任务环境`)
     if (!context.tasks[taskName])
-      throw new Error(`无法获取 <${this.currentAccountName}> 的任务 <${taskName}>`)
+      throw new Error(
+        `无法获取 <${this.currentAccountName}> 的任务 <${taskName}>`,
+      )
     this.logger.info(`停止任务 <${taskName}> - <${this.currentAccountName}>`)
     context.tasks[taskName].stop()
   }
@@ -142,14 +151,22 @@ export class PageManager {
     if (!context)
       throw new Error(`无法获取 <${this.currentAccountName}> 的任务环境`)
     if (!context.tasks[taskName])
-      throw new Error(`无法获取 <${this.currentAccountName}> 的任务 <${taskName}>`)
+      throw new Error(
+        `无法获取 <${this.currentAccountName}> 的任务 <${taskName}>`,
+      )
     context.tasks[taskName].updateConfig(newConfig)
   }
 }
 
 export const pageManager = PageManager.getInstance()
 
-ipcMain.handle(IPC_CHANNELS.account.switch, async (_, { accountId, accountNames }: { accountId: string, accountNames: Account[] }) => {
-  pageManager.switchContext(accountId)
-  pageManager.updateAccountNames(accountNames)
-})
+ipcMain.handle(
+  IPC_CHANNELS.account.switch,
+  async (
+    _,
+    { accountId, accountNames }: { accountId: string; accountNames: Account[] },
+  ) => {
+    pageManager.switchContext(accountId)
+    pageManager.updateAccountNames(accountNames)
+  },
+)

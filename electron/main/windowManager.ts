@@ -17,6 +17,7 @@ class WindowManager {
     return this.windows.get(name)
   }
 
+  // biome-ignore lint/suspicious/noExplicitAny: 等
   sendToWindow(name: string, channel: string, ...args: any[]) {
     const win = this.windows.get(name)
     if (win && !win.isDestroyed()) {

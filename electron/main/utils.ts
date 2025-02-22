@@ -6,4 +6,7 @@ export async function sleep(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
-export type RequiredWith<BaseType, Keys extends keyof BaseType> = Required<Pick<BaseType, Keys>> & Omit<BaseType, Keys>
+export type RequiredWith<BaseType, Keys extends keyof BaseType> = Required<
+  Pick<BaseType, Keys>
+> &
+  Omit<BaseType, Keys>

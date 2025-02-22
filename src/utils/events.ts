@@ -1,3 +1,4 @@
+// biome-ignore lint/suspicious/noExplicitAny: 暂时忽略
 type EventCallback = (...args: any[]) => void
 
 class EventEmitter {
@@ -13,7 +14,7 @@ class EventEmitter {
     if (!this.events.has(event)) {
       this.events.set(event, [])
     }
-    this.events.get(event)!.push(callback)
+    this.events.get(event)?.push(callback)
 
     // 返回取消订阅的函数
     return () => this.off(event, callback)
@@ -43,17 +44,18 @@ class EventEmitter {
    * @param event 事件名称
    * @param args 传递给回调函数的参数
    */
+
+  // biome-ignore lint/suspicious/noExplicitAny: 暂时忽略
   emit(event: string, ...args: any[]) {
     const callbacks = this.events.get(event)
     if (callbacks) {
-      callbacks.forEach((callback) => {
+      for (const callback of callbacks) {
         try {
           callback(...args)
-        }
-        catch (error) {
+        } catch (error) {
           console.error(`Error in event ${event} callback:`, error)
         }
-      })
+      }
     }
   }
 
@@ -64,8 +66,7 @@ class EventEmitter {
   removeAllListeners(event?: string) {
     if (event) {
       this.events.delete(event)
-    }
-    else {
+    } else {
       this.events.clear()
     }
   }
@@ -102,7 +103,7 @@ export interface EventTypes {
 // 类型安全的事件发射器
 export function emitEvent<E extends EventName>(
   event: E,
-  ...args: Parameters<EventTypes[typeof EVENTS[E]]>
+  ...args: Parameters<EventTypes[(typeof EVENTS)[E]]>
 ) {
   eventEmitter.emit(EVENTS[event], ...args)
 }
@@ -110,7 +111,7 @@ export function emitEvent<E extends EventName>(
 // 类型安全的事件监听器
 export function onEvent<E extends EventName>(
   event: E,
-  callback: EventTypes[typeof EVENTS[E]],
+  callback: EventTypes[(typeof EVENTS)[E]],
 ) {
   return eventEmitter.on(EVENTS[event], callback as EventCallback)
 }

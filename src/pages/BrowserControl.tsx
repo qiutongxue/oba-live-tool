@@ -1,6 +1,12 @@
 import { Title } from '@/components/common/Title'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import {
   Select,
   SelectContent,
@@ -22,20 +28,35 @@ const platforms = {
 } as const
 
 export default function BrowserControl() {
-  const { isConnected, setIsConnected, accountName, setAccountName, platform, setPlatform } = useLiveControl()
+  const {
+    isConnected,
+    setIsConnected,
+    accountName,
+    setAccountName,
+    platform,
+    setPlatform,
+  } = useLiveControl()
   const [isLoading, setIsLoading] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
   const { toast } = useToast()
 
-  const { setPath, path: chromePath, cookies: oldCookies, setCookies } = useChromeConfig()
+  const {
+    setPath,
+    path: chromePath,
+    cookies: oldCookies,
+    setCookies,
+  } = useChromeConfig()
   const { enabled: devMode } = useDevMode()
 
   useEffect(() => {
-    const removeListener = window.ipcRenderer.on(IPC_CHANNELS.chrome.setPath, (path) => {
-      if (path && !chromePath) {
-        setPath(path)
-      }
-    })
+    const removeListener = window.ipcRenderer.on(
+      IPC_CHANNELS.chrome.setPath,
+      path => {
+        if (path && !chromePath) {
+          setPath(path)
+        }
+      },
+    )
     return () => removeListener()
   }, [setPath, chromePath])
 
@@ -53,16 +74,13 @@ export default function BrowserControl() {
         setAccountName(result.accountName || '')
         setCookies(result.cookies)
         toast.success('已连接到直播控制台')
-      }
-      else {
+      } else {
         throw new Error('找不到 cookies')
       }
-    }
-    catch (error) {
+    } catch (error) {
       setIsConnected('disconnected')
       toast.error(error instanceof Error ? error.message : '连接直播控制台失败')
-    }
-    finally {
+    } finally {
       setIsLoading(false)
     }
   }
@@ -73,11 +91,9 @@ export default function BrowserControl() {
       await window.ipcRenderer.invoke(IPC_CHANNELS.tasks.liveControl.disconnect)
       setAccountName('')
       toast.success('已断开连接')
-    }
-    catch (error) {
+    } catch (error) {
       toast.error(error instanceof Error ? error.message : '断开连接失败')
-    }
-    finally {
+    } finally {
       setIsConnected('disconnected')
       setIsLoading(false)
     }
@@ -86,8 +102,7 @@ export default function BrowserControl() {
   const handleButtonClick = () => {
     if (isConnected === 'connected') {
       disconnectLiveControl()
-    }
-    else {
+    } else {
       connectLiveControl()
     }
   }
@@ -107,15 +122,21 @@ export default function BrowserControl() {
           <CardContent>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className={`w-2 h-2 rounded-full ${isConnected === 'connected' ? 'bg-green-500' : 'bg-gray-300'}`} />
+                <div
+                  className={`w-2 h-2 rounded-full ${isConnected === 'connected' ? 'bg-green-500' : 'bg-gray-300'}`}
+                />
                 <span className="text-sm text-muted-foreground">
-                  {isConnected === 'connected' ? `已连接${accountName ? ` (${accountName})` : ''}` : '未连接'}
+                  {isConnected === 'connected'
+                    ? `已连接${accountName ? ` (${accountName})` : ''}`
+                    : '未连接'}
                 </span>
               </div>
               <div className="flex items-center gap-2">
                 <Select
                   value={platform}
-                  onValueChange={(value: keyof typeof platforms) => setPlatform(value)}
+                  onValueChange={(value: keyof typeof platforms) =>
+                    setPlatform(value)
+                  }
                   disabled={isConnected === 'connecting' || isLoading}
                 >
                   <SelectTrigger className="w-[140px]">
@@ -130,37 +151,35 @@ export default function BrowserControl() {
                   </SelectContent>
                 </Select>
                 <Button
-                  variant={isConnected === 'connected' ? 'secondary' : 'default'}
+                  variant={
+                    isConnected === 'connected' ? 'secondary' : 'default'
+                  }
                   onClick={handleButtonClick}
                   disabled={isLoading}
                   size="sm"
                   onMouseEnter={() => setIsHovered(true)}
                   onMouseLeave={() => setIsHovered(false)}
                 >
-                  {isConnected === 'connected'
-                    ? (
+                  {isConnected === 'connected' ? (
+                    <>
+                      {isHovered ? (
                         <>
-                          {isHovered
-                            ? (
-                                <>
-                                  <Cross2Icon className="mr-2 h-4 w-4" />
-                                  断开连接
-                                </>
-                              )
-                            : (
-                                <>
-                                  <CheckIcon className="mr-2 h-4 w-4" />
-                                  已连接
-                                </>
-                              )}
+                          <Cross2Icon className="mr-2 h-4 w-4" />
+                          断开连接
                         </>
-                      )
-                    : (
+                      ) : (
                         <>
-                          <GlobeIcon className="mr-2 h-4 w-4" />
-                          {isLoading ? '连接中...' : '连接直播控制台'}
+                          <CheckIcon className="mr-2 h-4 w-4" />
+                          已连接
                         </>
                       )}
+                    </>
+                  ) : (
+                    <>
+                      <GlobeIcon className="mr-2 h-4 w-4" />
+                      {isLoading ? '连接中...' : '连接直播控制台'}
+                    </>
+                  )}
                 </Button>
               </div>
             </div>

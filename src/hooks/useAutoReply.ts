@@ -4,8 +4,8 @@ import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
-import { useAccounts } from './useAccounts'
 import { type ChatMessage, useAIChatStore } from './useAIChat'
+import { useAccounts } from './useAccounts'
 
 interface ReplyPreview {
   id: string
@@ -42,11 +42,17 @@ interface AutoReplyAction {
   setIsListening: (accountId: string, isListening: ListeningStatus) => void
   setPrompt: (accountId: string, prompt: string) => void
   addComment: (accountId: string, comment: Comment) => void
-  addReply: (accountId: string, commentId: string, nickname: string, content: string) => void
+  addReply: (
+    accountId: string,
+    commentId: string,
+    nickname: string,
+    content: string,
+  ) => void
   removeReply: (accountId: string, commentId: string) => void
 }
 
-const defaultPrompt = '你是一个直播间的助手，负责回复观众的评论。请用简短友好的语气回复，不要超过50个字。'
+const defaultPrompt =
+  '你是一个直播间的助手，负责回复观众的评论。请用简短友好的语气回复，不要超过50个字。'
 
 const defaultContext: AutoReplyContext = {
   isRunning: false,
@@ -58,7 +64,7 @@ const defaultContext: AutoReplyContext = {
 
 export const useAutoReplyStore = create<AutoReplyState & AutoReplyAction>()(
   persist(
-    immer((set) => {
+    immer(set => {
       // 迁移之前版本设置的 prompt
       const previousPrompt = localStorage.getItem('autoReplyPrompt')
       if (previousPrompt) {
@@ -67,61 +73,78 @@ export const useAutoReplyStore = create<AutoReplyState & AutoReplyAction>()(
 
       return {
         contexts: {
-          default: { ...defaultContext, prompt: previousPrompt || defaultPrompt },
+          default: {
+            ...defaultContext,
+            prompt: previousPrompt || defaultPrompt,
+          },
         },
-        setIsRunning: (accountId, isRunning) => set((state) => {
-          if (!state.contexts[accountId]) {
-            state.contexts[accountId] = defaultContext
-          }
-          state.contexts[accountId].isRunning = isRunning
-        }),
-        setIsListening: (accountId, isListening) => set((state) => {
-          if (!state.contexts[accountId]) {
-            state.contexts[accountId] = defaultContext
-          }
-          state.contexts[accountId].isListening = isListening
-        }),
-        setPrompt: (accountId, prompt) => set((state) => {
-          if (!state.contexts[accountId]) {
-            state.contexts[accountId] = defaultContext
-          }
-          state.contexts[accountId].prompt = prompt
-        }),
-        addComment: (accountId, comment) => set((state) => {
-          if (!state.contexts[accountId]) {
-            state.contexts[accountId] = defaultContext
-          }
-          state.contexts[accountId].comments = [{ ...comment }, ...state.contexts[accountId].comments]
-        }),
-        addReply: (accountId, commentId, nickname, content) => set((state) => {
-          if (!state.contexts[accountId]) {
-            state.contexts[accountId] = defaultContext
-          }
-          state.contexts[accountId].replies = [{
-            id: crypto.randomUUID(),
-            commentId,
-            replyContent: content,
-            replyFor: nickname,
-            timestamp: new Date().toISOString(),
-          }, ...state.contexts[accountId].replies]
-        }),
-        removeReply: (accountId, commentId) => set((state) => {
-          if (!state.contexts[accountId]) {
-            state.contexts[accountId] = defaultContext
-          }
-          state.contexts[accountId].replies = state.contexts[accountId].replies.filter(reply => reply.commentId !== commentId)
-        }),
+        setIsRunning: (accountId, isRunning) =>
+          set(state => {
+            if (!state.contexts[accountId]) {
+              state.contexts[accountId] = defaultContext
+            }
+            state.contexts[accountId].isRunning = isRunning
+          }),
+        setIsListening: (accountId, isListening) =>
+          set(state => {
+            if (!state.contexts[accountId]) {
+              state.contexts[accountId] = defaultContext
+            }
+            state.contexts[accountId].isListening = isListening
+          }),
+        setPrompt: (accountId, prompt) =>
+          set(state => {
+            if (!state.contexts[accountId]) {
+              state.contexts[accountId] = defaultContext
+            }
+            state.contexts[accountId].prompt = prompt
+          }),
+        addComment: (accountId, comment) =>
+          set(state => {
+            if (!state.contexts[accountId]) {
+              state.contexts[accountId] = defaultContext
+            }
+            state.contexts[accountId].comments = [
+              { ...comment },
+              ...state.contexts[accountId].comments,
+            ]
+          }),
+        addReply: (accountId, commentId, nickname, content) =>
+          set(state => {
+            if (!state.contexts[accountId]) {
+              state.contexts[accountId] = defaultContext
+            }
+            state.contexts[accountId].replies = [
+              {
+                id: crypto.randomUUID(),
+                commentId,
+                replyContent: content,
+                replyFor: nickname,
+                timestamp: new Date().toISOString(),
+              },
+              ...state.contexts[accountId].replies,
+            ]
+          }),
+        removeReply: (accountId, commentId) =>
+          set(state => {
+            if (!state.contexts[accountId]) {
+              state.contexts[accountId] = defaultContext
+            }
+            state.contexts[accountId].replies = state.contexts[
+              accountId
+            ].replies.filter(reply => reply.commentId !== commentId)
+          }),
       }
     }),
     {
       name: 'auto-reply',
       version: 1,
-      partialize: (state) => {
+      partialize: state => {
         return {
-        // 只存 prompt
+          // 只存 prompt
           contexts: Object.fromEntries(
             Object.entries(state.contexts).map(([accountId, context]) => [
-            // [accountId, context { prompt }]
+              // [accountId, context { prompt }]
               accountId,
               { prompt: context.prompt },
             ]),
@@ -134,10 +157,12 @@ export const useAutoReplyStore = create<AutoReplyState & AutoReplyAction>()(
           ...currentState,
           ...persisted,
           contexts: Object.fromEntries(
-            Object.entries(persisted.contexts || {}).map(([accountId, context]) => [
-              accountId,
-              { ...defaultContext, ...context }, // 用默认值补全字段
-            ]),
+            Object.entries(persisted.contexts || {}).map(
+              ([accountId, context]) => [
+                accountId,
+                { ...defaultContext, ...context }, // 用默认值补全字段
+              ],
+            ),
           ),
         }
       },
@@ -147,7 +172,10 @@ export const useAutoReplyStore = create<AutoReplyState & AutoReplyAction>()(
 
 function generateMessages(comments: Comment[], replies: ReplyPreview[]) {
   const messages: Omit<ChatMessage, 'id' | 'timestamp'>[] = []
-  for (let i = comments.length - 1, j = replies.length - 1; i >= 0 || j >= 0;) {
+  for (
+    let i = comments.length - 1, j = replies.length - 1;
+    i >= 0 || j >= 0;
+  ) {
     if (j < 0 || (i >= 0 && comments[i].timestamp < replies[j].timestamp)) {
       messages.push({
         role: 'user',
@@ -158,8 +186,7 @@ function generateMessages(comments: Comment[], replies: ReplyPreview[]) {
         }),
       })
       i--
-    }
-    else {
+    } else {
       messages.push({
         role: 'assistant',
         content: replies[j].replyContent,
@@ -171,7 +198,7 @@ function generateMessages(comments: Comment[], replies: ReplyPreview[]) {
   let content = []
   // 把连续相同角色的消息合并
   const mergedMessages: Omit<ChatMessage, 'id' | 'timestamp'>[] = []
-  for (let i = 0, j = 0; i < messages.length;) {
+  for (let i = 0, j = 0; i < messages.length; ) {
     while (j < messages.length && messages[j].role === messages[i].role) {
       content.push(messages[j].content)
       j++
@@ -187,11 +214,21 @@ function generateMessages(comments: Comment[], replies: ReplyPreview[]) {
 }
 
 export function useAutoReply() {
-  const { addReply, addComment, contexts, setIsRunning, setIsListening, setPrompt } = useAutoReplyStore()
+  const {
+    addReply,
+    addComment,
+    contexts,
+    setIsRunning,
+    setIsListening,
+    setPrompt,
+  } = useAutoReplyStore()
   const { currentAccountId } = useAccounts()
   const aiStore = useAIChatStore()
 
-  const context = useMemo(() => contexts[currentAccountId] || defaultContext, [contexts, currentAccountId])
+  const context = useMemo(
+    () => contexts[currentAccountId] || defaultContext,
+    [contexts, currentAccountId],
+  )
   const { isRunning, isListening, comments, replies, prompt } = context
 
   const handleComment = useMemoizedFn((comment: Comment, accountId: string) => {
@@ -221,19 +258,34 @@ export function useAutoReply() {
     ]
 
     // 把 messages 发送给 AI
-    window.ipcRenderer.invoke(IPC_CHANNELS.tasks.aiChat.normalChat, {
-      messages,
-      provider: aiStore.config.provider,
-      model: aiStore.config.model,
-      apiKey: aiStore.apiKeys[aiStore.config.provider],
-    }).then((reply) => {
-      if (reply && typeof reply === 'string') {
-        addReply(accountId, comment.id, comment.nickname, reply)
-      }
-    }).catch((err) => {
-      console.error('生成回复失败:', err)
-    })
+    window.ipcRenderer
+      .invoke(IPC_CHANNELS.tasks.aiChat.normalChat, {
+        messages,
+        provider: aiStore.config.provider,
+        model: aiStore.config.model,
+        apiKey: aiStore.apiKeys[aiStore.config.provider],
+      })
+      .then(reply => {
+        if (reply && typeof reply === 'string') {
+          addReply(accountId, comment.id, comment.nickname, reply)
+        }
+      })
+      .catch(err => {
+        console.error('生成回复失败:', err)
+      })
   })
 
-  return { handleComment, isRunning, isListening, comments, replies, prompt, setIsRunning: (isRunning: boolean) => setIsRunning(currentAccountId, isRunning), setIsListening: (isListening: ListeningStatus) => setIsListening(currentAccountId, isListening), setPrompt: (prompt: string) => setPrompt(currentAccountId, prompt) }
+  return {
+    handleComment,
+    isRunning,
+    isListening,
+    comments,
+    replies,
+    prompt,
+    setIsRunning: (isRunning: boolean) =>
+      setIsRunning(currentAccountId, isRunning),
+    setIsListening: (isListening: ListeningStatus) =>
+      setIsListening(currentAccountId, isListening),
+    setPrompt: (prompt: string) => setPrompt(currentAccountId, prompt),
+  }
 }

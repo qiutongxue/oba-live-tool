@@ -23,34 +23,40 @@ const defaultContext: LiveControlContext = {
   platform: 'douyin',
 }
 
-export const useLiveControlStore = create<LiveControlStore>()(immer((set) => {
-  return {
-    contexts: {
-      default: defaultContext,
-    },
-    setIsConnected: (accountId, connected) => set((state) => {
-      if (!state.contexts[accountId]) {
-        state.contexts[accountId] = defaultContext
-      }
-      state.contexts[accountId].isConnected = connected
-    }),
-    setAccountName: (accountId, name) => set((state) => {
-      if (!state.contexts[accountId]) {
-        state.contexts[accountId] = defaultContext
-      }
-      state.contexts[accountId].accountName = name
-    }),
-    setPlatform: (accountId, platform) => set((state) => {
-      if (!state.contexts[accountId]) {
-        state.contexts[accountId] = defaultContext
-      }
-      state.contexts[accountId].platform = platform
-    }),
-  }
-}))
+export const useLiveControlStore = create<LiveControlStore>()(
+  immer(set => {
+    return {
+      contexts: {
+        default: defaultContext,
+      },
+      setIsConnected: (accountId, connected) =>
+        set(state => {
+          if (!state.contexts[accountId]) {
+            state.contexts[accountId] = defaultContext
+          }
+          state.contexts[accountId].isConnected = connected
+        }),
+      setAccountName: (accountId, name) =>
+        set(state => {
+          if (!state.contexts[accountId]) {
+            state.contexts[accountId] = defaultContext
+          }
+          state.contexts[accountId].accountName = name
+        }),
+      setPlatform: (accountId, platform) =>
+        set(state => {
+          if (!state.contexts[accountId]) {
+            state.contexts[accountId] = defaultContext
+          }
+          state.contexts[accountId].platform = platform
+        }),
+    }
+  }),
+)
 
 export function useLiveControl() {
-  const { contexts, setIsConnected, setAccountName, setPlatform } = useLiveControlStore()
+  const { contexts, setIsConnected, setAccountName, setPlatform } =
+    useLiveControlStore()
 
   const currentAccountId = useAccounts(state => state.currentAccountId)
   const context = contexts[currentAccountId] || defaultContext
@@ -59,8 +65,11 @@ export function useLiveControl() {
     isConnected: context.isConnected,
     accountName: context.accountName,
     platform: context.platform,
-    setIsConnected: (connected: ConnectionStatus) => setIsConnected(currentAccountId, connected),
-    setAccountName: (name: string | null) => setAccountName(currentAccountId, name),
-    setPlatform: (platform: 'buyin' | 'douyin') => setPlatform(currentAccountId, platform),
+    setIsConnected: (connected: ConnectionStatus) =>
+      setIsConnected(currentAccountId, connected),
+    setAccountName: (name: string | null) =>
+      setAccountName(currentAccountId, name),
+    setPlatform: (platform: 'buyin' | 'douyin') =>
+      setPlatform(currentAccountId, platform),
   }
 }

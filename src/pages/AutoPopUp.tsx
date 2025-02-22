@@ -13,17 +13,26 @@ import React, { useCallback, useState } from 'react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 
 export default function AutoPopUp() {
-  const { isRunning, config, setGoodsIds, setScheduler, setRandom, setIsRunning } = useAutoPopUp()
+  const {
+    isRunning,
+    config,
+    setGoodsIds,
+    setScheduler,
+    setRandom,
+    setIsRunning,
+  } = useAutoPopUp()
   const [validationError, setValidationError] = useState<string | null>(null)
   const { toast } = useToast()
 
   const onStartTask = useCallback(async () => {
-    const result = await window.ipcRenderer.invoke(IPC_CHANNELS.tasks.autoPopUp.start, config)
+    const result = await window.ipcRenderer.invoke(
+      IPC_CHANNELS.tasks.autoPopUp.start,
+      config,
+    )
     if (result) {
       setIsRunning(true)
       toast.success('自动弹窗任务已启动')
-    }
-    else {
+    } else {
       setIsRunning(false)
       toast.error('自动弹窗任务启动失败')
     }
@@ -35,10 +44,8 @@ export default function AutoPopUp() {
   }, [setIsRunning])
 
   const handleTaskButtonClick = () => {
-    if (!isRunning)
-      onStartTask()
-    else
-      onStopTask()
+    if (!isRunning) onStartTask()
+    else onStopTask()
   }
 
   const handleGoodsIdChange = (index: number, value: string) => {
@@ -60,8 +67,7 @@ export default function AutoPopUp() {
 
   const addGoodsId = useCallback(() => {
     let id = 1
-    while (config.goodsIds.includes(id))
-      id += 1
+    while (config.goodsIds.includes(id)) id += 1
     setGoodsIds([...config.goodsIds, id])
   }, [config.goodsIds, setGoodsIds])
 
@@ -95,11 +101,7 @@ export default function AutoPopUp() {
                     添加需要自动弹出的商品ID
                   </p>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={addGoodsId}
-                >
+                <Button variant="outline" size="sm" onClick={addGoodsId}>
                   <PlusIcon className="mr-2 h-4 w-4" />
                   添加商品
                 </Button>
@@ -107,6 +109,7 @@ export default function AutoPopUp() {
 
               <div className="space-y-4">
                 {config.goodsIds.map((id, index) => (
+                  // biome-ignore lint/suspicious/noArrayIndexKey: 影响不大
                   <div key={index} className="flex gap-3 items-center group">
                     <Input
                       type="number"
@@ -120,7 +123,9 @@ export default function AutoPopUp() {
                       variant="ghost"
                       size="icon"
                       onClick={() => {
-                        const newGoodsIds = config.goodsIds.filter((_, i) => i !== index)
+                        const newGoodsIds = config.goodsIds.filter(
+                          (_, i) => i !== index,
+                        )
                         setGoodsIds(newGoodsIds)
                       }}
                       className="opacity-0 group-hover:opacity-100"
@@ -162,9 +167,14 @@ export default function AutoPopUp() {
                   <Input
                     type="number"
                     value={config.scheduler.interval[0] / 1000}
-                    onChange={e => setScheduler({
-                      interval: [Number(e.target.value) * 1000, config.scheduler.interval[1]],
-                    })}
+                    onChange={e =>
+                      setScheduler({
+                        interval: [
+                          Number(e.target.value) * 1000,
+                          config.scheduler.interval[1],
+                        ],
+                      })
+                    }
                     className="w-24"
                     min="1"
                     placeholder="最小"
@@ -173,9 +183,14 @@ export default function AutoPopUp() {
                   <Input
                     type="number"
                     value={config.scheduler.interval[1] / 1000}
-                    onChange={e => setScheduler({
-                      interval: [config.scheduler.interval[0], Number(e.target.value) * 1000],
-                    })}
+                    onChange={e =>
+                      setScheduler({
+                        interval: [
+                          config.scheduler.interval[0],
+                          Number(e.target.value) * 1000,
+                        ],
+                      })
+                    }
                     className="w-24"
                     min="1"
                     placeholder="最大"

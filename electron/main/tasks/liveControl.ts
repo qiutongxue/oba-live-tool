@@ -1,16 +1,11 @@
-import type playwright from 'playwright'
-import type {
-  LoginConstants,
-} from '../constants'
-import { pageManager } from '#/taskManager'
 import { ipcMain } from 'electron'
+import type playwright from 'playwright'
 import { chromium } from 'playwright-extra'
 import stealth from 'puppeteer-extra-plugin-stealth'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
-import {
-  GOODS_ITEM_SELECTOR,
-  loginConstants,
-} from '../constants'
+import { pageManager } from '#/taskManager'
+import type { LoginConstants } from '../constants'
+import { GOODS_ITEM_SELECTOR, loginConstants } from '../constants'
 import { createLogger } from '../logger'
 import { findChrome } from '../utils/checkChrome'
 
@@ -41,8 +36,7 @@ class LiveControlManager {
   private async initChromePath() {
     if (!this.chromePath) {
       this.chromePath = await findChrome()
-      if (!this.chromePath)
-        throw new Error('未找到 Chrome 浏览器')
+      if (!this.chromePath) throw new Error('未找到 Chrome 浏览器')
     }
   }
 
@@ -50,7 +44,7 @@ class LiveControlManager {
     await this.initChromePath()
     return chromium.launch({
       headless,
-      executablePath: this.chromePath!,
+      executablePath: this.chromePath as string,
     })
   }
 
@@ -61,7 +55,10 @@ class LiveControlManager {
     return { browser, context, page }
   }
 
-  private async loadCookies(context: playwright.BrowserContext, cookiesString: string): Promise<boolean> {
+  private async loadCookies(
+    context: playwright.BrowserContext,
+    cookiesString: string,
+  ): Promise<boolean> {
     if (!cookiesString) {
       logger.debug('cookies 不存在')
       return false
@@ -71,9 +68,11 @@ class LiveControlManager {
       const cookies = JSON.parse(cookiesString)
       await context.addCookies(cookies)
       return true
-    }
-    catch (error) {
-      logger.error('加载 cookies 失败:', error instanceof Error ? error.message : String(error))
+    } catch (error) {
+      logger.error(
+        '加载 cookies 失败:',
+        error instanceof Error ? error.message : String(error),
+      )
       return false
     }
   }
@@ -83,7 +82,9 @@ class LiveControlManager {
     this.newCookies = JSON.stringify(cookies)
   }
 
-  private async handleHeadlessLogin(session: BrowserSession): Promise<BrowserSession | null> {
+  private async handleHeadlessLogin(
+    session: BrowserSession,
+  ): Promise<BrowserSession | null> {
     const { browser } = session
     // 关闭当前浏览器
     await browser.close()
@@ -92,7 +93,10 @@ class LiveControlManager {
     await newSession.page.goto(this.loginConstants.loginUrl)
 
     // 等待用户登录成功
-    await newSession.page.waitForSelector(this.loginConstants.isLoggedInSelector, { timeout: 0 })
+    await newSession.page.waitForSelector(
+      this.loginConstants.isLoggedInSelector,
+      { timeout: 0 },
+    )
     // 保存 cookies
     await this.saveCookies(newSession.context)
     // 关闭有头浏览器，返回 null 以触发重新连接
@@ -100,13 +104,17 @@ class LiveControlManager {
     return null
   }
 
-  private async handleLogin(session: BrowserSession, headless: boolean): Promise<BrowserSession | null> {
+  private async handleLogin(
+    session: BrowserSession,
+    headless: boolean,
+  ): Promise<BrowserSession | null> {
     logger.info('需要登录，请在打开的浏览器中完成登录')
-    if (headless)
-      return this.handleHeadlessLogin(session)
+    if (headless) return this.handleHeadlessLogin(session)
 
     await session.page.goto(this.loginConstants.loginUrl)
-    await session.page.waitForSelector(this.loginConstants.isLoggedInSelector, { timeout: 0 })
+    await session.page.waitForSelector(this.loginConstants.isLoggedInSelector, {
+      timeout: 0,
+    })
     await this.saveCookies(session.context)
     if (this.platform === 'buyin') {
       // 百应登录之后不会跳转到中控台，需要手动跳转
@@ -119,7 +127,10 @@ class LiveControlManager {
     this.chromePath = path
   }
 
-  public async connect({ headless = true, cookies = '' }: BrowserConfig): Promise<BrowserSession & { accountName: string | null }> {
+  public async connect({
+    headless = true,
+    cookies = '',
+  }: BrowserConfig): Promise<BrowserSession & { accountName: string | null }> {
     logger.info('启动中……')
 
     let loginSuccess = false
@@ -136,9 +147,14 @@ class LiveControlManager {
         await session.page.goto(this.loginConstants.liveControlUrl)
         await Promise.race([
           // 需要登录
-          session.page.waitForURL(this.loginConstants.loginUrlRegex, { timeout: 0 }),
+          session.page.waitForURL(this.loginConstants.loginUrlRegex, {
+            timeout: 0,
+          }),
           // 成功进入了中控台
-          session.page.waitForSelector(this.loginConstants.isInLiveControlSelector, { timeout: 0 }),
+          session.page.waitForSelector(
+            this.loginConstants.isInLiveControlSelector,
+            { timeout: 0 },
+          ),
         ])
 
         logger.debug(`当前页面: ${session.page.url()}`)
@@ -147,29 +163,30 @@ class LiveControlManager {
         if (this.loginConstants.loginUrlRegex.test(session.page.url())) {
           const newSession = await this.handleLogin(session, headless)
           // 对于无头模式，需要重新连接
-          if (!newSession)
-            continue
+          if (!newSession) continue
           session = newSession
         }
         // 每次连接都保存一次 cookies
         await this.saveCookies(session.context)
         loginSuccess = true
-      }
-      catch (error) {
-        logger.error('连接失败:', error instanceof Error ? error.message : String(error))
-        if (session?.browser)
-          await session.browser.close()
+      } catch (error) {
+        logger.error(
+          '连接失败:',
+          error instanceof Error ? error.message : String(error),
+        )
+        if (session?.browser) await session.browser.close()
         throw error
       }
     }
 
-    if (!session)
-      throw new Error('会话创建失败')
+    if (!session) throw new Error('会话创建失败')
 
     // 等待中控台页面加载完成
     await session.page.waitForSelector(GOODS_ITEM_SELECTOR, { timeout: 0 })
     // 获取当前登录的账号
-    const accountName = await session.page.$(this.loginConstants.accountNameSelector).then(el => el?.textContent())
+    const accountName = await session.page
+      .$(this.loginConstants.accountNameSelector)
+      .then(el => el?.textContent())
     logger.success(`登录成功，当前账号为「${accountName}」`)
     return {
       ...session,
@@ -185,17 +202,27 @@ class LiveControlManager {
 function setupIpcHandlers() {
   ipcMain.handle(
     IPC_CHANNELS.tasks.liveControl.connect,
-    async (_, { chromePath, headless, cookies, platform = 'douyin' }: {
-      chromePath?: string
-      headless?: boolean
-      cookies?: string
-      platform?: keyof typeof loginConstants
-    }) => {
+    async (
+      _,
+      {
+        chromePath,
+        headless,
+        cookies,
+        platform = 'douyin',
+      }: {
+        chromePath?: string
+        headless?: boolean
+        cookies?: string
+        platform?: keyof typeof loginConstants
+      },
+    ) => {
       try {
         const manager = new LiveControlManager(platform || 'douyin')
-        if (chromePath)
-          manager.setChromePath(chromePath)
-        const { browser, context, page, accountName } = await manager.connect({ headless, cookies })
+        if (chromePath) manager.setChromePath(chromePath)
+        const { browser, context, page, accountName } = await manager.connect({
+          headless,
+          cookies,
+        })
 
         pageManager.setContext({ browser, browserContext: context, page })
 
@@ -203,20 +230,19 @@ function setupIpcHandlers() {
           cookies: manager.cookies,
           accountName,
         }
-      }
-      catch (error) {
-        logger.error('连接直播控制台失败:', error instanceof Error ? error.message : String(error))
+      } catch (error) {
+        logger.error(
+          '连接直播控制台失败:',
+          error instanceof Error ? error.message : String(error),
+        )
         return null
       }
     },
   )
 
-  ipcMain.handle(
-    IPC_CHANNELS.tasks.liveControl.disconnect,
-    async () => {
-      await pageManager.getPage()?.close()
-    },
-  )
+  ipcMain.handle(IPC_CHANNELS.tasks.liveControl.disconnect, async () => {
+    await pageManager.getPage()?.close()
+  })
 }
 
 setupIpcHandlers()

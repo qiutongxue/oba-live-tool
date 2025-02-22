@@ -1,4 +1,4 @@
-import { eventEmitter, EVENTS } from '@/utils/events'
+import { EVENTS, eventEmitter } from '@/utils/events'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
@@ -25,7 +25,7 @@ export const useAccounts = create<AccountsStore>()(
       currentAccountId: 'default',
 
       addAccount: (name: string) => {
-        set((state) => {
+        set(state => {
           const newId = crypto.randomUUID()
           state.accounts.push({
             id: newId,
@@ -36,7 +36,7 @@ export const useAccounts = create<AccountsStore>()(
       },
 
       removeAccount: (id: string) => {
-        set((state) => {
+        set(state => {
           state.accounts = state.accounts.filter(acc => acc.id !== id)
           if (state.currentAccountId === id) {
             state.currentAccountId = 'default'
@@ -46,7 +46,7 @@ export const useAccounts = create<AccountsStore>()(
       },
 
       switchAccount: (id: string) => {
-        set((state) => {
+        set(state => {
           state.currentAccountId = id
           eventEmitter.emit(EVENTS.ACCOUNT_SWITCHED, id)
         })
@@ -57,7 +57,7 @@ export const useAccounts = create<AccountsStore>()(
       },
 
       updateAccountName: (id: string, name: string) => {
-        set((state) => {
+        set(state => {
           const account = state.accounts.find(acc => acc.id === id)
           if (account) {
             account.name = name

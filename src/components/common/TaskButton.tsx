@@ -2,7 +2,12 @@ import { useLiveControl } from '@/hooks/useLiveControl'
 import { PlayIcon, StopIcon } from '@radix-ui/react-icons'
 import { useDebounceFn } from 'ahooks'
 import { Button } from '../ui/button'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '../ui/tooltip'
 
 export function TaskButton({
   isTaskRunning,
@@ -12,7 +17,11 @@ export function TaskButton({
   onStartStop: () => void
 }) {
   const { isConnected } = useLiveControl()
-  const debouncedFn = useDebounceFn(onStartStop, { wait: 500, leading: true, trailing: false })
+  const debouncedFn = useDebounceFn(onStartStop, {
+    wait: 500,
+    leading: true,
+    trailing: false,
+  })
   return (
     <TooltipProvider>
       <Tooltip>
@@ -23,19 +32,17 @@ export function TaskButton({
               onClick={() => debouncedFn.run()}
               disabled={isConnected !== 'connected'}
             >
-              {isTaskRunning
-                ? (
-                    <>
-                      <StopIcon className="mr-2 h-4 w-4" />
-                      停止任务
-                    </>
-                  )
-                : (
-                    <>
-                      <PlayIcon className="mr-2 h-4 w-4" />
-                      开始任务
-                    </>
-                  )}
+              {isTaskRunning ? (
+                <>
+                  <StopIcon className="mr-2 h-4 w-4" />
+                  停止任务
+                </>
+              ) : (
+                <>
+                  <PlayIcon className="mr-2 h-4 w-4" />
+                  开始任务
+                </>
+              )}
             </Button>
           </span>
         </TooltipTrigger>

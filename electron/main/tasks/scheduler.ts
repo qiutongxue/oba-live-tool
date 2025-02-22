@@ -27,7 +27,11 @@ export class TaskScheduler implements Scheduler {
   private config: SchedulerConfig
   private readonly name: string
 
-  constructor(name: string, executor: () => Promise<void>, config: SchedulerConfig) {
+  constructor(
+    name: string,
+    executor: () => Promise<void>,
+    config: SchedulerConfig,
+  ) {
     this.name = name
     this.executor = executor
     this.config = config
@@ -48,8 +52,7 @@ export class TaskScheduler implements Scheduler {
   private async executeTask() {
     try {
       await this.executor()
-    }
-    catch (error) {
+    } catch (error) {
       logger.error(`执行「${this.name}」失败:`, error)
       this.stop()
       return
