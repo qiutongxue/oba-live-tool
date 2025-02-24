@@ -160,7 +160,7 @@ export const useAutoReplyStore = create<AutoReplyState & AutoReplyAction>()(
             Object.entries(persisted.contexts || {}).map(
               ([accountId, context]) => [
                 accountId,
-                { ...defaultContext, ...context }, // 用默认值补全字段
+                { ...defaultContext(), ...context }, // 用默认值补全字段
               ],
             ),
           ),
@@ -226,13 +226,13 @@ export function useAutoReply() {
   const aiStore = useAIChatStore()
 
   const context = useMemo(
-    () => contexts[currentAccountId] || defaultContext,
+    () => contexts[currentAccountId] || defaultContext(),
     [contexts, currentAccountId],
   )
   const { isRunning, isListening, comments, replies, prompt } = context
 
   const handleComment = useMemoizedFn((comment: Comment, accountId: string) => {
-    const context = contexts[accountId] || defaultContext
+    const context = contexts[accountId] || defaultContext()
     const { isRunning, comments, replies, prompt } = context
 
     addComment(accountId, comment)

@@ -104,7 +104,7 @@ export function useChromeConfig() {
   const { contexts, setPath, setCookies } = useChromeConfigStore()
   const { platform } = useLiveControl()
   const currentAccountId = useAccounts(state => state.currentAccountId)
-  const context = contexts[currentAccountId] || defaultContext
+  const context = contexts[currentAccountId] || defaultContext()
 
   return {
     path: context.path,

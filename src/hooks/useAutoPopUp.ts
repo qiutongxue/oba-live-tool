@@ -83,7 +83,7 @@ export const useAutoPopUpStore = create<AutoPopUpStore>()(
           } catch {
             return {
               contexts: {
-                default: defaultContext,
+                default: defaultContext(),
               },
             }
           }
@@ -108,7 +108,7 @@ export function useAutoPopUp() {
   const store = useAutoPopUpStore()
   const { currentAccountId } = useAccounts()
 
-  const context = store.contexts[currentAccountId] || defaultContext
+  const context = store.contexts[currentAccountId] || defaultContext()
   const updateConfig = (newConfig: Partial<AutoPopUpConfig>) => {
     store.setConfig(currentAccountId, newConfig)
   }

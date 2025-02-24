@@ -105,7 +105,7 @@ export const useAutoMessageStore = create<AutoMessageStore>()(
           } catch {
             return {
               contexts: {
-                default: defaultContext,
+                default: defaultContext(),
               },
             }
           }
@@ -133,7 +133,7 @@ export function useAutoMessage() {
   const { currentAccountId } = useAccounts()
 
   // 获取当前账号的完整状态
-  const context = store.contexts[currentAccountId] || defaultContext
+  const context = store.contexts[currentAccountId] || defaultContext()
 
   const updateConfig = (newConfig: Partial<AutoMessageConfig>) => {
     store.setConfig(currentAccountId, newConfig)
