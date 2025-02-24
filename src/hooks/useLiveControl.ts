@@ -37,9 +37,7 @@ export const useLiveControlStore = create<LiveControlStore>()(
           if (!state.contexts[accountId]) {
             state.contexts[accountId] = defaultContext()
           }
-          console.log('before', accountId, JSON.stringify(state.contexts))
           state.contexts[accountId].isConnected = connected
-          console.log('after', accountId, JSON.stringify(state.contexts))
         }),
       setAccountName: (accountId, name) =>
         set(state => {
