@@ -54,13 +54,13 @@ interface AutoReplyAction {
 const defaultPrompt =
   '你是一个直播间的助手，负责回复观众的评论。请用简短友好的语气回复，不要超过50个字。'
 
-const defaultContext: AutoReplyContext = {
+const defaultContext = (): AutoReplyContext => ({
   isRunning: false,
   isListening: 'stopped',
   replies: [],
   comments: [],
   prompt: defaultPrompt,
-}
+})
 
 export const useAutoReplyStore = create<AutoReplyState & AutoReplyAction>()(
   persist(
@@ -74,35 +74,35 @@ export const useAutoReplyStore = create<AutoReplyState & AutoReplyAction>()(
       return {
         contexts: {
           default: {
-            ...defaultContext,
+            ...defaultContext(),
             prompt: previousPrompt || defaultPrompt,
           },
         },
         setIsRunning: (accountId, isRunning) =>
           set(state => {
             if (!state.contexts[accountId]) {
-              state.contexts[accountId] = defaultContext
+              state.contexts[accountId] = defaultContext()
             }
             state.contexts[accountId].isRunning = isRunning
           }),
         setIsListening: (accountId, isListening) =>
           set(state => {
             if (!state.contexts[accountId]) {
-              state.contexts[accountId] = defaultContext
+              state.contexts[accountId] = defaultContext()
             }
             state.contexts[accountId].isListening = isListening
           }),
         setPrompt: (accountId, prompt) =>
           set(state => {
             if (!state.contexts[accountId]) {
-              state.contexts[accountId] = defaultContext
+              state.contexts[accountId] = defaultContext()
             }
             state.contexts[accountId].prompt = prompt
           }),
         addComment: (accountId, comment) =>
           set(state => {
             if (!state.contexts[accountId]) {
-              state.contexts[accountId] = defaultContext
+              state.contexts[accountId] = defaultContext()
             }
             state.contexts[accountId].comments = [
               { ...comment },
@@ -112,7 +112,7 @@ export const useAutoReplyStore = create<AutoReplyState & AutoReplyAction>()(
         addReply: (accountId, commentId, nickname, content) =>
           set(state => {
             if (!state.contexts[accountId]) {
-              state.contexts[accountId] = defaultContext
+              state.contexts[accountId] = defaultContext()
             }
             state.contexts[accountId].replies = [
               {
@@ -128,7 +128,7 @@ export const useAutoReplyStore = create<AutoReplyState & AutoReplyAction>()(
         removeReply: (accountId, commentId) =>
           set(state => {
             if (!state.contexts[accountId]) {
-              state.contexts[accountId] = defaultContext
+              state.contexts[accountId] = defaultContext()
             }
             state.contexts[accountId].replies = state.contexts[
               accountId

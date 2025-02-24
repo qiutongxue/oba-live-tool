@@ -17,7 +17,7 @@ interface AutoPopUpContext {
   config: AutoPopUpConfig
 }
 
-const defaultContext: AutoPopUpContext = {
+const defaultContext = (): AutoPopUpContext => ({
   isRunning: false,
   config: {
     scheduler: {
@@ -26,7 +26,7 @@ const defaultContext: AutoPopUpContext = {
     goodsIds: [],
     random: false,
   },
-}
+})
 
 interface AutoPopUpStore {
   contexts: Record<string, AutoPopUpContext>
@@ -43,18 +43,18 @@ export const useAutoPopUpStore = create<AutoPopUpStore>()(
         })
       })
       return {
-        contexts: { default: defaultContext },
+        contexts: { default: defaultContext() },
         setIsRunning: (accountId, running) =>
           set(state => {
             if (!state.contexts[accountId]) {
-              state.contexts[accountId] = defaultContext
+              state.contexts[accountId] = defaultContext()
             }
             state.contexts[accountId].isRunning = running
           }),
         setConfig: (accountId, config) =>
           set(state => {
             if (!state.contexts[accountId]) {
-              state.contexts[accountId] = defaultContext
+              state.contexts[accountId] = defaultContext()
             }
             state.contexts[accountId].config = {
               ...state.contexts[accountId].config,

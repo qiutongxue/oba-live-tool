@@ -27,24 +27,24 @@ interface ChromeConfigStore {
   ) => void
 }
 
-const defaultContext: ChromeConfig = {
+const defaultContext = (): ChromeConfig => ({
   path: '',
   cookies: {
     buyin: '',
     douyin: '',
   },
-}
+})
 
 export const useChromeConfigStore = create<ChromeConfigStore>()(
   persist(
     immer(set => ({
       contexts: {
-        default: defaultContext,
+        default: defaultContext(),
       },
       setPath: (accountId, path) => {
         set(state => {
           if (!state.contexts[accountId]) {
-            state.contexts[accountId] = defaultContext
+            state.contexts[accountId] = defaultContext()
           }
           state.contexts[accountId].path = path
         })
@@ -52,7 +52,7 @@ export const useChromeConfigStore = create<ChromeConfigStore>()(
       setCookies: (accountId, platform, cookies) => {
         set(state => {
           if (!state.contexts[accountId]) {
-            state.contexts[accountId] = defaultContext
+            state.contexts[accountId] = defaultContext()
           }
           state.contexts[accountId].cookies[platform] = cookies
         })

@@ -23,7 +23,7 @@ interface AutoMessageContext {
   config: AutoMessageConfig
 }
 
-const defaultContext: AutoMessageContext = {
+const defaultContext = (): AutoMessageContext => ({
   isRunning: false,
   config: {
     scheduler: {
@@ -32,7 +32,7 @@ const defaultContext: AutoMessageContext = {
     messages: [],
     random: false,
   },
-}
+})
 
 interface AutoMessageStore {
   contexts: Record<string, AutoMessageContext>
@@ -50,18 +50,18 @@ export const useAutoMessageStore = create<AutoMessageStore>()(
       })
 
       return {
-        contexts: { default: defaultContext },
+        contexts: { default: defaultContext() },
         setIsRunning: (accountId, running) =>
           set(state => {
             if (!state.contexts[accountId]) {
-              state.contexts[accountId] = defaultContext
+              state.contexts[accountId] = defaultContext()
             }
             state.contexts[accountId].isRunning = running
           }),
         setConfig: (accountId, config) =>
           set(state => {
             if (!state.contexts[accountId]) {
-              state.contexts[accountId] = defaultContext
+              state.contexts[accountId] = defaultContext()
             }
             state.contexts[accountId].config = {
               ...state.contexts[accountId].config,
