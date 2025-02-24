@@ -1,3 +1,4 @@
+import { useCallback, useMemo } from 'react'
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import { useAccounts } from './useAccounts'
@@ -17,36 +18,40 @@ interface LiveControlStore {
   setPlatform: (accountId: string, platform: 'buyin' | 'douyin') => void
 }
 
-const defaultContext: LiveControlContext = {
-  isConnected: 'disconnected',
-  accountName: null,
-  platform: 'douyin',
+function defaultContext(): LiveControlContext {
+  return {
+    isConnected: 'disconnected',
+    accountName: null,
+    platform: 'douyin',
+  }
 }
 
 export const useLiveControlStore = create<LiveControlStore>()(
   immer(set => {
     return {
       contexts: {
-        default: defaultContext,
+        default: defaultContext(),
       },
       setIsConnected: (accountId, connected) =>
         set(state => {
           if (!state.contexts[accountId]) {
-            state.contexts[accountId] = defaultContext
+            state.contexts[accountId] = defaultContext()
           }
+          console.log('before', accountId, JSON.stringify(state.contexts))
           state.contexts[accountId].isConnected = connected
+          console.log('after', accountId, JSON.stringify(state.contexts))
         }),
       setAccountName: (accountId, name) =>
         set(state => {
           if (!state.contexts[accountId]) {
-            state.contexts[accountId] = defaultContext
+            state.contexts[accountId] = defaultContext()
           }
           state.contexts[accountId].accountName = name
         }),
       setPlatform: (accountId, platform) =>
         set(state => {
           if (!state.contexts[accountId]) {
-            state.contexts[accountId] = defaultContext
+            state.contexts[accountId] = defaultContext()
           }
           state.contexts[accountId].platform = platform
         }),
@@ -59,17 +64,33 @@ export function useLiveControl() {
     useLiveControlStore()
 
   const currentAccountId = useAccounts(state => state.currentAccountId)
-  const context = contexts[currentAccountId] || defaultContext
+  const context = useMemo(
+    () => contexts[currentAccountId] || defaultContext(),
+    [contexts, currentAccountId],
+  )
 
   return {
     isConnected: context.isConnected,
     accountName: context.accountName,
     platform: context.platform,
-    setIsConnected: (connected: ConnectionStatus) =>
-      setIsConnected(currentAccountId, connected),
-    setAccountName: (name: string | null) =>
-      setAccountName(currentAccountId, name),
-    setPlatform: (platform: 'buyin' | 'douyin') =>
-      setPlatform(currentAccountId, platform),
+    currentAccountId,
+    setIsConnected: useCallback(
+      (connected: ConnectionStatus) => {
+        setIsConnected(currentAccountId, connected)
+      },
+      [currentAccountId, setIsConnected],
+    ),
+    setAccountName: useCallback(
+      (name: string | null) => {
+        setAccountName(currentAccountId, name)
+      },
+      [currentAccountId, setAccountName],
+    ),
+    setPlatform: useCallback(
+      (platform: 'buyin' | 'douyin') => {
+        setPlatform(currentAccountId, platform)
+      },
+      [currentAccountId, setPlatform],
+    ),
   }
 }
