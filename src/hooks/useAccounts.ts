@@ -37,6 +37,9 @@ export const useAccounts = create<AccountsStore>()(
 
       removeAccount: (id: string) => {
         set(state => {
+          if (id === 'default') {
+            return
+          }
           state.accounts = state.accounts.filter(acc => acc.id !== id)
           if (state.currentAccountId === id) {
             state.currentAccountId = 'default'
