@@ -1,8 +1,10 @@
 import { useAccounts } from '@/hooks/useAccounts'
-import { useLiveControl } from '@/hooks/useLiveControl'
+import { useCurrentLiveControl } from '@/hooks/useLiveControl'
 import { useToast } from '@/hooks/useToast'
 import { Pencil1Icon, PlusIcon } from '@radix-ui/react-icons'
+import { useMemoizedFn } from 'ahooks'
 import { useState } from 'react'
+import React from 'react'
 import type { Account } from '#/taskManager'
 import { Button } from './ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog'
@@ -15,7 +17,7 @@ import {
   SelectValue,
 } from './ui/select'
 
-export function AccountSwitcher() {
+export const AccountSwitcher = React.memo(() => {
   const {
     accounts,
     currentAccountId,
@@ -23,7 +25,7 @@ export function AccountSwitcher() {
     switchAccount,
     updateAccountName,
   } = useAccounts()
-  const { isConnected } = useLiveControl()
+  const isConnected = useCurrentLiveControl(context => context.isConnected)
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [newAccountName, setNewAccountName] = useState('')
@@ -33,12 +35,14 @@ export function AccountSwitcher() {
   } | null>(null)
   const { toast } = useToast()
 
-  async function handleAccountSwitch(accountId: string) {
+  console.log('accountSwitcher')
+
+  const handleAccountSwitch = useMemoizedFn(async (accountId: string) => {
     switchAccount(accountId)
     toast.success('切换账号成功')
-  }
+  })
 
-  function handleAddAccount() {
+  const handleAddAccount = useMemoizedFn(() => {
     if (!newAccountName.trim()) {
       toast.error('请输入账号名称')
       return
@@ -53,9 +57,9 @@ export function AccountSwitcher() {
     setIsAddDialogOpen(false)
     setNewAccountName('')
     toast.success('添加账号成功')
-  }
+  })
 
-  function handleEditAccount() {
+  const handleEditAccount = useMemoizedFn(() => {
     if (!editingAccount) return
     if (!editingAccount.name.trim()) {
       toast.error('请输入账号名称')
@@ -77,12 +81,33 @@ export function AccountSwitcher() {
     setIsEditDialogOpen(false)
     setEditingAccount(null)
     toast.success('修改账号名称成功')
-  }
+  })
 
-  function openEditDialog(account: { id: string; name: string }) {
-    setEditingAccount(account)
-    setIsEditDialogOpen(true)
-  }
+  const openEditDialog = useMemoizedFn(
+    (account: { id: string; name: string }) => {
+      setEditingAccount(account)
+      setIsEditDialogOpen(true)
+    },
+  )
+
+  // useWhyDidYouUpdate('AccountSwitcher', {
+  //   accounts,
+  //   currentAccountId,
+  //   isConnected,
+  //   isAddDialogOpen,
+  //   isEditDialogOpen,
+  //   newAccountName,
+  //   editingAccount,
+  //   toast,
+  //   handleAccountSwitch,
+  //   handleAddAccount,
+  //   handleEditAccount,
+  //   openEditDialog,
+  //   setIsAddDialogOpen,
+  //   setIsEditDialogOpen,
+  //   setNewAccountName,
+  //   setEditingAccount,
+  // })
 
   return (
     <div className="flex items-center gap-2">
@@ -165,4 +190,6 @@ export function AccountSwitcher() {
       </Dialog>
     </div>
   )
-}
+})
+
+AccountSwitcher.whyDidYouRender = true

@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react'
+import { useMemo } from 'react'
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import { useAccounts } from './useAccounts'
@@ -11,11 +11,14 @@ interface LiveControlContext {
   platform: 'buyin' | 'douyin'
 }
 
-interface LiveControlStore {
-  contexts: Record<string, LiveControlContext>
+interface LiveControlActions {
   setIsConnected: (accountId: string, connected: ConnectionStatus) => void
   setAccountName: (accountId: string, name: string | null) => void
   setPlatform: (accountId: string, platform: 'buyin' | 'douyin') => void
+}
+
+type LiveControlStore = LiveControlActions & {
+  contexts: Record<string, LiveControlContext>
 }
 
 function defaultContext(): LiveControlContext {
@@ -57,38 +60,33 @@ export const useLiveControlStore = create<LiveControlStore>()(
   }),
 )
 
-export function useLiveControl() {
-  const { contexts, setIsConnected, setAccountName, setPlatform } =
-    useLiveControlStore()
-
+export const useCurrentLiveControlActions = () => {
+  const setIsConnected = useLiveControlStore(state => state.setIsConnected)
+  const setAccountName = useLiveControlStore(state => state.setAccountName)
+  const setPlatform = useLiveControlStore(state => state.setPlatform)
   const currentAccountId = useAccounts(state => state.currentAccountId)
-  const context = useMemo(
-    () => contexts[currentAccountId] || defaultContext(),
-    [contexts, currentAccountId],
-  )
-
-  return {
-    isConnected: context.isConnected,
-    accountName: context.accountName,
-    platform: context.platform,
-    currentAccountId,
-    setIsConnected: useCallback(
-      (connected: ConnectionStatus) => {
+  return useMemo(
+    () => ({
+      setIsConnected: (connected: ConnectionStatus) => {
         setIsConnected(currentAccountId, connected)
       },
-      [currentAccountId, setIsConnected],
-    ),
-    setAccountName: useCallback(
-      (name: string | null) => {
+      setAccountName: (name: string | null) => {
         setAccountName(currentAccountId, name)
       },
-      [currentAccountId, setAccountName],
-    ),
-    setPlatform: useCallback(
-      (platform: 'buyin' | 'douyin') => {
+      setPlatform: (platform: 'buyin' | 'douyin') => {
         setPlatform(currentAccountId, platform)
       },
-      [currentAccountId, setPlatform],
-    ),
-  }
+    }),
+    [currentAccountId, setIsConnected, setAccountName, setPlatform],
+  )
+}
+
+export const useCurrentLiveControl = <T>(
+  getter: (context: LiveControlContext) => T,
+): T => {
+  const currentAccountId = useAccounts(state => state.currentAccountId)
+  return useLiveControlStore(state => {
+    const context = state.contexts[currentAccountId] ?? defaultContext()
+    return getter(context)
+  })
 }

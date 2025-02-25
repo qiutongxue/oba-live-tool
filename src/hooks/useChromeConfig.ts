@@ -1,8 +1,8 @@
+import { useMemo } from 'react'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
 import { useAccounts } from './useAccounts'
-import { useLiveControl } from './useLiveControl'
 
 interface ChromeConfigV1 {
   path: string
@@ -100,17 +100,27 @@ export const useChromeConfigStore = create<ChromeConfigStore>()(
   ),
 )
 
-export function useChromeConfig() {
-  const { contexts, setPath, setCookies } = useChromeConfigStore()
-  const { platform } = useLiveControl()
+export function useCurrentChromeConfig<T>(
+  getters: (state: ChromeConfig) => T,
+): T {
   const currentAccountId = useAccounts(state => state.currentAccountId)
-  const context = contexts[currentAccountId] || defaultContext()
+  return useChromeConfigStore(state => {
+    const context = state.contexts[currentAccountId] ?? defaultContext()
+    return getters(context)
+  })
+}
 
-  return {
-    path: context.path,
-    cookies: context.cookies[platform],
-    setPath: (path: string) => setPath(currentAccountId, path),
-    setCookies: (cookies: string) =>
-      setCookies(currentAccountId, platform, cookies),
-  }
+export function useCurrentChromeConfigActions() {
+  const setPath = useChromeConfigStore(state => state.setPath)
+  const setCookies = useChromeConfigStore(state => state.setCookies)
+  const currentAccountId = useAccounts(state => state.currentAccountId)
+
+  return useMemo(
+    () => ({
+      setPath: (path: string) => setPath(currentAccountId, path),
+      setCookies: (platform: keyof ChromeConfig['cookies'], cookies: string) =>
+        setCookies(currentAccountId, platform, cookies),
+    }),
+    [currentAccountId, setPath, setCookies],
+  )
 }
