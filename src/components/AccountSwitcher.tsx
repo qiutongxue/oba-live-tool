@@ -35,8 +35,6 @@ export const AccountSwitcher = React.memo(() => {
   } | null>(null)
   const { toast } = useToast()
 
-  console.log('accountSwitcher')
-
   const handleAccountSwitch = useMemoizedFn(async (accountId: string) => {
     switchAccount(accountId)
     toast.success('切换账号成功')
