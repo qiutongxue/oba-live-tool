@@ -69,7 +69,7 @@ async function createWindow() {
       preload,
       // Warning: Enable nodeIntegration and disable contextIsolation is not secure in production
       // nodeIntegration: true,
-
+      nodeIntegration: process.env.NODE_ENV === 'development',
       // Consider using contextBridge.exposeInMainWorld
       // Read more on https://www.electronjs.org/docs/latest/tutorial/context-isolation
       // contextIsolation: false,
