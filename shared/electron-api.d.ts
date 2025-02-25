@@ -26,6 +26,10 @@ interface RendererParamsMapping {
   [IPC_CHANNELS.tasks.autoPopUp.stop]: [id: string]
   [IPC_CHANNELS.tasks.autoMessage.stop]: [id: string]
   [IPC_CHANNELS.tasks.liveControl.disconnect]: [id: string]
+  [IPC_CHANNELS.tasks.aiChat.stream]: [
+    { chunk: string; done: boolean; type: string },
+  ]
+  [IPC_CHANNELS.tasks.aiChat.error]: [{ error: string }]
 }
 
 interface MainParamsMapping {
@@ -54,6 +58,14 @@ interface MainParamsMapping {
   [IPC_CHANNELS.tasks.autoPopUp.stop]: []
   [IPC_CHANNELS.tasks.autoMessage.start]: [config: AutoMessageConfig]
   [IPC_CHANNELS.tasks.autoMessage.stop]: []
+  [IPC_CHANNELS.tasks.aiChat.chat]: [
+    {
+      messages: Message[]
+      provider: keyof typeof providers
+      model: string
+      apiKey: string
+    },
+  ]
   [IPC_CHANNELS.tasks.liveControl.disconnect]: []
   [IPC_CHANNELS.updater.checkUpdate]: [{ source: string }]
   [IPC_CHANNELS.updater.startDownload]: []
