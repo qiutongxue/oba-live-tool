@@ -32,6 +32,7 @@ class CommentManager {
   private controller: LiveController
   public isRunning = false
   private handlerInitialized = false
+  private intervalTimer: NodeJS.Timeout | null = null
 
   constructor(
     private readonly page: Page,
@@ -205,7 +206,7 @@ class CommentManager {
       await this.processExistingComments()
 
       // 5分钟检查一次是否弹出了保护窗口
-      setInterval(
+      this.intervalTimer = setInterval(
         () => {
           this.controller.recoveryLive()
         },
@@ -235,7 +236,7 @@ class CommentManager {
       //     delete (window as any).parseComment
       //   }
       // })
-
+      this.intervalTimer && clearInterval(this.intervalTimer)
       this.isRunning = false
       windowManager.sendToWindow(
         'main',

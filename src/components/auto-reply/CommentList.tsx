@@ -1,5 +1,5 @@
 import { useAutoReply } from '@/hooks/useAutoReply'
-import { useLiveControl } from '@/hooks/useLiveControl'
+import { useCurrentLiveControl } from '@/hooks/useLiveControl'
 import { useToast } from '@/hooks/useToast'
 import { cn } from '@/lib/utils'
 import { RefreshCcw } from 'lucide-react'
@@ -22,7 +22,7 @@ export default function CommentList({
   highlight: highlightedCommentId,
 }: { highlight: string | null }) {
   const { comments, isListening, setIsListening } = useAutoReply()
-  const { isConnected } = useLiveControl()
+  const isConnected = useCurrentLiveControl(context => context.isConnected)
   const { toast } = useToast()
   const [hideHost, setHideHost] = useState(false)
 

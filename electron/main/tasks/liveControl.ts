@@ -5,7 +5,7 @@ import stealth from 'puppeteer-extra-plugin-stealth'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { pageManager } from '#/taskManager'
 import type { LoginConstants } from '../constants'
-import { GOODS_ITEM_SELECTOR, loginConstants } from '../constants'
+import { loginConstants } from '../constants'
 import { createLogger } from '../logger'
 import { findChrome } from '../utils/checkChrome'
 
@@ -181,8 +181,6 @@ class LiveControlManager {
 
     if (!session) throw new Error('会话创建失败')
 
-    // 等待中控台页面加载完成
-    await session.page.waitForSelector(GOODS_ITEM_SELECTOR, { timeout: 0 })
     // 获取当前登录的账号
     const accountName = await session.page
       .$(this.loginConstants.accountNameSelector)

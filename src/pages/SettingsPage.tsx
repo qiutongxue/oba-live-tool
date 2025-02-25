@@ -1,4 +1,5 @@
 import { Title } from '@/components/common/Title'
+import { AccountSetting } from '@/components/settings/AccountSetting'
 import { BrowserSetting } from '@/components/settings/BrowserSetting'
 import { DevSetting } from '@/components/settings/DevSetting'
 import { UpdateSetting } from '@/components/settings/UpdateSetting'
@@ -13,6 +14,7 @@ export default function Settings() {
       <div className="space-y-8">
         <BrowserSetting />
         <UpdateSetting />
+        <AccountSetting />
         <DevSetting />
 
         <div className="mt-12 flex justify-center">

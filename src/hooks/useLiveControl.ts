@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import { useAccounts } from './useAccounts'
@@ -10,43 +11,48 @@ interface LiveControlContext {
   platform: 'buyin' | 'douyin'
 }
 
-interface LiveControlStore {
-  contexts: Record<string, LiveControlContext>
+interface LiveControlActions {
   setIsConnected: (accountId: string, connected: ConnectionStatus) => void
   setAccountName: (accountId: string, name: string | null) => void
   setPlatform: (accountId: string, platform: 'buyin' | 'douyin') => void
 }
 
-const defaultContext: LiveControlContext = {
-  isConnected: 'disconnected',
-  accountName: null,
-  platform: 'douyin',
+type LiveControlStore = LiveControlActions & {
+  contexts: Record<string, LiveControlContext>
+}
+
+function defaultContext(): LiveControlContext {
+  return {
+    isConnected: 'disconnected',
+    accountName: null,
+    platform: 'douyin',
+  }
 }
 
 export const useLiveControlStore = create<LiveControlStore>()(
   immer(set => {
     return {
       contexts: {
-        default: defaultContext,
+        default: defaultContext(),
       },
       setIsConnected: (accountId, connected) =>
         set(state => {
           if (!state.contexts[accountId]) {
-            state.contexts[accountId] = defaultContext
+            state.contexts[accountId] = defaultContext()
           }
           state.contexts[accountId].isConnected = connected
         }),
       setAccountName: (accountId, name) =>
         set(state => {
           if (!state.contexts[accountId]) {
-            state.contexts[accountId] = defaultContext
+            state.contexts[accountId] = defaultContext()
           }
           state.contexts[accountId].accountName = name
         }),
       setPlatform: (accountId, platform) =>
         set(state => {
           if (!state.contexts[accountId]) {
-            state.contexts[accountId] = defaultContext
+            state.contexts[accountId] = defaultContext()
           }
           state.contexts[accountId].platform = platform
         }),
@@ -54,22 +60,33 @@ export const useLiveControlStore = create<LiveControlStore>()(
   }),
 )
 
-export function useLiveControl() {
-  const { contexts, setIsConnected, setAccountName, setPlatform } =
-    useLiveControlStore()
-
+export const useCurrentLiveControlActions = () => {
+  const setIsConnected = useLiveControlStore(state => state.setIsConnected)
+  const setAccountName = useLiveControlStore(state => state.setAccountName)
+  const setPlatform = useLiveControlStore(state => state.setPlatform)
   const currentAccountId = useAccounts(state => state.currentAccountId)
-  const context = contexts[currentAccountId] || defaultContext
+  return useMemo(
+    () => ({
+      setIsConnected: (connected: ConnectionStatus) => {
+        setIsConnected(currentAccountId, connected)
+      },
+      setAccountName: (name: string | null) => {
+        setAccountName(currentAccountId, name)
+      },
+      setPlatform: (platform: 'buyin' | 'douyin') => {
+        setPlatform(currentAccountId, platform)
+      },
+    }),
+    [currentAccountId, setIsConnected, setAccountName, setPlatform],
+  )
+}
 
-  return {
-    isConnected: context.isConnected,
-    accountName: context.accountName,
-    platform: context.platform,
-    setIsConnected: (connected: ConnectionStatus) =>
-      setIsConnected(currentAccountId, connected),
-    setAccountName: (name: string | null) =>
-      setAccountName(currentAccountId, name),
-    setPlatform: (platform: 'buyin' | 'douyin') =>
-      setPlatform(currentAccountId, platform),
-  }
+export const useCurrentLiveControl = <T>(
+  getter: (context: LiveControlContext) => T,
+): T => {
+  const currentAccountId = useAccounts(state => state.currentAccountId)
+  return useLiveControlStore(state => {
+    const context = state.contexts[currentAccountId] ?? defaultContext()
+    return getter(context)
+  })
 }

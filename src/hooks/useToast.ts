@@ -182,10 +182,9 @@ const toasty = {
     }),
 }
 
-function useToast() {
+function useToasts() {
   const [state, setState] = React.useState<State>(memoryState)
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   React.useEffect(() => {
     listeners.push(setState)
     return () => {
@@ -194,13 +193,18 @@ function useToast() {
         listeners.splice(index, 1)
       }
     }
-  }, [state])
+  }, [])
 
   return {
     ...state,
-    toast: toasty,
     dismiss: (toastId?: string) => dispatch({ type: 'DISMISS_TOAST', toastId }),
   }
 }
 
-export { toast, useToast }
+function useToast() {
+  return {
+    toast: toasty,
+  }
+}
+
+export { useToast, useToasts }

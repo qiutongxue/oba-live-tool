@@ -1,5 +1,8 @@
-import { useChromeConfig } from '@/hooks/useChromeConfig'
-import { useLiveControl } from '@/hooks/useLiveControl'
+import {
+  useCurrentChromeConfig,
+  useCurrentChromeConfigActions,
+} from '@/hooks/useChromeConfig'
+import { useCurrentLiveControl } from '@/hooks/useLiveControl'
 import { useToast } from '@/hooks/useToast'
 import { MagnifyingGlassIcon } from '@radix-ui/react-icons'
 import { CodeIcon } from 'lucide-react'
@@ -29,8 +32,10 @@ import { Label } from '../ui/label'
 import { Separator } from '../ui/separator'
 
 export function BrowserSetting() {
-  const { path, setPath, setCookies } = useChromeConfig()
-  const { isConnected } = useLiveControl()
+  const path = useCurrentChromeConfig(context => context.path)
+  const isConnected = useCurrentLiveControl(context => context.isConnected)
+  const platform = useCurrentLiveControl(context => context.platform)
+  const { setPath, setCookies } = useCurrentChromeConfigActions()
   const [isDetecting, setIsDetecting] = useState(false)
   const { toast } = useToast()
 
@@ -46,7 +51,7 @@ export function BrowserSetting() {
   }, [setPath])
 
   const handleCookiesReset = () => {
-    setCookies('')
+    setCookies(platform, '')
     toast.success('登录状态已重置')
   }
 
