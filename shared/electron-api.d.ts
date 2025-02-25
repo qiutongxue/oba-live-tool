@@ -48,8 +48,12 @@ interface MainParamsMapping {
     },
   ]
   [IPC_CHANNELS.chrome.toggleDevTools]: []
+  [IPC_CHANNELS.chrome.selectPath]: []
+  [IPC_CHANNELS.chrome.getPath]: []
   [IPC_CHANNELS.tasks.autoPopUp.start]: [config: AutoPopUpConfig]
   [IPC_CHANNELS.tasks.autoPopUp.stop]: []
+  [IPC_CHANNELS.tasks.autoMessage.start]: [config: AutoMessageConfig]
+  [IPC_CHANNELS.tasks.autoMessage.stop]: []
   [IPC_CHANNELS.tasks.liveControl.disconnect]: []
   [IPC_CHANNELS.updater.checkUpdate]: [{ source: string }]
   [IPC_CHANNELS.updater.startDownload]: []
@@ -72,6 +76,8 @@ interface MainReturnTypeMapping {
   [IPC_CHANNELS.tasks.aiChat.normalChat]: string
   [IPC_CHANNELS.tasks.autoPopUp.start]: boolean
   [IPC_CHANNELS.tasks.autoPopUp.stop]: boolean
+  [IPC_CHANNELS.tasks.autoMessage.start]: boolean
+  [IPC_CHANNELS.tasks.autoMessage.stop]: boolean
   [IPC_CHANNELS.tasks.liveControl.disconnect]: boolean
   [IPC_CHANNELS.updater.checkUpdate]:
     | {
@@ -82,6 +88,8 @@ interface MainReturnTypeMapping {
     | UpdateCheckResult
   [IPC_CHANNELS.updater.startDownload]: undefined
   [IPC_CHANNELS.updater.quitAndInstall]: undefined
+  [IPC_CHANNELS.chrome.selectPath]: string
+  [IPC_CHANNELS.chrome.getPath]: string
 }
 
 export interface ElectronAPI {
