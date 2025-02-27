@@ -17,7 +17,7 @@ import {
 import { Separator } from '@/components/ui/separator'
 import Update from '@/components/update'
 import { useState } from 'react'
-import { version } from '../../../package.json'
+import { version } from '../../../../package.json'
 
 interface UpdateSource {
   value: string
