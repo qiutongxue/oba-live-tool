@@ -1,9 +1,4 @@
-import { Textarea } from '@/components/ui/textarea'
-import { useAutoReply } from '@/hooks/useAutoReply'
-import { useMemoizedFn } from 'ahooks'
-import { Settings } from 'lucide-react'
-import { useState } from 'react'
-import { Button } from '../ui/button'
+import { Button } from '@/components/ui/button'
 import {
   Drawer,
   DrawerClose,
@@ -13,7 +8,12 @@ import {
   DrawerHeader,
   DrawerTitle,
   DrawerTrigger,
-} from '../ui/drawer'
+} from '@/components/ui/drawer'
+import { Textarea } from '@/components/ui/textarea'
+import { useAutoReply } from '@/hooks/useAutoReply'
+import { useMemoizedFn } from 'ahooks'
+import { Settings } from 'lucide-react'
+import { useState } from 'react'
 
 interface PromptCardProps {
   onSave?: () => void

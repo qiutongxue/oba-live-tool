@@ -1,12 +1,12 @@
 import { APIKeyDialog } from '@/components/ai-chat/APIKeyDialog'
-import CommentList from '@/components/auto-reply/CommentList'
-import PreviewList from '@/components/auto-reply/PreviewList'
-import { PromptCard } from '@/components/auto-reply/PromptCard'
 import { TaskButton } from '@/components/common/TaskButton'
 import { Title } from '@/components/common/Title'
 import { Badge } from '@/components/ui/badge'
 import { useAIChatStore } from '@/hooks/useAIChat'
 import { useAutoReply } from '@/hooks/useAutoReply'
+import CommentList from '@/pages/AutoReply/auto-reply/CommentList'
+import PreviewList from '@/pages/AutoReply/auto-reply/PreviewList'
+import { PromptCard } from '@/pages/AutoReply/auto-reply/PromptCard'
 import { useState } from 'react'
 import { providers } from 'shared/providers'
 
@@ -47,7 +47,7 @@ export default function AutoReply() {
 
       <div className="flex items-center gap-2">
         <Badge variant="dark" className="gap-1">
-          <span className="text-xs font-medium">服务商:</span>
+          <span className="text-xs font-medium">提供商:</span>
           <span>{providers[aiConfig.provider].name}</span>
         </Badge>
         <Badge variant="outline" className="gap-1">

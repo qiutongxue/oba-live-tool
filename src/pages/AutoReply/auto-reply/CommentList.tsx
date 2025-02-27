@@ -1,3 +1,15 @@
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { Label } from '@/components/ui/label'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Separator } from '@/components/ui/separator'
+import { Switch } from '@/components/ui/switch'
 import { useAutoReply } from '@/hooks/useAutoReply'
 import { useCurrentLiveControl } from '@/hooks/useLiveControl'
 import { useToast } from '@/hooks/useToast'
@@ -5,18 +17,6 @@ import { cn } from '@/lib/utils'
 import { RefreshCcw } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
-import { Button } from '../ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '../ui/card'
-import { Label } from '../ui/label'
-import { ScrollArea } from '../ui/scroll-area'
-import { Separator } from '../ui/separator'
-import { Switch } from '../ui/switch'
 
 export default function CommentList({
   highlight: highlightedCommentId,
