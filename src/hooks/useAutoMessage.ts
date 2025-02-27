@@ -1,6 +1,6 @@
 import { EVENTS, eventEmitter } from '@/utils/events'
 import { useMemoizedFn } from 'ahooks'
-import { useMemo } from 'react'
+import { useMemo, useRef } from 'react'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
@@ -49,6 +49,12 @@ export const useAutoMessageStore = create<AutoMessageStore>()(
       eventEmitter.on(EVENTS.ACCOUNT_REMOVED, (accountId: string) => {
         set(state => {
           delete state.contexts[accountId]
+        })
+      })
+
+      eventEmitter.on(EVENTS.ACCOUNT_ADDED, (accountId: string) => {
+        set(state => {
+          state.contexts[accountId] = defaultContext()
         })
       })
 
@@ -158,9 +164,11 @@ export const useCurrentAutoMessage = <T>(
   getter: (context: AutoMessageContext) => T,
 ): T => {
   const currentAccountId = useAccounts(state => state.currentAccountId)
+  const defaultContextRef = useRef(defaultContext())
   return useAutoMessageStore(
     useShallow(state => {
-      const context = state.contexts[currentAccountId] ?? defaultContext()
+      const context =
+        state.contexts[currentAccountId] ?? defaultContextRef.current
       return getter(context)
     }),
   )

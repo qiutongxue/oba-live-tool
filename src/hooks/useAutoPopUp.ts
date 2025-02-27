@@ -1,6 +1,6 @@
 import { EVENTS, eventEmitter } from '@/utils/events'
 import { useMemoizedFn } from 'ahooks'
-import { useMemo } from 'react'
+import { useMemo, useRef } from 'react'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
@@ -154,9 +154,11 @@ export const useCurrentAutoPopUp = <T>(
   getter: (context: AutoPopUpContext) => T,
 ): T => {
   const currentAccountId = useAccounts(state => state.currentAccountId)
+  const defaultContextRef = useRef(defaultContext())
   return useAutoPopUpStore(
     useShallow(state => {
-      const context = state.contexts[currentAccountId] ?? defaultContext()
+      const context =
+        state.contexts[currentAccountId] ?? defaultContextRef.current
       return getter(context)
     }),
   )
