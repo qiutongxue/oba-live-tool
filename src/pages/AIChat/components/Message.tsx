@@ -1,9 +1,9 @@
+import { Button } from '@/components/ui/button'
+import { Separator } from '@/components/ui/separator'
 import type { ChatMessage } from '@/hooks/useAIChat'
 import { useAIChatStore } from '@/hooks/useAIChat'
 import { ReloadIcon } from '@radix-ui/react-icons'
 import { useCallback } from 'react'
-import { Button } from '../ui/button'
-import { Separator } from '../ui/separator'
 
 export function Message({
   id,
