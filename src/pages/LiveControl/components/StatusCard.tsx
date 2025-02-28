@@ -1,4 +1,3 @@
-import { Title } from '@/components/common/Title'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -26,43 +25,9 @@ import {
 import { useToast } from '@/hooks/useToast'
 import { CheckIcon, Cross2Icon, GlobeIcon } from '@radix-ui/react-icons'
 import { useMemoizedFn } from 'ahooks'
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
-
-const platforms = {
-  douyin: '抖音小店',
-  buyin: '巨量百应',
-} as const
-
-export default function BrowserControl() {
-  const chromePath = useCurrentChromeConfig(context => context.path)
-  const { setPath } = useCurrentChromeConfigActions()
-
-  useEffect(() => {
-    const removeListener = window.ipcRenderer.on(
-      IPC_CHANNELS.chrome.setPath,
-      path => {
-        if (path && !chromePath) {
-          setPath(path)
-        }
-      },
-    )
-    return () => removeListener()
-  }, [setPath, chromePath])
-
-  return (
-    <div className="container py-8 space-y-4">
-      <div>
-        <Title title="直播控制台" description="连接并管理您的直播控制台" />
-      </div>
-
-      <div className="space-y-8">
-        <StatusCard />
-        <InstructionsCard />
-      </div>
-    </div>
-  )
-}
+import PlatformSelect from './PlatformSelect'
 
 const StatusCard = React.memo(() => {
   return (
@@ -217,55 +182,4 @@ const ConnectState = React.memo(() => {
   )
 })
 
-const InstructionsCard = React.memo(() => (
-  <Card>
-    <CardHeader>
-      <CardTitle>使用说明</CardTitle>
-      <CardDescription>了解如何使用直播控制台</CardDescription>
-    </CardHeader>
-    <CardContent>
-      <div className="space-y-4">
-        <div className="flex gap-3">
-          <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-            <span className="text-sm font-medium text-primary">1</span>
-          </div>
-          <p className="text-sm text-muted-foreground leading-6">
-            选择平台并点击"连接直播控制台"按钮，等待登录
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-            <span className="text-sm font-medium text-primary">2</span>
-          </div>
-          <p className="text-sm text-muted-foreground leading-6">
-            登录成功后，即可使用自动发言和自动弹窗功能
-          </p>
-        </div>
-      </div>
-    </CardContent>
-  </Card>
-))
-
-const PlatformSelect = React.memo(() => {
-  const platform = useCurrentLiveControl(context => context.platform)
-  const isConnected = useCurrentLiveControl(context => context.isConnected)
-  const { setPlatform } = useCurrentLiveControlActions()
-  return (
-    <Select
-      value={platform}
-      onValueChange={setPlatform}
-      disabled={isConnected !== 'disconnected'}
-    >
-      <SelectTrigger className="w-[140px]">
-        <SelectValue placeholder="选择平台" />
-      </SelectTrigger>
-      <SelectContent>
-        {Object.entries(platforms).map(([key, name]) => (
-          <SelectItem key={key} value={key}>
-            {name}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  )
-})
+export default StatusCard
