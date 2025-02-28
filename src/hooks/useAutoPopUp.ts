@@ -1,7 +1,10 @@
 import { EVENTS, eventEmitter } from '@/utils/events'
+import { useMemoizedFn } from 'ahooks'
+import { useMemo, useRef } from 'react'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
+import { useShallow } from 'zustand/react/shallow'
 import { useAccounts } from './useAccounts'
 
 interface AutoPopUpConfig {
@@ -104,24 +107,59 @@ export const useAutoPopUpStore = create<AutoPopUpStore>()(
   ),
 )
 
-export function useAutoPopUp() {
-  const store = useAutoPopUpStore()
-  const { currentAccountId } = useAccounts()
+// export function useAutoPopUp() {
+//   const store = useAutoPopUpStore()
+//   const { currentAccountId } = useAccounts()
 
-  const context = store.contexts[currentAccountId] || defaultContext()
-  const updateConfig = (newConfig: Partial<AutoPopUpConfig>) => {
-    store.setConfig(currentAccountId, newConfig)
-  }
+//   const context = store.contexts[currentAccountId] || defaultContext()
+//   const updateConfig = (newConfig: Partial<AutoPopUpConfig>) => {
+//     store.setConfig(currentAccountId, newConfig)
+//   }
 
-  return {
-    isRunning: context.isRunning,
-    config: context.config,
-    setIsRunning: (running: boolean) =>
-      store.setIsRunning(currentAccountId, running),
-    setScheduler: (scheduler: AutoPopUpConfig['scheduler']) =>
-      updateConfig({ scheduler }),
-    setGoodsIds: (goodsIds: AutoPopUpConfig['goodsIds']) =>
-      updateConfig({ goodsIds }),
-    setRandom: (random: boolean) => updateConfig({ random }),
-  }
+//   return {
+//     isRunning: context.isRunning,
+//     config: context.config,
+//     setIsRunning: (running: boolean) =>
+//       store.setIsRunning(currentAccountId, running),
+//     setScheduler: (scheduler: AutoPopUpConfig['scheduler']) =>
+//       updateConfig({ scheduler }),
+//     setGoodsIds: (goodsIds: AutoPopUpConfig['goodsIds']) =>
+//       updateConfig({ goodsIds }),
+//     setRandom: (random: boolean) => updateConfig({ random }),
+//   }
+// }
+
+export const useAutoPopUpActions = () => {
+  const setIsRunning = useAutoPopUpStore(state => state.setIsRunning)
+  const setConfig = useAutoPopUpStore(state => state.setConfig)
+  const currentAccountId = useAccounts(state => state.currentAccountId)
+  const updateConfig = useMemoizedFn((newConfig: Partial<AutoPopUpConfig>) => {
+    setConfig(currentAccountId, newConfig)
+  })
+  return useMemo(
+    () => ({
+      setIsRunning: (running: boolean) =>
+        setIsRunning(currentAccountId, running),
+      setScheduler: (scheduler: AutoPopUpConfig['scheduler']) =>
+        updateConfig({ scheduler }),
+      setGoodsIds: (goodsIds: AutoPopUpConfig['goodsIds']) =>
+        updateConfig({ goodsIds }),
+      setRandom: (random: boolean) => updateConfig({ random }),
+    }),
+    [currentAccountId, setIsRunning, updateConfig],
+  )
+}
+
+export const useCurrentAutoPopUp = <T>(
+  getter: (context: AutoPopUpContext) => T,
+): T => {
+  const currentAccountId = useAccounts(state => state.currentAccountId)
+  const defaultContextRef = useRef(defaultContext())
+  return useAutoPopUpStore(
+    useShallow(state => {
+      const context =
+        state.contexts[currentAccountId] ?? defaultContextRef.current
+      return getter(context)
+    }),
+  )
 }

@@ -1,17 +1,16 @@
-import { useAutoReply } from '@/hooks/useAutoReply'
-import { SendHorizontalIcon } from 'lucide-react'
-import { IPC_CHANNELS } from 'shared/ipcChannels'
-import { Button } from '../ui/button'
+import { Button } from '@/components/ui/button'
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '../ui/card'
-import { ScrollArea } from '../ui/scroll-area'
-
-import { Separator } from '../ui/separator'
+} from '@/components/ui/card'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Separator } from '@/components/ui/separator'
+import { useAutoReply } from '@/hooks/useAutoReply'
+import { SendHorizontalIcon } from 'lucide-react'
+import { IPC_CHANNELS } from 'shared/ipcChannels'
 
 export default function PreviewList({
   setHighLight,

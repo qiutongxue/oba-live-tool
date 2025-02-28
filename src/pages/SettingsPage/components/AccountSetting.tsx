@@ -15,15 +15,15 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '../ui/alert-dialog'
-import { Button } from '../ui/button'
+} from '../../../components/ui/alert-dialog'
+import { Button } from '../../../components/ui/button'
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '../ui/card'
+} from '../../../components/ui/card'
 
 export function AccountSetting() {
   const { accounts, removeAccount, currentAccountId } = useAccounts()

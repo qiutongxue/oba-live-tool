@@ -6,8 +6,8 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from '../ui/card'
-import { Switch } from '../ui/switch'
+} from '../../../components/ui/card'
+import { Switch } from '../../../components/ui/switch'
 
 export function DevSetting() {
   const { toast } = useToast()

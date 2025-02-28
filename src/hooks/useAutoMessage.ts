@@ -1,7 +1,10 @@
 import { EVENTS, eventEmitter } from '@/utils/events'
+import { useMemoizedFn } from 'ahooks'
+import { useMemo, useRef } from 'react'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
+import { useShallow } from 'zustand/react/shallow'
 import { useAccounts } from './useAccounts'
 
 export interface Message {
@@ -46,6 +49,12 @@ export const useAutoMessageStore = create<AutoMessageStore>()(
       eventEmitter.on(EVENTS.ACCOUNT_REMOVED, (accountId: string) => {
         set(state => {
           delete state.contexts[accountId]
+        })
+      })
+
+      eventEmitter.on(EVENTS.ACCOUNT_ADDED, (accountId: string) => {
+        set(state => {
+          state.contexts[accountId] = defaultContext()
         })
       })
 
@@ -128,25 +137,39 @@ export const useAutoMessageStore = create<AutoMessageStore>()(
   ),
 )
 
-export function useAutoMessage() {
-  const store = useAutoMessageStore()
-  const { currentAccountId } = useAccounts()
+export const useAutoMessageActions = () => {
+  const setIsRunning = useAutoMessageStore(state => state.setIsRunning)
+  const setConfig = useAutoMessageStore(state => state.setConfig)
+  const currentAccountId = useAccounts(state => state.currentAccountId)
+  const updateConfig = useMemoizedFn(
+    (newConfig: Partial<AutoMessageConfig>) => {
+      setConfig(currentAccountId, newConfig)
+    },
+  )
 
-  // 获取当前账号的完整状态
-  const context = store.contexts[currentAccountId] || defaultContext()
+  return useMemo(
+    () => ({
+      setIsRunning: (running: boolean) =>
+        setIsRunning(currentAccountId, running),
+      setScheduler: (scheduler: AutoMessageConfig['scheduler']) =>
+        updateConfig({ scheduler }),
+      setMessages: (messages: Message[]) => updateConfig({ messages }),
+      setRandom: (random: boolean) => updateConfig({ random }),
+    }),
+    [currentAccountId, setIsRunning, updateConfig],
+  )
+}
 
-  const updateConfig = (newConfig: Partial<AutoMessageConfig>) => {
-    store.setConfig(currentAccountId, newConfig)
-  }
-
-  return {
-    isRunning: context.isRunning,
-    config: context.config,
-    setIsRunning: (running: boolean) =>
-      store.setIsRunning(currentAccountId, running),
-    setScheduler: (scheduler: AutoMessageConfig['scheduler']) =>
-      updateConfig({ scheduler }),
-    setMessages: (messages: Message[]) => updateConfig({ messages }),
-    setRandom: (random: boolean) => updateConfig({ random }),
-  }
+export const useCurrentAutoMessage = <T>(
+  getter: (context: AutoMessageContext) => T,
+): T => {
+  const currentAccountId = useAccounts(state => state.currentAccountId)
+  const defaultContextRef = useRef(defaultContext())
+  return useAutoMessageStore(
+    useShallow(state => {
+      const context =
+        state.contexts[currentAccountId] ?? defaultContextRef.current
+      return getter(context)
+    }),
+  )
 }

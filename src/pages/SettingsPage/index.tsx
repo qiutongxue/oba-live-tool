@@ -1,8 +1,8 @@
 import { Title } from '@/components/common/Title'
-import { AccountSetting } from '@/components/settings/AccountSetting'
-import { BrowserSetting } from '@/components/settings/BrowserSetting'
-import { DevSetting } from '@/components/settings/DevSetting'
-import { UpdateSetting } from '@/components/settings/UpdateSetting'
+import { AccountSetting } from '@/pages/SettingsPage/components/AccountSetting'
+import { BrowserSetting } from '@/pages/SettingsPage/components/BrowserSetting'
+import { DevSetting } from '@/pages/SettingsPage/components/DevSetting'
+import { UpdateSetting } from '@/pages/SettingsPage/components/UpdateSetting'
 
 export default function Settings() {
   return (

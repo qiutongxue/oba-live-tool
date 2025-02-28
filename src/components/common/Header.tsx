@@ -1,5 +1,5 @@
 import { Package } from 'lucide-react'
-import { AccountSwitcher } from '../AccountSwitcher'
+import { AccountSwitcher } from './AccountSwitcher'
 
 export function Header() {
   return (

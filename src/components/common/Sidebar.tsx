@@ -1,12 +1,14 @@
-import { useAutoMessage } from '@/hooks/useAutoMessage'
-import { useAutoPopUp } from '@/hooks/useAutoPopUp'
+import { useCurrentAutoMessage } from '@/hooks/useAutoMessage'
+import { useCurrentAutoPopUp } from '@/hooks/useAutoPopUp'
 import { useAutoReply } from '@/hooks/useAutoReply'
 import { cn } from '@/lib/utils'
 import { NavLink } from 'react-router'
 
 export default function Sidebar() {
-  const { isRunning: isAutoMessageRunning } = useAutoMessage()
-  const { isRunning: isAutoPopupRunning } = useAutoPopUp()
+  const isAutoMessageRunning = useCurrentAutoMessage(
+    context => context.isRunning,
+  )
+  const isAutoPopupRunning = useCurrentAutoPopUp(context => context.isRunning)
   const { isRunning: isAutoReplyRunning } = useAutoReply()
 
   const tabs = [
