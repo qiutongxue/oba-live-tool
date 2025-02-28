@@ -1,3 +1,4 @@
+import AIModelInfo from '@/components/ai-chat/AIModelInfo'
 import { APIKeyDialog } from '@/components/ai-chat/APIKeyDialog'
 import { Message } from '@/components/ai-chat/Message'
 import { LoadingIcon } from '@/components/icons/loading'
@@ -175,16 +176,7 @@ export default function AIChat() {
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
-        <Badge variant="dark" className="gap-1">
-          <span className="text-xs font-medium">服务商:</span>
-          <span>{providers[config.provider].name}</span>
-        </Badge>
-        <Badge variant="outline" className="gap-1">
-          <span className="text-xs font-medium">模型:</span>
-          <span className="font-mono">{config.model}</span>
-        </Badge>
-      </div>
+      <AIModelInfo />
 
       <Card className="flex flex-col h-[calc(100vh-20rem)] border-none">
         <CardContent className="flex-1 flex flex-col gap-4 p-0 overflow-hidden">
