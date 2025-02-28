@@ -6,16 +6,16 @@ import { useMemoizedFn } from 'ahooks'
 import { useState } from 'react'
 import React from 'react'
 import type { Account } from '#/taskManager'
-import { Button } from './ui/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog'
-import { Input } from './ui/input'
+import { Button } from '../ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog'
+import { Input } from '../ui/input'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from './ui/select'
+} from '../ui/select'
 
 export const AccountSwitcher = React.memo(() => {
   const {
