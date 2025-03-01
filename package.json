@@ -41,7 +41,7 @@
     "ahooks": "^3.8.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "electron-updater": "6.4.1",
+    "electron-updater": "6.6.0",
     "immer": "^10.1.1",
     "lodash-es": "^4.17.21",
     "lucide-react": "^0.474.0",
