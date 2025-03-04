@@ -3,6 +3,7 @@ import {
   COMMENT_TEXTAREA_SELECTOR,
   GOODS_ACTION_SELECTOR,
   GOODS_ITEM_SELECTOR,
+  LIVE_OVER_CLOSE_SELECTOR,
   PIN_TOP_SELECTOR,
   RECOVERY_BUTTON_SELECTOR,
   SUBMIT_COMMENT_SELECTOR,
@@ -47,6 +48,10 @@ export class LiveController {
     const recoveryButton = await this.page.$(RECOVERY_BUTTON_SELECTOR)
     if (recoveryButton) {
       await recoveryButton.click()
+    }
+    const closeLiveSummary = await this.page.$(LIVE_OVER_CLOSE_SELECTOR)
+    if (closeLiveSummary) {
+      await closeLiveSummary.click()
     }
   }
 

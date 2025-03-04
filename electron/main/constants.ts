@@ -76,3 +76,9 @@ export const COMMENT_LIST_ITEM = `${COMMENT_LIST_WRAPPER} div[class^="commentIte
  */
 export const RECOVERY_BUTTON_SELECTOR =
   'div.auxo-modal-content > div > div > div.auxo-modal-confirm-btns > button.auxo-btn.auxo-btn-primary'
+
+/**
+ * 直播结束后弹出的【直播总结】的关闭按钮
+ */
+export const LIVE_OVER_CLOSE_SELECTOR =
+  'div.auxo-modal-content svg[class^="liveOverCloseIcon"]'
