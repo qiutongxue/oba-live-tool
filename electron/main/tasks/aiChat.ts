@@ -12,8 +12,13 @@ interface StreamChunk {
   index: number
 }
 
-function createOpenAIClient(apiKey: string, provider: keyof typeof providers) {
-  const { baseURL } = providers[provider]
+function createOpenAIClient(
+  apiKey: string,
+  provider: keyof typeof providers,
+  customBaseURL?: string,
+) {
+  const baseURL =
+    provider === 'custom' ? customBaseURL : providers[provider].baseURL
   return new OpenAI({ apiKey, baseURL })
 }
 
@@ -69,12 +74,12 @@ function handleError(error: unknown, sender: Electron.WebContents) {
   sender.send(IPC_CHANNELS.tasks.aiChat.error, { error: errorMessage })
 }
 
-export function setupAIChat() {
+function setupIpcHandlers() {
   ipcMain.handle(
     IPC_CHANNELS.tasks.aiChat.chat,
-    async (event, { messages, apiKey, provider, model }) => {
+    async (event, { messages, apiKey, provider, model, customBaseURL }) => {
       try {
-        const openai = createOpenAIClient(apiKey, provider)
+        const openai = createOpenAIClient(apiKey, provider, customBaseURL)
         logger.info('正在向 AI 提问……')
 
         const stream = await openai.chat.completions.create({
@@ -95,9 +100,9 @@ export function setupAIChat() {
 
   ipcMain.handle(
     IPC_CHANNELS.tasks.aiChat.normalChat,
-    async (event, { messages, apiKey, provider, model }) => {
+    async (event, { messages, apiKey, provider, model, customBaseURL }) => {
       try {
-        const openai = createOpenAIClient(apiKey, provider)
+        const openai = createOpenAIClient(apiKey, provider, customBaseURL)
         logger.debug('[normal] AI 回答开始')
         const response = await openai.chat.completions.create({
           model,
@@ -113,4 +118,33 @@ export function setupAIChat() {
       }
     },
   )
+
+  ipcMain.handle(
+    IPC_CHANNELS.tasks.aiChat.testApiKey,
+    async (event, { apiKey, provider, customBaseURL }) => {
+      try {
+        const client = createOpenAIClient(apiKey, provider, customBaseURL)
+
+        logger.info(
+          `正在测试 ${provider === 'custom' ? customBaseURL : provider} 的API连接...`,
+        )
+        await client.models.list()
+        logger.info('API连接成功')
+
+        return {
+          success: true,
+        }
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : String(error)
+        logger.error(`API连接测试失败: ${errorMessage}`)
+        return {
+          success: false,
+          error: errorMessage,
+        }
+      }
+    },
+  )
 }
+
+setupIpcHandlers()

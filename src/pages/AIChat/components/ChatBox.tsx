@@ -23,6 +23,7 @@ const useChatMessaging = () => {
     tryToHandleEmptyMessage,
     config,
     apiKeys,
+    customBaseURL,
   } = useAIChatStore()
 
   const handleStreamMessage = useMemoizedFn(
@@ -77,6 +78,7 @@ const useChatMessaging = () => {
           apiKey: apiKeys[config.provider],
           provider: config.provider,
           model: config.model,
+          customBaseURL: customBaseURL,
         })
         .catch(error => {
           cleanup()

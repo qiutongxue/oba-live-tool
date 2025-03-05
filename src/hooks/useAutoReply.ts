@@ -264,6 +264,7 @@ export function useAutoReply() {
         provider: aiStore.config.provider,
         model: aiStore.config.model,
         apiKey: aiStore.apiKeys[aiStore.config.provider],
+        customBaseURL: aiStore.customBaseURL,
       })
       .then(reply => {
         if (reply && typeof reply === 'string') {

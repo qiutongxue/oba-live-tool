@@ -48,4 +48,10 @@ export const providers = {
     apiUrl: 'https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey',
     models: [],
   },
+  custom: {
+    name: '自定义',
+    baseURL: '',
+    apiUrl: '',
+    models: [],
+  },
 } as const

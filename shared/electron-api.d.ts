@@ -49,6 +49,7 @@ interface MainParamsMapping {
       provider: keyof typeof providers
       model: string
       apiKey: string
+      customBaseURL?: string
     },
   ]
   [IPC_CHANNELS.chrome.toggleDevTools]: []
@@ -64,6 +65,14 @@ interface MainParamsMapping {
       provider: keyof typeof providers
       model: string
       apiKey: string
+      customBaseURL?: string
+    },
+  ]
+  [IPC_CHANNELS.tasks.aiChat.testApiKey]: [
+    {
+      apiKey: string
+      provider: keyof typeof providers
+      customBaseURL?: string
     },
   ]
   [IPC_CHANNELS.tasks.liveControl.disconnect]: []
@@ -86,6 +95,11 @@ interface MainReturnTypeMapping {
   [IPC_CHANNELS.tasks.autoReply.startCommentListener]: boolean
   [IPC_CHANNELS.tasks.autoReply.sendReply]: undefined
   [IPC_CHANNELS.tasks.aiChat.normalChat]: string
+  [IPC_CHANNELS.tasks.aiChat.testApiKey]: {
+    success: boolean
+    models?: string[]
+    error?: string
+  }
   [IPC_CHANNELS.tasks.autoPopUp.start]: boolean
   [IPC_CHANNELS.tasks.autoPopUp.stop]: boolean
   [IPC_CHANNELS.tasks.autoMessage.start]: boolean

@@ -12,7 +12,7 @@ export interface ChatMessage {
   isError?: boolean
 }
 
-export type AIProvider = keyof typeof providers
+export type AIProvider = keyof typeof providers | 'custom'
 
 type APIKeys = {
   [key in AIProvider]: string
@@ -32,6 +32,8 @@ interface AIChat {
   status: Status
   apiKeys: APIKeys
   config: ProviderConfig
+  customBaseURL: string
+  setCustomBaseURL: (url: string) => void
   setConfig: (config: Partial<ProviderConfig>) => void
   setApiKey: (provider: AIProvider, key: string) => void
   addMessage: (message: Omit<ChatMessage, 'id' | 'timestamp'>) => void
@@ -49,7 +51,7 @@ export const useAIChatStore = create<AIChat>()(
       const modelPreferences = Object.keys(providers).reduce(
         (acc, provider) => {
           acc[provider as AIProvider] =
-            providers[provider as AIProvider].models[0] || ''
+            providers[provider as keyof typeof providers].models[0] || ''
           return acc
         },
         {} as Record<AIProvider, string>,
@@ -72,6 +74,12 @@ export const useAIChatStore = create<AIChat>()(
           modelPreferences,
         },
         apiKeys,
+        customBaseURL: '',
+        setCustomBaseURL: url => {
+          set(state => {
+            state.customBaseURL = url
+          })
+        },
         setConfig: config => {
           set(state => {
             if (config.provider) {
@@ -168,7 +176,11 @@ export const useAIChatStore = create<AIChat>()(
     }),
     {
       name: 'ai-chat-storage',
-      partialize: state => ({ apiKeys: state.apiKeys, config: state.config }),
+      partialize: state => ({
+        apiKeys: state.apiKeys,
+        config: state.config,
+        customBaseURL: state.customBaseURL,
+      }),
     },
   ),
 )

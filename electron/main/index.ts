@@ -19,7 +19,6 @@ import fs from 'fs-extra'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { createLogger } from './logger'
 import { pageManager } from './taskManager'
-import { setupAIChat } from './tasks/aiChat'
 import { update } from './update'
 import { findChromium } from './utils/checkChrome'
 import windowManager from './windowManager'
@@ -27,6 +26,7 @@ import './tasks/liveControl'
 import './tasks/autoMessage'
 import './tasks/autoPopUp'
 import './tasks/autoReply'
+import './tasks/aiChat'
 
 const _require = createRequire(import.meta.url)
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -100,7 +100,6 @@ async function createWindow() {
 
   // Auto update
   update(win)
-  setupAIChat()
 }
 
 app.whenReady().then(createWindow)
