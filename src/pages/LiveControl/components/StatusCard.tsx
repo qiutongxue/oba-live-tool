@@ -23,8 +23,8 @@ import {
   useCurrentLiveControlActions,
 } from '@/hooks/useLiveControl'
 import { useToast } from '@/hooks/useToast'
-import { CheckIcon, Cross2Icon, GlobeIcon } from '@radix-ui/react-icons'
 import { useMemoizedFn } from 'ahooks'
+import { CheckIcon, GlobeIcon, XIcon } from 'lucide-react'
 import React, { useState } from 'react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import PlatformSelect from './PlatformSelect'
@@ -151,7 +151,7 @@ const DisconnectButton = React.memo(
       >
         {isHovered ? (
           <>
-            <Cross2Icon className="mr-2 h-4 w-4" />
+            <XIcon className="mr-2 h-4 w-4" />
             断开连接
           </>
         ) : (

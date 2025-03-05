@@ -1,5 +1,4 @@
 import { useCurrentLiveControl } from '@/hooks/useLiveControl'
-import { PlayIcon, StopIcon } from '@radix-ui/react-icons'
 import { useDebounceFn } from 'ahooks'
 import { Button } from '../ui/button'
 import {
@@ -8,6 +7,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '../ui/tooltip'
+import { CarbonPlayFilledAlt, CarbonStopFilledAlt } from '../icons/carbon'
 
 export function TaskButton({
   isTaskRunning,
@@ -34,12 +34,12 @@ export function TaskButton({
             >
               {isTaskRunning ? (
                 <>
-                  <StopIcon className="mr-2 h-4 w-4" />
+                  <CarbonStopFilledAlt className="mr-2 h-4 w-4" />
                   停止任务
                 </>
               ) : (
                 <>
-                  <PlayIcon className="mr-2 h-4 w-4" />
+                  <CarbonPlayFilledAlt className="mr-2 h-4 w-4" />
                   开始任务
                 </>
               )}

@@ -1,11 +1,14 @@
 import {
+  SimpleIconsGooglechrome,
+  SimpleIconsMicrosoftedge,
+} from '@/components/icons/simpleIcons'
+import {
   useCurrentChromeConfig,
   useCurrentChromeConfigActions,
 } from '@/hooks/useChromeConfig'
 import { useCurrentLiveControl } from '@/hooks/useLiveControl'
 import { useToast } from '@/hooks/useToast'
-import { MagnifyingGlassIcon } from '@radix-ui/react-icons'
-import { CodeIcon } from 'lucide-react'
+import { EraserIcon, FolderSearchIcon, SearchIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import {
@@ -117,7 +120,7 @@ export function BrowserSetting() {
                 disabled={isDetecting}
                 className="flex-shrink-0"
               >
-                <MagnifyingGlassIcon
+                <SearchIcon
                   className={`mr-2 h-4 w-4 ${isDetecting ? 'animate-spin' : ''}`}
                 />
                 {isDetecting ? '检测中...' : '开始检测'}
@@ -134,7 +137,7 @@ export function BrowserSetting() {
                 htmlFor="edge-first"
                 className="text-sm text-muted-foreground"
               >
-                优先使用Edge浏览器
+                优先使用 Edge 浏览器
               </Label>
             </div>
           </div>
@@ -151,12 +154,20 @@ export function BrowserSetting() {
               className="font-mono"
             />
             <Button variant="outline" onClick={handleSelectChrome}>
-              <CodeIcon className="mr-2 h-4 w-4" />
+              <FolderSearchIcon className="mr-2 h-4 w-4" />
               浏览
             </Button>
           </div>
-          <p className="text-sm text-muted-foreground">
-            请选择 chrome.exe 或 msedge.exe
+          <p className="text-sm text-muted-foreground pt-1">
+            请选择
+            <span className="ml-1">
+              <SimpleIconsGooglechrome className="w-4 h-4 inline mx-1" />
+              chrome.exe
+            </span>
+            <span className="before:content-['|'] before:mx-1">
+              <SimpleIconsMicrosoftedge className="w-4 h-4 inline mx-1" />
+              msedge.exe
+            </span>
           </p>
         </div>
 
@@ -171,7 +182,10 @@ export function BrowserSetting() {
           </div>
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="destructive">重置</Button>
+              <Button variant="destructive">
+                <EraserIcon className="mr-2 h-4 w-4" />
+                重置
+              </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>

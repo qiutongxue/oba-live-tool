@@ -2,7 +2,7 @@ import AIModelInfo from '@/components/ai-chat/AIModelInfo'
 import { APIKeyDialog } from '@/components/ai-chat/APIKeyDialog'
 import { Button } from '@/components/ui/button'
 import { useAIChatStore } from '@/hooks/useAIChat'
-import { TrashIcon } from '@radix-ui/react-icons'
+import { TrashIcon } from 'lucide-react'
 import ChatBox from './components/ChatBox'
 
 export default function AIChat() {

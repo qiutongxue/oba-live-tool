@@ -6,7 +6,7 @@ import {
   useCurrentAutoMessage,
 } from '@/hooks/useAutoMessage'
 import MessageComp from '@/pages/AutoMessage/components/MessageComp'
-import { PlusIcon } from '@radix-ui/react-icons'
+import { PlusIcon } from 'lucide-react'
 import { useMemoizedFn } from 'ahooks'
 import React from 'react'
 

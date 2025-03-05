@@ -1,7 +1,7 @@
 import { useAccounts } from '@/hooks/useAccounts'
 import { useCurrentLiveControl } from '@/hooks/useLiveControl'
 import { useToast } from '@/hooks/useToast'
-import { TrashIcon } from '@radix-ui/react-icons'
+import { TrashIcon } from 'lucide-react'
 import { useMemoizedFn } from 'ahooks'
 import { BanIcon } from 'lucide-react'
 import { useState } from 'react'

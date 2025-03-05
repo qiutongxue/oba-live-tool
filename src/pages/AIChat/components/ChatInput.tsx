@@ -3,8 +3,8 @@ import { Textarea } from '@/components/ui/textarea'
 import { useAIChatStore } from '@/hooks/useAIChat'
 import { useToast } from '@/hooks/useToast'
 import { messagesToContext } from '@/lib/utils'
-import { PaperPlaneIcon } from '@radix-ui/react-icons'
 import { useMemoizedFn } from 'ahooks'
+import { SendIcon } from 'lucide-react'
 import { useState } from 'react'
 
 export default function ChatInput({
@@ -53,7 +53,7 @@ export default function ChatInput({
         onClick={handleSubmit}
         disabled={!input.trim() || status !== 'ready'}
       >
-        <PaperPlaneIcon className="h-5 w-5" />
+        <SendIcon className="h-5 w-5" />
       </Button>
     </>
   )

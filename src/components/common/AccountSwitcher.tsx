@@ -1,8 +1,8 @@
 import { useAccounts } from '@/hooks/useAccounts'
 import { useCurrentLiveControl } from '@/hooks/useLiveControl'
 import { useToast } from '@/hooks/useToast'
-import { Pencil1Icon, PlusIcon } from '@radix-ui/react-icons'
 import { useMemoizedFn } from 'ahooks'
+import { Pencil, Plus } from 'lucide-react'
 import { useState } from 'react'
 import React from 'react'
 import type { Account } from '#/taskManager'
@@ -120,7 +120,7 @@ export const AccountSwitcher = React.memo(() => {
           )
         }}
       >
-        <Pencil1Icon className="h-4 w-4" />
+        <Pencil className="h-4 w-4" />
       </Button>
       <Select
         disabled={isConnected === 'connecting'}
@@ -148,7 +148,7 @@ export const AccountSwitcher = React.memo(() => {
         size="icon"
         onClick={() => setIsAddDialogOpen(true)}
       >
-        <PlusIcon className="h-4 w-4" />
+        <Plus className="h-4 w-4" />
       </Button>
 
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
