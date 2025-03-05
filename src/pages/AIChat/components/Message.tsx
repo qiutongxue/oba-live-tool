@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import type { ChatMessage } from '@/hooks/useAIChat'
 import { useAIChatStore } from '@/hooks/useAIChat'
-import { ReloadIcon } from '@radix-ui/react-icons'
+import { RotateCw } from 'lucide-react'
 import { useCallback } from 'react'
 
 export function Message({
@@ -51,7 +51,7 @@ export function Message({
           onClick={handleRetry}
           className="opacity-50 group-hover:opacity-100 transition-opacity hover:bg-transparent"
         >
-          <ReloadIcon className="h-4 w-4" />
+          <RotateCw className="h-4 w-4" />
         </Button>
       )}
       <div

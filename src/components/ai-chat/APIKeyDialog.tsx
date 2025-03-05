@@ -20,8 +20,7 @@ import {
 import type { AIProvider, ProviderConfig } from '@/hooks/useAIChat'
 import { useAIChatStore } from '@/hooks/useAIChat'
 import { useToast } from '@/hooks/useToast'
-import { GearIcon } from '@radix-ui/react-icons'
-import { CheckIcon } from 'lucide-react'
+import { CheckIcon, SettingsIcon } from 'lucide-react'
 import { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { providers } from 'shared/providers'
@@ -416,7 +415,7 @@ export function APIKeyDialog() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
-          <GearIcon className="mr-2 h-4 w-4" />
+          <SettingsIcon className="mr-2 h-4 w-4" />
           配置 API Key
         </Button>
       </DialogTrigger>

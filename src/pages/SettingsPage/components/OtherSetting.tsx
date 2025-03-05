@@ -1,3 +1,4 @@
+import { SimpleIconsGithub } from '@/components/icons/simpleIcons'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -9,8 +10,7 @@ import {
 import {
   ExternalLinkIcon,
   FileTextIcon,
-  GitHubLogoIcon,
-} from '@radix-ui/react-icons'
+} from 'lucide-react'
 import { BugIcon } from 'lucide-react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 
@@ -59,7 +59,7 @@ export function OtherSetting() {
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  <GitHubLogoIcon className="h-4 w-4" />
+                  <SimpleIconsGithub className="h-4 w-4" />
                   GitHub
                   <ExternalLinkIcon className="h-4 w-4" />
                 </a>

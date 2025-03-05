@@ -8,12 +8,11 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Progress } from '@/components/ui/progress'
-import { DownloadIcon, ReloadIcon, RocketIcon } from '@radix-ui/react-icons'
+import { useToast } from '@/hooks/useToast'
 import type { ProgressInfo } from 'electron-updater'
+import { Download, RefreshCw, Rocket } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
-import './update.css'
-import { useToast } from '@/hooks/useToast'
 
 function Update({ source = 'github' }: { source: string }) {
   const { toast } = useToast()
@@ -118,7 +117,7 @@ function Update({ source = 'github' }: { source: string }) {
     if (downloading) {
       return (
         <>
-          <DownloadIcon className="mr-2 h-4 w-4 animate-bounce" />
+          <RefreshCw className="mr-2 h-4 w-4 animate-bounce" />
           正在更新...
         </>
       )
@@ -126,14 +125,14 @@ function Update({ source = 'github' }: { source: string }) {
     if (progressInfo?.percent === 100) {
       return (
         <>
-          <RocketIcon className="mr-2 h-4 w-4" />
+          <Rocket className="mr-2 h-4 w-4" />
           马上安装
         </>
       )
     }
     return (
       <>
-        <DownloadIcon className="mr-2 h-4 w-4" />
+        <Download className="mr-2 h-4 w-4" />
         立即更新
       </>
     )
@@ -258,12 +257,12 @@ function Update({ source = 'github' }: { source: string }) {
       >
         {checking ? (
           <>
-            <ReloadIcon className="mr-2 h-4 w-4 animate-spin" />
+            <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
             检查更新中
           </>
         ) : (
           <>
-            <ReloadIcon className="mr-2 h-4 w-4" />
+            <RefreshCw className="mr-2 h-4 w-4" />
             检查更新
           </>
         )}
