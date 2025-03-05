@@ -7,7 +7,7 @@ import { pageManager } from '#/taskManager'
 import type { LoginConstants } from '../constants'
 import { loginConstants } from '../constants'
 import { createLogger } from '../logger'
-import { findChrome } from '../utils/checkChrome'
+import { findChromium } from '../utils/checkChrome'
 
 const TASK_NAME = '中控台'
 const logger = createLogger(TASK_NAME)
@@ -35,8 +35,8 @@ class LiveControlManager {
 
   private async initChromePath() {
     if (!this.chromePath) {
-      this.chromePath = await findChrome()
-      if (!this.chromePath) throw new Error('未找到 Chrome 浏览器')
+      this.chromePath = await findChromium()
+      if (!this.chromePath) throw new Error('未找到浏览器')
     }
   }
 

@@ -3,15 +3,28 @@ import { promisify } from 'node:util'
 import { createLogger } from '../logger'
 
 const execAsync = promisify(exec)
-const logger = createLogger('ChromeChecker')
+const logger = createLogger('ChromiumChecker')
 
-async function findChromeByCommonPath() {
-  const commonPaths = [
-    '%ProgramFiles%\\Google\\Chrome\\Application\\chrome.exe',
-    '%ProgramFiles(x86)%\\Google\\Chrome\\Application\\chrome.exe',
-    '%LocalAppData%\\Google\\Chrome\\Application\\chrome.exe',
-  ]
+const constants = {
+  chrome: {
+    commonPaths: [
+      '%ProgramFiles%\\Google\\Chrome\\Application\\chrome.exe',
+      '%ProgramFiles(x86)%\\Google\\Chrome\\Application\\chrome.exe',
+      '%LocalAppData%\\Google\\Chrome\\Application\\chrome.exe',
+    ],
+    executableName: 'chrome.exe',
+  },
+  edge: {
+    commonPaths: [
+      '%ProgramFiles%\\Microsoft\\Edge\\Application\\msedge.exe',
+      '%ProgramFiles(x86)%\\Microsoft\\Edge\\Application\\msedge.exe',
+      '%LocalAppData%\\Microsoft\\Edge\\Application\\msedge.exe',
+    ],
+    executableName: 'msedge.exe',
+  },
+}
 
+async function findChromiumByCommonPath(commonPaths: string[]) {
   for (const path of commonPaths) {
     try {
       const expandedPath = await execAsync(`echo ${path}`)
@@ -19,7 +32,7 @@ async function findChromeByCommonPath() {
         `if exist "${expandedPath.stdout.trim()}" echo true`,
       )
       if (exists.trim() === 'true') {
-        logger.debug('找到 Chrome 浏览器:', expandedPath.stdout.trim())
+        logger.debug('找到浏览器:', expandedPath.stdout.trim())
         return expandedPath.stdout.trim()
       }
     } catch {
@@ -29,14 +42,14 @@ async function findChromeByCommonPath() {
   return null
 }
 
-async function findChromeByTasklist() {
+async function findChromiumByTasklist(executableName: string) {
   try {
     const { stdout: tasklistResult } = await execAsync(
-      'tasklist /FI "imagename eq chrome.exe" /NH',
+      `tasklist /FI "imagename eq ${executableName}" /NH`,
     )
     const lines = tasklistResult.trim().split('\n')
     if (lines.length === 0 || lines[0].includes('No tasks')) {
-      throw new Error('Chrome is not running')
+      throw new Error(`${executableName} is not running`)
     }
 
     // 提取第一个 Chrome 进程的 PID
@@ -55,14 +68,27 @@ async function findChromeByTasklist() {
     }
     return path
   } catch (err) {
-    logger.error('查找 Chrome 浏览器时出错:', err)
+    logger.warn(`找不到 ${executableName}：${err}`)
   }
   return null
 }
 
-export async function findChrome(): Promise<string | null> {
-  // Windows 常见的 Chrome 安装路径
+async function findChrome(): Promise<string | null> {
   const path =
-    (await findChromeByCommonPath()) || (await findChromeByTasklist())
+    (await findChromiumByCommonPath(constants.chrome.commonPaths)) ||
+    (await findChromiumByTasklist(constants.chrome.executableName))
   return path
+}
+
+async function findEdge(): Promise<string | null> {
+  const path =
+    (await findChromiumByCommonPath(constants.edge.commonPaths)) ||
+    (await findChromiumByTasklist(constants.edge.executableName))
+  return path
+}
+
+export async function findChromium(edge = false): Promise<string | null> {
+  const chromePath = await findChrome()
+  const edgePath = await findEdge()
+  return (edge && edgePath) || chromePath || edgePath
 }

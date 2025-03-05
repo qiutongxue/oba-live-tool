@@ -21,7 +21,7 @@ import { createLogger } from './logger'
 import { pageManager } from './taskManager'
 import { setupAIChat } from './tasks/aiChat'
 import { update } from './update'
-import { findChrome } from './utils/checkChrome'
+import { findChromium } from './utils/checkChrome'
 import windowManager from './windowManager'
 import './tasks/liveControl'
 import './tasks/autoMessage'
@@ -145,20 +145,25 @@ ipcMain.handle('open-win', (_, arg) => {
   }
 })
 
-ipcMain.handle(IPC_CHANNELS.chrome.getPath, async () => {
-  const path = await findChrome()
+ipcMain.handle(IPC_CHANNELS.chrome.getPath, async (_, edge = true) => {
+  const path = await findChromium(edge)
   return path
 })
 
 ipcMain.handle(IPC_CHANNELS.chrome.selectPath, async () => {
-  // 打开文件选择器，选择 chrome.exe
+  // 打开文件选择器，选择 chrome.exe/msedge.exe
   const path = await dialog.showOpenDialog({
     properties: ['openFile'],
-    filters: [{ name: 'chrome', extensions: ['exe'] }],
+    filters: [{ name: 'chrome|msedge', extensions: ['exe'] }],
   })
   if (path.filePaths.length > 0) {
-    return path.filePaths[0]
+    const selectedPath = path.filePaths[0]
+    const fileName = selectedPath.toLowerCase().split('\\').pop()
+    if (fileName === 'chrome.exe' || fileName === 'msedge.exe') {
+      return selectedPath
+    }
   }
+  return null
 })
 
 ipcMain.handle(IPC_CHANNELS.chrome.toggleDevTools, event => {
