@@ -38,7 +38,7 @@
 ### 系统要求
 
 - 操作系统：Windows 10 及以上
-- 浏览器：电脑上需要安装 Chrome 浏览器
+- 浏览器：电脑上需要安装 Chrome 或 Edge 浏览器
 - 抖音小店/巨量百应：账号需要能正常进入中控台
 
 ### 下载安装
@@ -52,6 +52,15 @@ git clone https://github.com/qiutongxue/oba-live-tool.git
 cd oba-live-tool
 pnpm install
 pnpm build
+```
+
+> pnpm 10 及以上版本请在 package.json 中添加：
+> ```json
+> {
+>   "pnpm": {
+>     "onlyBuiltDependencies": ["electron"]
+>   }
+> }
 ```
 
 ## 📖 使用方法
