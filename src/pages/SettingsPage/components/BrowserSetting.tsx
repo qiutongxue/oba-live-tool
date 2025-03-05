@@ -1,4 +1,8 @@
 import {
+  SimpleIconsGooglechrome,
+  SimpleIconsMicrosoftedge,
+} from '@/components/icons/simpleIcons'
+import {
   useCurrentChromeConfig,
   useCurrentChromeConfigActions,
 } from '@/hooks/useChromeConfig'
@@ -134,7 +138,7 @@ export function BrowserSetting() {
                 htmlFor="edge-first"
                 className="text-sm text-muted-foreground"
               >
-                优先使用Edge浏览器
+                优先使用 Edge 浏览器
               </Label>
             </div>
           </div>
@@ -155,8 +159,16 @@ export function BrowserSetting() {
               浏览
             </Button>
           </div>
-          <p className="text-sm text-muted-foreground">
-            请选择 chrome.exe 或 msedge.exe
+          <p className="text-sm text-muted-foreground pt-1">
+            请选择
+            <span className="ml-1">
+              <SimpleIconsGooglechrome className="w-4 h-4 inline mx-1" />
+              chrome.exe
+            </span>
+            <span className="before:content-['|'] before:mx-1">
+              <SimpleIconsMicrosoftedge className="w-4 h-4 inline mx-1" />
+              msedge.exe
+            </span>
           </p>
         </div>
 
