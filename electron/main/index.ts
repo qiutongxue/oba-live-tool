@@ -175,3 +175,7 @@ ipcMain.handle(IPC_CHANNELS.chrome.toggleDevTools, event => {
     }
   }
 })
+
+ipcMain.handle(IPC_CHANNELS.app.openLogFolder, () => {
+  shell.openPath(app.getPath('logs'))
+})

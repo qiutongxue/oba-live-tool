@@ -85,6 +85,7 @@ interface MainParamsMapping {
       accountNames: Account[]
     },
   ]
+  [IPC_CHANNELS.app.openLogFolder]: []
 }
 
 interface MainReturnTypeMapping {
@@ -116,6 +117,7 @@ interface MainReturnTypeMapping {
   [IPC_CHANNELS.updater.quitAndInstall]: undefined
   [IPC_CHANNELS.chrome.selectPath]: string
   [IPC_CHANNELS.chrome.getPath]: string
+  [IPC_CHANNELS.app.openLogFolder]: undefined
 }
 
 export interface ElectronAPI {

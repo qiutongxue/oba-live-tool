@@ -54,4 +54,7 @@ export const IPC_CHANNELS = {
     switch: 'account:switch',
   },
   log: 'log',
+  app: {
+    openLogFolder: 'app:openLogFolder',
+  },
 } as const
