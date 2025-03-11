@@ -13,7 +13,7 @@ import { createLogger } from '#/logger'
 const logger = createLogger('LiveController')
 
 export class LiveController {
-  private page: Page
+  protected page: Page
 
   constructor(page: Page) {
     this.page = page
@@ -55,7 +55,7 @@ export class LiveController {
     }
   }
 
-  private async clickPopUpButton(id: number): Promise<'讲解' | '取消讲解'> {
+  protected async clickPopUpButton(id: number): Promise<'讲解' | '取消讲解'> {
     const goodsItem = (await this.page.$$(GOODS_ITEM_SELECTOR))?.[id - 1]
 
     if (!goodsItem) {
@@ -96,5 +96,32 @@ export class LiveController {
       throw new Error('无法点击发布按钮')
     }
     await submit_btn.click()
+  }
+}
+
+export class LocalLiveController  extends LiveController {
+  
+  constructor(page: Page) {
+    super(page)
+  }
+
+  protected async clickPopUpButton(id: number) : Promise<'讲解' | '取消讲解'> {
+    const popUpButtons = await this.page.$$(`[class^="talking-btn"]`)
+    if (!popUpButtons || popUpButtons.length === 0) {
+      throw new Error('找不到讲解按钮，可能未上架商品')
+    }
+    const targetButton = popUpButtons[id - 1]
+    if (!targetButton) {
+      throw new Error(`商品 ${id} 不存在`)
+    }
+    if (await targetButton.evaluate(el => el.className.includes('disabled'))) {
+      throw new Error(`无法点击「讲解」按钮，因为未开播`)
+    }
+    const buttonText = await targetButton?.textContent()
+    if (buttonText !== '讲解' && buttonText !== '取消讲解') {
+      throw new Error(`不是讲解按钮，是 ${buttonText} 按钮`)
+    }
+    await targetButton?.click()
+    return buttonText
   }
 }
