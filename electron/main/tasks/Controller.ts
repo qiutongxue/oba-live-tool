@@ -19,21 +19,6 @@ export class LiveController {
     this.page = page
   }
 
-  public async sendMessage(message: string, pinTop?: boolean) {
-    await this.recoveryLive()
-    const textarea = await this.page.$(COMMENT_TEXTAREA_SELECTOR)
-    if (!textarea) {
-      throw new Error('找不到评论框')
-    }
-
-    await textarea.fill(message)
-    if (pinTop) {
-      await this.clickPinTopButton()
-    }
-    await this.clickSubmitCommentButton()
-    logger.success(`发送${pinTop ? '「置顶」' : ''}消息: ${message}`)
-  }
-
   public async popUp(id: number) {
     await this.recoveryLive()
     // 不用什么 waitFor 了，直接轮询，暴力的才是最好的
@@ -123,5 +108,28 @@ export class LocalLiveController  extends LiveController {
     }
     await targetButton?.click()
     return buttonText
+  }
+
+  public async sendMessage(message: string, pinTop?: boolean) {
+    await this.recoveryLive()
+    const textarea = await this.page.$('textarea[class^="input"]')
+    if (!textarea) {
+      throw new Error('找不到评论框')
+    }
+
+    await textarea.fill(message)
+    await this.clickSendMessageButton()
+    logger.success(`发送消息: ${message}`)
+  }
+
+  private async clickSendMessageButton() {
+    const sendMessageButton = await this.page.$('div[class^="comment-wrap"] div[class^="button"]')
+    if (!sendMessageButton) {
+      throw new Error('找不到发送按钮')
+    }
+    if (await sendMessageButton.evaluate(el => el.className.includes('disable'))) {
+      throw new Error('无法点击发送按钮，可能未输入文字')
+    }
+    await sendMessageButton.click()
   }
 }
