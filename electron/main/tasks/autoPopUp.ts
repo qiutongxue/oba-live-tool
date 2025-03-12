@@ -29,12 +29,11 @@ class PopUpManager {
     private readonly page: Page,
     private account: Account,
     userConfig: PopUpConfig,
-    eos?: boolean
   ) {
     this.validateConfig(userConfig)
     this.config = userConfig
     this.scheduler = this.createTaskScheduler()
-    this.controller = eos ? new LocalLiveController(page) : new LiveController(page)
+    this.controller = pageManager.getContext()?.platform === 'eos' ? new LocalLiveController(page) : new LiveController(page)
   }
 
   private createTaskScheduler() {
