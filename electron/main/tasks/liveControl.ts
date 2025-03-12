@@ -222,7 +222,7 @@ function setupIpcHandlers() {
           cookies,
         })
 
-        pageManager.setContext({ browser, browserContext: context, page })
+        pageManager.setContext({ browser, browserContext: context, page, platform })
 
         return {
           cookies: manager.cookies,
