@@ -32,6 +32,7 @@ interface AutoReplyContext {
   replies: ReplyPreview[]
   comments: Comment[]
   prompt: string
+  autoSend: boolean
 }
 
 interface AutoReplyState {
@@ -49,6 +50,7 @@ interface AutoReplyAction {
     content: string,
   ) => void
   removeReply: (accountId: string, commentId: string) => void
+  setAutoSend: (accountId: string, autoSend: boolean) => void
 }
 
 const defaultPrompt =
@@ -60,6 +62,7 @@ const defaultContext = (): AutoReplyContext => ({
   replies: [],
   comments: [],
   prompt: defaultPrompt,
+  autoSend: false,
 })
 
 export const useAutoReplyStore = create<AutoReplyState & AutoReplyAction>()(
@@ -134,6 +137,13 @@ export const useAutoReplyStore = create<AutoReplyState & AutoReplyAction>()(
               accountId
             ].replies.filter(reply => reply.commentId !== commentId)
           }),
+        setAutoSend: (accountId, autoSend) =>
+          set(state => {
+            if (!state.contexts[accountId]) {
+              state.contexts[accountId] = defaultContext()
+            }
+            state.contexts[accountId].autoSend = autoSend
+          }),
       }
     }),
     {
@@ -141,12 +151,13 @@ export const useAutoReplyStore = create<AutoReplyState & AutoReplyAction>()(
       version: 1,
       partialize: state => {
         return {
-          // 只存 prompt
           contexts: Object.fromEntries(
             Object.entries(state.contexts).map(([accountId, context]) => [
-              // [accountId, context { prompt }]
               accountId,
-              { prompt: context.prompt },
+              { 
+                prompt: context.prompt,
+                autoSend: context.autoSend
+              },
             ]),
           ),
         }
@@ -221,6 +232,7 @@ export function useAutoReply() {
     setIsRunning,
     setIsListening,
     setPrompt,
+    setAutoSend,
   } = useAutoReplyStore()
   const { currentAccountId } = useAccounts()
   const aiStore = useAIChatStore()
@@ -229,11 +241,11 @@ export function useAutoReply() {
     () => contexts[currentAccountId] || defaultContext(),
     [contexts, currentAccountId],
   )
-  const { isRunning, isListening, comments, replies, prompt } = context
+  const { isRunning, isListening, comments, replies, prompt, autoSend } = context
 
   const handleComment = useMemoizedFn((comment: Comment, accountId: string) => {
     const context = contexts[accountId] || defaultContext()
-    const { isRunning, comments, replies, prompt } = context
+    const { isRunning, comments, replies, prompt, autoSend } = context
 
     addComment(accountId, comment)
     // 如果是主播评论就跳过
@@ -269,6 +281,15 @@ export function useAutoReply() {
       .then(reply => {
         if (reply && typeof reply === 'string') {
           addReply(accountId, comment.id, comment.nickname, reply)
+          
+          // 如果开启了自动发送，则自动发送回复
+          if (autoSend) {
+            window.ipcRenderer
+              .invoke(IPC_CHANNELS.tasks.autoReply.sendReply, reply)
+              .catch(err => {
+                console.error('自动发送回复失败:', err)
+              })
+          }
         }
       })
       .catch(err => {
@@ -283,10 +304,12 @@ export function useAutoReply() {
     comments,
     replies,
     prompt,
+    autoSend,
     setIsRunning: (isRunning: boolean) =>
       setIsRunning(currentAccountId, isRunning),
     setIsListening: (isListening: ListeningStatus) =>
       setIsListening(currentAccountId, isListening),
     setPrompt: (prompt: string) => setPrompt(currentAccountId, prompt),
+    setAutoSend: (autoSend: boolean) => setAutoSend(currentAccountId, autoSend),
   }
 }
