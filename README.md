@@ -31,7 +31,7 @@
 
 💃 **AI 自动回复**：实时监听直播互动评论、自动生成回复内容
 
-🤖 **AI 智能助理**：接入 DeepSeek，支持官方、OpenRouter、硅基流动三种入口
+🤖 **AI 智能助理**：接入 DeepSeek，支持官方、OpenRouter、硅基流动、火山引擎等多种支持 openai 接口的提供商
 
 ## 🚀 快速开始
 
@@ -54,7 +54,7 @@ pnpm install
 pnpm build
 ```
 
-> pnpm 10 及以上版本请在 package.json 中添加：
+> pnpm 10 及以上版本请在 package.json 中添加以下配置后再执行 `pnpm install`：
 > ```json
 > {
 >   "pnpm": {
@@ -85,12 +85,14 @@ pnpm build
 
 想要使用 AI 功能，需要先设置 API KEY。
 
-软件目前只支持以下四个提供商的文生文模型（~~其实理论上兼容 openai 库的都能用，但是我还没搞自定义~~）：
+软件提供了四种 DeepSeek 模型的预设：
 
 - [DeepSeek](https://platform.deepseek.com/)
 - [OpenRouter](https://openrouter.ai/)
 - [硅基流动](https://www.siliconflow.cn/)
 - [火山引擎](https://console.volcengine.com/ark/)
+
+除此之外，「自定义」还支持几乎任何兼容 openai 对话模型接口的服务。
 
 在 「AI 助手」或「自动回复」的页面，点击「配置 API Key」按钮，就能选择自己需要的提供商和模型了。
 
