@@ -14,6 +14,7 @@ interface ChromeConfig {
   cookies: {
     buyin: string
     douyin: string
+    eos: string
   }
 }
 
@@ -32,6 +33,7 @@ const defaultContext = (): ChromeConfig => ({
   cookies: {
     buyin: '',
     douyin: '',
+    eos: '',
   },
 })
 
@@ -60,7 +62,7 @@ export const useChromeConfigStore = create<ChromeConfigStore>()(
     })),
     {
       name: 'chrome-config',
-      version: 2,
+      version: 3,
       migrate: (persistedState, version) => {
         if (version === 0) {
           const persisted = persistedState as ChromeConfigV1
@@ -71,6 +73,7 @@ export const useChromeConfigStore = create<ChromeConfigStore>()(
                 cookies: {
                   buyin: '',
                   douyin: persisted?.cookies || '',
+                  eos: '',
                 },
               },
             },
@@ -89,6 +92,7 @@ export const useChromeConfigStore = create<ChromeConfigStore>()(
                   cookies: {
                     buyin: '',
                     douyin: context.cookies,
+                    eos: '',
                   },
                 },
               ]),

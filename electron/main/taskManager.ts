@@ -9,6 +9,7 @@ interface Context {
   page: Page
   browser: Browser
   browserContext: BrowserContext
+  platform: string
   tasks: Record<string, Scheduler>
 }
 

@@ -7,7 +7,7 @@ import type { Account } from '#/taskManager'
 import { pageManager } from '#/taskManager'
 import { randomInt } from '#/utils'
 import windowManager from '#/windowManager'
-import { LiveController } from './Controller'
+import { LiveController, LocalLiveController } from './Controller'
 import type { BaseConfig } from './scheduler'
 import { TaskScheduler } from './scheduler'
 
@@ -33,7 +33,7 @@ class PopUpManager {
     this.validateConfig(userConfig)
     this.config = userConfig
     this.scheduler = this.createTaskScheduler()
-    this.controller = new LiveController(page)
+    this.controller = pageManager.getContext()?.platform === 'eos' ? new LocalLiveController(page) : new LiveController(page)
   }
 
   private createTaskScheduler() {
