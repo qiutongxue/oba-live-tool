@@ -14,6 +14,7 @@ import React from 'react'
 const platforms = {
   douyin: '抖音小店',
   buyin: '巨量百应',
+  eos: '抖音团购',
 } as const
 
 const PlatformSelect = React.memo(() => {
