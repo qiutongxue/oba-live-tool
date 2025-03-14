@@ -19,6 +19,21 @@ export class LiveController {
     this.page = page
   }
 
+  public async sendMessage(message: string, pinTop?: boolean) {
+    await this.recoveryLive()
+    const textarea = await this.page.$(COMMENT_TEXTAREA_SELECTOR)
+    if (!textarea) {
+      throw new Error('找不到评论框')
+    }
+
+    await textarea.fill(message)
+    if (pinTop) {
+      await this.clickPinTopButton()
+    }
+    await this.clickSubmitCommentButton()
+    logger.success(`发送${pinTop ? '「置顶」' : ''}消息: ${message}`)
+  }
+
   public async popUp(id: number) {
     await this.recoveryLive()
     // 不用什么 waitFor 了，直接轮询，暴力的才是最好的
