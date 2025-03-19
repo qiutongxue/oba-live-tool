@@ -11,9 +11,7 @@ import { LiveController, LocalLiveController } from './Controller'
 import type { BaseConfig } from './scheduler'
 import { TaskScheduler } from './scheduler'
 
-
 const TASK_NAME = '自动发言'
-const logger = createLogger(TASK_NAME)
 
 interface Message {
   id: string
@@ -32,16 +30,21 @@ class MessageManager {
   private config: MessageConfig
   private readonly scheduler: TaskScheduler
   private controller: LiveController
+  private logger: ReturnType<typeof createLogger>
 
   constructor(
     private readonly page: Page,
     private account: Account,
     userConfig: MessageConfig,
   ) {
+    this.logger = createLogger(`${TASK_NAME} @${account.name}`)
     this.validateConfig(userConfig)
     this.config = userConfig
     this.scheduler = this.createTaskScheduler()
-    this.controller = pageManager.getContext()?.platform === 'eos' ? new LocalLiveController(page) : new LiveController(page)
+    this.controller =
+      pageManager.getContext()?.platform === 'eos'
+        ? new LocalLiveController(page, this.logger)
+        : new LiveController(page, this.logger)
   }
 
   private createTaskScheduler() {
@@ -49,9 +52,9 @@ class MessageManager {
       TASK_NAME,
       () => this.execute(),
       merge({}, this.config.scheduler, {
-        onStart: () => logger.info(`「${TASK_NAME}」开始执行`),
+        onStart: () => this.logger.info('任务开始执行'),
         onStop: () => {
-          logger.info(`「${TASK_NAME}」停止执行`)
+          this.logger.info('任务停止执行')
           windowManager.sendToWindow(
             'main',
             IPC_CHANNELS.tasks.autoMessage.stop,
@@ -59,6 +62,7 @@ class MessageManager {
           )
         },
       }),
+      this.logger,
     )
   }
 
@@ -78,8 +82,8 @@ class MessageManager {
       const isPinTop = message.pinTop
       await this.controller.sendMessage(message.content, isPinTop)
     } catch (e) {
-      logger.error(
-        `「${TASK_NAME}」执行失败: ${e instanceof Error ? e.message : String(e)}`,
+      this.logger.error(
+        `执行失败: ${e instanceof Error ? e.message : String(e)}`,
       )
       throw e
     }
@@ -103,7 +107,9 @@ class MessageManager {
       throw new Error('配置验证失败：计时器区间设置错误')
     }
 
-    logger.info(`消息配置验证通过，共加载 ${userConfig.messages.length} 条消息`)
+    this.logger.info(
+      `消息配置验证通过，共加载 ${userConfig.messages.length} 条消息`,
+    )
   }
 
   public start() {
@@ -146,6 +152,9 @@ function setupIpcHandlers() {
       pageManager.startTask(TASK_NAME)
       return true
     } catch (error) {
+      const logger = createLogger(
+        `${TASK_NAME} @${pageManager.currentAccountName}`,
+      )
       logger.error(
         '启动自动发言失败:',
         error instanceof Error ? error.message : error,

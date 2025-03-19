@@ -1,7 +1,5 @@
 import { createLogger } from '#/logger'
 
-const logger = createLogger('Scheduler')
-
 export interface SchedulerConfig {
   interval: [number, number]
   maxRetries?: number
@@ -26,15 +24,17 @@ export class TaskScheduler implements Scheduler {
   private readonly executor: () => Promise<void>
   private config: SchedulerConfig
   private readonly name: string
-
+  private logger: ReturnType<typeof createLogger>
   constructor(
     name: string,
     executor: () => Promise<void>,
     config: SchedulerConfig,
+    logger?: ReturnType<typeof createLogger>
   ) {
     this.name = name
     this.executor = executor
     this.config = config
+    this.logger = logger ?? createLogger('Scheduler')
   }
 
   private calculateNextInterval(): number {
@@ -53,7 +53,7 @@ export class TaskScheduler implements Scheduler {
     try {
       await this.executor()
     } catch (error) {
-      logger.error(`执行「${this.name}」失败:`, error)
+      this.logger.error(`执行「${this.name}」失败:`, error)
       this.stop()
       return
     }
@@ -65,7 +65,7 @@ export class TaskScheduler implements Scheduler {
 
   private scheduleNext(delay: number) {
     this.clearTimer()
-    logger.info(`下次执行「${this.name}」将在 ${delay / 1000} 秒后`)
+    this.logger.info(`下次执行「${this.name}」将在 ${delay / 1000} 秒后`)
     this.timerId = setTimeout(() => this.executeTask(), delay)
   }
 

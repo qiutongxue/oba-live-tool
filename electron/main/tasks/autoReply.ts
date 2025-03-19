@@ -9,7 +9,6 @@ import windowManager from '#/windowManager'
 import { LiveController } from './Controller'
 
 const TASK_NAME = '监听评论'
-const logger = createLogger(TASK_NAME)
 
 declare global {
   interface Window {
@@ -33,12 +32,13 @@ class CommentManager {
   public isRunning = false
   private handlerInitialized = false
   private intervalTimer: NodeJS.Timeout | null = null
-
+  private logger: ReturnType<typeof createLogger>
   constructor(
     private readonly page: Page,
     private account: Account,
   ) {
     if (!page) throw new Error('Page not initialized')
+    this.logger = createLogger(`${TASK_NAME} @${account.name}`)
     this.controller = new LiveController(page)
   }
 
@@ -49,7 +49,9 @@ class CommentManager {
       await this.page.exposeFunction(
         'handleNewComment',
         (comment: CommentData) => {
-          logger.info(`【新评论】<${comment.nickname}>: ${comment.content}`)
+          this.logger.info(
+            `【新评论】<${comment.nickname}>: ${comment.content}`,
+          )
           windowManager.sendToWindow(
             'main',
             IPC_CHANNELS.tasks.autoReply.showComment,
@@ -186,7 +188,7 @@ class CommentManager {
 
   public async start() {
     if (this.isRunning) {
-      logger.warn('评论监听已在运行中')
+      this.logger.warn('评论监听已在运行中')
       return
     }
     // 立即设置为 true，如果在 start 完成时再设置，下面异步任务执行的过程中有可能会被再次调用 start，导致执行两遍
@@ -213,7 +215,7 @@ class CommentManager {
         5 * 60 * 1000,
       )
 
-      logger.success('评论监听启动成功')
+      this.logger.success('评论监听启动成功')
     } catch (error) {
       // 确保出错时状态正确
       this.isRunning = false
@@ -223,7 +225,7 @@ class CommentManager {
 
   public async stop() {
     if (!this.isRunning) {
-      logger.warn('评论监听已经停止')
+      this.logger.warn('评论监听已经停止')
       return
     }
 
@@ -242,9 +244,9 @@ class CommentManager {
         'main',
         IPC_CHANNELS.tasks.autoReply.stopCommentListener,
       )
-      logger.success('评论监听已停止')
+      this.logger.success('评论监听已停止')
     } catch (error) {
-      logger.error(
+      this.logger.error(
         '停止评论监听失败:',
         error instanceof Error ? error.message : String(error),
       )
@@ -261,6 +263,9 @@ function setupIpcHandlers() {
   ipcMain.handle(
     IPC_CHANNELS.tasks.autoReply.startCommentListener,
     async () => {
+      const logger = createLogger(
+        `${TASK_NAME} @${pageManager.currentAccountName}`,
+      )
       try {
         if (!pageManager.contains(TASK_NAME)) {
           logger.debug('注册监听评论任务')
@@ -283,6 +288,9 @@ function setupIpcHandlers() {
   )
 
   ipcMain.handle(IPC_CHANNELS.tasks.autoReply.stopCommentListener, async () => {
+    const logger = createLogger(
+      `${TASK_NAME} @${pageManager.currentAccountName}`,
+    )
     try {
       pageManager.stopTask(TASK_NAME)
       return true
@@ -296,6 +304,9 @@ function setupIpcHandlers() {
   })
 
   ipcMain.handle(IPC_CHANNELS.tasks.autoReply.sendReply, async (_, message) => {
+    const logger = createLogger(
+      `${TASK_NAME} @${pageManager.currentAccountName}`,
+    )
     try {
       const page = pageManager.getPage()
       const controller = new LiveController(page)

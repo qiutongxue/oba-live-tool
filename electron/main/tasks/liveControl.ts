@@ -10,7 +10,6 @@ import { createLogger } from '../logger'
 import { findChromium } from '../utils/checkChrome'
 
 const TASK_NAME = '中控台'
-const logger = createLogger(TASK_NAME)
 
 interface BrowserConfig {
   headless?: boolean
@@ -27,10 +26,12 @@ class LiveControlManager {
   private chromePath: string | null = null
   private newCookies: string | null = null
   private loginConstants: LoginConstants
+  private logger: ReturnType<typeof createLogger>
 
   constructor(private platform: keyof typeof loginConstants) {
     this.loginConstants = loginConstants[platform] || loginConstants.douyin
     chromium.use(stealth())
+    this.logger = createLogger(TASK_NAME)
   }
 
   private async initChromePath() {
@@ -60,7 +61,7 @@ class LiveControlManager {
     cookiesString: string,
   ): Promise<boolean> {
     if (!cookiesString) {
-      logger.debug('cookies 不存在')
+      this.logger.debug('cookies 不存在')
       return false
     }
 
@@ -69,7 +70,7 @@ class LiveControlManager {
       await context.addCookies(cookies)
       return true
     } catch (error) {
-      logger.error(
+      this.logger.error(
         '加载 cookies 失败:',
         error instanceof Error ? error.message : String(error),
       )
@@ -108,7 +109,7 @@ class LiveControlManager {
     session: BrowserSession,
     headless: boolean,
   ): Promise<BrowserSession | null> {
-    logger.info('需要登录，请在打开的浏览器中完成登录')
+    this.logger.info('需要登录，请在打开的浏览器中完成登录')
     if (headless) return this.handleHeadlessLogin(session)
 
     await session.page.goto(this.loginConstants.loginUrl)
@@ -131,7 +132,7 @@ class LiveControlManager {
     headless = true,
     cookies = '',
   }: BrowserConfig): Promise<BrowserSession & { accountName: string | null }> {
-    logger.info('启动中……')
+    this.logger.info('启动中……')
 
     let loginSuccess = false
     let session: BrowserSession | null = null
@@ -157,7 +158,7 @@ class LiveControlManager {
           ),
         ])
 
-        logger.debug(`当前页面: ${session.page.url()}`)
+        this.logger.debug(`当前页面: ${session.page.url()}`)
 
         // 检查是否需要登录
         if (this.loginConstants.loginUrlRegex.test(session.page.url())) {
@@ -170,7 +171,7 @@ class LiveControlManager {
         await this.saveCookies(session.context)
         loginSuccess = true
       } catch (error) {
-        logger.error(
+        this.logger.error(
           '连接失败:',
           error instanceof Error ? error.message : String(error),
         )
@@ -182,10 +183,11 @@ class LiveControlManager {
     if (!session) throw new Error('会话创建失败')
 
     // 获取当前登录的账号
+    await session.page.waitForSelector(this.loginConstants.accountNameSelector)
     const accountName = await session.page
       .$(this.loginConstants.accountNameSelector)
       .then(el => el?.textContent())
-    logger.success(`登录成功，当前账号为「${accountName}」`)
+    this.logger.success(`登录成功，当前账号为「${accountName}」`)
     return {
       ...session,
       accountName: accountName || null,
@@ -222,13 +224,19 @@ function setupIpcHandlers() {
           cookies,
         })
 
-        pageManager.setContext({ browser, browserContext: context, page, platform })
+        pageManager.setContext({
+          browser,
+          browserContext: context,
+          page,
+          platform,
+        })
 
         return {
           cookies: manager.cookies,
           accountName,
         }
       } catch (error) {
+        const logger = createLogger(TASK_NAME)
         logger.error(
           '连接直播控制台失败:',
           error instanceof Error ? error.message : String(error),
