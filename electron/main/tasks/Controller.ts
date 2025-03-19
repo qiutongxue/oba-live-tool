@@ -1,4 +1,4 @@
-import type { Page } from 'playwright'
+import type { ElementHandle, Page } from 'playwright'
 import {
   COMMENT_TEXTAREA_SELECTOR,
   GOODS_ACTION_SELECTOR,
@@ -10,13 +10,13 @@ import {
 } from '#/constants'
 import { createLogger } from '#/logger'
 
-const logger = createLogger('LiveController')
-
 export class LiveController {
   protected page: Page
+  protected logger: ReturnType<typeof createLogger>
 
-  constructor(page: Page) {
+  constructor(page: Page, logger?: ReturnType<typeof createLogger>) {
     this.page = page
+    this.logger = logger ?? createLogger('LiveController')
   }
 
   public async sendMessage(message: string, pinTop?: boolean) {
@@ -31,17 +31,17 @@ export class LiveController {
       await this.clickPinTopButton()
     }
     await this.clickSubmitCommentButton()
-    logger.success(`发送${pinTop ? '「置顶」' : ''}消息: ${message}`)
+    this.logger.success(`发送${pinTop ? '「置顶」' : ''}消息: ${message}`)
   }
 
   public async popUp(id: number) {
     await this.recoveryLive()
     // 不用什么 waitFor 了，直接轮询，暴力的才是最好的
     while ((await this.clickPopUpButton(id)) === '取消讲解') {
-      logger.info(`商品 ${id} 取消讲解`)
+      this.logger.info(`商品 ${id} 取消讲解`)
       await new Promise(resolve => setTimeout(resolve, 1000))
     }
-    logger.success(`商品 ${id} 讲解成功`)
+    this.logger.success(`商品 ${id} 讲解成功`)
   }
 
   public async recoveryLive() {
@@ -55,12 +55,18 @@ export class LiveController {
     }
   }
 
-  protected async clickPopUpButton(id: number): Promise<'讲解' | '取消讲解'> {
-    const goodsItem = (await this.page.$$(GOODS_ITEM_SELECTOR))?.[id - 1]
-
-    if (!goodsItem) {
-      throw new Error(`商品 ${id} 不存在`)
+  private async clickPopUpButton(id: number): Promise<'讲解' | '取消讲解'> {
+    const button = await this.getPopUpButton(id)
+    const buttonText = await button.textContent()
+    if (buttonText !== '取消讲解' && buttonText !== '讲解') {
+      throw new Error(`不是讲解按钮，是 ${buttonText} 按钮`)
     }
+    await button.click()
+    return buttonText
+  }
+
+  protected async getPopUpButton(id: number) {
+    const goodsItem = await this.findGoodsItemById(id)
     const goodsAction = await goodsItem.$(GOODS_ACTION_SELECTOR)
     if (!goodsAction) {
       throw new Error('找不到商品操作按钮')
@@ -71,12 +77,73 @@ export class LiveController {
     if (!button) {
       throw new Error('找不到讲解按钮')
     }
-    const buttonText = await button.textContent()
-    if (buttonText !== '取消讲解' && buttonText !== '讲解') {
-      throw new Error(`不是讲解按钮，是 ${buttonText} 按钮`)
+    return button
+  }
+
+  private async findGoodsItemById(
+    id: number,
+    prevScrollTop = 0,
+  ): Promise<ElementHandle<SVGElement | HTMLElement>> {
+    const { element, found } = await this.getCurrentGoodsItem(id)
+    if (found) {
+      return element
     }
-    await button.click()
-    return buttonText
+    // 往上滚到头或往下滚到头，触发列表加载
+    await element.scrollIntoViewIfNeeded()
+    const scrollContainer = await this.getGoodsItemsScrollContainer()
+    if (!scrollContainer) {
+      throw new Error('找不到滚动容器？ Amazing!')
+    }
+    // TODO: 是不是要等待一会？等新的商品加载完？
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    const currentScrollTop = await scrollContainer.evaluate(el => el.scrollTop)
+    // 没法滚了，说明加载完了还找不到东西
+    if (currentScrollTop === prevScrollTop) {
+      throw new Error('找不到商品，请确认商品 id 是否正确')
+    }
+    return this.findGoodsItemById(id, currentScrollTop)
+  }
+
+  private async getCurrentGoodsItem(id: number) {
+    const currentGoodsItems = await this.page.$$(GOODS_ITEM_SELECTOR)
+    const firstGoodsItem = currentGoodsItems[0]
+    if (!firstGoodsItem) {
+      throw new Error('没有上架任何商品')
+    }
+    const firstIdInput = await firstGoodsItem.$(
+      `div[class^="indexWrapper"] input`,
+    )
+    const firstIdValue = Number.parseInt(
+      (await firstIdInput?.evaluate(el => (el as HTMLInputElement).value)) ??
+        '',
+    )
+    if (id < firstIdValue) {
+      this.logger.warn(
+        `商品 ${id} 不在当前商品的范围 [${firstIdValue} ~ ${firstIdValue + currentGoodsItems.length - 1}]，继续查找中...`,
+      )
+      // 需要往上滚
+      return {
+        element: currentGoodsItems[0],
+      }
+    }
+    if (id >= firstIdValue + currentGoodsItems.length) {
+      this.logger.warn(
+        `商品 ${id} 不在当前商品的范围 [${firstIdValue} ~ ${firstIdValue + currentGoodsItems.length - 1}]，继续查找中...`,
+      )
+      // 需要往下滚
+      return {
+        element: currentGoodsItems[currentGoodsItems.length - 1],
+      }
+    }
+    // 找到了
+    return {
+      element: currentGoodsItems[id - firstIdValue],
+      found: true,
+    }
+  }
+
+  protected async getGoodsItemsScrollContainer() {
+    return this.page.$('#live-control-goods-list-container div')
   }
 
   private async clickPinTopButton() {
@@ -99,13 +166,8 @@ export class LiveController {
   }
 }
 
-export class LocalLiveController  extends LiveController {
-  
-  constructor(page: Page) {
-    super(page)
-  }
-
-  protected async clickPopUpButton(id: number) : Promise<'讲解' | '取消讲解'> {
+export class LocalLiveController extends LiveController {
+  protected async getPopUpButton(id: number) {
     const popUpButtons = await this.page.$$(`[class^="talking-btn"]`)
     if (!popUpButtons || popUpButtons.length === 0) {
       throw new Error('找不到讲解按钮，可能未上架商品')
@@ -115,14 +177,9 @@ export class LocalLiveController  extends LiveController {
       throw new Error(`商品 ${id} 不存在`)
     }
     if (await targetButton.evaluate(el => el.className.includes('disabled'))) {
-      throw new Error(`无法点击「讲解」按钮，因为未开播`)
+      throw new Error('无法点击「讲解」按钮，因为未开播')
     }
-    const buttonText = await targetButton?.textContent()
-    if (buttonText !== '讲解' && buttonText !== '取消讲解') {
-      throw new Error(`不是讲解按钮，是 ${buttonText} 按钮`)
-    }
-    await targetButton?.click()
-    return buttonText
+    return targetButton as ElementHandle<HTMLButtonElement>
   }
 
   public async sendMessage(message: string, pinTop?: boolean) {
@@ -134,15 +191,19 @@ export class LocalLiveController  extends LiveController {
 
     await textarea.fill(message)
     await this.clickSendMessageButton()
-    logger.success(`发送消息: ${message}`)
+    this.logger.success(`发送消息: ${message}`)
   }
 
   private async clickSendMessageButton() {
-    const sendMessageButton = await this.page.$('div[class^="comment-wrap"] div[class^="button"]')
+    const sendMessageButton = await this.page.$(
+      'div[class^="comment-wrap"] div[class^="button"]',
+    )
     if (!sendMessageButton) {
       throw new Error('找不到发送按钮')
     }
-    if (await sendMessageButton.evaluate(el => el.className.includes('disable'))) {
+    if (
+      await sendMessageButton.evaluate(el => el.className.includes('disable'))
+    ) {
       throw new Error('无法点击发送按钮，可能未输入文字')
     }
     await sendMessageButton.click()
