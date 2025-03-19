@@ -61,7 +61,8 @@ export class LiveController {
     if (buttonText !== '取消讲解' && buttonText !== '讲解') {
       throw new Error(`不是讲解按钮，是 ${buttonText} 按钮`)
     }
-    await button.click()
+    // await button.scrollIntoViewIfNeeded()
+    await button.dispatchEvent('click')
     return buttonText
   }
 
