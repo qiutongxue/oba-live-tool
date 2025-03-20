@@ -9,29 +9,42 @@ import {
   SUBMIT_COMMENT_SELECTOR,
 } from '#/constants'
 import { createLogger } from '#/logger'
+import { pageManager } from '#/taskManager'
 
 export class LiveController {
   protected page: Page
   protected logger: ReturnType<typeof createLogger>
+  protected elementFinder: LiveControlElementFinder
 
   constructor(page: Page, logger?: ReturnType<typeof createLogger>) {
     this.page = page
     this.logger = logger ?? createLogger('LiveController')
+    const platform = pageManager.getContext()?.platform
+    if (platform === 'eos') {
+      this.elementFinder = new EOSLiveControlElementFinder(page)
+    } else {
+      this.elementFinder = new BuyinLiveControlElementFinder(page)
+    }
   }
 
   public async sendMessage(message: string, pinTop?: boolean) {
     await this.recoveryLive()
-    const textarea = await this.page.$(COMMENT_TEXTAREA_SELECTOR)
+    const textarea = await this.elementFinder.getCommentTextarea()
     if (!textarea) {
       throw new Error('找不到评论框')
     }
 
     await textarea.fill(message)
+
+    let successPinTop = false
     if (pinTop) {
-      await this.clickPinTopButton()
+      successPinTop = await this.clickPinTopButton()
     }
+
     await this.clickSubmitCommentButton()
-    this.logger.success(`发送${pinTop ? '「置顶」' : ''}消息: ${message}`)
+    this.logger.success(
+      `发送${successPinTop ? '「置顶」' : ''}消息: ${message}`,
+    )
   }
 
   public async popUp(id: number) {
@@ -56,7 +69,7 @@ export class LiveController {
   }
 
   private async clickPopUpButton(id: number): Promise<'讲解' | '取消讲解'> {
-    const button = await this.getPopUpButton(id)
+    const button = await this.getPopUpButtonById(id)
     const buttonText = await button.textContent()
     if (buttonText !== '取消讲解' && buttonText !== '讲解') {
       throw new Error(`不是讲解按钮，是 ${buttonText} 按钮`)
@@ -66,18 +79,10 @@ export class LiveController {
     return buttonText
   }
 
-  protected async getPopUpButton(id: number) {
+  protected async getPopUpButtonById(id: number) {
     const goodsItem = await this.findGoodsItemById(id)
-    const goodsAction = await goodsItem.$(GOODS_ACTION_SELECTOR)
-    if (!goodsAction) {
-      throw new Error('找不到商品操作按钮')
-    }
-    // 默认获取第一个元素，就是讲解按钮所在的位置
-    const presBtnWrap = await goodsAction.$(`div[class*="wrapper"]:has(button)`)
-    const button = await presBtnWrap?.$('button')
-    if (!button) {
-      throw new Error('找不到讲解按钮')
-    }
+    const button =
+      await this.elementFinder.getPopUpButtonFromGoodsItem(goodsItem)
     return button
   }
 
@@ -91,33 +96,36 @@ export class LiveController {
     }
     // 往上滚到头或往下滚到头，触发列表加载
     await element.scrollIntoViewIfNeeded()
-    const scrollContainer = await this.getGoodsItemsScrollContainer()
+
+    const scrollContainer =
+      await this.elementFinder.getGoodsItemsScrollContainer()
     if (!scrollContainer) {
-      throw new Error('找不到滚动容器？ Amazing!')
+      throw new Error('找不到滚动容器？')
     }
-    // TODO: 是不是要等待一会？等新的商品加载完？
+
+    // 等待 1 秒，等新的商品加载完
     await new Promise(resolve => setTimeout(resolve, 1000))
     const currentScrollTop = await scrollContainer.evaluate(el => el.scrollTop)
     // 没法滚了，说明加载完了还找不到东西
-    if (currentScrollTop === prevScrollTop) {
+    if (
+      prevScrollTop - 10 <= currentScrollTop &&
+      currentScrollTop <= prevScrollTop + 10
+    ) {
       throw new Error('找不到商品，请确认商品 id 是否正确')
     }
     return this.findGoodsItemById(id, currentScrollTop)
   }
 
   private async getCurrentGoodsItem(id: number) {
-    const currentGoodsItems = await this.page.$$(GOODS_ITEM_SELECTOR)
+    const currentGoodsItems =
+      await this.elementFinder.getCurrentGoodsItemsList()
     const firstGoodsItem = currentGoodsItems[0]
     if (!firstGoodsItem) {
       throw new Error('没有上架任何商品')
     }
-    const firstIdInput = await firstGoodsItem.$(
-      `div[class^="indexWrapper"] input`,
-    )
-    const firstIdValue = Number.parseInt(
-      (await firstIdInput?.evaluate(el => (el as HTMLInputElement).value)) ??
-        '',
-    )
+    const firstIdValue =
+      await this.elementFinder.getIdFromGoodsItem(firstGoodsItem)
+
     if (id < firstIdValue) {
       this.logger.warn(
         `商品 ${id} 不在当前商品的范围 [${firstIdValue} ~ ${firstIdValue + currentGoodsItems.length - 1}]，继续查找中...`,
@@ -143,19 +151,67 @@ export class LiveController {
     }
   }
 
-  protected async getGoodsItemsScrollContainer() {
-    return this.page.$('#live-control-goods-list-container div')
-  }
-
   private async clickPinTopButton() {
-    const pinTopLabel = await this.page.$(PIN_TOP_SELECTOR)
+    const pinTopLabel = await this.elementFinder.getPinTopLabel()
     if (!pinTopLabel) {
-      throw new Error('找不到置顶按钮')
+      this.logger.warn('找不到置顶选项，不进行置顶')
+      return false
     }
-    await pinTopLabel.click()
+    await pinTopLabel.dispatchEvent('click')
+    return true
   }
 
   private async clickSubmitCommentButton() {
+    const submit_btn =
+      await this.elementFinder.getClickableSubmitCommentButton()
+    if (!submit_btn) {
+      throw new Error('无法点击发布按钮')
+    }
+    await submit_btn.dispatchEvent('click')
+  }
+}
+
+abstract class LiveControlElementFinder {
+  protected page: Page
+
+  constructor(page: Page) {
+    this.page = page
+  }
+
+  public abstract getPopUpButtonFromGoodsItem(
+    item: ElementHandle<SVGElement | HTMLElement>,
+  ): Promise<ElementHandle<HTMLButtonElement>>
+  public abstract getIdFromGoodsItem(
+    item: ElementHandle<SVGElement | HTMLElement>,
+  ): Promise<number>
+  public abstract getCurrentGoodsItemsList(): Promise<
+    ElementHandle<SVGElement | HTMLElement>[]
+  >
+  public abstract getGoodsItemsScrollContainer(): Promise<ElementHandle<
+    SVGElement | HTMLElement
+  > | null>
+  public abstract getCommentTextarea(): Promise<ElementHandle<
+    SVGElement | HTMLElement
+  > | null>
+  public abstract getClickableSubmitCommentButton(): Promise<ElementHandle<
+    SVGElement | HTMLElement
+  > | null>
+  public abstract getPinTopLabel(): Promise<ElementHandle<
+    SVGElement | HTMLElement
+  > | null>
+}
+
+class BuyinLiveControlElementFinder extends LiveControlElementFinder {
+  public async getPinTopLabel(): Promise<ElementHandle<
+    SVGElement | HTMLElement
+  > | null> {
+    const pinTopLabel = await this.page.$(PIN_TOP_SELECTOR)
+    return pinTopLabel
+  }
+
+  public async getClickableSubmitCommentButton(): Promise<ElementHandle<
+    SVGElement | HTMLElement
+  > | null> {
     const submit_btn = await this.page.$(SUBMIT_COMMENT_SELECTOR)
     if (
       !submit_btn ||
@@ -163,39 +219,57 @@ export class LiveController {
     ) {
       throw new Error('无法点击发布按钮')
     }
-    await submit_btn.click()
+    return submit_btn
+  }
+
+  public async getPopUpButtonFromGoodsItem(
+    item: ElementHandle<SVGElement | HTMLElement>,
+  ): Promise<ElementHandle<HTMLButtonElement>> {
+    const goodsAction = await item.$(GOODS_ACTION_SELECTOR)
+    if (!goodsAction) {
+      throw new Error('找不到商品操作按钮')
+    }
+    // 默认获取第一个元素，就是讲解按钮所在的位置
+    const presBtnWrap = await goodsAction.$(`div[class*="wrapper"]:has(button)`)
+    const button = await presBtnWrap?.$('button')
+    if (!button) {
+      throw new Error('找不到讲解按钮')
+    }
+    return button
+  }
+
+  public async getGoodsItemsScrollContainer() {
+    return this.page.$('#live-control-goods-list-container div')
+  }
+
+  public async getCurrentGoodsItemsList() {
+    return this.page.$$(GOODS_ITEM_SELECTOR)
+  }
+
+  public async getIdFromGoodsItem(
+    item: ElementHandle<SVGElement | HTMLElement>,
+  ) {
+    const idInput = await item.$(`div[class^="indexWrapper"] input`)
+    return Number.parseInt(
+      (await idInput?.evaluate(el => (el as HTMLInputElement).value)) ?? '',
+    )
+  }
+
+  public async getCommentTextarea() {
+    return this.page.$(COMMENT_TEXTAREA_SELECTOR)
   }
 }
 
-export class LocalLiveController extends LiveController {
-  protected async getPopUpButton(id: number) {
-    const popUpButtons = await this.page.$$(`[class^="talking-btn"]`)
-    if (!popUpButtons || popUpButtons.length === 0) {
-      throw new Error('找不到讲解按钮，可能未上架商品')
-    }
-    const targetButton = popUpButtons[id - 1]
-    if (!targetButton) {
-      throw new Error(`商品 ${id} 不存在`)
-    }
-    if (await targetButton.evaluate(el => el.className.includes('disabled'))) {
-      throw new Error('无法点击「讲解」按钮，因为未开播')
-    }
-    return targetButton as ElementHandle<HTMLButtonElement>
+class EOSLiveControlElementFinder extends LiveControlElementFinder {
+  public async getPinTopLabel(): Promise<ElementHandle<
+    SVGElement | HTMLElement
+  > | null> {
+    return null
   }
 
-  public async sendMessage(message: string, pinTop?: boolean) {
-    await this.recoveryLive()
-    const textarea = await this.page.$('textarea[class^="input"]')
-    if (!textarea) {
-      throw new Error('找不到评论框')
-    }
-
-    await textarea.fill(message)
-    await this.clickSendMessageButton()
-    this.logger.success(`发送消息: ${message}`)
-  }
-
-  private async clickSendMessageButton() {
+  public async getClickableSubmitCommentButton(): Promise<ElementHandle<
+    SVGElement | HTMLElement
+  > | null> {
     const sendMessageButton = await this.page.$(
       'div[class^="comment-wrap"] div[class^="button"]',
     )
@@ -207,6 +281,45 @@ export class LocalLiveController extends LiveController {
     ) {
       throw new Error('无法点击发送按钮，可能未输入文字')
     }
-    await sendMessageButton.click()
+    return sendMessageButton
+  }
+
+  public async getPopUpButtonFromGoodsItem(
+    item: ElementHandle<SVGElement | HTMLElement>,
+  ): Promise<ElementHandle<HTMLButtonElement>> {
+    const button = await item.$('[class^="talking-btn"]')
+    if (!button) {
+      throw new Error('找不到讲解按钮')
+    }
+    if (await button.evaluate(el => el.className.includes('disabled'))) {
+      throw new Error('无法点击「讲解」按钮，因为未开播')
+    }
+    return button as ElementHandle<HTMLButtonElement>
+  }
+
+  public async getIdFromGoodsItem(
+    item: ElementHandle<SVGElement | HTMLElement>,
+  ): Promise<number> {
+    const idInput = await item.$('input')
+    return Number.parseInt((await idInput?.evaluate(el => el.value)) ?? '')
+  }
+
+  public async getCurrentGoodsItemsList(): Promise<
+    ElementHandle<SVGElement | HTMLElement>[]
+  > {
+    return this.page.$$('#live-card-list div[class^="render-item"]')
+  }
+
+  public getGoodsItemsScrollContainer(): Promise<ElementHandle<
+    SVGElement | HTMLElement
+  > | null> {
+    return this.page.$('#live-card-list > div > div')
+  }
+
+  public async getCommentTextarea(): Promise<ElementHandle<
+    SVGElement | HTMLElement
+  > | null> {
+    const textarea = await this.page.$('textarea[class^="input"]')
+    return textarea
   }
 }
