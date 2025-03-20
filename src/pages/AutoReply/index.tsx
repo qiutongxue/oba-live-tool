@@ -2,21 +2,19 @@ import AIModelInfo from '@/components/ai-chat/AIModelInfo'
 import { APIKeyDialog } from '@/components/ai-chat/APIKeyDialog'
 import { TaskButton } from '@/components/common/TaskButton'
 import { Title } from '@/components/common/Title'
-import { Badge } from '@/components/ui/badge'
 import { useAIChatStore } from '@/hooks/useAIChat'
 import { useAutoReply } from '@/hooks/useAutoReply'
 import CommentList from '@/pages/AutoReply/components/CommentList'
 import PreviewList from '@/pages/AutoReply/components/PreviewList'
 import { PromptCard } from '@/pages/AutoReply/components/PromptCard'
 import { useState } from 'react'
-import { providers } from 'shared/providers'
+import { Blocklist } from './components/Blocklist'
 
 export default function AutoReply() {
   const { isRunning, setIsRunning } = useAutoReply()
   const [highlightedCommentId, setHighlightedCommentId] = useState<
     string | null
   >(null)
-  const aiConfig = useAIChatStore(state => state.config)
 
   const handleAutoReplyToggle = async () => {
     try {
@@ -37,6 +35,8 @@ export default function AutoReply() {
             />
           </div>
           <div className="flex items-center gap-2">
+            {/* 用户屏蔽列表 */}
+            <Blocklist />
             <APIKeyDialog />
             <TaskButton
               isTaskRunning={isRunning}

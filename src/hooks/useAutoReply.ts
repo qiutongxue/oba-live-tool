@@ -33,6 +33,8 @@ interface AutoReplyContext {
   comments: Comment[]
   prompt: string
   autoSend: boolean
+  // 用户屏蔽列表
+  userBlocklist: string[]
 }
 
 interface AutoReplyState {
@@ -51,6 +53,7 @@ interface AutoReplyAction {
   ) => void
   removeReply: (accountId: string, commentId: string) => void
   setAutoSend: (accountId: string, autoSend: boolean) => void
+  setUserBlocklist: (accountId: string, userBlocklist: string[]) => void
 }
 
 const defaultPrompt =
@@ -63,6 +66,7 @@ const defaultContext = (): AutoReplyContext => ({
   comments: [],
   prompt: defaultPrompt,
   autoSend: false,
+  userBlocklist: [],
 })
 
 export const useAutoReplyStore = create<AutoReplyState & AutoReplyAction>()(
@@ -144,6 +148,13 @@ export const useAutoReplyStore = create<AutoReplyState & AutoReplyAction>()(
             }
             state.contexts[accountId].autoSend = autoSend
           }),
+        setUserBlocklist: (accountId, userBlocklist) =>
+          set(state => {
+            if (!state.contexts[accountId]) {
+              state.contexts[accountId] = defaultContext()
+            }
+            state.contexts[accountId].userBlocklist = userBlocklist
+          }),
       }
     }),
     {
@@ -154,9 +165,10 @@ export const useAutoReplyStore = create<AutoReplyState & AutoReplyAction>()(
           contexts: Object.fromEntries(
             Object.entries(state.contexts).map(([accountId, context]) => [
               accountId,
-              { 
+              {
                 prompt: context.prompt,
-                autoSend: context.autoSend
+                autoSend: context.autoSend,
+                userBlocklist: context.userBlocklist,
               },
             ]),
           ),
@@ -241,15 +253,21 @@ export function useAutoReply() {
     () => contexts[currentAccountId] || defaultContext(),
     [contexts, currentAccountId],
   )
-  const { isRunning, isListening, comments, replies, prompt, autoSend } = context
+  const { isRunning, isListening, comments, replies, prompt, autoSend } =
+    context
 
   const handleComment = useMemoizedFn((comment: Comment, accountId: string) => {
     const context = contexts[accountId] || defaultContext()
-    const { isRunning, comments, replies, prompt, autoSend } = context
+    const { isRunning, comments, replies, prompt, autoSend, userBlocklist } =
+      context
 
     addComment(accountId, comment)
     // 如果是主播评论就跳过
     if (!isRunning || comment.authorTags.length > 0) {
+      return
+    }
+    // 如果用户在屏蔽列表中，也跳过
+    if (userBlocklist?.includes(comment.nickname)) {
       return
     }
 
@@ -281,7 +299,7 @@ export function useAutoReply() {
       .then(reply => {
         if (reply && typeof reply === 'string') {
           addReply(accountId, comment.id, comment.nickname, reply)
-          
+
           // 如果开启了自动发送，则自动发送回复
           if (autoSend) {
             window.ipcRenderer
