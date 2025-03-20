@@ -1,18 +1,3 @@
-import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Separator } from '@/components/ui/separator'
-import { useAutoReply } from '@/hooks/useAutoReply'
-import { SendHorizontalIcon } from 'lucide-react'
-import { IPC_CHANNELS } from 'shared/ipcChannels'
-import { Switch } from '@/components/ui/switch'
-import { Label } from '@/components/ui/label'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,7 +8,22 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { Label } from '@/components/ui/label'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Separator } from '@/components/ui/separator'
+import { Switch } from '@/components/ui/switch'
+import { useAutoReply } from '@/hooks/useAutoReply'
+import { SendHorizontalIcon } from 'lucide-react'
 import React from 'react'
+import { IPC_CHANNELS } from 'shared/ipcChannels'
 
 export default function PreviewList({
   setHighLight,
@@ -114,8 +114,12 @@ export default function PreviewList({
                             variant="ghost"
                             size="icon"
                             className="invisible group-hover:visible h-6 w-6"
+                            title="发送"
                             onClick={() =>
-                              handleSendReply(reply.replyContent, reply.commentId)
+                              handleSendReply(
+                                reply.replyContent,
+                                reply.commentId,
+                              )
                             }
                           >
                             <SendHorizontalIcon className="h-4 w-4" />
