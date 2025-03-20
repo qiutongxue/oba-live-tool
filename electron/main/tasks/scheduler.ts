@@ -29,7 +29,7 @@ export class TaskScheduler implements Scheduler {
     name: string,
     executor: () => Promise<void>,
     config: SchedulerConfig,
-    logger?: ReturnType<typeof createLogger>
+    logger?: ReturnType<typeof createLogger>,
   ) {
     this.name = name
     this.executor = executor
@@ -50,10 +50,25 @@ export class TaskScheduler implements Scheduler {
   }
 
   private async executeTask() {
-    try {
-      await this.executor()
-    } catch (error) {
-      this.logger.error(`执行「${this.name}」失败:`, error)
+    // 重试机制
+    let retry = 0
+    const maxRetries = this.config.maxRetries ?? 3
+    while (this.isRunning && retry < maxRetries) {
+      try {
+        await this.executor()
+        break
+      } catch (error) {
+        this.logger.error(
+          `（已尝试 ${retry + 1} 次）执行「${this.name}」失败:`,
+          error,
+        )
+        retry++
+        await new Promise(resolve => setTimeout(resolve, 1000))
+      }
+    }
+
+    if (retry >= maxRetries) {
+      this.logger.error(`执行「${this.name}」失败，已达到最大重试次数`)
       this.stop()
       return
     }
