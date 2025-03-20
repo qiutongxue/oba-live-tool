@@ -16,10 +16,21 @@
     "quickfix.biome": "explicit"
   },
   "editor.defaultFormatter": "biomejs.biome",
-
+  "biome_lsp.trace.server": "messages",
+  "biome.enabled": true,
   "[typescript]": {
     "editor.defaultFormatter": "biomejs.biome"
   },
-  "biome_lsp.trace.server": "messages",
-  "biome.enabled": true,
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+  "[javascriptreact]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  }
 }
