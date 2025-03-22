@@ -21,13 +21,13 @@ export interface Scheduler {
 export class TaskScheduler implements Scheduler {
   private timerId: NodeJS.Timeout | null = null
   private isStopped = true
-  private readonly executor: () => Promise<void>
+  private readonly executor: (retried?: boolean) => Promise<void>
   private config: SchedulerConfig
   private readonly name: string
   private logger: ReturnType<typeof createLogger>
   constructor(
     name: string,
-    executor: () => Promise<void>,
+    executor: (retried?: boolean) => Promise<void>,
     config: SchedulerConfig,
     logger?: ReturnType<typeof createLogger>,
   ) {
@@ -53,9 +53,10 @@ export class TaskScheduler implements Scheduler {
     // 重试机制
     let retry = 0
     const maxRetries = this.config.maxRetries ?? 3
+    // 记录是否已经重试了
     while (this.isRunning && retry < maxRetries) {
       try {
-        await this.executor()
+        await this.executor(retry === 0)
         break
       } catch (error) {
         this.logger.error(

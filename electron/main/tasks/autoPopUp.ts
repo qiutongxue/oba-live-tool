@@ -5,7 +5,7 @@ import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { createLogger } from '#/logger'
 import type { Account } from '#/taskManager'
 import { pageManager } from '#/taskManager'
-import { randomInt } from '#/utils'
+import { randomInt, takeScreenshot } from '#/utils'
 import windowManager from '#/windowManager'
 import { LiveController } from './Controller'
 import type { BaseConfig } from './scheduler'
@@ -40,7 +40,7 @@ class PopUpManager {
   private createTaskScheduler() {
     return new TaskScheduler(
       TASK_NAME,
-      () => this.execute(),
+      (...args) => this.execute(...args),
       merge({}, this.config.scheduler, {
         onStart: () => {
           this.logger.info('任务开始执行')
@@ -58,15 +58,17 @@ class PopUpManager {
     )
   }
 
-  private async execute() {
+  private async execute(screenshot = false) {
     try {
       const goodsId = this.getNextGoodsId()
-      // logger.debug(`准备讲解商品 ID: ${goodsId}`)
       await this.controller.popUp(goodsId)
     } catch (error) {
       this.logger.error(
         `执行失败: ${error instanceof Error ? error.message : String(error)}`,
       )
+      if (screenshot) {
+        await takeScreenshot(this.page, TASK_NAME, this.account.name).catch()
+      }
       throw error
     }
   }
