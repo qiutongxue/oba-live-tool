@@ -7,7 +7,13 @@ import { useState } from 'react'
 import React from 'react'
 import type { Account } from '#/taskManager'
 import { Button } from '../ui/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '../ui/dialog'
 import { Input } from '../ui/input'
 import {
   Select,
@@ -171,6 +177,7 @@ export const AccountSwitcher = React.memo(() => {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>修改账号名称</DialogTitle>
+            <DialogDescription>账号名称不能重复</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <Input

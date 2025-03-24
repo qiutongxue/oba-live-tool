@@ -114,7 +114,7 @@ export default function CommentList({
                     <span
                       key={`${comment.id}-${tag}`}
                       className={cn(
-                        'mr-1.5 inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium',
+                        'mr-1.5 inline-flex items-center rounded-sm px-1.5 py-0.5 text-xs font-medium',
                         // 主播标签
                         tag === '主播' &&
                           'bg-pink-50 text-pink-700 ring-1 ring-inset ring-pink-700/10',

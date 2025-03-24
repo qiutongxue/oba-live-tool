@@ -54,7 +54,7 @@ export function Blocklist() {
             </SheetDescription>
           </SheetHeader>
 
-          <div className="space-y-4 mt-4">
+          <div className="space-y-4 px-4 mt-4">
             <div className="flex gap-2">
               <Input
                 placeholder="输入用户名"

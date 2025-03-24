@@ -22,7 +22,7 @@ export function LoadingIcon({
       <div
         className={cn(
           'animate-spin rounded-full border-gray-400 border-t-transparent',
-          'shadow-sm',
+          'shadow-xs',
           sizeClasses[size],
           color,
         )}

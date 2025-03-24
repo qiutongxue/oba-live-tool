@@ -3,7 +3,7 @@ import { AccountSwitcher } from './AccountSwitcher'
 
 export function Header() {
   return (
-    <header className="w-full bg-white shadow-sm px-6 flex h-16 items-center justify-between">
+    <header className="w-full bg-white shadow-xs px-6 flex h-16 items-center justify-between">
       {/* <div className=""> */}
       <div className="flex items-center gap-3">
         <Package className="h-6 w-6 text-primary" />
