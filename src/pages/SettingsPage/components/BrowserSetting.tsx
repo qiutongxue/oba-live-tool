@@ -118,7 +118,7 @@ export function BrowserSetting() {
                 variant="default"
                 onClick={handleAutoDetect}
                 disabled={isDetecting}
-                className="flex-shrink-0"
+                className="shrink-0"
               >
                 <SearchIcon
                   className={`mr-2 h-4 w-4 ${isDetecting ? 'animate-spin' : ''}`}

@@ -68,7 +68,7 @@ export default function Sidebar() {
                 cn(
                   'flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-all relative',
                   isActive
-                    ? 'bg-primary/10 text-primary shadow-sm'
+                    ? 'bg-primary/10 text-primary shadow-xs'
                     : 'text-muted-foreground hover:bg-muted hover:text-foreground',
                 )
               }

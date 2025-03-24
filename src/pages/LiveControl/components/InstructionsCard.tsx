@@ -16,7 +16,7 @@ const InstructionsCard = React.memo(() => (
     <CardContent>
       <div className="space-y-4">
         <div className="flex gap-3">
-          <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+          <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
             <span className="text-sm font-medium text-primary">1</span>
           </div>
           <p className="text-sm text-muted-foreground leading-6">
@@ -24,7 +24,7 @@ const InstructionsCard = React.memo(() => (
           </p>
         </div>
         <div className="flex gap-3">
-          <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+          <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
             <span className="text-sm font-medium text-primary">2</span>
           </div>
           <p className="text-sm text-muted-foreground leading-6">
