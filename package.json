@@ -68,7 +68,7 @@
     "biome": "^0.3.3",
     "builder-util-runtime": "^9.2.10",
     "bumpp": "^10.0.1",
-    "electron": "^34.0.2",
+    "electron": "^35.0.3",
     "electron-builder": "^24.13.3",
     "electron-log": "^5.3.0",
     "husky": "^9.1.7",
@@ -89,6 +89,11 @@
   "lint-staged": {
     "*": [
       "biome check --write --no-errors-on-unmatched --files-ignore-unknown=true"
+    ]
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "electron"
     ]
   }
 }
