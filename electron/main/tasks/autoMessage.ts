@@ -31,6 +31,7 @@ class MessageManager {
   private readonly scheduler: TaskScheduler
   private controller: LiveController
   private logger: ReturnType<typeof createLogger>
+  private abortController = new AbortController()
 
   constructor(
     private readonly page: Page,
@@ -41,7 +42,11 @@ class MessageManager {
     this.validateConfig(userConfig)
     this.config = userConfig
     this.scheduler = this.createTaskScheduler()
-    this.controller = new LiveController(page, this.logger)
+    this.controller = new LiveController(
+      page,
+      this.logger,
+      this.abortController.signal,
+    )
   }
 
   private createTaskScheduler() {
@@ -52,6 +57,7 @@ class MessageManager {
         onStart: () => this.logger.info('任务开始执行'),
         onStop: () => {
           this.logger.info('任务停止执行')
+          this.abortController.abort()
           windowManager.sendToWindow(
             'main',
             IPC_CHANNELS.tasks.autoMessage.stop,
@@ -79,9 +85,9 @@ class MessageManager {
       const isPinTop = message.pinTop
       await this.controller.sendMessage(message.content, isPinTop)
     } catch (error) {
-      this.logger.error(
-        `执行失败: ${error instanceof Error ? error.message : String(error)}`,
-      )
+      // this.logger.error(
+      //   `执行失败: ${error instanceof Error ? error.message : String(error)}`,
+      // )
       if (screenshot) {
         await takeScreenshot(this.page, TASK_NAME, this.account.name).catch()
       }

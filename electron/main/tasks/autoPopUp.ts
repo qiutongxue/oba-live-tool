@@ -24,6 +24,7 @@ class PopUpManager {
   private readonly scheduler: TaskScheduler
   private controller: LiveController
   private logger: ReturnType<typeof createLogger>
+  private abortController = new AbortController()
 
   constructor(
     private readonly page: Page,
@@ -34,7 +35,11 @@ class PopUpManager {
     this.validateConfig(userConfig)
     this.config = userConfig
     this.scheduler = this.createTaskScheduler()
-    this.controller = new LiveController(page, this.logger)
+    this.controller = new LiveController(
+      page,
+      this.logger,
+      this.abortController.signal,
+    )
   }
 
   private createTaskScheduler() {
@@ -47,6 +52,7 @@ class PopUpManager {
         },
         onStop: () => {
           this.logger.info('任务停止执行')
+          this.abortController.abort()
           windowManager.sendToWindow(
             'main',
             IPC_CHANNELS.tasks.autoPopUp.stop,
@@ -63,9 +69,9 @@ class PopUpManager {
       const goodsId = this.getNextGoodsId()
       await this.controller.popUp(goodsId)
     } catch (error) {
-      this.logger.error(
-        `执行失败: ${error instanceof Error ? error.message : String(error)}`,
-      )
+      // this.logger.error(
+      //   `执行失败: ${error instanceof Error ? error.message : String(error)}`,
+      // )
       if (screenshot) {
         await takeScreenshot(this.page, TASK_NAME, this.account.name).catch()
       }

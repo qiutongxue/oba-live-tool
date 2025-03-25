@@ -95,7 +95,7 @@ export class PageManager {
       return
     }
 
-    if (context.tasks[taskName]) {
+    if (context.tasks[taskName]?.isRunning) {
       context.tasks[taskName].stop()
       delete context.tasks[taskName]
     }

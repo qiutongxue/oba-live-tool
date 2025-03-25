@@ -10,15 +10,19 @@ import {
 } from '#/constants'
 import { createLogger } from '#/logger'
 import { pageManager } from '#/taskManager'
+import { abortable } from '#/utils/decorators'
 
 export class LiveController {
-  protected page: Page
-  protected logger: ReturnType<typeof createLogger>
+  // protected page: Page
+  // protected logger: ReturnType<typeof createLogger>
+  // protected abortSignal?: AbortSignal
   protected elementFinder: LiveControlElementFinder
 
-  constructor(page: Page, logger?: ReturnType<typeof createLogger>) {
-    this.page = page
-    this.logger = logger ?? createLogger('LiveController')
+  constructor(
+    protected page: Page,
+    protected logger = createLogger('LiveController'),
+    public abortSignal?: AbortSignal,
+  ) {
     const platform = pageManager.getContext()?.platform
     if (platform === 'eos') {
       this.elementFinder = new EOSLiveControlElementFinder(page)
@@ -27,6 +31,7 @@ export class LiveController {
     }
   }
 
+  @abortable
   public async sendMessage(message: string, pinTop?: boolean) {
     await this.recoveryLive()
     const textarea = await this.elementFinder.getCommentTextarea()
@@ -47,6 +52,7 @@ export class LiveController {
     )
   }
 
+  @abortable
   public async popUp(id: number) {
     await this.recoveryLive()
     // 不用什么 waitFor 了，直接轮询，暴力的才是最好的
@@ -86,6 +92,7 @@ export class LiveController {
     return button
   }
 
+  @abortable
   private async findGoodsItemById(
     id: number,
     prevScrollTop = 0,
@@ -116,6 +123,7 @@ export class LiveController {
     return this.findGoodsItemById(id, currentScrollTop)
   }
 
+  @abortable
   private async getCurrentGoodsItem(id: number) {
     const currentGoodsItems =
       await this.elementFinder.getCurrentGoodsItemsList()

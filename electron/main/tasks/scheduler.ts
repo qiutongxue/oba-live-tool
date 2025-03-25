@@ -19,23 +19,15 @@ export interface Scheduler {
 }
 
 export class TaskScheduler implements Scheduler {
-  private timerId: NodeJS.Timeout | null = null
+  private timerId: ReturnType<typeof setTimeout> | null = null
   private isStopped = true
-  private readonly executor: (retried?: boolean) => Promise<void>
-  private config: SchedulerConfig
-  private readonly name: string
-  private logger: ReturnType<typeof createLogger>
+
   constructor(
-    name: string,
-    executor: (retried?: boolean) => Promise<void>,
-    config: SchedulerConfig,
-    logger?: ReturnType<typeof createLogger>,
-  ) {
-    this.name = name
-    this.executor = executor
-    this.config = config
-    this.logger = logger ?? createLogger('Scheduler')
-  }
+    private readonly name: string,
+    private readonly executor: (retried?: boolean) => Promise<void>,
+    private config: SchedulerConfig,
+    private readonly logger = createLogger('Scheduler'),
+  ) {}
 
   private calculateNextInterval(): number {
     const [min, max] = this.config.interval
@@ -60,7 +52,7 @@ export class TaskScheduler implements Scheduler {
         break
       } catch (error) {
         this.logger.error(
-          `（已尝试 ${retry + 1} 次）执行「${this.name}」失败:`,
+          `（已尝试 ${retry + 1}/${maxRetries} 次）执行「${this.name}」失败:`,
           error,
         )
         retry++
