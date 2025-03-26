@@ -32,7 +32,6 @@ async function findChromiumByCommonPath(commonPaths: string[]) {
         `if exist "${expandedPath.stdout.trim()}" echo true`,
       )
       if (exists.trim() === 'true') {
-        logger.debug('找到浏览器:', expandedPath.stdout.trim())
         return expandedPath.stdout.trim()
       }
     } catch {
@@ -56,13 +55,12 @@ async function findChromiumByTasklist(executableName: string) {
     const pid = lines[0].split(/\s+/)[1]
     if (!pid) throw new Error('Failed to extract PID')
 
-    // 使用 wmic 获取 Chrome 进程的可执行路径
-    const { stdout: wmicResult } = await execAsync(
-      `wmic process where "ProcessId=${pid}" get ExecutablePath`,
+    // 获取 Chrome 进程的可执行路径
+    const { stdout: result } = await execAsync(
+      // 使用 powershell 避免中文乱码
+      `powershell -Command "Get-Process -Id ${pid} | Select-Object -ExpandProperty Path"`,
     )
-    // ExecutablePath
-    // X:\xxxxx\chrome.exe
-    const path = wmicResult.split('\n')[1].trim()
+    const path = result.trim()
     if (!path) {
       throw new Error('Failed to extract Chrome path')
     }
