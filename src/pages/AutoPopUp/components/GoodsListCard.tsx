@@ -2,8 +2,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { useAutoPopUpActions, useCurrentAutoPopUp } from '@/hooks/useAutoPopUp'
-import { PlusIcon } from 'lucide-react'
 import { useMemoizedFn } from 'ahooks'
+import { PlusIcon } from 'lucide-react'
 import React from 'react'
 import GoodsListItem from './GoodsListItem'
 // 商品列表卡片组件
@@ -57,7 +57,8 @@ const GoodsListCard = React.memo(function GoodsListCard({
           <div className="space-y-4">
             {goodsIds.map((id, index) => (
               <GoodsListItem
-                key={id}
+                // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+                key={index}
                 id={id}
                 index={index}
                 onChange={handleGoodsIdChange}
