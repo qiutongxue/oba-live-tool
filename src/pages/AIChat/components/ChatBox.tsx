@@ -2,8 +2,8 @@ import { LoadingIcon } from '@/components/icons/loading'
 import { Card, CardContent } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { type ChatMessage, useAIChatStore } from '@/hooks/useAIChat'
-import { useDebounceEffect, useMemoizedFn } from 'ahooks'
-import React, { useEffect, useRef } from 'react'
+import { useDebounceEffect, useEventListener, useMemoizedFn } from 'ahooks'
+import React, { useEffect, useRef, useState } from 'react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import ChatInput from './ChatInput'
 import { Message } from './Message'
@@ -24,7 +24,15 @@ const useChatMessaging = () => {
     config,
     apiKeys,
     customBaseURL,
+    autoScroll,
+    setAutoScroll,
   } = useAIChatStore()
+
+  useEventListener('wheel', ev => {
+    if (ev.deltaY < 0 && autoScroll && status === 'replying') {
+      setAutoScroll(false)
+    }
+  })
 
   const handleStreamMessage = useMemoizedFn(
     ({
@@ -44,6 +52,7 @@ const useChatMessaging = () => {
   )
 
   const sendMessage = useMemoizedFn(async (messages: ContextMessage[]) => {
+    setAutoScroll(true)
     return new Promise<void>((resolve, reject) => {
       setStatus('waiting')
 
@@ -103,6 +112,20 @@ const useChatMessaging = () => {
 const useScrollToBottom = (messages: ContextMessage[]) => {
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const viewportRef = useRef<HTMLDivElement>(null)
+  const autoScroll = useAIChatStore(state => state.autoScroll)
+
+  useEventListener(
+    'scroll',
+    () => {
+      if (viewportRef.current) {
+        const { scrollTop, scrollHeight, clientHeight } = viewportRef.current
+        if (scrollHeight - scrollTop - clientHeight < 5) {
+          useAIChatStore.getState().setAutoScroll(true)
+        }
+      }
+    },
+    { target: viewportRef },
+  )
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -117,13 +140,13 @@ const useScrollToBottom = (messages: ContextMessage[]) => {
 
   useDebounceEffect(
     () => {
-      if (viewportRef.current) {
+      if (viewportRef.current && autoScroll) {
         const scrollContainer = viewportRef.current
         scrollContainer.scrollTop = scrollContainer.scrollHeight
       }
     },
-    [messages],
-    { wait: 100 },
+    [messages, autoScroll],
+    { wait: 1, leading: true, trailing: true },
   )
 
   return { scrollAreaRef }
