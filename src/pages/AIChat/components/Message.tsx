@@ -3,7 +3,8 @@ import { Separator } from '@/components/ui/separator'
 import type { ChatMessage } from '@/hooks/useAIChat'
 import { useAIChatStore } from '@/hooks/useAIChat'
 import { RotateCw } from 'lucide-react'
-import { useCallback } from 'react'
+import { useCallback, useMemo } from 'react'
+import { MessageContent } from './MessageContent'
 
 export function Message({
   id,
@@ -21,13 +22,12 @@ export function Message({
   const { messages, setMessages } = useAIChatStore()
 
   // 判断是否显示重试按钮
-  const showRetry =
-    role === 'user' &&
-    (() => {
-      const index = messages.findIndex(m => m.id === id)
-      const nextMessage = messages[index + 1]
-      return nextMessage?.isError
-    })()
+  const showRetry = useMemo(() => {
+    if (role !== 'user') return false
+    const index = messages.findIndex(m => m.id === id)
+    const nextMessage = messages[index + 1]
+    return nextMessage?.isError ?? false
+  }, [messages, id, role])
 
   const handleRetry = useCallback(async () => {
     // 找到当前消息后的错误消息并移除
@@ -40,10 +40,36 @@ export function Message({
     onRetry(newMessages.map(m => ({ role: m.role, content: m.content })))
   }, [messages, id, onRetry, setMessages])
 
+  return role === 'user' ? (
+    <UserMessage
+      content={content}
+      timestamp={timestamp}
+      showRetry={showRetry}
+      handleRetry={handleRetry}
+    />
+  ) : (
+    <AssistantMessage
+      content={content}
+      reasoning_content={reasoning_content}
+      timestamp={timestamp}
+      isError={isError ?? false}
+    />
+  )
+}
+
+function UserMessage({
+  content,
+  timestamp,
+  showRetry,
+  handleRetry,
+}: {
+  content: string
+  timestamp: number
+  showRetry: boolean
+  handleRetry: () => void
+}) {
   return (
-    <div
-      className={`relative flex ${role === 'user' ? 'justify-end' : 'justify-start'} group`}
-    >
+    <div className="relative flex justify-end group">
       {showRetry && (
         <Button
           variant="ghost"
@@ -55,12 +81,40 @@ export function Message({
         </Button>
       )}
       <div
+        className="max-w-[80%] rounded-lg px-4 py-2 break-words shadow-sm bg-primary text-primary-foreground"
+        style={{ overflowWrap: 'break-word', wordBreak: 'break-word' }}
+      >
+        <div className="whitespace-pre-wrap leading-relaxed text-[15px]">
+          {content}
+        </div>
+        <div className="absolute -bottom-5 select-none right-1">
+          <span className="text-[11px] text-primary/70">
+            {new Date(timestamp).toLocaleTimeString()}
+          </span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function AssistantMessage({
+  content,
+  reasoning_content,
+  timestamp,
+  isError,
+}: {
+  content: string
+  reasoning_content: string | undefined
+  timestamp: number
+  isError: boolean
+}) {
+  return (
+    <div className="relative flex justify-start group">
+      <div
         className={`max-w-[80%] rounded-lg px-4 py-2 break-words shadow-sm ${
-          role === 'user'
-            ? 'bg-primary text-primary-foreground'
-            : isError
-              ? 'bg-destructive text-destructive-foreground'
-              : 'bg-muted hover:bg-muted/80'
+          isError
+            ? 'bg-destructive text-destructive-foreground'
+            : 'bg-muted hover:bg-muted/80'
         }`}
         style={{ overflowWrap: 'break-word', wordBreak: 'break-word' }}
       >
@@ -71,18 +125,10 @@ export function Message({
             </p>
           )}
           {reasoning_content && content && <Separator className="my-2" />}
-          <p>{content}</p>
+          <MessageContent content={content} />
         </div>
-        <div
-          className={`absolute -bottom-5 select-none ${
-            role === 'user' ? 'right-1' : 'left-1'
-          }`}
-        >
-          <span
-            className={`text-[11px] ${
-              role === 'user' ? 'text-primary/70' : 'text-muted-foreground/70'
-            }`}
-          >
+        <div className="absolute -bottom-5 select-none  left-1">
+          <span className="text-[11px] text-muted-foreground/70">
             {new Date(timestamp).toLocaleTimeString()}
           </span>
         </div>
