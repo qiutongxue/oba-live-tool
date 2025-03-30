@@ -44,14 +44,15 @@ jobs:
 
       - name: Check if current branch is dev
         id: check_branch
+        shell: pwsh
         run: |
-          BRANCH_NAME=$(git branch --contains ${{ github.ref }} | grep -v "HEAD" | sed -e 's/^[ \t]*//')
-          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
-          if [[ "$BRANCH_NAME" == "dev" ]]; then
-            echo "IS_DEV=true" >> $GITHUB_ENV
-          else
-            echo "IS_DEV=false" >> $GITHUB_ENV
-          fi
+          $branchName = git branch --contains ${{ github.ref }} | Where-Object { $_ -notmatch "HEAD" } | ForEach-Object { $_.Trim() }
+          echo "BRANCH_NAME=$branchName" >> $env:GITHUB_ENV
+          if ($branchName -eq "dev") {
+            echo "IS_DEV=true" >> $env:GITHUB_ENV
+          } else {
+            echo "IS_DEV=false" >> $env:GITHUB_ENV
+          }
 
       - name: Create Release and Upload Assets
         uses: softprops/action-gh-release@v2
