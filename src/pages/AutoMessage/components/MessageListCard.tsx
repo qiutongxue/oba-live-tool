@@ -46,7 +46,7 @@ const MessageListCard = React.memo(() => {
             </Button>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-4 max-h-35 overflow-auto">
             {messages.map(message => (
               <MessageComp
                 key={message.id}

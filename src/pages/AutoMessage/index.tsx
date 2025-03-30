@@ -12,6 +12,7 @@ import React, { useCallback, useState } from 'react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import MessageListCard from './components/MessageListCard'
 import MessageSettingsCard from './components/MessageSettingsCard'
+import MessageGenerateCard from './components/MessageGenerateCard'
 
 const useTaskControl = () => {
   const isRunning = useCurrentAutoMessage(context => context.isRunning)
@@ -71,6 +72,7 @@ export default function AutoMessage() {
       )}
 
       <div className="grid gap-6">
+        <MessageGenerateCard />
         <MessageListCard />
         <MessageSettingsCard />
       </div>
