@@ -1,10 +1,11 @@
 import { ipcMain } from 'electron'
-import type { Page } from 'playwright'
+import type { Page, Response } from 'playwright'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { COMMENT_LIST_WRAPPER } from '#/constants'
 import { createLogger } from '#/logger'
 import type { Account } from '#/taskManager'
 import { pageManager } from '#/taskManager'
+import { sleep } from '#/utils'
 import windowManager from '#/windowManager'
 import { LiveController } from './Controller'
 
@@ -258,6 +259,86 @@ class CommentManager {
   public updateConfig() {}
 }
 
+class CommentManagerV2 {
+  private logger: ReturnType<typeof createLogger>
+  public isRunning = false
+  private controller: LiveController
+
+  constructor(
+    private page: Page,
+    private account: Account,
+  ) {
+    this.logger = createLogger(`${TASK_NAME} @${account.name}`)
+    this.controller = new LiveController(this.page)
+  }
+
+  public start() {
+    if (this.isRunning) {
+      this.logger.warn('评论监听已在运行中')
+      return
+    }
+    this.isRunning = true
+    this.page.on('response', this.listenComments.bind(this))
+    this.keepPageRunning()
+  }
+
+  public stop() {
+    if (!this.isRunning) {
+      this.logger.warn('评论监听已经停止')
+      return
+    }
+    this.isRunning = false
+    this.page.removeAllListeners('response')
+  }
+
+  // 保持网页正常运行
+  private async keepPageRunning() {
+    if (!this.isRunning) return
+    // 有新评论的话点击评论按钮
+    const newCommentButton = this.page.locator('[class^="newCommentLabel"]')
+    if (newCommentButton) {
+      await newCommentButton.dispatchEvent('click')
+    }
+    // 检查是否弹出了保护窗口
+    await this.controller.recoveryLive()
+
+    await sleep(3000)
+    this.keepPageRunning()
+  }
+
+  private async listenComments(response: Response) {
+    try {
+      const url = response.url()
+      if (url.includes('comment/info?')) {
+        const body = await response.json()
+        for (const comment of body.data.comment_infos) {
+          const commentData = {
+            id: comment.comment_id,
+            nickname: comment.nick_name,
+            content: comment.content,
+            timestamp: new Date().toISOString(),
+          }
+          windowManager.sendToWindow(
+            'main',
+            IPC_CHANNELS.tasks.autoReply.showComment,
+            { comment: commentData, accountId: this.account.id },
+          )
+          this.logger.info(
+            `【新评论】<${commentData.nickname}>: ${commentData.content}`,
+          )
+        }
+      }
+    } catch (error) {
+      this.logger.error(
+        '监听评论失败:',
+        error instanceof Error ? error.message : String(error),
+      )
+    }
+  }
+
+  public updateConfig() {}
+}
+
 // IPC 处理程序
 function setupIpcHandlers() {
   ipcMain.handle(
@@ -271,10 +352,9 @@ function setupIpcHandlers() {
           logger.debug('注册监听评论任务')
           pageManager.register(
             TASK_NAME,
-            (page, account) => new CommentManager(page, account),
+            (page, account) => new CommentManagerV2(page, account),
           )
         }
-
         await pageManager.startTask(TASK_NAME)
         return true
       } catch (error) {
