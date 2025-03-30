@@ -31,7 +31,8 @@ export const IPC_CHANNELS = {
       sendReply: 'tasks:autoReply:sendReply',
     },
     autoReplyPlus: {
-      getLiveRoomId: 'tasks:autoReplyPlus:getLiveRoomId',
+      startCommentListener: 'tasks:autoReplyPlus:startCommentListener',
+      stopCommentListener: 'tasks:autoReplyPlus:stopCommentListener',
       message: 'tasks:autoReplyPlus:message',
     },
   },

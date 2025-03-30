@@ -109,7 +109,8 @@ interface MainParamsMapping {
     },
   ]
   [IPC_CHANNELS.app.openLogFolder]: []
-  [IPC_CHANNELS.tasks.autoReplyPlus.getLiveRoomId]: []
+  [IPC_CHANNELS.tasks.autoReplyPlus.startCommentListener]: []
+  [IPC_CHANNELS.tasks.autoReplyPlus.stopCommentListener]: []
 }
 
 interface MainReturnTypeMapping {

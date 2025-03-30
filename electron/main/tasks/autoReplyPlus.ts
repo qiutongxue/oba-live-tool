@@ -1,8 +1,11 @@
 import { ipcMain } from 'electron'
 import type { Page, Request, Response } from 'playwright'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
+import { createLogger } from '#/logger'
 import { type Account, pageManager } from '#/taskManager'
 import windowManager from '#/windowManager'
+
+const TASK_NAME = '自动回复Plus'
 
 type Context = NonNullable<ReturnType<typeof pageManager.getContext>>
 
@@ -93,35 +96,48 @@ interface LiveOrderResponse {
 }
 
 class AutoReplyPlus {
+  public isRunning = false
+  private logger: ReturnType<typeof createLogger>
   private page: Page | null = null
   constructor(private account: Account) {
-    this.init()
+    this.logger = createLogger(`${TASK_NAME} @${this.account.name}`)
   }
 
   private async init() {
-    const context = pageManager.getContext()
-    if (!context) {
-      throw new Error('context is not found')
+    try {
+      const context = pageManager.getContext()
+      if (!context) {
+        throw new Error('context is not found')
+      }
+      const liveRoomId = await this.getLiveRoomId(context)
+      await this.gotoScreen(liveRoomId, context)
+      this.listenResponse()
+    } catch (error) {
+      this.logger.error(error)
     }
-    const liveRoomId = await this.getLiveRoomId(context)
-    await this.gotoScreen(liveRoomId, context)
-    this.listen()
   }
 
   public async getLiveRoomId(context: Context) {
     return new Promise<string>((resolve, reject) => {
       const page = context.page
-      const handleRequest = (request: Request) => {
-        const url = request.url()
-        if (request.url().includes('info?comment_query')) {
-          const wssPushRoomId = getWssPushRoomId(url)
-          if (wssPushRoomId) {
-            page.off('request', handleRequest)
-            resolve(wssPushRoomId)
+      const handleResponse = async (response: Response) => {
+        const url = response.url()
+        // TODO: 可以换成 promotion_v2 的响应，直接返回 room_id
+        if (response.url().includes('promotions_v2?')) {
+          const resData = await response.json()
+          const roomId = resData?.data?.room_id
+          if (roomId) {
+            page.off('response', handleResponse)
+            this.logger.debug(`获取直播间 ID成功: ${roomId}`)
+            resolve(roomId)
           }
         }
       }
-      page.on('request', handleRequest)
+      page.on('response', handleResponse)
+      setTimeout(() => {
+        page.off('response', handleResponse)
+        reject(new Error('找不到直播间 ID，可能直播间已关闭'))
+      }, 10000)
     })
   }
 
@@ -135,15 +151,23 @@ class AutoReplyPlus {
     // 百应的罗盘是 talent，抖店的罗盘是 shop
     const subPath = context.platform === 'douyin' ? 'shop' : 'talent'
     await this.page.goto(`https://compass.jinritemai.com/${subPath}`)
+    this.logger.debug('正在尝试登录电商罗盘')
     // 等待罗盘自动登录
     await this.page.waitForSelector('div[class^="userName"]')
+    this.logger.debug('登录成功，正在进入大屏')
     // 再进入大屏
     await this.page.goto(
       `https://compass.jinritemai.com/screen/anchor/shop?live_room_id=${liveRoomId}`,
     )
+    // 删除中间的直播画面，减少不必要的资源占用
+    this.page.waitForSelector('video').then(el => {
+      el?.evaluate(el => el.remove())
+    })
+    this.logger.debug('大屏进入成功')
   }
 
-  private listen() {
+  private listenResponse() {
+    this.logger.debug('开始监听评论')
     const handleResponse = async (response: Response) => {
       const url = response.url()
       if (url.includes('message?')) {
@@ -195,9 +219,18 @@ class AutoReplyPlus {
     }
   }
 
-  public start() {}
+  public start() {
+    this.isRunning = true
+    this.init()
+  }
 
-  public stop() {}
+  public stop() {
+    this.isRunning = false
+    this.page?.removeAllListeners('response')
+    this.page?.close()
+  }
+
+  public updateConfig() {}
 }
 
 function getWssPushRoomId(urlString: string): string | null {
@@ -245,13 +278,21 @@ function getWssPushRoomId(urlString: string): string | null {
 }
 
 function setupIpcHandlers() {
-  ipcMain.handle(IPC_CHANNELS.tasks.autoReplyPlus.getLiveRoomId, async () => {
-    const account = pageManager.getActiveAccount()
-    if (!account) {
-      throw new Error('account is not found')
-    }
-    const autoReplyPlus = new AutoReplyPlus(account)
-  })
+  ipcMain.handle(
+    IPC_CHANNELS.tasks.autoReplyPlus.startCommentListener,
+    async () => {
+      pageManager.register(TASK_NAME, (_, account) => {
+        return new AutoReplyPlus(account)
+      })
+      pageManager.startTask(TASK_NAME)
+    },
+  )
+  ipcMain.handle(
+    IPC_CHANNELS.tasks.autoReplyPlus.stopCommentListener,
+    async () => {
+      pageManager.stopTask(TASK_NAME)
+    },
+  )
 }
 
 setupIpcHandlers()

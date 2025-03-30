@@ -294,13 +294,13 @@ class CommentManagerV2 {
   // 保持网页正常运行
   private async keepPageRunning() {
     if (!this.isRunning) return
+    // 检查是否弹出了保护窗口
+    await this.controller.recoveryLive()
     // 有新评论的话点击评论按钮
     const newCommentButton = this.page.locator('[class^="newCommentLabel"]')
     if (newCommentButton) {
       await newCommentButton.dispatchEvent('click')
     }
-    // 检查是否弹出了保护窗口
-    await this.controller.recoveryLive()
 
     await sleep(3000)
     this.keepPageRunning()
