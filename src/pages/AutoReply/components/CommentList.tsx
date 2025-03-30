@@ -14,35 +14,85 @@ import { useAutoReply } from '@/hooks/useAutoReply'
 import { useCurrentLiveControl } from '@/hooks/useLiveControl'
 import { useToast } from '@/hooks/useToast'
 import { cn } from '@/lib/utils'
-import { RefreshCcw } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { Pause, Play, RefreshCcw } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
+
+// 评论项组件
+const CommentItem = ({
+  comment,
+  isHost,
+  isHighlighted,
+}: {
+  comment: { id: string; nickname: string; content: string }
+  isHost: boolean
+  isHighlighted: boolean
+}) => {
+  return (
+    <div
+      className={cn(
+        'group flex items-start gap-3 px-3 py-2 rounded-lg transition-colors',
+        isHighlighted ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-muted/50',
+      )}
+    >
+      <div className="flex-1 min-w-0">
+        <span className={cn('text-sm', 'text-gray-500')}>
+          {/* {isHost && (
+            <span className="mr-1.5 font-normal text-xs px-1.5 py-0.5 rounded-sm bg-pink-50 text-pink-600 border border-pink-200">
+              主播
+            </span> 
+          )} */}
+          {comment.nickname}：
+        </span>
+        <span className="text-sm text-gray-700">{comment.content}</span>
+      </div>
+    </div>
+  )
+}
 
 export default function CommentList({
   highlight: highlightedCommentId,
-}: { highlight: string | null }) {
+}: {
+  highlight: string | null
+}) {
   const { comments, isListening, setIsListening } = useAutoReply()
   const isConnected = useCurrentLiveControl(context => context.isConnected)
   const { toast } = useToast()
   const [hideHost, setHideHost] = useState(false)
 
-  useEffect(() => {
-    if (isConnected === 'connected' && isListening === 'stopped') {
-      // 防止并发
-      setIsListening('waiting')
-      window.ipcRenderer
-        .invoke(IPC_CHANNELS.tasks.autoReply.startCommentListener)
-        .then(result => {
-          if (!result) throw new Error('监听评论失败')
-          toast.success('监听评论成功')
-          setIsListening('listening')
-        })
-        .catch(() => {
-          setIsListening('error')
-          toast.error('监听评论失败')
-        })
+  // 手动启动监听评论
+  const startListening = async () => {
+    if (isConnected !== 'connected') {
+      toast.error('请先连接直播间')
+      return
     }
-  }, [isConnected, isListening, setIsListening, toast])
+
+    try {
+      setIsListening('waiting')
+      const result = await window.ipcRenderer.invoke(
+        IPC_CHANNELS.tasks.autoReply.startCommentListener,
+      )
+      if (!result) throw new Error('监听评论失败')
+      toast.success('监听评论成功')
+      setIsListening('listening')
+    } catch (error) {
+      setIsListening('error')
+      toast.error('监听评论失败')
+    }
+  }
+
+  // 手动停止监听评论
+  const stopListening = async () => {
+    try {
+      await window.ipcRenderer.invoke(
+        IPC_CHANNELS.tasks.autoReply.stopCommentListener,
+      )
+      setIsListening('stopped')
+      toast.success('已停止监听评论')
+    } catch (error) {
+      toast.error('停止监听评论失败')
+    }
+  }
 
   useEffect(() => {
     const removeListener = window.ipcRenderer.on(
@@ -56,88 +106,98 @@ export default function CommentList({
     }
   }, [setIsListening])
 
-  const filteredComments = hideHost
-    ? comments.filter(comment => comment.authorTags.length === 0)
-    : comments
+  const accountName = useCurrentLiveControl(ctx => ctx.accountName)
+
+  const filteredComments = useMemo(
+    () =>
+      hideHost
+        ? comments.filter(comment => comment.nickname !== accountName)
+        : comments,
+    [comments, hideHost, accountName],
+  )
 
   return (
-    <Card>
+    <Card className="shadow-sm">
       <CardHeader className="pb-3 relative">
         <CardTitle>评论列表</CardTitle>
         <CardDescription>实时显示直播间的评论内容</CardDescription>
-        <div className="flex items-center space-x-2 absolute right-4 ">
-          {isConnected === 'connected' &&
-            (isListening === 'error' ? (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsListening('stopped')}
-                className="-translate-y-1/4"
-              >
-                <RefreshCcw className="h-4 w-4" />
-              </Button>
-            ) : (
-              isListening === 'listening' && (
+        <div className="flex items-center space-x-2 absolute right-4 top-4">
+          {isListening === 'listening' ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={stopListening}
+              className="flex items-center gap-1"
+            >
+              <Pause className="h-4 w-4" />
+              停止监听
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={startListening}
+              className="flex items-center gap-1"
+              disabled={
+                isListening === 'waiting' || isConnected !== 'connected'
+              }
+            >
+              {isListening === 'waiting' ? (
+                '连接中...'
+              ) : (
                 <>
+                  <Play className="h-4 w-4" />
+                  开始监听
+                </>
+              )}
+            </Button>
+          )}
+
+          {isConnected === 'connected' && (
+            <>
+              {isListening === 'error' && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={startListening}
+                  title="重试"
+                >
+                  <RefreshCcw className="h-4 w-4" />
+                </Button>
+              )}
+
+              {isListening === 'listening' && (
+                <div className="flex items-center gap-2 ml-2">
                   <Switch
                     id="hide-host"
                     checked={hideHost}
                     onCheckedChange={setHideHost}
                   />
-                  <Label htmlFor="hide-host">用户评论</Label>
-                </>
-              )
-            ))}
+                  <Label htmlFor="hide-host">仅用户评论</Label>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </CardHeader>
       <Separator />
-      <CardContent>
-        <ScrollArea className="py-2 h-[600px]">
-          <div className="space-y-1">
+      <CardContent className="p-0">
+        <ScrollArea className="h-[600px]">
+          <div className="py-2 space-y-0.5">
             {filteredComments.length === 0 ? (
-              <div className="text-center text-muted-foreground py-8">
-                暂无评论数据
+              <div className="flex items-center justify-center h-20 text-muted-foreground">
+                {isListening === 'listening'
+                  ? '暂无评论数据'
+                  : '请点击"开始监听"按钮开始接收评论'}
               </div>
             ) : (
               filteredComments.map(comment => (
-                <div
+                <CommentItem
                   key={comment.id}
-                  className={cn(
-                    'group px-3 py-1.5 text-sm rounded-lg transition-colors',
-                    highlightedCommentId === comment.id
-                      ? 'bg-blue-50 hover:bg-blue-100'
-                      : 'hover:bg-muted/50',
-                  )}
-                >
-                  {/* 标签区域 */}
-                  {[...comment.authorTags, ...comment.commentTags].map(tag => (
-                    <span
-                      key={`${comment.id}-${tag}`}
-                      className={cn(
-                        'mr-1.5 inline-flex items-center rounded-sm px-1.5 py-0.5 text-xs font-medium',
-                        // 主播标签
-                        tag === '主播' &&
-                          'bg-pink-50 text-pink-700 ring-1 ring-inset ring-pink-700/10',
-                        // 评论标签
-                        comment.commentTags.includes(tag) &&
-                          'bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-700/10',
-                        // 其他作者标签
-                        !comment.commentTags.includes(tag) &&
-                          tag !== '主播' &&
-                          'bg-gray-50 text-gray-600 ring-1 ring-inset ring-gray-500/10',
-                      )}
-                    >
-                      {tag}
-                    </span>
-                  ))}
-
-                  {/* 昵称和内容 */}
-                  <span className="font-medium text-gray-900">
-                    {comment.nickname}
-                  </span>
-                  <span className="mx-1.5 text-gray-400">: </span>
-                  <span className="text-gray-700">{comment.content}</span>
-                </div>
+                  comment={comment}
+                  isHost={comment.nickname === accountName}
+                  isHighlighted={highlightedCommentId === comment.id}
+                />
               ))
             )}
           </div>

@@ -6,6 +6,7 @@ import { persist } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
 import { type ChatMessage, useAIChatStore } from './useAIChat'
 import { useAccounts } from './useAccounts'
+import { useCurrentLiveControl } from './useLiveControl'
 
 interface ReplyPreview {
   id: string
@@ -18,8 +19,8 @@ interface ReplyPreview {
 export interface Comment {
   id: string
   nickname: string
-  authorTags: string[]
-  commentTags: string[]
+  authorTags?: string[]
+  commentTags?: string[]
   content: string
   timestamp: string
 }
@@ -248,6 +249,7 @@ export function useAutoReply() {
   } = useAutoReplyStore()
   const { currentAccountId } = useAccounts()
   const aiStore = useAIChatStore()
+  const accountName = useCurrentLiveControl(ctx => ctx.accountName)
 
   const context = useMemo(
     () => contexts[currentAccountId] || defaultContext(),
@@ -263,7 +265,11 @@ export function useAutoReply() {
 
     addComment(accountId, comment)
     // 如果是主播评论就跳过
-    if (!isRunning || comment.authorTags.length > 0) {
+    if (
+      !isRunning ||
+      (comment.authorTags && comment.authorTags.length > 0) ||
+      comment.nickname === accountName
+    ) {
       return
     }
     // 如果用户在屏蔽列表中，也跳过
@@ -278,7 +284,7 @@ export function useAutoReply() {
     )
 
     // 开头加上系统提示词
-    const systemPrompt = `你将接收到一组或多组JSON数据，每组数据代表的是直播间用户的评论内容，nickname 为用户的昵称，commentTags 为用户的标签，content 为用户的评论内容，请你分析这组数据，如果是多组数据，把多组数据合并成一个回复，并按照下面的提示词进行回复：\n${prompt}`
+    const systemPrompt = `你将接收到一组或多组JSON数据，每组数据代表的是直播间用户的评论内容，nickname 为用户的昵称，content 为用户的评论内容，请你分析这组数据，如果是多组数据，把多组数据合并成一个回复，并按照下面的提示词进行回复：\n${prompt}`
     const messages = [
       {
         role: 'system',
