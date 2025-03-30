@@ -40,6 +40,10 @@ export class PageManager {
     this.accountNames = names
   }
 
+  getActiveAccount() {
+    return this.accountNames.find(name => name.id === this.currentId)
+  }
+
   get currentAccountName() {
     return (
       this.accountNames.find(name => name.id === this.currentId)?.name || ''

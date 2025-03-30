@@ -53,6 +53,11 @@ export default function Sidebar() {
       name: '应用设置',
       icon: <CarbonSettings className="w-5 h-5" />,
     },
+    {
+      id: '/auto-reply-plus',
+      name: '自动回复+',
+      icon: <CarbonIbmWatsonTextToSpeech className="w-5 h-5" />,
+    },
   ]
 
   return (
