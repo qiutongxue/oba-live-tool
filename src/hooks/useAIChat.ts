@@ -45,7 +45,27 @@ interface AIChat {
   clearMessages: () => void
 }
 
-export const useAIChatStore = create<AIChat>()(
+interface AIChatStore {
+  messages: ChatMessage[]
+  status: Status
+  apiKeys: APIKeys
+  config: ProviderConfig
+  customBaseURL: string
+  setCustomBaseURL: (url: string) => void
+  setConfig: (config: Partial<ProviderConfig>) => void
+  setApiKey: (provider: AIProvider, key: string) => void
+  addMessage: (message: Omit<ChatMessage, 'id' | 'timestamp'>) => void
+  appendToChat: (chunk: string) => void
+  appendToReasoning: (chunk: string) => void
+  tryToHandleEmptyMessage: (message: string) => void
+  setMessages: (messages: ChatMessage[]) => void
+  setStatus: (status: Status) => void
+  clearMessages: () => void
+  autoScroll: boolean
+  setAutoScroll: (value: boolean) => void
+}
+
+export const useAIChatStore = create<AIChatStore>()(
   persist(
     immer(set => {
       const modelPreferences = Object.keys(providers).reduce(
@@ -172,6 +192,8 @@ export const useAIChatStore = create<AIChat>()(
             state.messages = []
           })
         },
+        autoScroll: true,
+        setAutoScroll: value => set({ autoScroll: value }),
       }
     }),
     {
