@@ -42,6 +42,17 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Check if current branch is dev
+        id: check_branch
+        run: |
+          BRANCH_NAME=$(git branch --contains ${{ github.ref }} | grep -v "HEAD" | sed -e 's/^[ \t]*//')
+          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
+          if [[ "$BRANCH_NAME" == "dev" ]]; then
+            echo "IS_DEV=true" >> $GITHUB_ENV
+          else
+            echo "IS_DEV=false" >> $GITHUB_ENV
+          fi
+
       - name: Create Release and Upload Assets
         uses: softprops/action-gh-release@v2
         with:
@@ -52,5 +63,6 @@ jobs:
             release/*/*.exe.blockmap
             release/*/latest.yml
           draft: false
+          prerelease: ${{ env.IS_DEV == 'true' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # 自动注入的 GitHub Token
