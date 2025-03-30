@@ -6,6 +6,8 @@ import { persist } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
 import { useShallow } from 'zustand/react/shallow'
 import { useAccounts } from './useAccounts'
+import { IPC_CHANNELS } from 'shared/ipcChannels'
+import { useAIChatStore } from './useAIChat'
 
 export interface Message {
   id: string
@@ -18,7 +20,8 @@ interface AutoMessageConfig {
     interval: [number, number] // [最小间隔, 最大间隔]
   }
   messages: Message[]
-  random: boolean
+  random: boolean,
+  baseContent: string
 }
 
 interface AutoMessageContext {
@@ -34,6 +37,7 @@ const defaultContext = (): AutoMessageContext => ({
     },
     messages: [],
     random: false,
+    baseContent: '',
   },
 })
 
@@ -138,6 +142,7 @@ export const useAutoMessageStore = create<AutoMessageStore>()(
 )
 
 export const useAutoMessageActions = () => {
+  const aiStore = useAIChatStore()
   const setIsRunning = useAutoMessageStore(state => state.setIsRunning)
   const setConfig = useAutoMessageStore(state => state.setConfig)
   const currentAccountId = useAccounts(state => state.currentAccountId)
@@ -146,15 +151,58 @@ export const useAutoMessageActions = () => {
       setConfig(currentAccountId, newConfig)
     },
   )
+  const generateMessages = useMemoizedFn((content: String) => {
+     // 开头加上系统提示词
+     const systemPrompt = `你将接收到一个商品介绍内容，请你根据介绍内容扩充生成10条直播带货商品介绍话术，每条不超过50字，并直接返回严格字符串数组格式,如["xxx","xxx"]，不需要其他文字说明。`
+     const messages = [
+       {
+         role: 'system',
+         content: systemPrompt,
+       },{
+         role: 'user',
+         content: content,
+       }
+     ]
+       // 把 messages 发送给 AI
+       window.ipcRenderer
+         .invoke(IPC_CHANNELS.tasks.aiChat.normalChat, {
+           messages,
+           provider: aiStore.config.provider,
+           model: aiStore.config.model,
+           apiKey: aiStore.apiKeys[aiStore.config.provider],
+           customBaseURL: aiStore.customBaseURL,
+       })
+       .then(reply => {
+         console.log('生成文案成功:', reply)
+         if (reply && typeof reply === 'string') {           
+           const replyMessages = JSON.parse(reply)
+           setConfig(currentAccountId, {
+             messages: replyMessages.map((message: string) =>{
+               return {
+                 id: crypto.randomUUID(),
+                 content: message,
+                 pinTop: false,
+               }
+             }),
+           })
+           
+         }
+       })
+       .catch(err => {
+         console.error('生成文案失败:', err)
+       })
+  })
 
   return useMemo(
     () => ({
-      setIsRunning: (running: boolean) =>
-        setIsRunning(currentAccountId, running),
-      setScheduler: (scheduler: AutoMessageConfig['scheduler']) =>
-        updateConfig({ scheduler }),
+      setIsRunning: (running: boolean) => setIsRunning(currentAccountId, running),
+      setScheduler: (scheduler: AutoMessageConfig['scheduler']) => updateConfig({ scheduler }),
       setMessages: (messages: Message[]) => updateConfig({ messages }),
       setRandom: (random: boolean) => updateConfig({ random }),
+      setBaseContent: (baseContent: string) => updateConfig({ baseContent }),
+      generateMessages: (content: String) => {
+        generateMessages(content)
+      }
     }),
     [currentAccountId, setIsRunning, updateConfig],
   )
