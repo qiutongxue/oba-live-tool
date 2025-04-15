@@ -545,12 +545,10 @@ function getRandomElement<T>(arr: T[]): T | undefined {
 async function sendMessage(content: string) {
   if (!content) return
   try {
-    // FIXME: 暂时关闭自动发送
-    console.log('自动发送回复:', content)
-    // await window.ipcRenderer.invoke(
-    //   IPC_CHANNELS.tasks.autoReply.sendReply,
-    //   content,
-    // )
+    await window.ipcRenderer.invoke(
+      IPC_CHANNELS.tasks.autoReply.sendReply,
+      content,
+    )
   } catch (err) {
     console.error('自动发送回复失败:', err)
   }
