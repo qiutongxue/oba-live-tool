@@ -23,8 +23,42 @@ interface MessageConfig extends BaseConfig {
   messages: Message[]
   pinTops?: boolean | number[]
   random?: boolean
+  extraSpaces?: boolean
 }
 
+function insertRandomSpaces(text: string, insertionProbability = 0.3): string {
+  // 不处理空字符串或概率为0的情况
+  if (!text || insertionProbability <= 0) return text
+
+  // 限制概率在合理范围内
+  const probability = Math.min(Math.max(insertionProbability, 0), 1)
+
+  const result: string[] = []
+  let lastWasSpace = false // 避免连续多个空格
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i]
+    result.push(char)
+
+    // 不在空格后立即再插入空格，避免过多空格影响阅读
+    if (
+      !lastWasSpace &&
+      char !== ' ' &&
+      i < text.length - 1 && // 不在末尾插入
+      text[i + 1] !== ' ' && // 下一个字符不是空格
+      Math.random() < probability
+    ) {
+      // 随机决定插入1个还是2个空格(小概率)
+      const spacesToInsert = Math.random() < 0.9 ? 1 : 2
+      result.push(' '.repeat(spacesToInsert))
+      lastWasSpace = true
+    } else {
+      lastWasSpace = char === ' '
+    }
+  }
+
+  return result.join('')
+}
 class MessageManager {
   private currentMessageIndex = -1
   private config: MessageConfig
@@ -82,6 +116,10 @@ class MessageManager {
   private async execute(screenshot = false) {
     try {
       const message = this.getNextMessage()
+      // 添加随机空格
+      if (this.config.extraSpaces) {
+        message.content = insertRandomSpaces(message.content)
+      }
       const isPinTop = message.pinTop
       await this.controller.sendMessage(message.content, isPinTop)
     } catch (error) {
