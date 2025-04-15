@@ -113,7 +113,9 @@ const MessageItem = ({
     >
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="font-medium truncate">{displayName}</span>
+          <span className="truncate text-sm text-muted-foreground">
+            {displayName}
+          </span>
           {message.msg_type === 'live_order' && (
             <Badge
               variant="outline"
@@ -327,16 +329,7 @@ export default function CommentList({
       </CardHeader>
       <Separator />
       <CardContent className="p-0">
-        <ScrollArea className="h-[600px]">
-          {/* 临时消息区域 - 固定在顶部 */}
-          {/* <div className="sticky top-0 z-10 px-3 py-1 space-y-1">
-            <AnimatePresence>
-              {tempMessages.map(message => (
-                <EnterRoomMessage key={message.msg_id} message={message} />
-              ))}
-            </AnimatePresence>
-          </div> */}
-
+        <ScrollArea className="h-[400px]">
           <div className="py-2 space-y-0.5">
             {filteredComments.length === 0 ? (
               <div className="flex items-center justify-center h-20 text-muted-foreground">

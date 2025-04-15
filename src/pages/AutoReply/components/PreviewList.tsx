@@ -1,13 +1,3 @@
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -16,10 +6,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Label } from '@/components/ui/label'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
-import { Switch } from '@/components/ui/switch'
 import { useAutoReply } from '@/hooks/useAutoReply'
 import { SendHorizontalIcon } from 'lucide-react'
 import React from 'react'
@@ -44,18 +32,14 @@ export default function PreviewList({
 
   return (
     <>
-      <Card>
+      <Card className="shadow-sm">
         <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>回复预览</CardTitle>
-              <CardDescription>AI 生成的回复内容</CardDescription>
-            </div>
-          </div>
+          <CardTitle>回复预览</CardTitle>
+          <CardDescription>AI 生成的回复内容</CardDescription>
         </CardHeader>
         <Separator />
         <CardContent>
-          <ScrollArea className="py-2 h-[600px]">
+          <ScrollArea className="py-2 h-[400px]">
             <div className="space-y-1">
               {replies.length === 0 ? (
                 <div className="text-center text-muted-foreground py-8">
