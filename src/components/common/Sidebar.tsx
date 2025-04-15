@@ -44,11 +44,6 @@ export default function Sidebar() {
       icon: <CarbonIbmEventAutomation className="w-5 h-5" />,
     },
     {
-      id: '/auto-reply-plus',
-      name: '自动回复+',
-      icon: <CarbonIbmEventAutomation className="w-5 h-5" />,
-    },
-    {
       id: '/ai-chat',
       name: 'AI 助手',
       icon: <CarbonIbmWatsonTextToSpeech className="w-5 h-5" />,

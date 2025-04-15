@@ -8,6 +8,7 @@ import { pageManager } from '#/taskManager'
 import { sleep } from '#/utils'
 import windowManager from '#/windowManager'
 import { LiveController } from './Controller'
+import { AutoReplyPlus } from './autoReplyPlus'
 
 const TASK_NAME = '监听评论'
 
@@ -297,7 +298,7 @@ class CommentManagerV2 {
     // 检查是否弹出了保护窗口
     await this.controller.recoveryLive()
     // 有新评论的话点击评论按钮
-    const newCommentButton = this.page.locator('[class^="newCommentLabel"]')
+    const newCommentButton = await this.page.$('[class^="newCommentLabel"]')
     if (newCommentButton) {
       await newCommentButton.dispatchEvent('click')
     }
@@ -313,10 +314,11 @@ class CommentManagerV2 {
         const body = await response.json()
         for (const comment of body.data.comment_infos) {
           const commentData = {
-            id: comment.comment_id,
-            nickname: comment.nick_name,
+            msg_id: comment.comment_id,
+            nick_name: comment.nick_name,
             content: comment.content,
-            timestamp: new Date().toISOString(),
+            msg_type: 'comment',
+            time: new Date().toLocaleTimeString(),
           }
           windowManager.sendToWindow(
             'main',
@@ -324,7 +326,7 @@ class CommentManagerV2 {
             { comment: commentData, accountId: this.account.id },
           )
           this.logger.info(
-            `【新评论】<${commentData.nickname}>: ${commentData.content}`,
+            `【新评论】<${commentData.nick_name}>: ${commentData.content}`,
           )
         }
       }
@@ -343,7 +345,7 @@ class CommentManagerV2 {
 function setupIpcHandlers() {
   ipcMain.handle(
     IPC_CHANNELS.tasks.autoReply.startCommentListener,
-    async () => {
+    async (_, entry: 'control' | 'compass') => {
       const logger = createLogger(
         `${TASK_NAME} @${pageManager.currentAccountName}`,
       )
@@ -352,7 +354,9 @@ function setupIpcHandlers() {
           logger.debug('注册监听评论任务')
           pageManager.register(
             TASK_NAME,
-            (page, account) => new CommentManagerV2(page, account),
+            entry !== 'compass'
+              ? (page, account) => new CommentManagerV2(page, account)
+              : (_, account) => new AutoReplyPlus(account),
           )
         }
         await pageManager.startTask(TASK_NAME)

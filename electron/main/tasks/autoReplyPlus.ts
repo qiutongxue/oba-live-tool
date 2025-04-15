@@ -95,7 +95,7 @@ interface LiveOrderResponse {
   msg: string
 }
 
-class AutoReplyPlus {
+export class AutoReplyPlus {
   public isRunning = false
   private logger: ReturnType<typeof createLogger>
   private page: Page | null = null
@@ -122,7 +122,6 @@ class AutoReplyPlus {
       const page = context.page
       const handleResponse = async (response: Response) => {
         const url = response.url()
-        // TODO: 可以换成 promotion_v2 的响应，直接返回 room_id
         if (response.url().includes('promotions_v2?')) {
           const resData = await response.json()
           const roomId = resData?.data?.room_id
@@ -160,8 +159,15 @@ class AutoReplyPlus {
       `https://compass.jinritemai.com/screen/anchor/shop?live_room_id=${liveRoomId}`,
     )
     // 删除中间的直播画面，减少不必要的资源占用
-    this.page.waitForSelector('video').then(el => {
-      el?.evaluate(el => el.remove())
+    this.page.locator('video').evaluate(el => {
+      const video = el as HTMLVideoElement
+      // 删太快也不行，找不到更好的方法之前只能死等一会了
+      setTimeout(() => {
+        video.pause()
+        video.removeAttribute('src')
+        video.load()
+        video.remove()
+      }, 3000)
     })
     this.logger.debug('大屏进入成功')
   }
@@ -187,10 +193,13 @@ class AutoReplyPlus {
       for (const message of messages) {
         windowManager.sendToWindow(
           'main',
-          IPC_CHANNELS.tasks.autoReplyPlus.message,
+          IPC_CHANNELS.tasks.autoReply.showComment,
           {
             accountId: this.account.id,
-            message,
+            comment: {
+              ...message,
+              time: new Date().toLocaleTimeString(),
+            },
           },
         )
       }
@@ -210,10 +219,13 @@ class AutoReplyPlus {
     for (const message of messages) {
       windowManager.sendToWindow(
         'main',
-        IPC_CHANNELS.tasks.autoReplyPlus.message,
+        IPC_CHANNELS.tasks.autoReply.showComment,
         {
           accountId: this.account.id,
-          message,
+          comment: {
+            ...message,
+            time: new Date().toLocaleTimeString(),
+          },
         },
       )
     }
@@ -231,50 +243,6 @@ class AutoReplyPlus {
   }
 
   public updateConfig() {}
-}
-
-function getWssPushRoomId(urlString: string): string | null {
-  try {
-    // 1. 使用 URL 对象解析 URL
-    // 这比手动字符串查找更健壮，并且通常经过优化
-    const url = new URL(urlString)
-
-    // 2. 获取 'internal_ext' 查询参数的值
-    // URLSearchParams 会自动处理 URL 解码
-    const internalExtValue = url.searchParams.get('internal_ext')
-
-    // 3. 检查参数是否存在
-    if (!internalExtValue) {
-      // console.warn("URL 中未找到 'internal_ext' 参数。");
-      return null
-    }
-
-    // 4. 使用正则表达式从 internalExtValue 中提取 wss_push_room_id
-    // 正则表达式通常比多次 split/indexOf 更快
-    // 模式解释：
-    // - (?:^|\|)  : 匹配字符串开头或管道符 '|' (非捕获组)
-    // - wss_push_room_id: : 匹配字面量 "wss_push_room_id:"
-    // - ([^|]+)  : 捕获组 1，匹配一个或多个非管道符 '|' 的字符 (这就是我们要的值)
-    // - (?:\||$)  : 匹配管道符 '|' 或字符串结尾 (非捕获组)
-    // 使用更简单的正则，因为我们知道 key 后面是 : 值后面是 | 或结尾
-    const match = internalExtValue.match(/wss_push_room_id:([^|]+)/)
-
-    // 5. 返回匹配结果
-    // 如果匹配成功，match 是一个数组，第一个元素是整个匹配的字符串，
-    // 第二个元素 (match[1]) 是第一个捕获组的内容，即我们需要的值。
-    if (match?.[1]) {
-      return match[1]
-    }
-    return null
-  } catch (error) {
-    // 处理无效的 URL 字符串
-    if (error instanceof TypeError) {
-      console.error('提供的字符串不是有效的 URL:', error.message)
-    } else {
-      console.error('解析 URL 时发生未知错误:', error)
-    }
-    return null
-  }
 }
 
 function setupIpcHandlers() {

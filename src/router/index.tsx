@@ -2,7 +2,7 @@ import AIChat from '@/pages/AIChat'
 import AutoMessage from '@/pages/AutoMessage'
 import AutoPopUp from '@/pages/AutoPopUp'
 import AutoReply from '@/pages/AutoReply'
-import { AutoReplyPlus } from '@/pages/AutoReplyPlus'
+import AutoReplySettings from '@/pages/AutoReply/AutoReplySettings'
 import LiveControl from '@/pages/LiveControl'
 import Settings from '@/pages/SettingsPage'
 import { createHashRouter } from 'react-router'
@@ -38,8 +38,8 @@ export const router = createHashRouter([
         element: <AutoReply />,
       },
       {
-        path: 'auto-reply-plus',
-        element: <AutoReplyPlus />,
+        path: '/auto-reply/settings',
+        element: <AutoReplySettings />,
       },
     ],
   },

@@ -20,12 +20,12 @@ interface PromptCardProps {
 }
 
 export function PromptCard({ onSave }: PromptCardProps) {
-  const { prompt, setPrompt } = useAutoReply()
-  const [tempPrompt, setTempPrompt] = useState(prompt)
+  const { config, updateAIReplySettings } = useAutoReply()
+  const [tempPrompt, setTempPrompt] = useState(config.comment.aiReply.prompt)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
 
   const handleSave = useMemoizedFn(() => {
-    setPrompt(tempPrompt)
+    updateAIReplySettings({ prompt: tempPrompt })
     onSave?.()
   })
 
@@ -54,7 +54,10 @@ export function PromptCard({ onSave }: PromptCardProps) {
             </div>
           </div>
           <DrawerFooter>
-            <Button onClick={handleSave} disabled={tempPrompt === prompt}>
+            <Button
+              onClick={handleSave}
+              disabled={tempPrompt === config.comment.aiReply.prompt}
+            >
               保存配置
             </Button>
             <DrawerClose asChild>

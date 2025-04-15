@@ -63,7 +63,7 @@ interface MainParamsMapping {
       platform?: 'douyin' | 'buyin'
     },
   ]
-  [IPC_CHANNELS.tasks.autoReply.startCommentListener]: []
+  [IPC_CHANNELS.tasks.autoReply.startCommentListener]: ['control' | 'compass']
   [IPC_CHANNELS.tasks.autoReply.stopCommentListener]: []
   [IPC_CHANNELS.tasks.autoReply.sendReply]: [replyContent: string]
   [IPC_CHANNELS.tasks.aiChat.normalChat]: [
