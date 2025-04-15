@@ -156,7 +156,7 @@ export class AutoReplyPlus {
     this.logger.debug('登录成功，正在进入大屏')
     // 再进入大屏
     await this.page.goto(
-      `https://compass.jinritemai.com/screen/anchor/shop?live_room_id=${liveRoomId}`,
+      `https://compass.jinritemai.com/screen/anchor/${subPath}?live_room_id=${liveRoomId}`,
     )
     // 删除中间的直播画面，减少不必要的资源占用
     this.page.locator('video').evaluate(el => {
