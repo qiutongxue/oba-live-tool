@@ -40,6 +40,10 @@ export class PageManager {
     this.accountNames = names
   }
 
+  getActiveAccount() {
+    return this.accountNames.find(name => name.id === this.currentId)
+  }
+
   get currentAccountName() {
     return (
       this.accountNames.find(name => name.id === this.currentId)?.name || ''
@@ -145,6 +149,7 @@ export class PageManager {
       )
     this.logger.info(`停止任务 <${taskName}> - <${this.currentAccountName}>`)
     context.tasks[taskName].stop()
+    delete context.tasks[taskName]
   }
 
   updateTaskConfig(taskName: string, newConfig: BaseConfig) {

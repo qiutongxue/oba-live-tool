@@ -4,6 +4,15 @@ import type {
   UpdateCheckResult,
   UpdateDownloadedEvent,
 } from 'electron-updater'
+import type {
+  CommentMessage,
+  EcomFansclubParticipateMessage,
+  LiveOrderMessage,
+  RoomEnterMessage,
+  RoomFollowMessage,
+  RoomLikeMessage,
+  SubscribeMerchantBrandVipMessage,
+} from 'electron/main/tasks/autoReplyPlus'
 import type { providers } from 'shared/providers'
 import type { Comment } from 'src/components/autoReply/index'
 import type { Account } from '#/taskManager'
@@ -30,6 +39,19 @@ interface RendererParamsMapping {
     { chunk: string; done: boolean; type: string },
   ]
   [IPC_CHANNELS.tasks.aiChat.error]: [{ error: string }]
+  [IPC_CHANNELS.tasks.autoReplyPlus.message]: [
+    {
+      accountId: string
+      message:
+        | CommentMessage
+        | RoomEnterMessage
+        | RoomLikeMessage
+        | SubscribeMerchantBrandVipMessage
+        | LiveOrderMessage
+        | EcomFansclubParticipateMessage
+        | RoomFollowMessage
+    },
+  ]
 }
 
 interface MainParamsMapping {
@@ -41,7 +63,8 @@ interface MainParamsMapping {
       platform?: 'douyin' | 'buyin'
     },
   ]
-  [IPC_CHANNELS.tasks.autoReply.startCommentListener]: []
+  [IPC_CHANNELS.tasks.autoReply.startCommentListener]: ['control' | 'compass']
+  [IPC_CHANNELS.tasks.autoReply.stopCommentListener]: []
   [IPC_CHANNELS.tasks.autoReply.sendReply]: [replyContent: string]
   [IPC_CHANNELS.tasks.aiChat.normalChat]: [
     {
@@ -86,6 +109,8 @@ interface MainParamsMapping {
     },
   ]
   [IPC_CHANNELS.app.openLogFolder]: []
+  [IPC_CHANNELS.tasks.autoReplyPlus.startCommentListener]: []
+  [IPC_CHANNELS.tasks.autoReplyPlus.stopCommentListener]: []
 }
 
 interface MainReturnTypeMapping {
@@ -118,6 +143,7 @@ interface MainReturnTypeMapping {
   [IPC_CHANNELS.chrome.selectPath]: string
   [IPC_CHANNELS.chrome.getPath]: string
   [IPC_CHANNELS.app.openLogFolder]: undefined
+  [IPC_CHANNELS.tasks.autoReplyPlus.getLiveRoomId]: string
 }
 
 export interface ElectronAPI {

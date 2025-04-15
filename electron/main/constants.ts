@@ -31,10 +31,10 @@ export const loginConstants: Record<string, LoginConstants> = {
     liveControlUrl: 'https://eos.douyin.com/livesite/live/current',
     loginUrl: 'https://eos.douyin.com/livesite/login',
     loginUrlRegex: /.*eos\.douyin\.com\/livesite\/login.*/,
-    isLoggedInSelector: `[class^="head-container-YO6fRH"]`,
-    isInLiveControlSelector: `[class^="layout-container-D54NNo"]`,
-    accountNameSelector: `[class^="profile-container-Bl0DiG"]`
-  }
+    isLoggedInSelector: `[class^="head-container"]`,
+    isInLiveControlSelector: `[class^="layout-container"]`,
+    accountNameSelector: `[class^="profile-container"]`,
+  },
 } as const
 // export const BUYIN_LIVE_CONTROL_URL = 'https://buyin.jinritemai.com/dashboard/live/control' as const
 // export const BUYIN_LOGIN_URL = 'https://buyin.jinritemai.com/login/common' as const

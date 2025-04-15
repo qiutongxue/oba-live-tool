@@ -1,13 +1,3 @@
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -16,10 +6,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Label } from '@/components/ui/label'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
-import { Switch } from '@/components/ui/switch'
 import { useAutoReply } from '@/hooks/useAutoReply'
 import { SendHorizontalIcon } from 'lucide-react'
 import React from 'react'
@@ -28,8 +16,7 @@ import { IPC_CHANNELS } from 'shared/ipcChannels'
 export default function PreviewList({
   setHighLight,
 }: { setHighLight: (commentId: string | null) => void }) {
-  const { replies, comments, autoSend, setAutoSend } = useAutoReply()
-  const [showWarning, setShowWarning] = React.useState(false)
+  const { replies, comments } = useAutoReply()
 
   const handleSendReply = async (replyContent: string, _commentId: string) => {
     try {
@@ -43,45 +30,16 @@ export default function PreviewList({
     }
   }
 
-  const handleAutoSendChange = (checked: boolean) => {
-    if (checked) {
-      setShowWarning(true)
-    } else {
-      setAutoSend(false)
-    }
-  }
-
-  const handleConfirmAutoSend = () => {
-    setAutoSend(true)
-    setShowWarning(false)
-  }
-
-  const handleCancelAutoSend = () => {
-    setShowWarning(false)
-  }
-
   return (
     <>
-      <Card>
+      <Card className="shadow-sm">
         <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>回复预览</CardTitle>
-              <CardDescription>AI 生成的回复内容</CardDescription>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="auto-send"
-                checked={autoSend}
-                onCheckedChange={handleAutoSendChange}
-              />
-              <Label htmlFor="auto-send">自动发送</Label>
-            </div>
-          </div>
+          <CardTitle>回复预览</CardTitle>
+          <CardDescription>AI 生成的回复内容</CardDescription>
         </CardHeader>
         <Separator />
         <CardContent>
-          <ScrollArea className="py-2 h-[600px]">
+          <ScrollArea className="py-2 h-[400px]">
             <div className="space-y-1">
               {replies.length === 0 ? (
                 <div className="text-center text-muted-foreground py-8">
@@ -90,7 +48,7 @@ export default function PreviewList({
               ) : (
                 replies.map(reply => {
                   const relatedComment = comments.find(
-                    c => c.id === reply.commentId,
+                    c => c.msg_id === reply.commentId,
                   )
                   return (
                     <div
@@ -103,7 +61,8 @@ export default function PreviewList({
                         {relatedComment && (
                           <div className="text-xs text-muted-foreground">
                             回复：
-                            {relatedComment.nickname} - {relatedComment.content}
+                            {relatedComment.nick_name} -{' '}
+                            {relatedComment.content}
                           </div>
                         )}
                         <div className="flex items-center justify-between gap-2">
@@ -134,35 +93,6 @@ export default function PreviewList({
           </ScrollArea>
         </CardContent>
       </Card>
-
-      <AlertDialog open={showWarning} onOpenChange={setShowWarning}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>确认开启自动发送？</AlertDialogTitle>
-            <AlertDialogDescription className="space-y-2">
-              <p>
-                请注意：开启自动发送后，AI生成的所有回复都会自动发送到直播间，这可能会带来以下风险：
-              </p>
-              <ul className="list-disc pl-6 space-y-1">
-                <li>AI可能会生成不恰当或不相关的回复</li>
-                <li>回复内容可能会违反平台规则</li>
-                <li>可能会影响与观众的真实互动体验</li>
-              </ul>
-              <p className="font-medium">
-                建议在开启自动发送前，先观察一段时间AI的回复质量。您也可以通过点击每条回复预览旁边的小飞机按钮来手动发送。
-              </p>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleCancelAutoSend}>
-              取消
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmAutoSend}>
-              我已了解风险，仍然开启
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   )
 }

@@ -10,8 +10,10 @@ import { useMemoizedFn } from 'ahooks'
 import React from 'react'
 
 const MessageSettingsCard = React.memo(() => {
-  const { scheduler, random } = useCurrentAutoMessage(context => context.config)
-  const { setScheduler, setRandom } = useAutoMessageActions()
+  const { scheduler, random, extraSpaces } = useCurrentAutoMessage(
+    context => context.config,
+  )
+  const { setScheduler, setRandom, setExtraSpaces } = useAutoMessageActions()
 
   const handleIntervalChange = useMemoizedFn((index: 0 | 1, value: string) => {
     const numValue = Number(value) * 1000
@@ -71,6 +73,17 @@ const MessageSettingsCard = React.memo(() => {
             <p className="text-xs text-muted-foreground">
               系统将在设定的时间区间内随机选择发送时机
             </p>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="extraSpaces"
+              checked={extraSpaces}
+              onCheckedChange={setExtraSpaces}
+            />
+            <Label htmlFor="extraSpaces" className="cursor-pointer">
+              插入随机空格
+            </Label>
           </div>
         </div>
       </CardContent>

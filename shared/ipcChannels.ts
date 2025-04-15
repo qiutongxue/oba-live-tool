@@ -30,6 +30,11 @@ export const IPC_CHANNELS = {
       replyGenerated: 'tasks:autoReply:replyGenerated',
       sendReply: 'tasks:autoReply:sendReply',
     },
+    autoReplyPlus: {
+      startCommentListener: 'tasks:autoReplyPlus:startCommentListener',
+      stopCommentListener: 'tasks:autoReplyPlus:stopCommentListener',
+      message: 'tasks:autoReplyPlus:message',
+    },
   },
   config: {
     save: 'config:save',
