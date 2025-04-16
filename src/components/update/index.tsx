@@ -57,7 +57,7 @@ function Update({ source = 'github' }: { source: string }) {
     setProgressInfo({ percent: 0 })
     setChecking(false)
     setModalOpen(true)
-    if ('error' in result) {
+    if (result && 'error' in result) {
       setUpdateAvailable(false)
       setUpdateError(result)
       if ('downloadURL' in result && result.downloadURL) {

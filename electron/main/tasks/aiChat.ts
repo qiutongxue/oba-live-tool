@@ -3,6 +3,7 @@ import OpenAI from 'openai'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { providers } from 'shared/providers'
 import { createLogger } from '#/logger'
+import { typedIpcMainHandle } from '#/utils'
 
 const logger = createLogger('ai对话')
 
@@ -75,7 +76,7 @@ function handleError(error: unknown, sender: Electron.WebContents) {
 }
 
 function setupIpcHandlers() {
-  ipcMain.handle(
+  typedIpcMainHandle(
     IPC_CHANNELS.tasks.aiChat.chat,
     async (event, { messages, apiKey, provider, model, customBaseURL }) => {
       try {
@@ -89,7 +90,6 @@ function setupIpcHandlers() {
         })
 
         await handleStreamResponse(stream, event.sender)
-        return { success: true }
       } catch (error) {
         handleError(error, event.sender)
       } finally {
@@ -98,7 +98,7 @@ function setupIpcHandlers() {
     },
   )
 
-  ipcMain.handle(
+  typedIpcMainHandle(
     IPC_CHANNELS.tasks.aiChat.normalChat,
     async (event, { messages, apiKey, provider, model, customBaseURL }) => {
       try {
@@ -116,10 +116,11 @@ function setupIpcHandlers() {
       } finally {
         logger.debug('[normal] AI 回答结束')
       }
+      return null
     },
   )
 
-  ipcMain.handle(
+  typedIpcMainHandle(
     IPC_CHANNELS.tasks.aiChat.testApiKey,
     async (event, { apiKey, provider, customBaseURL }) => {
       try {

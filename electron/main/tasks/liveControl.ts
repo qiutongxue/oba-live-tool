@@ -4,6 +4,7 @@ import { chromium } from 'playwright-extra'
 import stealth from 'puppeteer-extra-plugin-stealth'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { pageManager } from '#/taskManager'
+import { typedIpcMainHandle } from '#/utils'
 import type { LoginConstants } from '../constants'
 import { loginConstants } from '../constants'
 import { createLogger } from '../logger'
@@ -200,22 +201,9 @@ class LiveControlManager {
 }
 
 function setupIpcHandlers() {
-  ipcMain.handle(
+  typedIpcMainHandle(
     IPC_CHANNELS.tasks.liveControl.connect,
-    async (
-      _,
-      {
-        chromePath,
-        headless,
-        cookies,
-        platform = 'douyin',
-      }: {
-        chromePath?: string
-        headless?: boolean
-        cookies?: string
-        platform?: keyof typeof loginConstants
-      },
-    ) => {
+    async (_, { chromePath, headless, cookies, platform = 'douyin' }) => {
       try {
         const manager = new LiveControlManager(platform || 'douyin')
         if (chromePath) manager.setChromePath(chromePath)
@@ -246,8 +234,18 @@ function setupIpcHandlers() {
     },
   )
 
-  ipcMain.handle(IPC_CHANNELS.tasks.liveControl.disconnect, async () => {
-    await pageManager.getPage()?.close()
+  typedIpcMainHandle(IPC_CHANNELS.tasks.liveControl.disconnect, async () => {
+    try {
+      await pageManager.getPage()?.close()
+      return true
+    } catch (error) {
+      const logger = createLogger(TASK_NAME)
+      logger.error(
+        '断开连接失败:',
+        error instanceof Error ? error.message : String(error),
+      )
+      return false
+    }
   })
 }
 

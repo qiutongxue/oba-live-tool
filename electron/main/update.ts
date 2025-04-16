@@ -8,6 +8,7 @@ import type {
 } from 'electron-updater'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { createLogger } from './logger'
+import { typedIpcMainHandle } from './utils'
 
 const { autoUpdater }: { autoUpdater: AppUpdater } = createRequire(
   import.meta.url,
@@ -79,7 +80,7 @@ export async function update(win: Electron.BrowserWindow) {
   }
 
   // Checking for updates
-  ipcMain.handle(
+  typedIpcMainHandle(
     IPC_CHANNELS.updater.checkUpdate,
     async (_, { source = 'github' }: { source: string }) => {
       if (!autoUpdater.forceDevUpdateConfig && !app.isPackaged) {
@@ -95,15 +96,15 @@ export async function update(win: Electron.BrowserWindow) {
           return await checkUpdateForGithub()
         }
         return await checkUpdateForGhProxy(source)
-      } catch (error: unknown) {
+      } catch (error) {
         const message = `网络错误: ${error instanceof Error ? error.message : (error as string)}`
-        return { message, error }
+        return { message, error: new Error(message) }
       }
     },
   )
 
   // Start downloading and feedback on progress
-  ipcMain.handle(
+  typedIpcMainHandle(
     IPC_CHANNELS.updater.startDownload,
     (event: Electron.IpcMainInvokeEvent) => {
       startDownload(
@@ -132,7 +133,7 @@ export async function update(win: Electron.BrowserWindow) {
   )
 
   // Install now
-  ipcMain.handle(IPC_CHANNELS.updater.quitAndInstall, () => {
+  typedIpcMainHandle(IPC_CHANNELS.updater.quitAndInstall, () => {
     autoUpdater.quitAndInstall(false, true)
   })
 }

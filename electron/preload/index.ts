@@ -1,25 +1,42 @@
-import { contextBridge, ipcRenderer } from 'electron'
-import type { ElectronAPI, RendererParamsMapping } from 'shared/electron-api'
+import { type IpcRendererEvent, contextBridge, ipcRenderer } from 'electron'
+import type { ElectronAPI, IpcChannels } from 'shared/electron-api'
+
+type IpcRendererInvokeReturnType<Channel extends keyof IpcChannels> =
+  ReturnType<IpcChannels[Channel]> extends Promise<infer U>
+    ? ReturnType<IpcChannels[Channel]>
+    : Promise<ReturnType<IpcChannels[Channel]>>
 
 const ipcRendererApi: ElectronAPI['ipcRenderer'] = {
-  on<K extends keyof RendererParamsMapping>(
-    channel: K,
-    listener: (...args: RendererParamsMapping[K]) => void,
+  on<Channel extends keyof IpcChannels>(
+    channel: Channel,
+    listener: (...args: Parameters<IpcChannels[Channel]>) => void,
   ): () => void {
-    const subscription = (_event: unknown, ...args: RendererParamsMapping[K]) =>
-      listener(...args)
-    ipcRenderer.on(channel, subscription)
+    const subscription = (
+      _event: IpcRendererEvent,
+      ...args: Parameters<IpcChannels[Channel]>
+    ) => listener(...args)
+
+    ipcRenderer.on(channel as string, subscription)
     return () => {
-      ipcRenderer.off(channel, subscription)
+      ipcRenderer.off(channel as string, subscription)
     }
   },
-  send(...args: Parameters<typeof ipcRenderer.send>) {
-    const [channel, ...omit] = args
-    return ipcRenderer.send(channel, ...omit)
+
+  send: <Channel extends keyof IpcChannels>(
+    channel: Channel,
+    ...args: Parameters<IpcChannels[Channel]>
+  ): void => {
+    ipcRenderer.send(channel as string, ...args) // <--- 也在这里加上断言
   },
-  invoke(...args: Parameters<typeof ipcRenderer.invoke>) {
-    const [channel, ...omit] = args
-    return ipcRenderer.invoke(channel, ...omit)
+
+  invoke: <Channel extends keyof IpcChannels>(
+    channel: Channel,
+    ...args: Parameters<IpcChannels[Channel]>
+  ): IpcRendererInvokeReturnType<Channel> => {
+    return ipcRenderer.invoke(
+      channel as string,
+      ...args,
+    ) as IpcRendererInvokeReturnType<Channel>
   },
 }
 

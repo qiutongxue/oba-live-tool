@@ -3,6 +3,7 @@ import type { Browser, BrowserContext, Page } from 'playwright'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { createLogger } from './logger'
 import type { BaseConfig, Scheduler } from './tasks/scheduler'
+import { typedIpcMainHandle } from './utils'
 import windowManager from './windowManager'
 
 interface Context {
@@ -166,7 +167,7 @@ export class PageManager {
 
 export const pageManager = PageManager.getInstance()
 
-ipcMain.handle(
+typedIpcMainHandle(
   IPC_CHANNELS.account.switch,
   async (
     _,

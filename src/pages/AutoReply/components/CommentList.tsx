@@ -243,7 +243,7 @@ export default function CommentList({
 
   useEffect(() => {
     const removeListener = window.ipcRenderer.on(
-      IPC_CHANNELS.tasks.autoReply.stopCommentListener,
+      IPC_CHANNELS.tasks.autoReply.listenerStopped,
       () => {
         setIsListening('stopped')
       },

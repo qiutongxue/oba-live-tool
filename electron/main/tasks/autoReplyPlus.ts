@@ -3,6 +3,7 @@ import type { Page, Request, Response } from 'playwright'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { createLogger } from '#/logger'
 import { type Account, pageManager } from '#/taskManager'
+import { typedIpcMainHandle } from '#/utils'
 import windowManager from '#/windowManager'
 
 const TASK_NAME = '自动回复Plus'
@@ -246,7 +247,7 @@ export class AutoReplyPlus {
 }
 
 function setupIpcHandlers() {
-  ipcMain.handle(
+  typedIpcMainHandle(
     IPC_CHANNELS.tasks.autoReplyPlus.startCommentListener,
     async () => {
       pageManager.register(TASK_NAME, (_, account) => {
@@ -255,7 +256,8 @@ function setupIpcHandlers() {
       pageManager.startTask(TASK_NAME)
     },
   )
-  ipcMain.handle(
+
+  typedIpcMainHandle(
     IPC_CHANNELS.tasks.autoReplyPlus.stopCommentListener,
     async () => {
       pageManager.stopTask(TASK_NAME)

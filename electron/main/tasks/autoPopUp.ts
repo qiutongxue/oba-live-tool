@@ -5,7 +5,7 @@ import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { createLogger } from '#/logger'
 import type { Account } from '#/taskManager'
 import { pageManager } from '#/taskManager'
-import { randomInt, takeScreenshot } from '#/utils'
+import { randomInt, takeScreenshot, typedIpcMainHandle } from '#/utils'
 import windowManager from '#/windowManager'
 import { LiveController } from './Controller'
 import type { BaseConfig } from './scheduler'
@@ -136,39 +136,37 @@ class PopUpManager {
 
 // IPC 处理程序
 function setupIpcHandlers() {
-  ipcMain.handle(
-    IPC_CHANNELS.tasks.autoPopUp.start,
-    async (_, config: PopUpConfig) => {
-      try {
-        pageManager.register(
-          TASK_NAME,
-          (page, account) => new PopUpManager(page, account, config),
-        )
-        pageManager.startTask(TASK_NAME)
-        return true
-      } catch (error) {
-        const logger = createLogger(
-          `${TASK_NAME} @${pageManager.currentAccountName}`,
-        )
-        logger.error(
-          '启动自动弹窗失败:',
-          error instanceof Error ? error.message : error,
-        )
-        return false
-      }
-    },
-  )
-
-  ipcMain.handle(IPC_CHANNELS.tasks.autoPopUp.stop, async () => {
-    pageManager.stopTask(TASK_NAME)
+  typedIpcMainHandle(IPC_CHANNELS.tasks.autoPopUp.start, async (_, config) => {
+    try {
+      pageManager.register(
+        TASK_NAME,
+        (page, account) => new PopUpManager(page, account, config),
+      )
+      pageManager.startTask(TASK_NAME)
+      return true
+    } catch (error) {
+      const logger = createLogger(
+        `${TASK_NAME} @${pageManager.currentAccountName}`,
+      )
+      logger.error(
+        '启动自动弹窗失败:',
+        error instanceof Error ? error.message : error,
+      )
+      return false
+    }
   })
 
-  ipcMain.handle(
-    IPC_CHANNELS.tasks.autoPopUp.updateConfig,
-    async (_, newConfig: PopUpConfig) => {
-      pageManager.updateTaskConfig(TASK_NAME, newConfig)
-    },
-  )
+  typedIpcMainHandle(IPC_CHANNELS.tasks.autoPopUp.stop, async () => {
+    pageManager.stopTask(TASK_NAME)
+    return true
+  })
+
+  // typedIpcMainHandle(
+  //   IPC_CHANNELS.tasks.autoPopUp.updateConfig,
+  //   async (_, newConfig: PopUpConfig) => {
+  //     pageManager.updateTaskConfig(TASK_NAME, newConfig)
+  //   },
+  // )
 }
 
 setupIpcHandlers()

@@ -5,7 +5,7 @@ import { COMMENT_LIST_WRAPPER } from '#/constants'
 import { createLogger } from '#/logger'
 import type { Account } from '#/taskManager'
 import { pageManager } from '#/taskManager'
-import { sleep } from '#/utils'
+import { sleep, typedIpcMainHandle } from '#/utils'
 import windowManager from '#/windowManager'
 import { LiveController } from './Controller'
 import { AutoReplyPlus } from './autoReplyPlus'
@@ -343,9 +343,9 @@ class CommentManagerV2 {
 
 // IPC 处理程序
 function setupIpcHandlers() {
-  ipcMain.handle(
+  typedIpcMainHandle(
     IPC_CHANNELS.tasks.autoReply.startCommentListener,
-    async (_, entry: 'control' | 'compass') => {
+    async (_, entry) => {
       const logger = createLogger(
         `${TASK_NAME} @${pageManager.currentAccountName}`,
       )
@@ -371,38 +371,42 @@ function setupIpcHandlers() {
     },
   )
 
-  ipcMain.handle(IPC_CHANNELS.tasks.autoReply.stopCommentListener, async () => {
-    const logger = createLogger(
-      `${TASK_NAME} @${pageManager.currentAccountName}`,
-    )
-    try {
-      pageManager.stopTask(TASK_NAME)
-      return true
-    } catch (error) {
-      logger.error(
-        '停止监听评论失败:',
-        error instanceof Error ? error.message : String(error),
+  typedIpcMainHandle(
+    IPC_CHANNELS.tasks.autoReply.stopCommentListener,
+    async () => {
+      const logger = createLogger(
+        `${TASK_NAME} @${pageManager.currentAccountName}`,
       )
-      return false
-    }
-  })
+      try {
+        pageManager.stopTask(TASK_NAME)
+      } catch (error) {
+        logger.error(
+          '停止监听评论失败:',
+          error instanceof Error ? error.message : String(error),
+        )
+      }
+    },
+  )
 
-  ipcMain.handle(IPC_CHANNELS.tasks.autoReply.sendReply, async (_, message) => {
-    const logger = createLogger(
-      `${TASK_NAME} @${pageManager.currentAccountName}`,
-    )
-    try {
-      const page = pageManager.getPage()
-      const controller = new LiveController(page)
-      await controller.sendMessage(message)
-    } catch (error) {
-      logger.error(
-        '发送回复失败:',
-        error instanceof Error ? error.message : String(error),
+  typedIpcMainHandle(
+    IPC_CHANNELS.tasks.autoReply.sendReply,
+    async (_, message) => {
+      const logger = createLogger(
+        `${TASK_NAME} @${pageManager.currentAccountName}`,
       )
-      throw error
-    }
-  })
+      try {
+        const page = pageManager.getPage()
+        const controller = new LiveController(page)
+        await controller.sendMessage(message)
+      } catch (error) {
+        logger.error(
+          '发送回复失败:',
+          error instanceof Error ? error.message : String(error),
+        )
+        throw error
+      }
+    },
+  )
 }
 
 setupIpcHandlers()

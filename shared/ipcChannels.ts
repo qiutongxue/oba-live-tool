@@ -3,16 +3,19 @@ export const IPC_CHANNELS = {
     liveControl: {
       connect: 'tasks:liveControl:connect',
       disconnect: 'tasks:liveControl:disconnect',
+      disconnectedEvent: 'tasks:liveControl:disconnectedEvent',
     },
     autoMessage: {
       start: 'tasks:autoMessage:start',
       stop: 'tasks:autoMessage:stop',
+      stoppedEvent: 'tasks:autoMessage:stoppedEvent',
       updateConfig: 'tasks:autoMessage:updateConfig',
     },
     autoPopUp: {
       start: 'tasks:autoPopUp:start',
       stop: 'tasks:autoPopUp:stop',
       updateConfig: 'tasks:autoPopUp:updateConfig',
+      stoppedEvent: 'tasks:autoPopUp:stoppedEvent',
     },
     aiChat: {
       chat: 'tasks:aiChat:chat',
@@ -24,6 +27,7 @@ export const IPC_CHANNELS = {
     autoReply: {
       startCommentListener: 'tasks:autoReply:startCommentListener',
       stopCommentListener: 'tasks:autoReply:stopCommentListener',
+      listenerStopped: 'tasks:autoReply:listenerStopped',
       showComment: 'tasks:autoReply:showComment',
       startAutoReply: 'tasks:autoReply:startAutoReply',
       stopAutoReply: 'tasks:autoReply:stopAutoReply',

@@ -1,7 +1,13 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import { app } from 'electron'
+import {
+  type IpcMainEvent,
+  type IpcMainInvokeEvent,
+  app,
+  ipcMain,
+} from 'electron'
 import type { Page } from 'playwright'
+import type { IpcChannels } from 'shared/electron-api'
 
 export function randomInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min
@@ -47,4 +53,26 @@ export async function takeScreenshot(
   )
   await cleanupScreenshotDir()
   await page.screenshot({ path: screenshotPath })
+}
+
+export function typedIpcMainHandle<Channel extends keyof IpcChannels>(
+  channel: Channel,
+  listener: (
+    event: IpcMainInvokeEvent,
+    ...args: Parameters<IpcChannels[Channel]>
+  ) =>
+    | ReturnType<IpcChannels[Channel]>
+    | Promise<ReturnType<IpcChannels[Channel]>>, // 支持同步或异步返回
+): void {
+  ipcMain.handle(channel as string, listener) // 使用 as any 绕过内部类型检查，因为外部已保证类型安全
+}
+
+export function typedIpcMainOn<Channel extends keyof IpcChannels>(
+  channel: Channel,
+  listener: (
+    event: IpcMainEvent,
+    ...args: Parameters<IpcChannels[Channel]>
+  ) => void,
+): void {
+  ipcMain.on(channel as string, listener)
 }

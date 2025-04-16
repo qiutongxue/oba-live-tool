@@ -18,147 +18,117 @@ import type { Comment } from 'src/components/autoReply/index'
 import type { Account } from '#/taskManager'
 import { IPC_CHANNELS } from './ipcChannels'
 
-interface RendererParamsMapping {
-  [IPC_CHANNELS.tasks.autoReply.stopCommentListener]: []
-  [IPC_CHANNELS.tasks.autoReply.showComment]: [
-    {
-      comment: Comment
-      accountId: string
-    },
-  ]
-  [IPC_CHANNELS.log]: [message: LogMessage]
-  [IPC_CHANNELS.chrome.setPath]: [path: string]
-  [IPC_CHANNELS.updater.updateAvailable]: [VersionInfo]
-  [IPC_CHANNELS.updater.updateError]: [ErrorType]
-  [IPC_CHANNELS.updater.downloadProgress]: [ProgressInfo]
-  [IPC_CHANNELS.updater.updateDownloaded]: [UpdateDownloadedEvent]
-  [IPC_CHANNELS.tasks.autoPopUp.stop]: [id: string]
-  [IPC_CHANNELS.tasks.autoMessage.stop]: [id: string]
-  [IPC_CHANNELS.tasks.liveControl.disconnect]: [id: string]
-  [IPC_CHANNELS.tasks.aiChat.stream]: [
-    { chunk: string; done: boolean; type: string },
-  ]
-  [IPC_CHANNELS.tasks.aiChat.error]: [{ error: string }]
-  [IPC_CHANNELS.tasks.autoReplyPlus.message]: [
-    {
-      accountId: string
-      message:
-        | CommentMessage
-        | RoomEnterMessage
-        | RoomLikeMessage
-        | SubscribeMerchantBrandVipMessage
-        | LiveOrderMessage
-        | EcomFansclubParticipateMessage
-        | RoomFollowMessage
-    },
-  ]
-}
-
-interface MainParamsMapping {
-  [IPC_CHANNELS.tasks.liveControl.connect]: [
-    {
-      chromePath?: string
-      headless?: boolean
-      cookies?: string
-      platform?: 'douyin' | 'buyin'
-    },
-  ]
-  [IPC_CHANNELS.tasks.autoReply.startCommentListener]: ['control' | 'compass']
-  [IPC_CHANNELS.tasks.autoReply.stopCommentListener]: []
-  [IPC_CHANNELS.tasks.autoReply.sendReply]: [replyContent: string]
-  [IPC_CHANNELS.tasks.aiChat.normalChat]: [
-    {
-      messages: Message[]
-      provider: keyof typeof providers
-      model: string
-      apiKey: string
-      customBaseURL?: string
-    },
-  ]
-  [IPC_CHANNELS.chrome.toggleDevTools]: []
-  [IPC_CHANNELS.chrome.selectPath]: []
-  [IPC_CHANNELS.chrome.getPath]: [edge?: boolean]
-  [IPC_CHANNELS.tasks.autoPopUp.start]: [config: AutoPopUpConfig]
-  [IPC_CHANNELS.tasks.autoPopUp.stop]: []
-  [IPC_CHANNELS.tasks.autoMessage.start]: [config: AutoMessageConfig]
-  [IPC_CHANNELS.tasks.autoMessage.stop]: []
-  [IPC_CHANNELS.tasks.aiChat.chat]: [
-    {
-      messages: Message[]
-      provider: keyof typeof providers
-      model: string
-      apiKey: string
-      customBaseURL?: string
-    },
-  ]
-  [IPC_CHANNELS.tasks.aiChat.testApiKey]: [
-    {
-      apiKey: string
-      provider: keyof typeof providers
-      customBaseURL?: string
-    },
-  ]
-  [IPC_CHANNELS.tasks.liveControl.disconnect]: []
-  [IPC_CHANNELS.updater.checkUpdate]: [{ source: string }]
-  [IPC_CHANNELS.updater.startDownload]: []
-  [IPC_CHANNELS.updater.quitAndInstall]: []
-  [IPC_CHANNELS.account.switch]: [
-    {
-      accountId: string
-      accountNames: Account[]
-    },
-  ]
-  [IPC_CHANNELS.app.openLogFolder]: []
-  [IPC_CHANNELS.tasks.autoReplyPlus.startCommentListener]: []
-  [IPC_CHANNELS.tasks.autoReplyPlus.stopCommentListener]: []
-}
-
-interface MainReturnTypeMapping {
-  [IPC_CHANNELS.tasks.liveControl.connect]: {
-    cookies: string
-    accountName: string
-  }
-  [IPC_CHANNELS.tasks.autoReply.startCommentListener]: boolean
-  [IPC_CHANNELS.tasks.autoReply.sendReply]: undefined
-  [IPC_CHANNELS.tasks.aiChat.normalChat]: string
-  [IPC_CHANNELS.tasks.aiChat.testApiKey]: {
-    success: boolean
-    models?: string[]
-    error?: string
-  }
-  [IPC_CHANNELS.tasks.autoPopUp.start]: boolean
-  [IPC_CHANNELS.tasks.autoPopUp.stop]: boolean
-  [IPC_CHANNELS.tasks.autoMessage.start]: boolean
-  [IPC_CHANNELS.tasks.autoMessage.stop]: boolean
-  [IPC_CHANNELS.tasks.liveControl.disconnect]: boolean
-  [IPC_CHANNELS.updater.checkUpdate]:
-    | {
-        message: string
-        error: Error
-        downloadURL?: string
-      }
+export interface IpcChannels {
+  // --- Renderer -> Main (Invoke/Handle) ---
+  [IPC_CHANNELS.tasks.liveControl.connect]: (params: {
+    chromePath?: string
+    headless?: boolean
+    cookies?: string
+    platform?: 'douyin' | 'buyin'
+  }) => { cookies: string | null; accountName: string | null } | null
+  [IPC_CHANNELS.tasks.autoReply.startCommentListener]: (
+    type: 'control' | 'compass',
+  ) => boolean
+  [IPC_CHANNELS.tasks.aiChat.normalChat]: (params: {
+    messages: Message[]
+    provider: keyof typeof providers
+    model: string
+    apiKey: string
+    customBaseURL?: string
+  }) => string | null
+  [IPC_CHANNELS.tasks.aiChat.testApiKey]: (params: {
+    apiKey: string
+    provider: keyof typeof providers
+    customBaseURL?: string
+  }) => { success: boolean; models?: string[]; error?: string }
+  [IPC_CHANNELS.tasks.autoPopUp.start]: (config: AutoPopUpConfig) => boolean
+  [IPC_CHANNELS.tasks.autoPopUp.stop]: () => boolean
+  [IPC_CHANNELS.tasks.autoMessage.start]: (config: AutoMessageConfig) => boolean
+  [IPC_CHANNELS.tasks.autoMessage.stop]: () => boolean
+  [IPC_CHANNELS.tasks.liveControl.disconnect]: () => boolean
+  [IPC_CHANNELS.updater.checkUpdate]: (params: { source: string }) =>
     | UpdateCheckResult
-  [IPC_CHANNELS.updater.startDownload]: undefined
-  [IPC_CHANNELS.updater.quitAndInstall]: undefined
-  [IPC_CHANNELS.chrome.selectPath]: string
-  [IPC_CHANNELS.chrome.getPath]: string
-  [IPC_CHANNELS.app.openLogFolder]: undefined
-  [IPC_CHANNELS.tasks.autoReplyPlus.getLiveRoomId]: string
+    | { message: string; error: Error; downloadURL?: string }
+    | null
+
+  [IPC_CHANNELS.updater.startDownload]: () => void
+  [IPC_CHANNELS.updater.quitAndInstall]: () => void
+  [IPC_CHANNELS.chrome.selectPath]: () => string | null
+  [IPC_CHANNELS.chrome.getPath]: (edge?: boolean) => string | null
+  [IPC_CHANNELS.app.openLogFolder]: () => void
+
+  // --- Renderer -> Main (Send/On) ---
+  [IPC_CHANNELS.tasks.autoReply.stopCommentListener]: () => void
+  [IPC_CHANNELS.tasks.autoReply.sendReply]: (replyContent: string) => void
+  [IPC_CHANNELS.chrome.toggleDevTools]: () => void
+  [IPC_CHANNELS.tasks.aiChat.chat]: (params: {
+    // 用于启动流式传输，响应通过 stream/error 通道
+    messages: Message[]
+    provider: keyof typeof providers
+    model: string
+    apiKey: string
+    customBaseURL?: string
+  }) => void
+  [IPC_CHANNELS.account.switch]: (params: {
+    accountId: string
+    accountNames: Account[]
+  }) => void
+  [IPC_CHANNELS.tasks.autoReplyPlus.startCommentListener]: () => void
+  [IPC_CHANNELS.tasks.autoReplyPlus.stopCommentListener]: () => void
+
+  // --- Main -> Renderer (Send/On) ---
+  [IPC_CHANNELS.tasks.autoReply.listenerStopped]: () => void
+  [IPC_CHANNELS.tasks.autoReply.showComment]: (data: {
+    comment: Comment
+    accountId: string
+  }) => void
+  [IPC_CHANNELS.log]: (message: LogMessage) => void
+  [IPC_CHANNELS.chrome.setPath]: (path: string) => void
+  [IPC_CHANNELS.updater.updateAvailable]: (info: VersionInfo) => void
+  [IPC_CHANNELS.updater.updateError]: (error: ErrorType) => void
+  [IPC_CHANNELS.updater.downloadProgress]: (progress: ProgressInfo) => void
+  [IPC_CHANNELS.updater.updateDownloaded]: (
+    event: UpdateDownloadedEvent,
+  ) => void
+  [IPC_CHANNELS.tasks.autoPopUp.stoppedEvent]: (id: string) => void
+  [IPC_CHANNELS.tasks.autoMessage.stoppedEvent]: (id: string) => void
+  [IPC_CHANNELS.tasks.liveControl.disconnectedEvent]: (id: string) => void
+  [IPC_CHANNELS.tasks.aiChat.stream]: (data: {
+    chunk: string
+    done: boolean
+    type: string
+  }) => void
+  [IPC_CHANNELS.tasks.aiChat.error]: (data: { error: string }) => void
+  [IPC_CHANNELS.tasks.autoReplyPlus.message]: (data: {
+    accountId: string
+    message:
+      | CommentMessage
+      | RoomEnterMessage
+      | RoomLikeMessage
+      | SubscribeMerchantBrandVipMessage
+      | LiveOrderMessage
+      | EcomFansclubParticipateMessage
+      | RoomFollowMessage
+  }) => void
 }
 
 export interface ElectronAPI {
   ipcRenderer: {
-    on<K extends keyof RendererParamsMapping>(
-      channel: K,
-      listener: (...args: RendererParamsMapping[K]) => void,
-    ): () => void
-    send<K extends keyof MainParamsMapping>(
-      channel: K,
-      ...args: MainParamsMapping[K]
-    ): void
-    invoke<K extends keyof MainParamsMapping>(
-      channel: K,
-      ...args: MainParamsMapping[K]
-    ): Promise<MainReturnTypeMapping[K]>
+    invoke: <Channel extends keyof IpcChannels>(
+      channel: Channel,
+      ...args: Parameters<IpcChannels[Channel]>
+    ) => ReturnType<IpcChannels[Channel]> extends Promise<infer U>
+      ? ReturnType<IpcChannels[Channel]>
+      : Promise<ReturnType<IpcChannels[Channel]>>
+
+    send: <Channel extends keyof IpcChannels>(
+      channel: Channel,
+      ...args: Parameters<IpcChannels[Channel]>
+    ) => void
+
+    on: <Channel extends keyof IpcChannels>(
+      channel: Channel,
+      listener: (...args: Parameters<IpcChannels[Channel]>) => void,
+    ) => () => void
   }
 }

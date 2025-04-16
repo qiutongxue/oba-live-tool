@@ -5,7 +5,7 @@ import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { createLogger } from '#/logger'
 import type { Account } from '#/taskManager'
 import { pageManager } from '#/taskManager'
-import { randomInt, takeScreenshot } from '#/utils'
+import { randomInt, takeScreenshot, typedIpcMainHandle } from '#/utils'
 import windowManager from '#/windowManager'
 import { LiveController } from './Controller'
 import type { BaseConfig } from './scheduler'
@@ -187,37 +187,40 @@ class MessageManager {
 
 // IPC 处理程序
 function setupIpcHandlers() {
-  ipcMain.handle(IPC_CHANNELS.tasks.autoMessage.start, async (_, config) => {
-    try {
-      pageManager.register(
-        TASK_NAME,
-        (page, account) => new MessageManager(page, account, config),
-      )
-      pageManager.startTask(TASK_NAME)
-      return true
-    } catch (error) {
-      const logger = createLogger(
-        `${TASK_NAME} @${pageManager.currentAccountName}`,
-      )
-      logger.error(
-        '启动自动发言失败:',
-        error instanceof Error ? error.message : error,
-      )
-      return false
-    }
-  })
+  typedIpcMainHandle(
+    IPC_CHANNELS.tasks.autoMessage.start,
+    async (_, config) => {
+      try {
+        pageManager.register(
+          TASK_NAME,
+          (page, account) => new MessageManager(page, account, config),
+        )
+        pageManager.startTask(TASK_NAME)
+        return true
+      } catch (error) {
+        const logger = createLogger(
+          `${TASK_NAME} @${pageManager.currentAccountName}`,
+        )
+        logger.error(
+          '启动自动发言失败:',
+          error instanceof Error ? error.message : error,
+        )
+        return false
+      }
+    },
+  )
 
-  ipcMain.handle(IPC_CHANNELS.tasks.autoMessage.stop, async () => {
+  typedIpcMainHandle(IPC_CHANNELS.tasks.autoMessage.stop, async () => {
     pageManager.stopTask(TASK_NAME)
     return true
   })
 
-  ipcMain.handle(
-    IPC_CHANNELS.tasks.autoMessage.updateConfig,
-    async (_, newConfig) => {
-      pageManager.updateTaskConfig(TASK_NAME, newConfig)
-    },
-  )
+  // typedIpcMainHandle(
+  //   IPC_CHANNELS.tasks.autoMessage.updateConfig,
+  //   async (_, newConfig) => {
+  //     pageManager.updateTaskConfig(TASK_NAME, newConfig)
+  //   },
+  // )
 }
 
 setupIpcHandlers()

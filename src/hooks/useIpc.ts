@@ -32,23 +32,26 @@ export function useIpc() {
         },
       ),
       window.ipcRenderer.on(
-        IPC_CHANNELS.tasks.liveControl.disconnect,
+        IPC_CHANNELS.tasks.liveControl.disconnectedEvent,
         (id: string) => {
           setIsConnected(id, 'disconnected')
           toast.error('直播控制台已断开连接')
         },
       ),
       window.ipcRenderer.on(
-        IPC_CHANNELS.tasks.autoMessage.stop,
+        IPC_CHANNELS.tasks.autoMessage.stoppedEvent,
         (id: string) => {
           setIsRunningAutoMessage(id, false)
           toast.error('自动发言已停止')
         },
       ),
-      window.ipcRenderer.on(IPC_CHANNELS.tasks.autoPopUp.stop, (id: string) => {
-        setIsRunningAutoPopUp(id, false)
-        toast.error('自动弹窗已停止')
-      }),
+      window.ipcRenderer.on(
+        IPC_CHANNELS.tasks.autoPopUp.stoppedEvent,
+        (id: string) => {
+          setIsRunningAutoPopUp(id, false)
+          toast.error('自动弹窗已停止')
+        },
+      ),
     ]
 
     return () => {

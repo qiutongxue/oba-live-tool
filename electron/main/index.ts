@@ -28,6 +28,7 @@ import './tasks/autoPopUp'
 import './tasks/autoReply'
 import './tasks/aiChat'
 import './tasks/autoReplyPlus'
+import { typedIpcMainHandle } from './utils'
 
 const _require = createRequire(import.meta.url)
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -145,12 +146,12 @@ ipcMain.handle('open-win', (_, arg) => {
   }
 })
 
-ipcMain.handle(IPC_CHANNELS.chrome.getPath, async (_, edge = true) => {
+typedIpcMainHandle(IPC_CHANNELS.chrome.getPath, async (_, edge) => {
   const path = await findChromium(edge)
   return path
 })
 
-ipcMain.handle(IPC_CHANNELS.chrome.selectPath, async () => {
+typedIpcMainHandle(IPC_CHANNELS.chrome.selectPath, async () => {
   // 打开文件选择器，选择 chrome.exe/msedge.exe
   const path = await dialog.showOpenDialog({
     properties: ['openFile'],
@@ -166,7 +167,7 @@ ipcMain.handle(IPC_CHANNELS.chrome.selectPath, async () => {
   return null
 })
 
-ipcMain.handle(IPC_CHANNELS.chrome.toggleDevTools, event => {
+typedIpcMainHandle(IPC_CHANNELS.chrome.toggleDevTools, event => {
   const win = BrowserWindow.fromWebContents(event.sender)
   if (win) {
     if (win.webContents.isDevToolsOpened()) {
@@ -177,6 +178,6 @@ ipcMain.handle(IPC_CHANNELS.chrome.toggleDevTools, event => {
   }
 })
 
-ipcMain.handle(IPC_CHANNELS.app.openLogFolder, () => {
+typedIpcMainHandle(IPC_CHANNELS.app.openLogFolder, () => {
   shell.openPath(app.getPath('logs'))
 })
