@@ -10,7 +10,7 @@ interface Context {
   page: Page
   browser: Browser
   browserContext: BrowserContext
-  platform: string
+  platform: LiveControlPlatform
   tasks: Record<string, Scheduler>
 }
 
@@ -63,7 +63,7 @@ export class PageManager {
       this.contexts.delete(this.currentId)
       windowManager.sendToWindow(
         'main',
-        IPC_CHANNELS.tasks.liveControl.disconnect,
+        IPC_CHANNELS.tasks.liveControl.disconnectedEvent,
         idSnapShot,
       )
     })

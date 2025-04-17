@@ -54,11 +54,11 @@ class CommentManager {
           this.logger.info(
             `【新评论】<${comment.nickname}>: ${comment.content}`,
           )
-          windowManager.sendToWindow(
-            'main',
-            IPC_CHANNELS.tasks.autoReply.showComment,
-            { comment, accountId: this.account.id },
-          )
+          // windowManager.sendToWindow(
+          //   'main',
+          //   IPC_CHANNELS.tasks.autoReply.showComment,
+          //   { comment, accountId: this.account.id },
+          // )
         },
       )
       this.handlerInitialized = true
@@ -244,7 +244,7 @@ class CommentManager {
       this.isRunning = false
       windowManager.sendToWindow(
         'main',
-        IPC_CHANNELS.tasks.autoReply.stopCommentListener,
+        IPC_CHANNELS.tasks.autoReply.listenerStopped,
       )
       this.logger.success('评论监听已停止')
     } catch (error) {
@@ -313,7 +313,7 @@ class CommentManagerV2 {
       if (url.includes('comment/info?')) {
         const body = await response.json()
         for (const comment of body.data.comment_infos) {
-          const commentData = {
+          const commentData: DouyinLiveMessage = {
             msg_id: comment.comment_id,
             nick_name: comment.nick_name,
             content: comment.content,

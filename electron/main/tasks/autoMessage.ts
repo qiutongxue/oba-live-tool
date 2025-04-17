@@ -94,7 +94,7 @@ class MessageManager {
           this.abortController.abort()
           windowManager.sendToWindow(
             'main',
-            IPC_CHANNELS.tasks.autoMessage.stop,
+            IPC_CHANNELS.tasks.autoMessage.stoppedEvent,
             this.account.id,
           )
         },
