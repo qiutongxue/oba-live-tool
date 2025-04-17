@@ -5,6 +5,7 @@ export interface LoginConstants {
   isLoggedInSelector: string
   isInLiveControlSelector: string
   accountNameSelector: string
+  hoverSelector?: string
 }
 
 export const loginConstants: Record<LiveControlPlatform, LoginConstants> = {
@@ -36,12 +37,16 @@ export const loginConstants: Record<LiveControlPlatform, LoginConstants> = {
     accountNameSelector: `[class^="profile-container"]`,
   },
   redbook: {
-    liveControlUrl: 'https://redlive.xiaohongshu.com/live_center_control',
-    loginUrl: 'https://redlive.xiaohongshu.com/live_login',
-    loginUrlRegex: /.*redlive\.xiaohongshu\.com\/live_login.*/,
-    isLoggedInSelector: `[class^="container-nav"]`,
-    isInLiveControlSelector: `[class^="goods-list"]`,
-    accountNameSelector: `[class^="user-name"]`,
+    liveControlUrl: 'https://ark.xiaohongshu.com/live_center_control',
+    loginUrl:
+      'https://customer.xiaohongshu.com/login?service=https%3A%2F%2Fark.xiaohongshu.com%2Flive_center_control',
+    loginUrlRegex: /.*customer\.xiaohongshu\.com\/login.*/,
+
+    isLoggedInSelector: '.user-info-wrapper',
+    // isInLiveControlSelector: '.comment-container',
+    isInLiveControlSelector: '.app-root-topbar-wrapper',
+    hoverSelector: '.user-info-wrapper',
+    accountNameSelector: '.sellerId-name',
   },
 } as const
 // export const BUYIN_LIVE_CONTROL_URL = 'https://buyin.jinritemai.com/dashboard/live/control' as const

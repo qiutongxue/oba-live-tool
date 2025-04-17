@@ -4,7 +4,7 @@ import { chromium } from 'playwright-extra'
 import stealth from 'puppeteer-extra-plugin-stealth'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { pageManager } from '#/taskManager'
-import { typedIpcMainHandle } from '#/utils'
+import { sleep, typedIpcMainHandle } from '#/utils'
 import type { LoginConstants } from '../constants'
 import { loginConstants } from '../constants'
 import { createLogger } from '../logger'
@@ -18,6 +18,7 @@ interface BrowserConfig {
   headless?: boolean
   storageState?: string
 }
+
 interface BrowserSession {
   browser: playwright.Browser
   context: playwright.BrowserContext
@@ -45,7 +46,7 @@ class LiveControlManager {
     }
   }
 
-  private async createBrowser(headless = true): Promise<playwright.Browser> {
+  private async createBrowser(headless = true) {
     await this.initChromePath()
     return chromium.launch({
       headless,
@@ -55,14 +56,14 @@ class LiveControlManager {
 
   private async createSession(headless: boolean): Promise<BrowserSession> {
     const browser = await this.createBrowser(headless)
-    if (this.storageState) {
-      const context = await browser.newContext({
-        storageState: this.storageState,
-      })
-      const page = await context.newPage()
-      return { browser, context, page }
-    }
-    const context = await browser.newContext()
+
+    const context = await browser.newContext(
+      this.storageState
+        ? {
+            storageState: this.storageState,
+          }
+        : undefined,
+    )
     const page = await context.newPage()
     return { browser, context, page }
   }
@@ -195,11 +196,50 @@ class LiveControlManager {
 
     if (!session) throw new Error('会话创建失败')
 
+    // 小红书反爬，直接访问无法正常加载元素，需要绕开
+    if (this.platform === 'redbook') {
+      // 1. 先回到首页
+      await session.page.goto('https://ark.xiaohongshu.com/')
+      // 2. 点击左侧 sidebar 的直播中控台
+      const rootMenuWrapper =
+        await session.page.waitForSelector('#root-menu-wrapper')
+      // 内容菜单
+      const menuList = await rootMenuWrapper.$$('.common-menu-wrap')
+      const contentMenu = menuList[2]
+      // 内容菜单中找到直播中控台
+      const contentMenuItems = await contentMenu.$$('.menu-item')
+      for (const item of contentMenuItems) {
+        const text = await item.textContent()
+        if (text === '直播中控台') {
+          await item.click()
+          // 等新页面出现
+          await sleep(1000)
+          break
+        }
+      }
+      // 保留新页面作为当前页面
+      for (const page of session.context.pages()) {
+        if (page.url().includes('live_center_control')) {
+          const prevPage = session.page
+          session.page = page
+          await prevPage.close()
+          break
+        }
+      }
+    }
+
+    // 需要鼠标悬停才能获取到用户名（小红书）
+    if (this.loginConstants.hoverSelector) {
+      await session.page.hover(this.loginConstants.hoverSelector)
+    }
+
     // 获取当前登录的账号
     await session.page.waitForSelector(this.loginConstants.accountNameSelector)
+
     const accountName = await session.page
       .$(this.loginConstants.accountNameSelector)
       .then(el => el?.textContent())
+
     this.logger.success(`登录成功，当前账号为「${accountName}」`)
     return {
       ...session,
@@ -228,7 +268,6 @@ function setupIpcHandlers() {
         })
 
         const state = JSON.stringify(await context.storageState())
-        console.log(state)
         return {
           storageState: state,
           accountName,
