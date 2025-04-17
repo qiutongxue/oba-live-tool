@@ -11,10 +11,11 @@ import {
 } from '@/hooks/useLiveControl'
 import React from 'react'
 
-const platforms = {
+const platforms: Record<LiveControlPlatform, string> = {
   douyin: '抖音小店',
   buyin: '巨量百应',
   eos: '抖音团购',
+  redbook: '小红书',
 } as const
 
 const PlatformSelect = React.memo(() => {
