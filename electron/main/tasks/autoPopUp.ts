@@ -55,7 +55,7 @@ class PopUpManager {
           this.abortController.abort()
           windowManager.sendToWindow(
             'main',
-            IPC_CHANNELS.tasks.autoPopUp.stop,
+            IPC_CHANNELS.tasks.autoPopUp.stoppedEvent,
             this.account.id,
           )
         },

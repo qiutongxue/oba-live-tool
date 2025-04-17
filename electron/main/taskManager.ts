@@ -10,7 +10,7 @@ interface Context {
   page: Page
   browser: Browser
   browserContext: BrowserContext
-  platform: string
+  platform: LiveControlPlatform
   tasks: Record<string, Scheduler>
 }
 

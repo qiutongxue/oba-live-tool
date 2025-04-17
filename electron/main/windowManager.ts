@@ -1,5 +1,6 @@
 // utils/windowManager.js
 import type { BrowserWindow } from 'electron'
+import type { IpcChannels } from 'shared/electron-api'
 
 class WindowManager {
   windows: Map<string, BrowserWindow>
@@ -17,8 +18,11 @@ class WindowManager {
     return this.windows.get(name)
   }
 
-  // biome-ignore lint/suspicious/noExplicitAny: 等
-  sendToWindow(name: string, channel: string, ...args: any[]) {
+  sendToWindow<Channel extends keyof IpcChannels>(
+    name: string,
+    channel: Channel,
+    ...args: Parameters<IpcChannels[Channel]>
+  ) {
     const win = this.windows.get(name)
     if (win && !win.isDestroyed()) {
       win.webContents.send(channel, ...args)

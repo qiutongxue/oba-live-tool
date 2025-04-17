@@ -14,7 +14,7 @@ import type {
   SubscribeMerchantBrandVipMessage,
 } from 'electron/main/tasks/autoReplyPlus'
 import type { providers } from 'shared/providers'
-import type { Comment } from 'src/components/autoReply/index'
+
 import type { Account } from '#/taskManager'
 import { IPC_CHANNELS } from './ipcChannels'
 
@@ -23,9 +23,12 @@ export interface IpcChannels {
   [IPC_CHANNELS.tasks.liveControl.connect]: (params: {
     chromePath?: string
     headless?: boolean
-    cookies?: string
-    platform?: 'douyin' | 'buyin'
-  }) => { cookies: string | null; accountName: string | null } | null
+    storageState?: string
+    platform?: LiveControlPlatform
+  }) => {
+    storageState: string | null
+    accountName: string | null
+  } | null
   [IPC_CHANNELS.tasks.autoReply.startCommentListener]: (
     type: 'control' | 'compass',
   ) => boolean
@@ -79,7 +82,7 @@ export interface IpcChannels {
   // --- Main -> Renderer (Send/On) ---
   [IPC_CHANNELS.tasks.autoReply.listenerStopped]: () => void
   [IPC_CHANNELS.tasks.autoReply.showComment]: (data: {
-    comment: Comment
+    comment: DouyinLiveMessage
     accountId: string
   }) => void
   [IPC_CHANNELS.log]: (message: LogMessage) => void
