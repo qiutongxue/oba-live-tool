@@ -54,10 +54,8 @@ const ConnectToLiveControl = React.memo(() => {
   const platform = useCurrentLiveControl(context => context.platform)
   const isConnected = useCurrentLiveControl(context => context.isConnected)
   const chromePath = useCurrentChromeConfig(context => context.path)
-  const oldCookies = useCurrentChromeConfig(
-    context => context.cookies[platform],
-  )
-  const { setCookies } = useCurrentChromeConfigActions()
+  const storageState = useCurrentChromeConfig(context => context.storageState)
+  const { setStorageState } = useCurrentChromeConfigActions()
   const { enabled: devMode } = useDevMode()
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
@@ -68,13 +66,13 @@ const ConnectToLiveControl = React.memo(() => {
       setIsLoading(true)
       const result = await window.ipcRenderer.invoke(
         IPC_CHANNELS.tasks.liveControl.connect,
-        { headless: !devMode, chromePath, cookies: oldCookies, platform },
+        { headless: !devMode, chromePath, storageState, platform },
       )
 
-      if (result?.cookies) {
+      if (result) {
         setIsConnected('connected')
         setAccountName(result.accountName || '')
-        setCookies(platform, result.cookies)
+        setStorageState(result.storageState || '')
         toast.success('已连接到直播控制台')
       } else {
         throw new Error('找不到 cookies')

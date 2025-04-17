@@ -9,7 +9,7 @@ interface ChromeConfigV1 {
   cookies: string
 }
 
-interface ChromeConfig {
+interface ChromeConfigV2 {
   path: string
   cookies: {
     buyin: string
@@ -18,63 +18,60 @@ interface ChromeConfig {
   }
 }
 
+interface ChromeConfig {
+  path: string
+  storageState: string
+}
+
 interface ChromeConfigStore {
   contexts: Record<string, ChromeConfig>
   setPath: (accountId: string, path: string) => void
-  setCookies: (
-    accountId: string,
-    platform: keyof ChromeConfig['cookies'],
-    cookies: string,
-  ) => void
+  setStorageState: (accountId: string, storageState: string) => void
 }
 
 const defaultContext = (): ChromeConfig => ({
   path: '',
-  cookies: {
-    buyin: '',
-    douyin: '',
-    eos: '',
-  },
+  storageState: '',
 })
 
 export const useChromeConfigStore = create<ChromeConfigStore>()(
   persist(
-    immer(set => ({
-      contexts: {
-        default: defaultContext(),
-      },
-      setPath: (accountId, path) => {
-        set(state => {
-          if (!state.contexts[accountId]) {
-            state.contexts[accountId] = defaultContext()
-          }
-          state.contexts[accountId].path = path
-        })
-      },
-      setCookies: (accountId, platform, cookies) => {
-        set(state => {
-          if (!state.contexts[accountId]) {
-            state.contexts[accountId] = defaultContext()
-          }
-          state.contexts[accountId].cookies[platform] = cookies
-        })
-      },
-    })),
+    immer(set => {
+      const ensureContext = (state: ChromeConfigStore, accountId: string) => {
+        if (!state.contexts[accountId]) {
+          state.contexts[accountId] = defaultContext()
+        }
+        return state.contexts[accountId]
+      }
+      return {
+        contexts: {
+          default: defaultContext(),
+        },
+        setPath: (accountId, path) => {
+          set(state => {
+            const context = ensureContext(state, accountId)
+            context.path = path
+          })
+        },
+        setStorageState: (accountId, storageState) => {
+          set(state => {
+            const context = ensureContext(state, accountId)
+            context.storageState = storageState
+          })
+        },
+      }
+    }),
     {
       name: 'chrome-config',
-      version: 3,
+      version: 4,
       migrate: (persistedState, version) => {
         if (version === 0) {
           const persisted = persistedState as ChromeConfigV1
           return {
             contexts: {
               default: {
-                chromePath: persisted?.path,
-                cookies: {
-                  buyin: '',
-                  douyin: persisted?.cookies || '',
-                  eos: '',
-                },
+                path: persisted?.path,
+                storageState: '',
               },
             },
           }
@@ -89,14 +86,21 @@ export const useChromeConfigStore = create<ChromeConfigStore>()(
                 accountId,
                 {
                   ...context,
-                  cookies: {
-                    buyin: '',
-                    douyin: context.cookies,
-                    eos: '',
-                  },
+                  storageState: '',
                 },
               ]),
             ),
+          }
+        }
+        if (version === 3) {
+          const persisted = persistedState as ChromeConfigV2
+          return {
+            contexts: {
+              default: {
+                path: persisted?.path,
+                storageState: '',
+              },
+            },
           }
         }
       },
@@ -116,15 +120,15 @@ export function useCurrentChromeConfig<T>(
 
 export function useCurrentChromeConfigActions() {
   const setPath = useChromeConfigStore(state => state.setPath)
-  const setCookies = useChromeConfigStore(state => state.setCookies)
+  const setStorageState = useChromeConfigStore(state => state.setStorageState)
   const currentAccountId = useAccounts(state => state.currentAccountId)
 
   return useMemo(
     () => ({
       setPath: (path: string) => setPath(currentAccountId, path),
-      setCookies: (platform: keyof ChromeConfig['cookies'], cookies: string) =>
-        setCookies(currentAccountId, platform, cookies),
+      setStorageState: (storageState: string) =>
+        setStorageState(currentAccountId, storageState),
     }),
-    [currentAccountId, setPath, setCookies],
+    [currentAccountId, setPath, setStorageState],
   )
 }

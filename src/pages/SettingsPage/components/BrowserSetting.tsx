@@ -39,7 +39,7 @@ export function BrowserSetting() {
   const path = useCurrentChromeConfig(context => context.path)
   const isConnected = useCurrentLiveControl(context => context.isConnected)
   const platform = useCurrentLiveControl(context => context.platform)
-  const { setPath, setCookies } = useCurrentChromeConfigActions()
+  const { setPath, setStorageState } = useCurrentChromeConfigActions()
   const [isDetecting, setIsDetecting] = useState(false)
   const [edgeFirst, setEdgeFirst] = useState(false)
   const { toast } = useToast()
@@ -56,7 +56,7 @@ export function BrowserSetting() {
   }, [setPath])
 
   const handleCookiesReset = () => {
-    setCookies(platform, '')
+    setStorageState('')
     toast.success('登录状态已重置')
   }
 
