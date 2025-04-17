@@ -7,7 +7,7 @@ export interface LoginConstants {
   accountNameSelector: string
 }
 
-export const loginConstants: Record<string, LoginConstants> = {
+export const loginConstants: Record<LiveControlPlatform, LoginConstants> = {
   buyin: {
     liveControlUrl: 'https://buyin.jinritemai.com/dashboard/live/control',
     loginUrl:
@@ -34,6 +34,14 @@ export const loginConstants: Record<string, LoginConstants> = {
     isLoggedInSelector: `[class^="head-container"]`,
     isInLiveControlSelector: `[class^="layout-container"]`,
     accountNameSelector: `[class^="profile-container"]`,
+  },
+  redbook: {
+    liveControlUrl: 'https://redlive.xiaohongshu.com/live_center_control',
+    loginUrl: 'https://redlive.xiaohongshu.com/live_login',
+    loginUrlRegex: /.*redlive\.xiaohongshu\.com\/live_login.*/,
+    isLoggedInSelector: `[class^="container-nav"]`,
+    isInLiveControlSelector: `[class^="goods-list"]`,
+    accountNameSelector: `[class^="user-name"]`,
   },
 } as const
 // export const BUYIN_LIVE_CONTROL_URL = 'https://buyin.jinritemai.com/dashboard/live/control' as const

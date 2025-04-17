@@ -8,13 +8,13 @@ type ConnectionStatus = 'connecting' | 'connected' | 'disconnected'
 interface LiveControlContext {
   isConnected: ConnectionStatus
   accountName: string | null
-  platform: 'buyin' | 'douyin'
+  platform: LiveControlPlatform
 }
 
 interface LiveControlActions {
   setIsConnected: (accountId: string, connected: ConnectionStatus) => void
   setAccountName: (accountId: string, name: string | null) => void
-  setPlatform: (accountId: string, platform: 'buyin' | 'douyin') => void
+  setPlatform: (accountId: string, platform: LiveControlPlatform) => void
 }
 
 type LiveControlStore = LiveControlActions & {
@@ -31,30 +31,31 @@ function defaultContext(): LiveControlContext {
 
 export const useLiveControlStore = create<LiveControlStore>()(
   immer(set => {
+    const ensureContext = (state: LiveControlStore, accountId: string) => {
+      if (!state.contexts[accountId]) {
+        state.contexts[accountId] = defaultContext()
+      }
+      return state.contexts[accountId]
+    }
+
     return {
       contexts: {
         default: defaultContext(),
       },
       setIsConnected: (accountId, connected) =>
         set(state => {
-          if (!state.contexts[accountId]) {
-            state.contexts[accountId] = defaultContext()
-          }
-          state.contexts[accountId].isConnected = connected
+          const context = ensureContext(state, accountId)
+          context.isConnected = connected
         }),
       setAccountName: (accountId, name) =>
         set(state => {
-          if (!state.contexts[accountId]) {
-            state.contexts[accountId] = defaultContext()
-          }
-          state.contexts[accountId].accountName = name
+          const context = ensureContext(state, accountId)
+          context.accountName = name
         }),
       setPlatform: (accountId, platform) =>
         set(state => {
-          if (!state.contexts[accountId]) {
-            state.contexts[accountId] = defaultContext()
-          }
-          state.contexts[accountId].platform = platform
+          const context = ensureContext(state, accountId)
+          context.platform = platform
         }),
     }
   }),
@@ -73,7 +74,7 @@ export const useCurrentLiveControlActions = () => {
       setAccountName: (name: string | null) => {
         setAccountName(currentAccountId, name)
       },
-      setPlatform: (platform: 'buyin' | 'douyin') => {
+      setPlatform: (platform: LiveControlPlatform) => {
         setPlatform(currentAccountId, platform)
       },
     }),
