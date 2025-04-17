@@ -12,11 +12,12 @@ import { findChromium } from '../utils/checkChrome'
 
 const TASK_NAME = '中控台'
 
+type PromiseReturnType<T> = T extends Promise<infer U> ? U : T
+
 interface BrowserConfig {
   headless?: boolean
-  cookies?: string
+  storageState?: string
 }
-
 interface BrowserSession {
   browser: playwright.Browser
   context: playwright.BrowserContext
@@ -25,7 +26,9 @@ interface BrowserSession {
 
 class LiveControlManager {
   private chromePath: string | null = null
-  private newCookies: string | null = null
+  private storageState: PromiseReturnType<
+    ReturnType<playwright.BrowserContext['storageState']>
+  > | null = null
   private loginConstants: LoginConstants
   private logger: ReturnType<typeof createLogger>
 
@@ -52,6 +55,13 @@ class LiveControlManager {
 
   private async createSession(headless: boolean): Promise<BrowserSession> {
     const browser = await this.createBrowser(headless)
+    if (this.storageState) {
+      const context = await browser.newContext({
+        storageState: this.storageState,
+      })
+      const page = await context.newPage()
+      return { browser, context, page }
+    }
     const context = await browser.newContext()
     const page = await context.newPage()
     return { browser, context, page }
@@ -79,10 +89,10 @@ class LiveControlManager {
     }
   }
 
-  private async saveCookies(context: playwright.BrowserContext) {
-    const cookies = await context.cookies()
-    this.newCookies = JSON.stringify(cookies)
-  }
+  // private async saveCookies(context: playwright.BrowserContext) {
+  //   const cookies = await context.cookies()
+  //   this.newCookies = JSON.stringify(cookies)
+  // }
 
   private async handleHeadlessLogin(
     session: BrowserSession,
@@ -99,8 +109,8 @@ class LiveControlManager {
       this.loginConstants.isLoggedInSelector,
       { timeout: 0 },
     )
-    // 保存 cookies
-    await this.saveCookies(newSession.context)
+    // 保存状态
+    this.storageState = await newSession.context.storageState()
     // 关闭有头浏览器，返回 null 以触发重新连接
     await newSession.browser.close()
     return null
@@ -117,11 +127,13 @@ class LiveControlManager {
     await session.page.waitForSelector(this.loginConstants.isLoggedInSelector, {
       timeout: 0,
     })
-    await this.saveCookies(session.context)
-    if (this.platform === 'buyin') {
-      // 百应登录之后不会跳转到中控台，需要手动跳转
+
+    if (this.platform !== 'douyin') {
+      // 除了抖音外都手动跳转一下
       await session.page.goto(this.loginConstants.liveControlUrl)
     }
+    // 保存状态
+    this.storageState = await session.context.storageState()
     return session
   }
 
@@ -131,19 +143,20 @@ class LiveControlManager {
 
   public async connect({
     headless = true,
-    cookies = '',
+    storageState = '',
   }: BrowserConfig): Promise<BrowserSession & { accountName: string | null }> {
     this.logger.info('启动中……')
 
     let loginSuccess = false
     let session: BrowserSession | null = null
 
+    if (storageState) {
+      this.storageState = JSON.parse(storageState)
+    }
+
     while (!loginSuccess) {
       try {
         session = await this.createSession(headless)
-
-        // 加载 cookies
-        await this.loadCookies(session.context, this.newCookies || cookies)
 
         // 访问中控台
         await session.page.goto(this.loginConstants.liveControlUrl)
@@ -168,8 +181,7 @@ class LiveControlManager {
           if (!newSession) continue
           session = newSession
         }
-        // 每次连接都保存一次 cookies
-        await this.saveCookies(session.context)
+
         loginSuccess = true
       } catch (error) {
         this.logger.error(
@@ -194,22 +206,18 @@ class LiveControlManager {
       accountName: accountName || null,
     }
   }
-
-  public get cookies() {
-    return this.newCookies
-  }
 }
 
 function setupIpcHandlers() {
   typedIpcMainHandle(
     IPC_CHANNELS.tasks.liveControl.connect,
-    async (_, { chromePath, headless, cookies, platform = 'douyin' }) => {
+    async (_, { chromePath, headless, storageState, platform = 'douyin' }) => {
       try {
         const manager = new LiveControlManager(platform || 'douyin')
         if (chromePath) manager.setChromePath(chromePath)
         const { browser, context, page, accountName } = await manager.connect({
           headless,
-          cookies,
+          storageState,
         })
 
         pageManager.setContext({
@@ -219,8 +227,10 @@ function setupIpcHandlers() {
           platform,
         })
 
+        const state = JSON.stringify(await context.storageState())
+        console.log(state)
         return {
-          cookies: manager.cookies,
+          storageState: state,
           accountName,
         }
       } catch (error) {
