@@ -50,5 +50,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with: 
           name: release_on_${{ matrix. os }}
-          path: release/
+          path: |
+            release/*/*.exe
+            release/*/*.dmg
           retention-days: 7
