@@ -110,7 +110,7 @@ async function findChromiumOnWindows() {
 }
 
 async function findChromiumOnMac() {
-  const find = async (commonPaths: string, executableName: string) => {
+  const find = async (commonPaths: string[], executableName: string) => {
     for (const path of commonPaths) {
       if (fs.existsSync(path)) {
         logger.info(`找到 ${executableName} 路径：${path}`)
@@ -120,11 +120,11 @@ async function findChromiumOnMac() {
     return await findAppPathWithOsaScript(executableName)
   }
   const chromePath = await find(
-    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+    ['/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'],
     'Google Chrome',
   )
   const edgePath = await find(
-    '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
+    ['/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge'],
     'Microsoft Edge',
   )
   return { chromePath, edgePath }
