@@ -8,7 +8,12 @@
   "files": ["dist-electron", "dist"],
   "mac": {
     "artifactName": "${productName}_${version}.${ext}",
-    "target": ["dmg"],
+    "target": [
+      {
+        "target": "dmg",
+        "arch": ["universal"]
+      }
+    ],
     "icon": "public/favicon.png"
   },
   "win": {
