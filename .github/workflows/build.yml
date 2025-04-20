@@ -20,7 +20,8 @@ jobs:
 
     strategy:
       matrix:
-        os: [macos-latest, windows-latest]
+        # macos-13 采用 intel 架构，见 https://docs.github.com/en/actions/using-github-hosted-runners/using-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
+        os: [macos-latest, windows-latest, macos-13] 
 
     steps:
       - name: Checkout Code
