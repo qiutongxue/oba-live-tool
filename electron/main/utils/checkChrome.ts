@@ -1,6 +1,6 @@
 import { exec } from 'node:child_process'
 import fs from 'node:fs'
-import { platform } from 'node:os'
+import os from 'node:os'
 import path from 'node:path'
 import { promisify } from 'node:util'
 import { createLogger } from '../logger'
@@ -83,66 +83,116 @@ async function findAppPathWithOsaScript(appName: string) {
   }
 }
 
-async function findChromiumOnWindows() {
-  const find = async (commonPaths: string[], executableName: string) => {
-    const path =
-      (await findChromiumByCommonPath(commonPaths)) ||
-      (await findChromiumByTasklist(executableName))
-    return path
+async function findChromiumOnWindows(
+  commonPaths: string[],
+  executableName: string,
+) {
+  const pathFromCommon = await findChromiumByCommonPath(commonPaths)
+  if (pathFromCommon) {
+    logger.info(`通过通用路径找到 ${executableName}: ${pathFromCommon}`)
+    return pathFromCommon
   }
-  const chromePath = await find(
-    [
-      '%ProgramFiles%\\Google\\Chrome\\Application\\chrome.exe',
-      '%ProgramFiles(x86)%\\Google\\Chrome\\Application\\chrome.exe',
-      '%LocalAppData%\\Google\\Chrome\\Application\\chrome.exe',
-    ],
-    'chrome.exe',
-  )
-  const edgePath = await find(
-    [
+
+  // 其次尝试 tasklist
+  const pathFromTasklist = await findChromiumByTasklist(executableName)
+  if (pathFromTasklist) {
+    logger.info(`通过 tasklist 找到 ${executableName}: ${pathFromTasklist}`)
+    return pathFromTasklist
+  }
+
+  logger.warn(`未能找到 ${executableName} (Windows)`)
+  return null // 明确返回 null 表示未找到
+}
+
+async function findChromiumOnMac(commonPaths: string[], appName: string) {
+  for (const path of commonPaths) {
+    if (fs.existsSync(path)) {
+      logger.info(`通过预定义路径找到 ${appName}: ${path}`)
+      return path
+    }
+  }
+
+  const pathFromOsa = await findAppPathWithOsaScript(appName)
+  if (pathFromOsa) {
+    logger.info(`通过 osascript 找到 ${appName}: ${pathFromOsa}`)
+    return pathFromOsa
+  }
+
+  logger.warn(`未能找到 ${appName} (macOS)`)
+  return null // 明确返回 null 表示未找到
+}
+
+interface BrowserConfig {
+  commonPaths: string[]
+  name: string
+}
+
+interface PlatformConfig {
+  edge: BrowserConfig
+  chrome: BrowserConfig
+  findChromium: (commonPaths: string[], name: string) => Promise<string | null>
+}
+
+const windowsConfig: PlatformConfig = {
+  edge: {
+    commonPaths: [
       '%ProgramFiles%\\Microsoft\\Edge\\Application\\msedge.exe',
       '%ProgramFiles(x86)%\\Microsoft\\Edge\\Application\\msedge.exe',
       '%LocalAppData%\\Microsoft\\Edge\\Application\\msedge.exe',
     ],
-    'msedge.exe',
-  )
-  return { chromePath, edgePath }
+    name: 'msedge.exe',
+  },
+  chrome: {
+    commonPaths: [
+      '%ProgramFiles%\\Google\\Chrome\\Application\\chrome.exe',
+      '%ProgramFiles(x86)%\\Google\\Chrome\\Application\\chrome.exe',
+      '%LocalAppData%\\Google\\Chrome\\Application\\chrome.exe',
+    ],
+    name: 'chrome.exe',
+  },
+  findChromium: findChromiumOnWindows,
 }
 
-async function findChromiumOnMac() {
-  const find = async (commonPaths: string[], executableName: string) => {
-    for (const path of commonPaths) {
-      if (fs.existsSync(path)) {
-        logger.info(`找到 ${executableName} 路径：${path}`)
-        return path
-      }
-    }
-    return await findAppPathWithOsaScript(executableName)
-  }
-  const chromePath = await find(
-    ['/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'],
-    'Google Chrome',
-  )
-  const edgePath = await find(
-    ['/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge'],
-    'Microsoft Edge',
-  )
-  return { chromePath, edgePath }
+const macConfig: PlatformConfig = {
+  edge: {
+    commonPaths: [
+      '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
+    ],
+    // 注意：这里 'name' 应该用于 osascript，它需要应用名
+    name: 'Microsoft Edge',
+  },
+  chrome: {
+    commonPaths: [
+      '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+    ],
+    name: 'Google Chrome',
+  },
+  findChromium: findChromiumOnMac,
 }
 
 export async function findChromium(edge = false): Promise<string | null> {
-  switch (platform()) {
-    case 'win32': {
-      const { chromePath, edgePath } = await findChromiumOnWindows()
-      return (edge && edgePath) || chromePath || edgePath
-    }
-    case 'darwin': {
-      const { chromePath, edgePath } = await findChromiumOnMac()
-      return (edge && edgePath) || chromePath || edgePath
-    }
-    default: {
-      logger.error(`不支持的平台：${platform()}`)
-      return null
+  const platform = os.platform()
+  let config: PlatformConfig
+
+  if (platform === 'win32') {
+    config = windowsConfig
+  } else if (platform === 'darwin') {
+    config = macConfig
+  } else {
+    logger.error(`不支持的操作系统: ${platform}`)
+    return null
+  }
+
+  const browserConfig = edge
+    ? [config.edge, config.chrome]
+    : [config.chrome, config.edge]
+
+  for (const cfg of browserConfig) {
+    const path = await config.findChromium(cfg.commonPaths, cfg.name)
+    if (path) {
+      return path
     }
   }
+
+  return null
 }
