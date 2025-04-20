@@ -12,7 +12,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-latest]
+        os: [windows-latest] 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -42,18 +42,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Check if current branch is dev
-        id: check_branch
-        shell: pwsh
-        run: |
-          $branchName = git branch --contains ${{ github.ref }} | Where-Object { $_ -notmatch "HEAD" } | ForEach-Object { $_.Trim() }
-          echo "BRANCH_NAME=$branchName" >> $env:GITHUB_ENV
-          if ($branchName -eq "dev") {
-            echo "IS_DEV=true" >> $env:GITHUB_ENV
-          } else {
-            echo "IS_DEV=false" >> $env:GITHUB_ENV
-          }
-
       - name: Create Release and Upload Assets
         uses: softprops/action-gh-release@v2
         with:
@@ -63,7 +51,7 @@ jobs:
             release/*/*.exe
             release/*/*.exe.blockmap
             release/*/latest.yml
-          draft: false
-          prerelease: ${{ env.IS_DEV == 'true' }}
+          draft: true
+          # prerelease: ${{ env.IS_DEV == 'true' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # 自动注入的 GitHub Token

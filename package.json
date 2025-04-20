@@ -69,7 +69,6 @@
     "@types/ws": "^8.18.0",
     "@vitejs/plugin-react": "^4.3.4",
     "@welldone-software/why-did-you-render": "10.0.1",
-    "biome": "^0.3.3",
     "builder-util-runtime": "^9.2.10",
     "bumpp": "^10.0.1",
     "electron": "^35.0.3",

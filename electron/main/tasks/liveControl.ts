@@ -285,7 +285,8 @@ function setupIpcHandlers() {
 
   typedIpcMainHandle(IPC_CHANNELS.tasks.liveControl.disconnect, async () => {
     try {
-      await pageManager.getPage()?.close()
+      const currentContext = pageManager.getContext()
+      await currentContext?.browser.close()
       return true
     } catch (error) {
       const logger = createLogger(TASK_NAME)

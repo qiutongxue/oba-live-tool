@@ -66,6 +66,8 @@ export class PageManager {
         IPC_CHANNELS.tasks.liveControl.disconnectedEvent,
         idSnapShot,
       )
+      // MacOS 需要手动关闭浏览器
+      context.browser.close().catch()
     })
     const previousContext = this.contexts.get(this.currentId) ?? {
       ...context,
