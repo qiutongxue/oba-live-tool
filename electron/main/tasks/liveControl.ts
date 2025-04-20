@@ -201,11 +201,10 @@ class LiveControlManager {
       // 1. 先回到首页
       await session.page.goto('https://ark.xiaohongshu.com/')
       // 2. 点击左侧 sidebar 的直播中控台
-      const rootMenuWrapper =
-        await session.page.waitForSelector('#root-menu-wrapper')
-      // 内容菜单
-      const menuList = await rootMenuWrapper.$$('.common-menu-wrap')
-      const contentMenu = menuList[2]
+      // 等内容菜单出现（防止因为加载慢导致获取出错
+      const contentMenu = await session.page.waitForSelector(
+        '#root-menu-wrapper .common-menu-wrap:nth-child(3)',
+      )
       // 内容菜单中找到直播中控台
       const contentMenuItems = await contentMenu.$$('.menu-item')
       for (const item of contentMenuItems) {
