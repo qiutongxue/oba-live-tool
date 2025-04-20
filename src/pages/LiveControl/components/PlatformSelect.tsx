@@ -16,6 +16,7 @@ const platforms: Record<LiveControlPlatform, string> = {
   buyin: '巨量百应',
   eos: '抖音团购',
   redbook: '小红书',
+  wxchannel: '视频号',
 } as const
 
 const PlatformSelect = React.memo(() => {

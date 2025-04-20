@@ -48,6 +48,15 @@ export const loginConstants: Record<LiveControlPlatform, LoginConstants> = {
     hoverSelector: '.user-info-wrapper',
     accountNameSelector: '.sellerId-name',
   },
+  wxchannel: {
+    liveControlUrl: 'https://channels.weixin.qq.com/platform/live/liveBuild',
+    loginUrl: 'https://channels.weixin.qq.com/login.html',
+    loginUrlRegex: /.*channels\.weixin\.qq\.com\/login/,
+    isLoggedInSelector: '.account-info .name',
+    // 视频号只有开播的时候才能进入中控台页面，所以暂时先只判断登录
+    isInLiveControlSelector: '.account-info .name',
+    accountNameSelector: '.account-info .name',
+  },
 } as const
 // export const BUYIN_LIVE_CONTROL_URL = 'https://buyin.jinritemai.com/dashboard/live/control' as const
 // export const BUYIN_LOGIN_URL = 'https://buyin.jinritemai.com/login/common' as const
