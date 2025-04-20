@@ -203,6 +203,7 @@ export default function CommentList({
 }) {
   const { comments, isListening, setIsListening, config } = useAutoReply()
   const isConnected = useCurrentLiveControl(context => context.isConnected)
+  const platform = useCurrentLiveControl(context => context.platform)
   const { toast } = useToast()
   const [hideHost, setHideHost] = useState(false)
 
@@ -263,6 +264,11 @@ export default function CommentList({
     [comments, hideHost, accountName],
   )
 
+  const isButtonDisabled =
+    isListening === 'waiting' ||
+    isConnected !== 'connected' ||
+    (platform !== 'douyin' && platform !== 'buyin')
+
   return (
     <Card className="shadow-sm">
       <CardHeader className="pb-3 relative">
@@ -285,9 +291,12 @@ export default function CommentList({
               size="sm"
               onClick={startListening}
               className="flex items-center gap-1"
-              disabled={
+              title={
                 isListening === 'waiting' || isConnected !== 'connected'
+                  ? '请先连接直播间'
+                  : undefined
               }
+              disabled={isButtonDisabled}
             >
               {isListening === 'waiting' ? (
                 '连接中...'

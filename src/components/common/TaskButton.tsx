@@ -1,5 +1,6 @@
 import { useCurrentLiveControl } from '@/hooks/useLiveControl'
 import { useDebounceFn } from 'ahooks'
+import { CarbonPlayFilledAlt, CarbonStopFilledAlt } from '../icons/carbon'
 import { Button } from '../ui/button'
 import {
   Tooltip,
@@ -7,14 +8,15 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '../ui/tooltip'
-import { CarbonPlayFilledAlt, CarbonStopFilledAlt } from '../icons/carbon'
 
 export function TaskButton({
   isTaskRunning,
   onStartStop,
+  forbidden = false,
 }: {
   isTaskRunning: boolean
   onStartStop: () => void
+  forbidden?: boolean
 }) {
   const isConnected = useCurrentLiveControl(context => context.isConnected)
   const debouncedFn = useDebounceFn(onStartStop, {
@@ -30,7 +32,7 @@ export function TaskButton({
             <Button
               variant={isTaskRunning ? 'destructive' : 'default'}
               onClick={() => debouncedFn.run()}
-              disabled={isConnected !== 'connected'}
+              disabled={forbidden || isConnected !== 'connected'}
             >
               {isTaskRunning ? (
                 <>
