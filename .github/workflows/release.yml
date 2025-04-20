@@ -12,7 +12,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-latest] 
+        os: [windows-latest, macos-latest] 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -49,8 +49,10 @@ jobs:
           body_path: CHANGELOG.md # 使用 CHANGELOG 作为 Release 说明
           files: |
             release/*/*.exe
-            release/*/*.exe.blockmap
-            release/*/latest.yml
+            release/*/*.dmg
+            release/*/*.blockmap
+            release/*/latest*.yml
+
           draft: true
           # prerelease: ${{ env.IS_DEV == 'true' }}
         env:
