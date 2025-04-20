@@ -1,4 +1,5 @@
 import { createRequire } from 'node:module'
+import { platform } from 'node:os'
 import { app, ipcMain } from 'electron'
 import type {
   AppUpdater,
@@ -74,7 +75,7 @@ export async function update(win: Electron.BrowserWindow) {
     })
     return await autoUpdater.checkForUpdatesAndNotify().catch(error => {
       const message = `网络错误: ${error instanceof Error ? error.message.split('\n')[0] : (error as string)}`
-      const downloadURL = `${src}${assetsUrl}oba-live-tool_${version}.exe`
+      const downloadURL = `${src}${assetsUrl}oba-live-tool_${version}.${platform() === 'darwin' ? 'dmg' : 'exe'}`
       return { message, error, downloadURL }
     })
   }
