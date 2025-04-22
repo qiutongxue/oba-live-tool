@@ -1,4 +1,4 @@
-import type { ElementHandle } from 'playwright'
+import type { ElementHandle, Locator } from 'playwright'
 import { LiveControlElementFinder } from '../LiveControlElementFinder'
 
 export class WxChannelLiveControlElementFinder extends LiveControlElementFinder {
@@ -36,10 +36,12 @@ export class WxChannelLiveControlElementFinder extends LiveControlElementFinder 
     throw new Error('未找到商品：请确认商品序号是否在范围内')
   }
 
-  public getCommentTextarea(): Promise<ElementHandle<
-    SVGElement | HTMLElement
-  > | null> {
-    return this.page.$('.live-message-input-container textarea')
+  public async getCommentTextarea(): Promise<
+    ElementHandle<SVGElement | HTMLElement> | Locator | null
+  > {
+    const iframe = this.page.locator('.wujie_iframe')
+    const textarea = iframe.locator('.live-message-input-container textarea')
+    return textarea
   }
 
   public async getClickableSubmitCommentButton(): Promise<ElementHandle<

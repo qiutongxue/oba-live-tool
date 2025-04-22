@@ -8,6 +8,7 @@ import { type PopUpStrategy, getPopUpStrategy } from './PopUpStrategy'
 import { BuyinLiveControlElementFinder } from './finders/BuyinLiveControlElementFinder'
 import { EOSLiveControlElementFinder } from './finders/EOSLiveControlElementFinder'
 import { RedbookLiveControlElementFinder } from './finders/RedbookLiveControlElementFinder'
+import { WxChannelLiveControlElementFinder } from './finders/WxChannelLiveControlElementFinder'
 
 function getLiveControlElementFinder(
   platform: LiveControlPlatform,
@@ -18,6 +19,8 @@ function getLiveControlElementFinder(
       return new EOSLiveControlElementFinder(page)
     case 'redbook':
       return new RedbookLiveControlElementFinder(page)
+    case 'wxchannel':
+      return new WxChannelLiveControlElementFinder(page)
     default:
       return new BuyinLiveControlElementFinder(page)
   }

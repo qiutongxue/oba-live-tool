@@ -1,4 +1,4 @@
-import type { ElementHandle, Page } from 'playwright'
+import type { ElementHandle, Locator, Page } from 'playwright'
 
 export abstract class LiveControlElementFinder {
   protected page: Page
@@ -19,9 +19,9 @@ export abstract class LiveControlElementFinder {
   public abstract getGoodsItemsScrollContainer(): Promise<ElementHandle<
     SVGElement | HTMLElement
   > | null>
-  public abstract getCommentTextarea(): Promise<ElementHandle<
-    SVGElement | HTMLElement
-  > | null>
+  public abstract getCommentTextarea(): Promise<
+    ElementHandle<SVGElement | HTMLElement> | Locator | null
+  >
   public abstract getClickableSubmitCommentButton(): Promise<ElementHandle<
     SVGElement | HTMLElement
   > | null>
