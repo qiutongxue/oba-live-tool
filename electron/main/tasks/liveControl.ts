@@ -161,17 +161,42 @@ class LiveControlManager {
 
         // 访问中控台
         await session.page.goto(this.loginConstants.liveControlUrl)
-        await Promise.race([
-          // 需要登录
-          session.page.waitForURL(this.loginConstants.loginUrlRegex, {
-            timeout: 0,
-          }),
-          // 成功进入了中控台
-          session.page.waitForSelector(
-            this.loginConstants.isInLiveControlSelector,
-            { timeout: 0 },
-          ),
-        ])
+
+        if (this.platform === 'wxchannel') {
+          const indexRegex = /platform\/?$/
+          await Promise.race([
+            // 需要登录
+            session.page.waitForURL(this.loginConstants.loginUrlRegex, {
+              timeout: 0,
+            }),
+            // 已开播就会直接进入中控台
+            session.page.waitForSelector(
+              this.loginConstants.isInLiveControlSelector,
+              { timeout: 0 },
+            ),
+            // 未开播会跳转到首页！
+            session.page.waitForURL(indexRegex, {
+              timeout: 0,
+            }),
+          ])
+
+          if (indexRegex.test(session.page.url())) {
+            // 未开播，直接抛出错误
+            throw new Error('视频号未开播的情况下无法连接到中控台，清先开播')
+          }
+        } else {
+          await Promise.race([
+            // 需要登录
+            session.page.waitForURL(this.loginConstants.loginUrlRegex, {
+              timeout: 0,
+            }),
+            // 成功进入了中控台
+            session.page.waitForSelector(
+              this.loginConstants.isInLiveControlSelector,
+              { timeout: 0 },
+            ),
+          ])
+        }
 
         this.logger.debug(`当前页面: ${session.page.url()}`)
 
@@ -185,10 +210,6 @@ class LiveControlManager {
 
         loginSuccess = true
       } catch (error) {
-        this.logger.error(
-          '连接失败:',
-          error instanceof Error ? error.message : String(error),
-        )
         if (session?.browser) await session.browser.close()
         throw error
       }

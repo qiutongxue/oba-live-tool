@@ -53,8 +53,7 @@ export const loginConstants: Record<LiveControlPlatform, LoginConstants> = {
     loginUrl: 'https://channels.weixin.qq.com/login.html',
     loginUrlRegex: /.*channels\.weixin\.qq\.com\/login/,
     isLoggedInSelector: '.account-info .name',
-    // 视频号只有开播的时候才能进入中控台页面，所以暂时先只判断登录
-    isInLiveControlSelector: '.account-info .name',
+    isInLiveControlSelector: '.live-message-input-container', // 评论框
     accountNameSelector: '.account-info .name',
   },
 } as const
