@@ -108,12 +108,6 @@ export class PageManager {
       delete context.tasks[taskName]
     }
 
-    if (context.platform === 'wxchannel') {
-      if (!context.page.url().includes('/live/liveBuild')) {
-        context.page.goto(loginConstants.wxchannel.liveControlUrl)
-      }
-    }
-
     const scheduler = creator(context.page, {
       id: this.currentId,
       name: this.currentAccountName,
