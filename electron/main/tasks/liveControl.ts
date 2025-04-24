@@ -249,6 +249,14 @@ class LiveControlManager {
       }
     }
 
+    // 微信视频号的弹窗不在中控台，需要额外开启一个页面
+    if (this.platform === 'wxchannel') {
+      const popUpPage = await session.context.newPage()
+      await popUpPage.goto(
+        'https://channels.weixin.qq.com/platform/live/commodity/onsale/index',
+      )
+    }
+
     // 需要鼠标悬停才能获取到用户名（小红书）
     if (this.loginConstants.hoverSelector) {
       await session.page.hover(this.loginConstants.hoverSelector)
