@@ -1,5 +1,5 @@
 import type { ElementHandle, Page } from 'playwright'
-import { LIVE_OVER_CLOSE_SELECTOR, RECOVERY_BUTTON_SELECTOR } from '#/constants'
+import { douyinConst, wxchannelConst } from '#/constants'
 import { createLogger } from '#/logger'
 import { pageManager } from '#/taskManager'
 import { abortable } from '#/utils/decorators'
@@ -26,12 +26,25 @@ function getLiveControlElementFinder(
   }
 }
 
+function getCloseOverlays(platform: LiveControlPlatform) {
+  switch (platform) {
+    case 'wxchannel':
+      return [wxchannelConst.selectors.overlays.CLOSE_BUTTON]
+    default:
+      return [
+        douyinConst.selectors.overlays.AFK_CLOSE_BUTTON,
+        douyinConst.selectors.overlays.LIVE_OVER_CLOSE_BUTTON,
+      ]
+  }
+}
+
 export class LiveController {
   // protected page: Page
   // protected logger: ReturnType<typeof createLogger>
   // protected abortSignal?: AbortSignal
   protected elementFinder: LiveControlElementFinder
   protected popUpStrategy: PopUpStrategy
+  protected closeOverlaysSelectors: string[]
 
   constructor(
     protected page: Page,
@@ -44,6 +57,7 @@ export class LiveController {
     }
     this.elementFinder = getLiveControlElementFinder(platform, page)
     this.popUpStrategy = getPopUpStrategy(platform)
+    this.closeOverlaysSelectors = getCloseOverlays(platform)
   }
 
   @abortable
@@ -77,13 +91,11 @@ export class LiveController {
   }
 
   public async recoveryLive() {
-    const recoveryButton = await this.page.$(RECOVERY_BUTTON_SELECTOR)
-    if (recoveryButton) {
-      await recoveryButton.click()
-    }
-    const closeLiveSummary = await this.page.$(LIVE_OVER_CLOSE_SELECTOR)
-    if (closeLiveSummary) {
-      await closeLiveSummary.click()
+    for (const selector of this.closeOverlaysSelectors) {
+      const closeButton = await this.page.$(selector)
+      if (closeButton) {
+        await closeButton.dispatchEvent('click')
+      }
     }
   }
 

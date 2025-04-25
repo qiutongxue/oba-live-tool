@@ -1,4 +1,5 @@
 import type { ElementHandle } from 'playwright'
+import { eosConst } from '#/constants'
 import { LiveControlElementFinder } from '../LiveControlElementFinder'
 
 export class EOSLiveControlElementFinder extends LiveControlElementFinder {
@@ -12,7 +13,7 @@ export class EOSLiveControlElementFinder extends LiveControlElementFinder {
     SVGElement | HTMLElement
   > | null> {
     const sendMessageButton = await this.page.$(
-      'div[class^="comment-wrap"] div[class^="button"]',
+      eosConst.selectors.commentInput.SUBMIT_BUTTON,
     )
     if (!sendMessageButton) {
       throw new Error('找不到发送按钮')
@@ -28,7 +29,7 @@ export class EOSLiveControlElementFinder extends LiveControlElementFinder {
   public async getPopUpButtonFromGoodsItem(
     item: ElementHandle<SVGElement | HTMLElement>,
   ): Promise<ElementHandle<HTMLButtonElement>> {
-    const button = await item.$('[class^="talking-btn"]')
+    const button = await item.$(eosConst.selectors.goodsItem.POPUP_BUTTON)
     if (!button) {
       throw new Error('找不到讲解按钮')
     }
@@ -41,26 +42,26 @@ export class EOSLiveControlElementFinder extends LiveControlElementFinder {
   public async getIdFromGoodsItem(
     item: ElementHandle<SVGElement | HTMLElement>,
   ): Promise<number> {
-    const idInput = await item.$('input')
+    const idInput = await item.$(eosConst.selectors.goodsItem.ID)
     return Number.parseInt((await idInput?.evaluate(el => el.value)) ?? '')
   }
 
   public async getCurrentGoodsItemsList(): Promise<
     ElementHandle<SVGElement | HTMLElement>[]
   > {
-    return this.page.$$('#live-card-list div[class^="render-item"]')
+    return this.page.$$(eosConst.selectors.GOODS_ITEM)
   }
 
   public getGoodsItemsScrollContainer(): Promise<ElementHandle<
     SVGElement | HTMLElement
   > | null> {
-    return this.page.$('#live-card-list > div > div')
+    return this.page.$(eosConst.selectors.GOODS_ITEMS_WRAPPER)
   }
 
   public async getCommentTextarea(): Promise<ElementHandle<
     SVGElement | HTMLElement
   > | null> {
-    const textarea = await this.page.$('textarea[class^="input"]')
+    const textarea = await this.page.$(eosConst.selectors.commentInput.TEXTAREA)
     return textarea
   }
 }
