@@ -1,3 +1,4 @@
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -6,13 +7,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import {
   useCurrentChromeConfig,
   useCurrentChromeConfigActions,
@@ -24,10 +18,31 @@ import {
 } from '@/hooks/useLiveControl'
 import { useToast } from '@/hooks/useToast'
 import { useMemoizedFn } from 'ahooks'
-import { CheckIcon, GlobeIcon, XIcon } from 'lucide-react'
+import { CheckIcon, CircleAlert, GlobeIcon, XIcon } from 'lucide-react'
 import React, { useState } from 'react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import PlatformSelect from './PlatformSelect'
+
+const StatusAlert = React.memo(() => {
+  const platform = useCurrentLiveControl(state => state.platform)
+  return platform === 'wxchannel' ? (
+    <Alert>
+      <CircleAlert className="h-4 w-4" />
+      <AlertTitle>你选择了视频号平台，请注意以下事项：</AlertTitle>
+      <AlertDescription>
+        <ol className="list-decimal list-inside">
+          <li>
+            请先确认<strong>开播后</strong>再连接中控台
+          </li>
+          <li>
+            视频号助手无法<strong>一号多登</strong>，在别处登录视频号助手会
+            <strong>中断连接</strong>!
+          </li>
+        </ol>
+      </AlertDescription>
+    </Alert>
+  ) : null
+})
 
 const StatusCard = React.memo(() => {
   return (
@@ -37,12 +52,15 @@ const StatusCard = React.memo(() => {
         <CardDescription>查看并管理直播控制台的连接状态</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="flex items-center justify-between">
-          <ConnectState />
-          <div className="flex items-center gap-2">
-            <PlatformSelect />
-            <ConnectToLiveControl />
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <ConnectState />
+            <div className="flex items-center gap-2">
+              <PlatformSelect />
+              <ConnectToLiveControl />
+            </div>
           </div>
+          <StatusAlert />
         </div>
       </CardContent>
     </Card>
