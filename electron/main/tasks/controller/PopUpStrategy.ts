@@ -30,7 +30,7 @@ const wxchannelPopUpStrategy: PopUpStrategy = async button => {
   const clickPopUpButton = async (
     button: ElementHandle<SVGElement | HTMLElement>,
   ) => {
-    const buttonText = await button.textContent()
+    const buttonText = (await button.textContent())?.trim()
     if (buttonText !== '结束讲解' && buttonText !== '讲解') {
       throw new Error(`不是讲解按钮，是 ${buttonText} 按钮`)
     }

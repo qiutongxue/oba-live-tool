@@ -8,13 +8,13 @@ export const selectors = {
   GOODS_ITEM:
     '.commodity-list-wrap .table-body-wrap > div > span div.table-row-wrap',
   /** 视频号中控台在 iframe 里，要先获取 iframe 才能定位其余元素 */
-  LIVE_CONTROL_IFRAME: '.wujie-iframe',
+  LIVE_CONTROL_IFRAME: '.wujie_iframe',
   overlays: {
     /** 关闭商品页面偶尔弹出的弹窗 “直播间讲解支持「送礼物」模式” 的按钮 */
     CLOSE_BUTTON: '.weui-desktop-dialog button[class*="close-btn"]',
   },
   goodsItem: {
-    POPUP_BUTTON: '.promoting',
+    POPUP_BUTTON: '.promoting-wrap .action-link span[class*="promoting"]',
     ID: 'input + span',
   },
   commentInput: {
