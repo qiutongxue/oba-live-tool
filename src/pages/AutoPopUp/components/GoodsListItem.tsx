@@ -23,7 +23,7 @@ const GoodsListItem = React.memo(function GoodsListItem({
         onChange={e => onChange(index, e.target.value)}
         className="w-32"
         min="1"
-        placeholder="商品ID"
+        placeholder="商品序号"
       />
       <Button
         variant="ghost"

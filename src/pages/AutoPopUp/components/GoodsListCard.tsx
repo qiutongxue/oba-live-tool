@@ -17,12 +17,12 @@ const GoodsListCard = React.memo(function GoodsListCard({
   const handleGoodsIdChange = useMemoizedFn((index: number, value: string) => {
     const numValue = Number(value)
     if (Number.isNaN(numValue) || numValue < 1) {
-      onValidationError('请输入有效的商品ID')
+      onValidationError('请输入有效的商品序号')
       return
     }
     const newIds = [...goodsIds]
     if (newIds.includes(numValue)) {
-      onValidationError('商品ID不能重复！')
+      onValidationError('商品序号不能重复！')
       return
     }
     newIds[index] = numValue
@@ -45,7 +45,7 @@ const GoodsListCard = React.memo(function GoodsListCard({
             <div className="space-y-1">
               <Label>商品列表</Label>
               <p className="text-sm text-muted-foreground">
-                添加需要自动弹出的商品ID
+                添加需要自动弹出的商品序号
               </p>
             </div>
             <Button variant="outline" size="sm" onClick={addGoodsId}>
