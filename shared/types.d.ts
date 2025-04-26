@@ -1,4 +1,4 @@
-type LiveControlPlatform = 'douyin' | 'buyin' | 'eos' | 'redbook'
+type LiveControlPlatform = 'douyin' | 'buyin' | 'eos' | 'redbook' | 'wxchannel'
 
 type DouyinLiveMessage = {
   time: string

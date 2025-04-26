@@ -1,28 +1,28 @@
 import type { ElementHandle } from 'playwright'
-import {
-  COMMENT_TEXTAREA_SELECTOR,
-  GOODS_ACTION_SELECTOR,
-  GOODS_ITEM_SELECTOR,
-  PIN_TOP_SELECTOR,
-  SUBMIT_COMMENT_SELECTOR,
-} from '#/constants'
+import * as douyinConst from '#/constants/douyin'
 import { LiveControlElementFinder } from '../LiveControlElementFinder'
 
 export class BuyinLiveControlElementFinder extends LiveControlElementFinder {
   public async getPinTopLabel(): Promise<ElementHandle<
     SVGElement | HTMLElement
   > | null> {
-    const pinTopLabel = await this.page.$(PIN_TOP_SELECTOR)
+    const pinTopLabel = await this.page.$(
+      douyinConst.selectors.commentInput.PIN_TOP_LABEL,
+    )
     return pinTopLabel
   }
 
   public async getClickableSubmitCommentButton(): Promise<ElementHandle<
     SVGElement | HTMLElement
   > | null> {
-    const submit_btn = await this.page.$(SUBMIT_COMMENT_SELECTOR)
+    const submit_btn = await this.page.$(
+      douyinConst.selectors.commentInput.SUBMIT_BUTTON,
+    )
     if (
       !submit_btn ||
-      (await submit_btn.getAttribute('class'))?.includes('isDisabled')
+      (await submit_btn.getAttribute('class'))?.includes(
+        douyinConst.selectors.commentInput.SUBMIT_BUTTON_DISABLED,
+      )
     ) {
       throw new Error('无法点击发布按钮')
     }
@@ -31,14 +31,16 @@ export class BuyinLiveControlElementFinder extends LiveControlElementFinder {
 
   public async getPopUpButtonFromGoodsItem(
     item: ElementHandle<SVGElement | HTMLElement>,
-  ): Promise<ElementHandle<HTMLButtonElement>> {
-    const goodsAction = await item.$(GOODS_ACTION_SELECTOR)
+  ) {
+    const goodsAction = await item.$(douyinConst.selectors.goodsItem.ACTION)
     if (!goodsAction) {
       throw new Error('找不到商品操作按钮')
     }
     // 默认获取第一个元素，就是讲解按钮所在的位置
-    const presBtnWrap = await goodsAction.$(`div[class*="wrapper"]:has(button)`)
-    const button = await presBtnWrap?.$('button')
+    const button = await goodsAction.$(
+      douyinConst.selectors.goodsItem.POPUP_BUTTON,
+    )
+    // const button = await presBtnWrap?.$('button')
     if (!button) {
       throw new Error('找不到讲解按钮')
     }
@@ -46,23 +48,23 @@ export class BuyinLiveControlElementFinder extends LiveControlElementFinder {
   }
 
   public async getGoodsItemsScrollContainer() {
-    return this.page.$('#live-control-goods-list-container div')
+    return this.page.$(douyinConst.selectors.GOODS_ITEMS_WRAPPER)
   }
 
   public async getCurrentGoodsItemsList() {
-    return this.page.$$(GOODS_ITEM_SELECTOR)
+    return this.page.$$(douyinConst.selectors.GOODS_ITEM)
   }
 
   public async getIdFromGoodsItem(
     item: ElementHandle<SVGElement | HTMLElement>,
   ) {
-    const idInput = await item.$(`div[class^="indexWrapper"] input`)
+    const idInput = await item.$(douyinConst.selectors.goodsItem.ID)
     return Number.parseInt(
       (await idInput?.evaluate(el => (el as HTMLInputElement).value)) ?? '',
     )
   }
 
   public async getCommentTextarea() {
-    return this.page.$(COMMENT_TEXTAREA_SELECTOR)
+    return this.page.$(douyinConst.selectors.commentInput.TEXTAREA)
   }
 }

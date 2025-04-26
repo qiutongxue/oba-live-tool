@@ -1,11 +1,10 @@
-import { ipcMain } from 'electron'
 import type playwright from 'playwright'
 import { chromium } from 'playwright-extra'
 import stealth from 'puppeteer-extra-plugin-stealth'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
+import type { LoginConstants } from '#/constants/login'
 import { pageManager } from '#/taskManager'
 import { sleep, typedIpcMainHandle } from '#/utils'
-import type { LoginConstants } from '../constants'
 import { loginConstants } from '../constants'
 import { createLogger } from '../logger'
 import { findChromium } from '../utils/checkChrome'
@@ -161,17 +160,42 @@ class LiveControlManager {
 
         // 访问中控台
         await session.page.goto(this.loginConstants.liveControlUrl)
-        await Promise.race([
-          // 需要登录
-          session.page.waitForURL(this.loginConstants.loginUrlRegex, {
-            timeout: 0,
-          }),
-          // 成功进入了中控台
-          session.page.waitForSelector(
-            this.loginConstants.isInLiveControlSelector,
-            { timeout: 0 },
-          ),
-        ])
+
+        if (this.platform === 'wxchannel') {
+          const indexRegex = /platform\/?$/
+          await Promise.race([
+            // 需要登录
+            session.page.waitForURL(this.loginConstants.loginUrlRegex, {
+              timeout: 0,
+            }),
+            // 已开播就会直接进入中控台
+            session.page.waitForSelector(
+              this.loginConstants.isInLiveControlSelector,
+              { timeout: 0 },
+            ),
+            // 未开播会跳转到首页！
+            session.page.waitForURL(indexRegex, {
+              timeout: 0,
+            }),
+          ])
+
+          if (indexRegex.test(session.page.url())) {
+            // 未开播，直接抛出错误
+            throw new Error('视频号未开播的情况下无法连接到中控台，清先开播')
+          }
+        } else {
+          await Promise.race([
+            // 需要登录
+            session.page.waitForURL(this.loginConstants.loginUrlRegex, {
+              timeout: 0,
+            }),
+            // 成功进入了中控台
+            session.page.waitForSelector(
+              this.loginConstants.isInLiveControlSelector,
+              { timeout: 0 },
+            ),
+          ])
+        }
 
         this.logger.debug(`当前页面: ${session.page.url()}`)
 
@@ -185,10 +209,6 @@ class LiveControlManager {
 
         loginSuccess = true
       } catch (error) {
-        this.logger.error(
-          '连接失败:',
-          error instanceof Error ? error.message : String(error),
-        )
         if (session?.browser) await session.browser.close()
         throw error
       }
@@ -226,6 +246,14 @@ class LiveControlManager {
           break
         }
       }
+    }
+
+    // 微信视频号的弹窗不在中控台，需要额外开启一个页面
+    if (this.platform === 'wxchannel') {
+      const popUpPage = await session.context.newPage()
+      await popUpPage.goto(
+        'https://channels.weixin.qq.com/platform/live/commodity/onsale/index',
+      )
     }
 
     // 需要鼠标悬停才能获取到用户名（小红书）
