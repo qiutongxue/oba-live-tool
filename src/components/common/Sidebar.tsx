@@ -1,6 +1,7 @@
 import { useCurrentAutoMessage } from '@/hooks/useAutoMessage'
 import { useCurrentAutoPopUp } from '@/hooks/useAutoPopUp'
 import { useAutoReply } from '@/hooks/useAutoReply'
+import { useCurrentLiveControl } from '@/hooks/useLiveControl'
 import { cn } from '@/lib/utils'
 import { NavLink } from 'react-router'
 import {
@@ -12,14 +13,23 @@ import {
   CarbonSettings,
 } from '../icons/carbon'
 
+interface SidebarTab {
+  id: string
+  name: string
+  isRunning?: boolean
+  icon: React.ReactNode
+  platform?: LiveControlPlatform[]
+}
+
 export default function Sidebar() {
   const isAutoMessageRunning = useCurrentAutoMessage(
     context => context.isRunning,
   )
   const isAutoPopupRunning = useCurrentAutoPopUp(context => context.isRunning)
   const { isRunning: isAutoReplyRunning } = useAutoReply()
+  const platform = useCurrentLiveControl(context => context.platform)
 
-  const tabs = [
+  const tabs: SidebarTab[] = [
     {
       id: '/',
       name: '打开中控台',
@@ -42,6 +52,7 @@ export default function Sidebar() {
       name: '自动回复',
       isRunning: isAutoReplyRunning,
       icon: <CarbonIbmEventAutomation className="w-5 h-5" />,
+      platform: ['douyin', 'buyin'],
     },
     {
       id: '/ai-chat',
@@ -55,12 +66,19 @@ export default function Sidebar() {
     },
   ]
 
+  const filteredTabs = tabs.filter(tab => {
+    if (tab.platform) {
+      return tab.platform.includes(platform)
+    }
+    return true
+  })
+
   return (
     <aside className="w-64 min-w-[256px] bg-background border-r">
       <div className="p-6">
         <h2 className="text-lg font-semibold mb-6">功能列表</h2>
         <nav className="space-y-2">
-          {tabs.map(tab => (
+          {filteredTabs.map(tab => (
             <NavLink
               key={tab.id}
               to={tab.id}
