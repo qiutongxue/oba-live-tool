@@ -13,12 +13,58 @@ import { RefreshCwIcon, TerminalIcon } from 'lucide-react'
 import { Outlet } from 'react-router'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { Header } from './components/common/Header'
-import { useIpc } from './hooks/useIpc'
+import { useIpcListener } from './hooks/useIpc'
 import './App.css'
+import { useEffect } from 'react'
+import { useAccounts } from './hooks/useAccounts'
+import { useAutoMessageStore } from './hooks/useAutoMessage'
+import { useAutoPopUpStore } from './hooks/useAutoPopUp'
+import { useAutoReply } from './hooks/useAutoReply'
+import { useLiveControlStore } from './hooks/useLiveControl'
+import { useToast } from './hooks/useToast'
+
+function useGlobalIpcListener() {
+  const { handleComment } = useAutoReply()
+  const { setIsConnected } = useLiveControlStore()
+  const { setIsRunning: setIsRunningAutoMessage } = useAutoMessageStore()
+  const { setIsRunning: setIsRunningAutoPopUp } = useAutoPopUpStore()
+  const { toast } = useToast()
+
+  useIpcListener(
+    IPC_CHANNELS.tasks.autoReply.showComment,
+    ({ comment, accountId }) => {
+      handleComment(comment, accountId)
+    },
+  )
+
+  useIpcListener(IPC_CHANNELS.tasks.liveControl.disconnectedEvent, id => {
+    setIsConnected(id, 'disconnected')
+    toast.error('直播控制台已断开连接')
+  })
+
+  useIpcListener(IPC_CHANNELS.tasks.autoMessage.stoppedEvent, id => {
+    setIsRunningAutoMessage(id, false)
+    toast.error('自动发言已停止')
+  })
+
+  useIpcListener(IPC_CHANNELS.tasks.autoPopUp.stoppedEvent, id => {
+    setIsRunningAutoPopUp(id, false)
+    toast.error('自动弹窗已停止')
+  })
+}
 
 function App() {
   const { enabled: devMode } = useDevMode()
-  useIpc()
+  const { accounts, currentAccountId } = useAccounts()
+
+  useEffect(() => {
+    window.ipcRenderer.invoke(IPC_CHANNELS.account.switch, {
+      accountId: currentAccountId,
+      accountNames: accounts,
+    })
+  }, [accounts, currentAccountId])
+
+  useGlobalIpcListener()
 
   const handleRefresh = () => {
     window.location.reload()

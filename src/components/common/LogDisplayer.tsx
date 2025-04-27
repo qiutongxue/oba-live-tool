@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Switch } from '@/components/ui/switch'
+import { useIpcListener } from '@/hooks/useIpc'
 import { cn } from '@/lib/utils'
 import { useMemoizedFn } from 'ahooks'
 import type { LogMessage } from 'electron-log'
@@ -34,62 +35,53 @@ export default function LogDisplayer() {
   const scrollToBottom = useCallback(() => {
     if (viewportRef.current && autoScroll) {
       const scrollContainer = viewportRef.current
-      scrollContainer.scrollTop = scrollContainer.scrollHeight
+      requestAnimationFrame(() => {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight
+      })
     }
   }, [autoScroll])
+
+  const parseLogMessage = (log: LogMessage): ParsedLog | null => {
+    if (!log.data || log.data.length === 0) {
+      return null
+    }
+    return {
+      id: crypto.randomUUID(),
+      timestamp: log.date.toLocaleString(),
+      module: log.scope ?? 'App',
+      level: typeof log.level === 'string' ? log.level.toUpperCase() : 'INFO',
+      message: log.data.map(String).join(' '),
+    }
+  }
 
   useEffect(() => {
     // 监听 ScrollArea 的 viewport 元素
     if (scrollAreaRef.current) {
-      const viewport = scrollAreaRef.current.querySelector(
+      const viewport = scrollAreaRef.current.querySelector<HTMLDivElement>(
         '[data-radix-scroll-area-viewport]',
       )
-      if (viewport instanceof HTMLDivElement) {
+      if (viewport) {
         // 使用 MutableRefObject 来避免只读属性错误
-        ;(viewportRef as { current: HTMLDivElement | null }).current = viewport
+        viewportRef.current = viewport
       }
     }
   }, [])
 
-  useEffect(() => {
-    let timer: NodeJS.Timeout | null = null
-
-    const parseLogMessage = (log: LogMessage): ParsedLog | null => {
-      // 匹配格式：[时间] [模块] » 级别 消息
-      if (!log.data[0]) {
-        return null
-      }
-      return {
-        id: crypto.randomUUID(),
-        timestamp: log.date.toLocaleString(),
-        module: log.scope ?? '',
-        level: log.level.toUpperCase(),
-        message: log.data.join(' '),
-      }
-    }
-
-    const handleLogMessage = (message: LogMessage) => {
+  // biome-ignore lint/correctness/useExhaustiveDependencies: parseLogMessage 不影响
+  const handleLogMessage = useCallback(
+    (message: LogMessage) => {
       const parsed = parseLogMessage(message)
-      if (parsed)
-        setLogMessages(prev => [...prev.slice(-MAX_LOG_MESSAGES), parsed])
-      if (autoScroll) {
-        // 使用 requestAnimationFrame 来确保在下一帧执行滚动
-        timer = setTimeout(() => {
-          requestAnimationFrame(scrollToBottom)
-        }, 0)
+      if (parsed) {
+        setLogMessages(prev => [...prev.slice(-MAX_LOG_MESSAGES + 1), parsed])
+        if (autoScroll) {
+          scrollToBottom()
+        }
       }
-    }
+    },
+    [autoScroll, scrollToBottom],
+  )
 
-    const removeListener = window.ipcRenderer.on(
-      IPC_CHANNELS.log,
-      handleLogMessage,
-    )
-
-    return () => {
-      removeListener()
-      timer && clearTimeout(timer)
-    }
-  }, [autoScroll, scrollToBottom])
+  useIpcListener(IPC_CHANNELS.log, handleLogMessage)
 
   return (
     <div className="h-full flex flex-col bg-background">

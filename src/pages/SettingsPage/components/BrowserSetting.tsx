@@ -6,10 +6,9 @@ import {
   useCurrentChromeConfig,
   useCurrentChromeConfigActions,
 } from '@/hooks/useChromeConfig'
-import { useCurrentLiveControl } from '@/hooks/useLiveControl'
 import { useToast } from '@/hooks/useToast'
 import { EraserIcon, FolderSearchIcon, SearchIcon } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import {
   AlertDialog,
@@ -37,23 +36,10 @@ import { Switch } from '../../../components/ui/switch'
 
 export function BrowserSetting() {
   const path = useCurrentChromeConfig(context => context.path)
-  const isConnected = useCurrentLiveControl(context => context.isConnected)
-  const platform = useCurrentLiveControl(context => context.platform)
   const { setPath, setStorageState } = useCurrentChromeConfigActions()
   const [isDetecting, setIsDetecting] = useState(false)
   const [edgeFirst, setEdgeFirst] = useState(false)
   const { toast } = useToast()
-
-  // 监听主进程发送的 Chrome 路径
-  useEffect(() => {
-    const removeListener = window.ipcRenderer.on(
-      IPC_CHANNELS.chrome.setPath,
-      (path: string) => {
-        if (path) setPath(path)
-      },
-    )
-    return () => removeListener()
-  }, [setPath])
 
   const handleCookiesReset = () => {
     setStorageState('')

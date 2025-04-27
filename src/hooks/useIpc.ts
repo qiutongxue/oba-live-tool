@@ -1,69 +1,49 @@
-import { useEffect } from 'react'
-import { IPC_CHANNELS } from 'shared/ipcChannels'
-import { useAccounts } from './useAccounts'
-import { useAutoMessageStore } from './useAutoMessage'
-import { useAutoPopUpStore } from './useAutoPopUp'
-import { type Comment, useAutoReply } from './useAutoReply'
-import { useLiveControlStore } from './useLiveControl'
-import { useToast } from './useToast'
-// 需要全局监听的 ipc 事件
+import { useMemoizedFn } from 'ahooks'
+import { useEffect, useRef } from 'react'
 
-export function useIpc() {
-  const { handleComment } = useAutoReply()
-  const { setIsConnected } = useLiveControlStore()
-  const { setIsRunning: setIsRunningAutoMessage } = useAutoMessageStore()
-  const { setIsRunning: setIsRunningAutoPopUp } = useAutoPopUpStore()
-  const { accounts, currentAccountId } = useAccounts()
-  const { toast } = useToast()
+const api = window.ipcRenderer
+
+export function useIpcListener<Channel extends Parameters<typeof api.on>[0]>(
+  ...args: Parameters<typeof api.on<Channel>>
+) {
+  const [channel, callback] = args
+  const callbackRef = useRef(callback)
 
   useEffect(() => {
-    window.ipcRenderer.invoke(IPC_CHANNELS.account.switch, {
-      accountId: currentAccountId,
-      accountNames: accounts,
-    })
-  }, [accounts, currentAccountId])
+    callbackRef.current = callback
+  }, [callback])
 
   useEffect(() => {
-    const removeListeners: (() => void)[] = [
-      window.ipcRenderer.on(
-        IPC_CHANNELS.tasks.autoReply.showComment,
-        ({ comment, accountId }: { comment: Comment; accountId: string }) => {
-          handleComment(comment, accountId)
-        },
-      ),
-      window.ipcRenderer.on(
-        IPC_CHANNELS.tasks.liveControl.disconnectedEvent,
-        (id: string) => {
-          setIsConnected(id, 'disconnected')
-          toast.error('直播控制台已断开连接')
-        },
-      ),
-      window.ipcRenderer.on(
-        IPC_CHANNELS.tasks.autoMessage.stoppedEvent,
-        (id: string) => {
-          setIsRunningAutoMessage(id, false)
-          toast.error('自动发言已停止')
-        },
-      ),
-      window.ipcRenderer.on(
-        IPC_CHANNELS.tasks.autoPopUp.stoppedEvent,
-        (id: string) => {
-          setIsRunningAutoPopUp(id, false)
-          toast.error('自动弹窗已停止')
-        },
-      ),
-    ]
+    const listener = (...args: Parameters<typeof callback>) => {
+      callbackRef.current(...args)
+    }
+
+    const removeListener = api.on(channel, listener)
 
     return () => {
-      for (const removeListener of removeListeners) {
-        removeListener()
-      }
+      removeListener()
     }
-  }, [
-    setIsConnected,
-    setIsRunningAutoMessage,
-    setIsRunningAutoPopUp,
-    toast,
-    handleComment,
-  ])
+  }, [channel])
 }
+
+// export function useIpcRenderer() {
+//   const ipcInvoke = useMemoizedFn(
+//     <Channel extends Parameters<typeof api.invoke>[0]>(
+//       ...args: Parameters<typeof api.invoke<Channel>>
+//     ) => {
+//       const [channel, ...params] = args
+//       return api.invoke(channel, ...params)
+//     },
+//   )
+
+//   const ipcSend = useMemoizedFn(
+//     <Channel extends Parameters<typeof api.send>[0]>(
+//       ...args: Parameters<typeof api.send<Channel>>
+//     ) => {
+//       const [channel, ...params] = args
+//       return api.send(channel, ...params)
+//     },
+//   )
+
+//   return { ipcInvoke, ipcSend }
+// }

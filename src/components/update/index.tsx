@@ -8,6 +8,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Progress } from '@/components/ui/progress'
+import { useIpcListener } from '@/hooks/useIpc'
 import { useToast } from '@/hooks/useToast'
 import type { ProgressInfo } from 'electron-updater'
 import { Download, RefreshCw, Rocket } from 'lucide-react'
@@ -138,36 +139,10 @@ function Update({ source = 'github' }: { source: string }) {
     )
   }
 
-  useEffect(() => {
-    const removeUpdateCanAvailable = window.ipcRenderer.on(
-      IPC_CHANNELS.updater.updateAvailable,
-      onUpdateCanAvailable,
-    )
-    const removeUpdateError = window.ipcRenderer.on(
-      IPC_CHANNELS.updater.updateError,
-      onUpdateError,
-    )
-    const removeDownloadProgress = window.ipcRenderer.on(
-      IPC_CHANNELS.updater.downloadProgress,
-      onDownloadProgress,
-    )
-    const removeUpdateDownloaded = window.ipcRenderer.on(
-      IPC_CHANNELS.updater.updateDownloaded,
-      onUpdateDownloaded,
-    )
-
-    return () => {
-      removeUpdateCanAvailable()
-      removeUpdateError()
-      removeDownloadProgress()
-      removeUpdateDownloaded()
-    }
-  }, [
-    onUpdateCanAvailable,
-    onUpdateError,
-    onDownloadProgress,
-    onUpdateDownloaded,
-  ])
+  useIpcListener(IPC_CHANNELS.updater.updateAvailable, onUpdateCanAvailable)
+  useIpcListener(IPC_CHANNELS.updater.updateError, onUpdateError)
+  useIpcListener(IPC_CHANNELS.updater.downloadProgress, onDownloadProgress)
+  useIpcListener(IPC_CHANNELS.updater.updateDownloaded, onUpdateDownloaded)
 
   return (
     <>

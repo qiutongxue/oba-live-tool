@@ -242,18 +242,6 @@ export default function CommentList({
     }
   }
 
-  useEffect(() => {
-    const removeListener = window.ipcRenderer.on(
-      IPC_CHANNELS.tasks.autoReply.listenerStopped,
-      () => {
-        setIsListening('stopped')
-      },
-    )
-    return () => {
-      removeListener()
-    }
-  }, [setIsListening])
-
   const accountName = useCurrentLiveControl(ctx => ctx.accountName)
 
   const filteredComments = useMemo(
