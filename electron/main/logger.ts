@@ -17,7 +17,9 @@ electronLog.scope.labelPadding = false
 electronLog.addLevel('success', 3)
 electronLog.hooks.push((message, transport) => {
   if (transport === electronLog.transports.console) {
-    windowManager.sendToWindow('main', IPC_CHANNELS.log, message)
+    if (message.level !== 'debug' && message.level !== 'verbose') {
+      windowManager.sendToWindow('main', IPC_CHANNELS.log, message)
+    }
   }
   return message
 })
