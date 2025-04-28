@@ -151,7 +151,7 @@ function startDownload(
   autoUpdater.downloadUpdate()
 }
 
-async function getLatestVersion() {
+export async function getLatestVersion() {
   // 从 package.json 获取最新版本号
   const version = await fetch(
     'https://fastly.jsdelivr.net/gh/qiutongxue/oba-live-tool@main/package.json',

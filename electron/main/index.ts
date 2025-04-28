@@ -19,7 +19,7 @@ import fs from 'fs-extra'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { createLogger } from './logger'
 import { pageManager } from './taskManager'
-import { update } from './update'
+import { getLatestVersion, update } from './update'
 import { findChromium } from './utils/checkChrome'
 import windowManager from './windowManager'
 import './tasks/liveControl'
@@ -89,9 +89,21 @@ async function createWindow() {
     win.loadFile(indexHtml)
   }
 
-  // Test actively push message to the Electron-Renderer
+  // 加载完成后检查更新
   win.webContents.on('did-finish-load', () => {
-    win?.webContents.send('main-process-message', new Date().toLocaleString())
+    const logger = createLogger('检查更新')
+    getLatestVersion()
+      .then(latestVersion => {
+        const currentVersion = app.getVersion()
+        if (currentVersion !== latestVersion) {
+          logger.info(
+            `检查到可用更新：${currentVersion} -> ${latestVersion}，可前往应用设置-软件更新处手动更新`,
+          )
+        }
+      })
+      .catch(err => {
+        logger.debug(`检查更新失败：${err}`)
+      })
   })
 
   // Make all links open with the browser, not with the application
