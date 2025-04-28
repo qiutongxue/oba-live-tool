@@ -4,6 +4,7 @@ import type {
   UpdateCheckResult,
   UpdateDownloadedEvent,
 } from 'electron-updater'
+import type { PopUpConfig } from 'electron/main/tasks/autoPopUp'
 import type {
   CommentMessage,
   EcomFansclubParticipateMessage,
@@ -44,8 +45,11 @@ export interface IpcChannels {
     provider: keyof typeof providers
     customBaseURL?: string
   }) => { success: boolean; models?: string[]; error?: string }
-  [IPC_CHANNELS.tasks.autoPopUp.start]: (config: AutoPopUpConfig) => boolean
+  [IPC_CHANNELS.tasks.autoPopUp.start]: (config: PopUpConfig) => boolean
   [IPC_CHANNELS.tasks.autoPopUp.stop]: () => boolean
+  [IPC_CHANNELS.tasks.autoPopUp.updateConfig]: (
+    config: Parital<PopUpConfig>,
+  ) => void
   [IPC_CHANNELS.tasks.autoMessage.start]: (config: AutoMessageConfig) => boolean
   [IPC_CHANNELS.tasks.autoMessage.stop]: () => boolean
   [IPC_CHANNELS.tasks.liveControl.disconnect]: () => boolean

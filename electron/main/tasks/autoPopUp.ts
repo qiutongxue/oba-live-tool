@@ -13,7 +13,7 @@ import { TaskScheduler } from './scheduler'
 
 const TASK_NAME = '自动弹窗'
 
-interface PopUpConfig extends BaseConfig {
+export interface PopUpConfig extends BaseConfig {
   goodsIds: number[]
   random?: boolean
 }
@@ -121,6 +121,8 @@ class PopUpManager {
       if (newConfig.scheduler)
         this.scheduler.updateConfig({ scheduler: newConfig.scheduler })
       this.config = config
+      // 更新配置后重新启动任务
+      this.scheduler.restart()
     } catch (error) {
       this.logger.error(
         `「${TASK_NAME}」配置更新失败: ${error instanceof Error ? error.message : String(error)}`,
@@ -183,12 +185,12 @@ function setupIpcHandlers() {
     return true
   })
 
-  // typedIpcMainHandle(
-  //   IPC_CHANNELS.tasks.autoPopUp.updateConfig,
-  //   async (_, newConfig: PopUpConfig) => {
-  //     pageManager.updateTaskConfig(TASK_NAME, newConfig)
-  //   },
-  // )
+  typedIpcMainHandle(
+    IPC_CHANNELS.tasks.autoPopUp.updateConfig,
+    async (_, newConfig) => {
+      pageManager.updateTaskConfig(TASK_NAME, newConfig)
+    },
+  )
 }
 
 setupIpcHandlers()

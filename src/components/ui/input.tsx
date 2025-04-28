@@ -16,6 +16,10 @@ const Input = ({
         className,
       )}
       {...props}
+      onKeyDown={e => {
+        e.stopPropagation()
+        props.onKeyDown?.(e)
+      }}
     />
   )
 }

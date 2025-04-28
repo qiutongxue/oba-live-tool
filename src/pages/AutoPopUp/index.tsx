@@ -1,7 +1,10 @@
 import { TaskButton } from '@/components/common/TaskButton'
 import { Title } from '@/components/common/Title'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { useAutoPopUpActions, useCurrentAutoPopUp } from '@/hooks/useAutoPopUp'
+import {
+  useAutoPopUpActions,
+  useCurrentAutoPopUp,
+  useShortcutListener,
+} from '@/hooks/useAutoPopUp'
 import { useToast } from '@/hooks/useToast'
 import { useMemoizedFn } from 'ahooks'
 import React, { useCallback, useState } from 'react'
@@ -43,12 +46,13 @@ const useTaskControl = () => {
 
 export default function AutoPopUp() {
   const { isRunning, onStartTask, onStopTask } = useTaskControl()
-  const [validationError, setValidationError] = useState<string | null>(null)
 
   const handleTaskButtonClick = useMemoizedFn(() => {
     if (!isRunning) onStartTask()
     else onStopTask()
   })
+
+  useShortcutListener()
 
   return (
     <div className="container py-8 space-y-4">
@@ -60,14 +64,8 @@ export default function AutoPopUp() {
         />
       </div>
 
-      {validationError && (
-        <Alert variant="destructive">
-          <AlertDescription>{validationError}</AlertDescription>
-        </Alert>
-      )}
-
       <div className="grid gap-6">
-        <GoodsListCard onValidationError={setValidationError} />
+        <GoodsListCard />
         <PopUpSettingsCard />
       </div>
     </div>

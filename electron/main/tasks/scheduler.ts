@@ -100,6 +100,11 @@ export class TaskScheduler implements Scheduler {
     }
   }
 
+  public restart() {
+    if (this.isStopped) return
+    this.scheduleNext(0)
+  }
+
   public get isRunning() {
     return !this.isStopped
   }
