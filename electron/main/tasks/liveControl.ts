@@ -67,33 +67,6 @@ class LiveControlManager {
     return { browser, context, page }
   }
 
-  private async loadCookies(
-    context: playwright.BrowserContext,
-    cookiesString: string,
-  ): Promise<boolean> {
-    if (!cookiesString) {
-      this.logger.debug('cookies 不存在')
-      return false
-    }
-
-    try {
-      const cookies = JSON.parse(cookiesString)
-      await context.addCookies(cookies)
-      return true
-    } catch (error) {
-      this.logger.error(
-        '加载 cookies 失败:',
-        error instanceof Error ? error.message : String(error),
-      )
-      return false
-    }
-  }
-
-  // private async saveCookies(context: playwright.BrowserContext) {
-  //   const cookies = await context.cookies()
-  //   this.newCookies = JSON.stringify(cookies)
-  // }
-
   private async handleHeadlessLogin(
     session: BrowserSession,
   ): Promise<BrowserSession | null> {

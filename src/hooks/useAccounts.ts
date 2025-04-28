@@ -21,7 +21,7 @@ interface AccountsStore {
 export const useAccounts = create<AccountsStore>()(
   persist(
     immer((set, get) => ({
-      accounts: [{ id: 'default', name: '默认账号', cookies: '', config: {} }],
+      accounts: [{ id: 'default', name: '默认账号' }],
       currentAccountId: 'default',
 
       addAccount: (name: string) => {

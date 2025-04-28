@@ -93,7 +93,7 @@ const ConnectToLiveControl = React.memo(() => {
         setStorageState(result.storageState || '')
         toast.success('已连接到直播控制台')
       } else {
-        throw new Error('找不到 cookies')
+        throw new Error('连接直播控制台失败')
       }
     } catch (error) {
       setIsConnected('disconnected')
