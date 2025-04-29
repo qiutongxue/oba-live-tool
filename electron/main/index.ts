@@ -28,6 +28,7 @@ import './tasks/autoPopUp'
 import './tasks/autoReply'
 import './tasks/aiChat'
 import './tasks/autoReplyPlus'
+import semver from 'semver'
 import { typedIpcMainHandle } from './utils'
 
 const _require = createRequire(import.meta.url)
@@ -95,7 +96,7 @@ async function createWindow() {
     getLatestVersion()
       .then(latestVersion => {
         const currentVersion = app.getVersion()
-        if (currentVersion !== latestVersion) {
+        if (semver.lt(currentVersion, latestVersion)) {
           logger.info(
             `检查到可用更新：${currentVersion} -> ${latestVersion}，可前往应用设置-软件更新处手动更新`,
           )
