@@ -1,3 +1,12 @@
+export const login: LoginConstants = {
+  liveControlUrl: 'https://channels.weixin.qq.com/platform/live/liveBuild',
+  loginUrl: 'https://channels.weixin.qq.com/login.html',
+  loginUrlRegex: /.*channels\.weixin\.qq\.com\/login/,
+  isLoggedInSelector: '.account-info .name',
+  isInLiveControlSelector: '.live-message-input-container', // 评论框
+  accountNameSelector: '.account-info .name',
+}
+
 /**
  * 商品页面
  */

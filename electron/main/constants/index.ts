@@ -1,7 +1,5 @@
-import * as douyinConst from './douyin'
-import * as eosConst from './eos'
-import { loginConstants } from './login'
-import * as redbookConst from './redbook'
-import * as wxchannelConst from './wxchannel'
-
-export { douyinConst, wxchannelConst, loginConstants, eosConst, redbookConst }
+export * as buyin from './buyin'
+export * as douyin from './douyin'
+export * as eos from './eos'
+export * as redbook from './redbook'
+export * as wxchannel from './wxchannel'

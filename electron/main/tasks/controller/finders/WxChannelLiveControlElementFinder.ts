@@ -1,5 +1,5 @@
 import type { ElementHandle, Locator } from 'playwright'
-import { wxchannelConst } from '#/constants'
+import { wxchannel as wxchannelConst } from '#/constants'
 import { LiveControlElementFinder } from '../LiveControlElementFinder'
 
 export class WxChannelLiveControlElementFinder extends LiveControlElementFinder {

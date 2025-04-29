@@ -2,10 +2,9 @@ import type playwright from 'playwright'
 import { chromium } from 'playwright-extra'
 import stealth from 'puppeteer-extra-plugin-stealth'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
-import type { LoginConstants } from '#/constants/login'
 import { pageManager } from '#/taskManager'
 import { sleep, typedIpcMainHandle } from '#/utils'
-import { loginConstants } from '../constants'
+import * as constants from '../constants'
 import { createLogger } from '../logger'
 import { findChromium } from '../utils/checkChrome'
 
@@ -32,8 +31,9 @@ class LiveControlManager {
   private loginConstants: LoginConstants
   private logger: ReturnType<typeof createLogger>
 
-  constructor(private platform: keyof typeof loginConstants) {
-    this.loginConstants = loginConstants[platform] || loginConstants.douyin
+  constructor(private platform: LiveControlPlatform) {
+    // constants[platform]
+    this.loginConstants = constants[platform].login // loginConstants[platform] || loginConstants.douyin
     chromium.use(stealth())
     this.logger = createLogger(TASK_NAME)
   }

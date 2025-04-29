@@ -1,5 +1,5 @@
 import type { ElementHandle } from 'playwright'
-import * as douyinConst from '#/constants/douyin'
+import { douyin as douyinConst } from '#/constants'
 import { LiveControlElementFinder } from '../LiveControlElementFinder'
 
 export class BuyinLiveControlElementFinder extends LiveControlElementFinder {

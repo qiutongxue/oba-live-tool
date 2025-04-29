@@ -1,3 +1,13 @@
+export const login: LoginConstants = {
+  liveControlUrl: 'https://fxg.jinritemai.com/ffa/buyin/dashboard/live/control',
+  loginUrl:
+    'https://fxg.jinritemai.com/login/common?extra=%7B%22target_url%22%3A%22https%3A%2F%2Ffxg.jinritemai.com%2Fffa%2Fbuyin%2Fdashboard%2Flive%2Fcontrol%22%7D',
+  loginUrlRegex: /.*fxg\.jinritemai\.com\/login\/common.*/,
+  isLoggedInSelector: `[class^="username"]`,
+  isInLiveControlSelector: `[class^="goodsPanel"]`,
+  accountNameSelector: `[class^="index_userName"]`,
+}
+
 export const selectors = {
   GOODS_ITEM: 'div[class^="goodsItem"]',
   GOODS_ITEMS_WRAPPER: '#live-control-goods-list-container div',

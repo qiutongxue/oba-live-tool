@@ -1,5 +1,5 @@
 import type { ElementHandle } from 'playwright'
-import { redbookConst } from '#/constants'
+import { redbook as redbookConst } from '#/constants'
 import { LiveControlElementFinder } from '../LiveControlElementFinder'
 
 export class RedbookLiveControlElementFinder extends LiveControlElementFinder {

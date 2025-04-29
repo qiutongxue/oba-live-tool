@@ -1,5 +1,5 @@
 import type { ElementHandle } from 'playwright'
-import { eosConst } from '#/constants'
+import { eos as eosConst } from '#/constants'
 import { LiveControlElementFinder } from '../LiveControlElementFinder'
 
 export class EOSLiveControlElementFinder extends LiveControlElementFinder {

@@ -1,5 +1,5 @@
 import type { ElementHandle, Page } from 'playwright'
-import { douyinConst, wxchannelConst } from '#/constants'
+import * as constants from '#/constants'
 import { createLogger } from '#/logger'
 import { pageManager } from '#/taskManager'
 import { abortable } from '#/utils/decorators'
@@ -29,11 +29,11 @@ function getLiveControlElementFinder(
 function getCloseOverlays(platform: LiveControlPlatform) {
   switch (platform) {
     case 'wxchannel':
-      return [wxchannelConst.selectors.overlays.CLOSE_BUTTON]
+      return [constants.wxchannel.selectors.overlays.CLOSE_BUTTON]
     default:
       return [
-        douyinConst.selectors.overlays.AFK_CLOSE_BUTTON,
-        douyinConst.selectors.overlays.LIVE_OVER_CLOSE_BUTTON,
+        constants.douyin.selectors.overlays.AFK_CLOSE_BUTTON,
+        constants.douyin.selectors.overlays.LIVE_OVER_CLOSE_BUTTON,
       ]
   }
 }
