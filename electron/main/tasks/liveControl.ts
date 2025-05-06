@@ -228,6 +228,17 @@ class LiveControlManager {
         'https://channels.weixin.qq.com/platform/live/commodity/onsale/index',
       )
     }
+    // 快手小店会弹出莫名其妙的窗口，按 ESC 关闭
+    if (this.platform === 'kuaishou') {
+      await Promise.race([
+        session.page.waitForSelector('#driver-page-overlay'),
+        sleep(5000),
+      ])
+      while (await session.page.$('#driver-page-overlay')) {
+        await session.page.press('body', 'Escape')
+        await sleep(1000)
+      }
+    }
 
     // 需要鼠标悬停才能获取到用户名（小红书）
     if (this.loginConstants.hoverSelector) {
