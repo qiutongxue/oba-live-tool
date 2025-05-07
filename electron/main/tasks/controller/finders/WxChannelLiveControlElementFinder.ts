@@ -17,15 +17,31 @@ export class WxChannelLiveControlElementFinder extends LiveControlElementFinder 
     item: ElementHandle<SVGElement | HTMLElement>,
   ): Promise<number> {
     const span = await item.$(wxchannelConst.selectors.goodsItem.ID)
-    return Number.parseInt((await span?.textContent()) ?? '')
+    const id = Number.parseInt((await span?.textContent()) ?? '')
+    if (Number.isNaN(id)) {
+      throw new Error('商品序号并非数字！')
+    }
+    return id
   }
 
   public async getCurrentGoodsItemsList(): Promise<
     ElementHandle<SVGElement | HTMLElement>[]
   > {
     const itemsList = await this.page.$$(wxchannelConst.selectors.GOODS_ITEM)
-    // 视频号是倒序的，并且似乎并没有虚拟列表，所以不用担心滚动的问题
-    return itemsList.reverse()
+    if (itemsList.length <= 1) {
+      return itemsList
+    }
+    // 视频号可能是倒序的，需要转成正序
+    const firstIdValue = await this.getIdFromGoodsItem(itemsList[0])
+    const lastIdValue = await this.getIdFromGoodsItem(
+      itemsList[itemsList.length - 1],
+    )
+    // 倒序，转成正序
+    if (firstIdValue > lastIdValue) {
+      itemsList.reverse()
+    }
+    // 暂时不用担心倒序可能会对后面的滚动查找元素有影响，因为视频号似乎没有虚拟列表，能把所有商品全部加载进来
+    return itemsList
   }
 
   public getGoodsItemsScrollContainer(): Promise<ElementHandle<
