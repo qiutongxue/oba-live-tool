@@ -1,5 +1,5 @@
-import { ipcMain } from 'electron'
-import { merge } from 'lodash-es'
+import { globalShortcut } from 'electron'
+import { merge, throttle } from 'lodash-es'
 import type { ElementHandle, Page } from 'playwright'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { createLogger } from '#/logger'
@@ -191,6 +191,30 @@ function setupIpcHandlers() {
       pageManager.updateTaskConfig(TASK_NAME, newConfig)
     },
   )
+
+  typedIpcMainHandle(
+    IPC_CHANNELS.tasks.autoPopUp.registerShortcuts,
+    (_, shortcuts) => {
+      for (const sc of shortcuts) {
+        globalShortcut.register(
+          sc.accelerator,
+          throttle(
+            () => {
+              pageManager.updateTaskConfig(TASK_NAME, {
+                goodsIds: sc.goodsIds,
+              } as PopUpConfig)
+            },
+            1000,
+            { trailing: false },
+          ),
+        )
+      }
+    },
+  )
+
+  typedIpcMainHandle(IPC_CHANNELS.tasks.autoPopUp.unregisterShortcuts, () => {
+    globalShortcut.unregisterAll()
+  })
 }
 
 setupIpcHandlers()

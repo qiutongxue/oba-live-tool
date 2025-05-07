@@ -1,20 +1,12 @@
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import {
-  type ShortcutMapping,
-  useAutoPopUpActions,
-  useCurrentAutoPopUp,
-} from '@/hooks/useAutoPopUp'
+import { Toggle } from '@/components/ui/toggle'
+import { type ShortcutMapping, useAutoPopUpActions } from '@/hooks/useAutoPopUp'
+import { useOSPlatform } from '@/hooks/useOSPlatform'
 import { useToast } from '@/hooks/useToast'
 import { useMemoizedFn } from 'ahooks'
-import {
-  ArrowBigRightDash,
-  Edit2Icon,
-  KeyRoundIcon,
-  Save,
-  Trash2Icon,
-  X,
-} from 'lucide-react'
+import { ArrowBigRightDash, Edit2Icon, Save, Trash2Icon, X } from 'lucide-react'
 import type React from 'react'
 import { useState } from 'react'
 
@@ -24,6 +16,19 @@ interface ShortcutListItemProps {
   checkDuplicateKey: (key: string) => boolean
   onSaved?: () => void
   onCancelled?: () => void
+}
+
+const PLATFORM_KEY_MAP = {
+  win: {
+    ctrl: '⌘ Ctrl',
+    shift: '⇧ Shift',
+    alt: '⌥ Alt',
+  },
+  mac: {
+    ctrl: '⌘ Command',
+    shift: '⇧ Shift',
+    alt: '⌥ Option',
+  },
 }
 
 const ShortcutListItem: React.FC<ShortcutListItemProps> = ({
@@ -39,7 +44,15 @@ const ShortcutListItem: React.FC<ShortcutListItemProps> = ({
   const [newKey, setNewKey] = useState(shortcut.key)
   const [newGoodsIds, setNewGoodsIds] = useState<number[]>(shortcut.goodsIds)
   const [newGoodsIdInput, setNewGoodsIdInput] = useState('')
+  const [ctrlKey, setCtrlKey] = useState(shortcut.ctrl ?? false)
+  const [altKey, setAltKey] = useState(shortcut.alt ?? false)
+  const [shiftKey, setShiftKey] = useState(shortcut.shift ?? false)
   const { toast } = useToast()
+  const osPlatform = useOSPlatform()
+
+  const keyMap =
+    osPlatform === 'MacOS' ? PLATFORM_KEY_MAP.mac : PLATFORM_KEY_MAP.win
+
   // 开始编辑
   const startEditing = useMemoizedFn(() => {
     setIsEditing(true)
@@ -72,13 +85,18 @@ const ShortcutListItem: React.FC<ShortcutListItemProps> = ({
       addShortcut({
         ...shortcut,
         key: newKey,
+        ctrl: ctrlKey,
+        alt: altKey,
+        shift: shiftKey,
         goodsIds: newGoodsIds,
       })
     } else {
-      //FIXME: 这边要改（下面的两个方法不能共存，要想一个好的方法处理新增和修改）
       updateShortcut({
         ...shortcut,
         key: newKey,
+        ctrl: ctrlKey,
+        alt: altKey,
+        shift: shiftKey,
         goodsIds: newGoodsIds,
       })
     }
@@ -102,7 +120,20 @@ const ShortcutListItem: React.FC<ShortcutListItemProps> = ({
   const handleKeyDown = useMemoizedFn((e: React.KeyboardEvent) => {
     if (!isRecordingKey) return
     e.preventDefault()
-    setNewKey(e.key)
+    // 禁用 Alt、Shift、Ctrl、Command(Win)
+    switch (e.key) {
+      case 'Control':
+      case 'Alt':
+      case 'Shift':
+      case 'Meta':
+        return
+    }
+    // 小写转大写
+    if ('a' <= e.key && e.key <= 'z') {
+      setNewKey(e.key.toUpperCase())
+    } else {
+      setNewKey(e.key)
+    }
     setIsRecordingKey(false)
   })
 
@@ -134,10 +165,24 @@ const ShortcutListItem: React.FC<ShortcutListItemProps> = ({
       <div className="border rounded-md p-3 shadow-sm hover:shadow transition-shadow">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <KeyRoundIcon className="h-5 w-5 text-muted-foreground" />
-            <span className="bg-primary/10 text-primary px-3 py-1.5 rounded-md font-medium">
-              {shortcut.key}
-            </span>
+            <div className="flex gap-2 items-center">
+              {shortcut.ctrl && (
+                <Badge variant={'outline'}>{keyMap.ctrl}</Badge>
+              )}
+              {shortcut.shift && (
+                <Badge variant={'outline'}>
+                  {/* <ArrowBigUpIcon className="w-4 h-4" /> */}
+                  {keyMap.shift}
+                </Badge>
+              )}
+              {shortcut.alt && (
+                <Badge variant={'outline'}>
+                  {/* <OptionIcon className="w-4 h-4" /> */}
+                  {keyMap.alt}
+                </Badge>
+              )}
+              <Badge variant={'outline'}>{shortcut.key}</Badge>
+            </div>
             <span className="text-muted-foreground">
               <ArrowBigRightDash />
             </span>
@@ -189,48 +234,51 @@ const ShortcutListItem: React.FC<ShortcutListItemProps> = ({
     <div className="border rounded-md p-4 space-y-4 shadow-md">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <KeyRoundIcon className="h-5 w-5 text-muted-foreground" />
-          {isRecordingKey ? (
-            <div className="flex items-center space-x-2">
-              <Input
-                className="w-24 bg-primary/5 border-primary/20"
-                placeholder="按下键盘..."
-                value={newKey}
-                onKeyDown={handleKeyDown}
-                readOnly
-                autoFocus
-              />
-            </div>
-          ) : (
-            <div className="flex items-center space-x-2">
-              <span className="inline-block px-3 py-1.5 bg-primary/10 text-primary rounded-md font-medium">
-                {newKey || '未设置'}
-              </span>
-              <Button variant="outline" size="sm" onClick={startRecordingKey}>
-                修改按键
-              </Button>
-            </div>
-          )}
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={saveEditing}
-            className="gap-1.5"
-          >
-            <Save className="h-4 w-4" />
-            保存
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={cancelEditing}
-            className="gap-1.5"
-          >
-            <X className="h-4 w-4" />
-            取消
-          </Button>
+          <div className="flex gap-2 justify-center items-center">
+            <Toggle
+              variant={'outline'}
+              pressed={ctrlKey}
+              onPressedChange={e => setCtrlKey(e)}
+            >
+              <span>{keyMap.ctrl}</span>
+            </Toggle>
+            <Toggle
+              variant={'outline'}
+              pressed={shiftKey}
+              onPressedChange={e => setShiftKey(e)}
+            >
+              <span>{keyMap.shift}</span>
+            </Toggle>
+            <Toggle
+              variant={'outline'}
+              pressed={altKey}
+              onPressedChange={e => setAltKey(e)}
+            >
+              <span>{keyMap.alt}</span>
+            </Toggle>
+
+            {isRecordingKey ? (
+              <div className="flex items-center space-x-2">
+                <Input
+                  className="w-24 bg-primary/5 border-primary/20"
+                  placeholder="按下键盘..."
+                  value={newKey}
+                  onKeyDown={handleKeyDown}
+                  readOnly
+                  autoFocus
+                />
+              </div>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <span className="inline-block px-3 py-1.5 bg-primary/10 text-primary rounded-md font-medium">
+                  {newKey || '未设置'}
+                </span>
+                <Button variant="outline" size="sm" onClick={startRecordingKey}>
+                  修改按键
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -259,29 +307,51 @@ const ShortcutListItem: React.FC<ShortcutListItemProps> = ({
             </span>
           )}
         </div>
-        <div className="flex items-center space-x-2">
-          <Input
-            type="number"
-            placeholder="输入商品序号"
-            className="w-32"
-            min="1"
-            value={newGoodsIdInput}
-            onChange={e => setNewGoodsIdInput(e.target.value)}
-            onKeyDown={e => {
-              if (e.key === 'Enter') {
-                e.preventDefault()
-                addGoodsId()
-              }
-            }}
-          />
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={addGoodsId}
-          >
-            添加
-          </Button>
+        <div className="flex justify-between items-center">
+          <div className="flex items-center space-x-2">
+            <Input
+              type="number"
+              placeholder="输入商品序号"
+              className="w-32"
+              min="1"
+              value={newGoodsIdInput}
+              onChange={e => setNewGoodsIdInput(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  addGoodsId()
+                }
+              }}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={addGoodsId}
+            >
+              添加
+            </Button>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={cancelEditing}
+              className="gap-1.5"
+            >
+              <X className="h-4 w-4" />
+              取消
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={saveEditing}
+              className="gap-1.5"
+            >
+              <Save className="h-4 w-4" />
+              保存
+            </Button>
+          </div>
         </div>
       </div>
     </div>

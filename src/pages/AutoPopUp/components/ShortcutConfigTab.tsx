@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-import { useCurrentAutoPopUp } from '@/hooks/useAutoPopUp'
+import { Switch } from '@/components/ui/switch'
+import { useAutoPopUpActions, useCurrentAutoPopUp } from '@/hooks/useAutoPopUp'
 import { useMemoizedFn } from 'ahooks'
 import { PlusIcon } from 'lucide-react'
 import React from 'react'
@@ -8,7 +9,9 @@ import { useCallback, useState } from 'react'
 import ShortcutListItem from './ShortcutListItem'
 
 const ShortcutConfigTab = React.memo(() => {
-  const shortcuts = useCurrentAutoPopUp(context => context.shortcuts) ?? []
+  const shortcuts = useCurrentAutoPopUp(context => context.shortcuts ?? [])
+  const isGlobalShortcut = useCurrentAutoPopUp(ctx => ctx.isGlobalShortcut)
+  const { setGlobalShortcut } = useAutoPopUpActions()
   const [isAddingNew, setIsAddingNew] = useState(false)
 
   // 检查快捷键是否重复
@@ -31,6 +34,18 @@ const ShortcutConfigTab = React.memo(() => {
 
   return (
     <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="space-y-1">
+          <Label>全局快捷键</Label>
+          <p className="text-sm text-muted-foreground">
+            开启后程序后台运行时也可触发，建议使用<strong>组合键</strong>
+          </p>
+        </div>
+        <Switch
+          checked={isGlobalShortcut}
+          onCheckedChange={setGlobalShortcut}
+        />
+      </div>
       <div className="flex items-center justify-between">
         <div className="space-y-1">
           <Label>快捷键映射</Label>

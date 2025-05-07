@@ -1,5 +1,5 @@
 import { EVENTS, eventEmitter } from '@/utils/events'
-import { useMemoizedFn } from 'ahooks'
+import { useMemoizedFn, useThrottleFn } from 'ahooks'
 import { useEffect, useMemo, useRef } from 'react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { create } from 'zustand'
@@ -7,11 +7,15 @@ import { persist } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
 import { useShallow } from 'zustand/react/shallow'
 import { useAccounts } from './useAccounts'
+import { useOSPlatform } from './useOSPlatform'
 
 // 快捷键映射类型定义
 export interface ShortcutMapping {
   id: string
   key: string
+  ctrl?: boolean
+  alt?: boolean
+  shift?: boolean
   goodsIds: number[]
 }
 
@@ -26,7 +30,8 @@ interface AutoPopUpConfig {
 interface AutoPopUpContext {
   isRunning: boolean
   config: AutoPopUpConfig
-  shortcuts: ShortcutMapping[]
+  shortcuts?: ShortcutMapping[]
+  isGlobalShortcut?: boolean
 }
 
 const defaultContext = (): AutoPopUpContext => ({
@@ -46,6 +51,7 @@ interface AutoPopUpStore {
   setIsRunning: (accountId: string, running: boolean) => void
   setConfig: (accountId: string, config: Partial<AutoPopUpConfig>) => void
   setShortcuts: (accountId: string, shortcuts: ShortcutMapping[]) => void
+  setGlobalShortcut: (accountId: string, globalShortcut: boolean) => void
 }
 
 export const useAutoPopUpStore = create<AutoPopUpStore>()(
@@ -83,6 +89,11 @@ export const useAutoPopUpStore = create<AutoPopUpStore>()(
           set(state => {
             const context = ensureContext(state, accountId)
             context.shortcuts = shortcuts
+          }),
+        setGlobalShortcut: (accountId, value) =>
+          set(state => {
+            const context = ensureContext(state, accountId)
+            context.isGlobalShortcut = value
           }),
       }
     }),
@@ -151,6 +162,7 @@ export const useAutoPopUpActions = () => {
   const setIsRunning = useAutoPopUpStore(state => state.setIsRunning)
   const setConfig = useAutoPopUpStore(state => state.setConfig)
   const setShortcuts = useAutoPopUpStore(state => state.setShortcuts)
+  const setGlobalShortcut = useAutoPopUpStore(state => state.setGlobalShortcut)
   const currentAccountId = useAccounts(state => state.currentAccountId)
   const updateConfig = useMemoizedFn((newConfig: Partial<AutoPopUpConfig>) => {
     setConfig(currentAccountId, newConfig)
@@ -193,8 +205,17 @@ export const useAutoPopUpActions = () => {
           currentShortcuts.filter(s => s.id !== id),
         )
       },
+      setGlobalShortcut: (value: boolean) => {
+        setGlobalShortcut(currentAccountId, value)
+      },
     }),
-    [currentAccountId, setIsRunning, updateConfig, setShortcuts],
+    [
+      currentAccountId,
+      setIsRunning,
+      updateConfig,
+      setShortcuts,
+      setGlobalShortcut,
+    ],
   )
 }
 
@@ -202,26 +223,81 @@ export const useAutoPopUpActions = () => {
 export const useShortcutListener = () => {
   const shortcuts = useCurrentAutoPopUp(context => context.shortcuts)
   const isRunning = useCurrentAutoPopUp(context => context.isRunning)
-  useEffect(() => {
-    if (!isRunning) return
+  const isGlobalShortcut = useCurrentAutoPopUp(ctx => ctx.isGlobalShortcut)
+  const platform = useOSPlatform()
 
-    const handleKeyDown = (e: KeyboardEvent) => {
+  // 全局的
+  useEffect(() => {
+    if (!isGlobalShortcut) return
+    if (!isRunning) return
+    if (!shortcuts || shortcuts.length === 0) return
+
+    const mappedShortcuts = shortcuts.map(sc => {
+      const accelerator = [
+        sc.ctrl && 'CommandOrControl',
+        sc.alt && 'Alt',
+        sc.shift && 'Shift',
+        sc.key,
+      ]
+        .filter(Boolean)
+        .join('+')
+
+      return {
+        accelerator,
+        goodsIds: sc.goodsIds,
+      }
+    })
+
+    window.ipcRenderer.invoke(
+      IPC_CHANNELS.tasks.autoPopUp.registerShortcuts,
+      mappedShortcuts,
+    )
+
+    return () => {
+      window.ipcRenderer.invoke(
+        IPC_CHANNELS.tasks.autoPopUp.unregisterShortcuts,
+      )
+    }
+  }, [isGlobalShortcut, shortcuts, isRunning])
+
+  const throttledKeydown = useThrottleFn(
+    (e: KeyboardEvent, shortcuts: ShortcutMapping[]) => {
       // 检查是否有匹配的快捷键
       const shortcut = shortcuts.find(
         s => s.key.toLocaleLowerCase() === e.key.toLocaleLowerCase(),
       )
-      if (shortcut) {
+      if (
+        shortcut &&
+        !!shortcut.ctrl ===
+          // Mac 系统可以用 Command 代替 Ctrl，也可以使用 Control
+          ((platform === 'MacOS' && e.metaKey) || e.ctrlKey) &&
+        !!shortcut.alt === e.altKey &&
+        !!shortcut.shift === e.shiftKey
+      ) {
         window.ipcRenderer.invoke(IPC_CHANNELS.tasks.autoPopUp.updateConfig, {
           goodsIds: shortcut.goodsIds,
         })
       }
+    },
+    { wait: 1000, trailing: false },
+  )
+
+  // 局部的
+  useEffect(() => {
+    if (isGlobalShortcut) return
+    if (!isRunning) return
+    if (!shortcuts || shortcuts.length === 0) return
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // 检查是否有匹配的快捷键
+      throttledKeydown.run(e, shortcuts)
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => {
       window.removeEventListener('keydown', handleKeyDown)
     }
-  }, [shortcuts, isRunning])
+  }, [shortcuts, isRunning, isGlobalShortcut, throttledKeydown])
 }
 
 export const useCurrentAutoPopUp = <T>(

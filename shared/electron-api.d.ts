@@ -50,6 +50,10 @@ export interface IpcChannels {
   [IPC_CHANNELS.tasks.autoPopUp.updateConfig]: (
     config: Parital<PopUpConfig>,
   ) => void
+  [IPC_CHANNELS.tasks.autoPopUp.registerShortcuts]: (
+    shortcuts: { accelerator: string; goodsIds: number[] }[],
+  ) => void
+  [IPC_CHANNELS.tasks.autoPopUp.unregisterShortcuts]: () => void
   [IPC_CHANNELS.tasks.autoMessage.start]: (config: AutoMessageConfig) => boolean
   [IPC_CHANNELS.tasks.autoMessage.stop]: () => boolean
   [IPC_CHANNELS.tasks.liveControl.disconnect]: () => boolean
