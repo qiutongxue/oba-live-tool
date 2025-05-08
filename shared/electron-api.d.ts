@@ -20,7 +20,7 @@ import type { Account } from '#/taskManager'
 import { IPC_CHANNELS } from './ipcChannels'
 
 export interface IpcChannels {
-  // --- Renderer -> Main (Invoke/Handle) ---
+  // LiveControl
   [IPC_CHANNELS.tasks.liveControl.connect]: (params: {
     chromePath?: string
     headless?: boolean
@@ -30,23 +30,18 @@ export interface IpcChannels {
     storageState: string | null
     accountName: string | null
   } | null
-  [IPC_CHANNELS.tasks.autoReply.startCommentListener]: (
-    type: 'control' | 'compass',
-  ) => boolean
-  [IPC_CHANNELS.tasks.aiChat.normalChat]: (params: {
-    messages: Message[]
-    provider: keyof typeof providers
-    model: string
-    apiKey: string
-    customBaseURL?: string
-  }) => string | null
-  [IPC_CHANNELS.tasks.aiChat.testApiKey]: (params: {
-    apiKey: string
-    provider: keyof typeof providers
-    customBaseURL?: string
-  }) => { success: boolean; models?: string[]; error?: string }
+  [IPC_CHANNELS.tasks.liveControl.disconnect]: () => boolean
+  [IPC_CHANNELS.tasks.liveControl.disconnectedEvent]: (id: string) => void
+
+  // AutoMessage
+  [IPC_CHANNELS.tasks.autoMessage.start]: (config: AutoMessageConfig) => boolean
+  [IPC_CHANNELS.tasks.autoMessage.stop]: () => boolean
+  [IPC_CHANNELS.tasks.autoMessage.stoppedEvent]: (id: string) => void
+
+  // AutoPopup
   [IPC_CHANNELS.tasks.autoPopUp.start]: (config: PopUpConfig) => boolean
   [IPC_CHANNELS.tasks.autoPopUp.stop]: () => boolean
+  [IPC_CHANNELS.tasks.autoPopUp.stoppedEvent]: (id: string) => void
   [IPC_CHANNELS.tasks.autoPopUp.updateConfig]: (
     config: Parital<PopUpConfig>,
   ) => void
@@ -54,62 +49,20 @@ export interface IpcChannels {
     shortcuts: { accelerator: string; goodsIds: number[] }[],
   ) => void
   [IPC_CHANNELS.tasks.autoPopUp.unregisterShortcuts]: () => void
-  [IPC_CHANNELS.tasks.autoMessage.start]: (config: AutoMessageConfig) => boolean
-  [IPC_CHANNELS.tasks.autoMessage.stop]: () => boolean
-  [IPC_CHANNELS.tasks.liveControl.disconnect]: () => boolean
-  [IPC_CHANNELS.updater.checkUpdate]: (params: { source: string }) =>
-    | UpdateCheckResult
-    | { message: string; error: Error; downloadURL?: string }
-    | null
 
-  [IPC_CHANNELS.updater.startDownload]: () => void
-  [IPC_CHANNELS.updater.quitAndInstall]: () => void
-  [IPC_CHANNELS.chrome.selectPath]: () => string | null
-  [IPC_CHANNELS.chrome.getPath]: (edge?: boolean) => string | null
-  [IPC_CHANNELS.app.openLogFolder]: () => void
-
-  // --- Renderer -> Main (Send/On) ---
+  // AutoReply
+  [IPC_CHANNELS.tasks.autoReply.startCommentListener]: (
+    type: 'control' | 'compass',
+  ) => boolean
   [IPC_CHANNELS.tasks.autoReply.stopCommentListener]: () => void
   [IPC_CHANNELS.tasks.autoReply.sendReply]: (replyContent: string) => void
-  [IPC_CHANNELS.chrome.toggleDevTools]: () => void
-  [IPC_CHANNELS.tasks.aiChat.chat]: (params: {
-    // 用于启动流式传输，响应通过 stream/error 通道
-    messages: Message[]
-    provider: keyof typeof providers
-    model: string
-    apiKey: string
-    customBaseURL?: string
-  }) => void
-  [IPC_CHANNELS.account.switch]: (params: {
-    accountId: string
-    accountNames: Account[]
-  }) => void
-  [IPC_CHANNELS.tasks.autoReplyPlus.startCommentListener]: () => void
-  [IPC_CHANNELS.tasks.autoReplyPlus.stopCommentListener]: () => void
-
-  // --- Main -> Renderer (Send/On) ---
   [IPC_CHANNELS.tasks.autoReply.listenerStopped]: () => void
   [IPC_CHANNELS.tasks.autoReply.showComment]: (data: {
     comment: DouyinLiveMessage
     accountId: string
   }) => void
-  [IPC_CHANNELS.log]: (message: LogMessage) => void
-  [IPC_CHANNELS.chrome.setPath]: (path: string) => void
-  [IPC_CHANNELS.updater.updateAvailable]: (info: VersionInfo) => void
-  [IPC_CHANNELS.updater.updateError]: (error: ErrorType) => void
-  [IPC_CHANNELS.updater.downloadProgress]: (progress: ProgressInfo) => void
-  [IPC_CHANNELS.updater.updateDownloaded]: (
-    event: UpdateDownloadedEvent,
-  ) => void
-  [IPC_CHANNELS.tasks.autoPopUp.stoppedEvent]: (id: string) => void
-  [IPC_CHANNELS.tasks.autoMessage.stoppedEvent]: (id: string) => void
-  [IPC_CHANNELS.tasks.liveControl.disconnectedEvent]: (id: string) => void
-  [IPC_CHANNELS.tasks.aiChat.stream]: (data: {
-    chunk: string
-    done: boolean
-    type: string
-  }) => void
-  [IPC_CHANNELS.tasks.aiChat.error]: (data: { error: string }) => void
+  [IPC_CHANNELS.tasks.autoReplyPlus.startCommentListener]: () => void
+  [IPC_CHANNELS.tasks.autoReplyPlus.stopCommentListener]: () => void
   [IPC_CHANNELS.tasks.autoReplyPlus.message]: (data: {
     accountId: string
     message:
@@ -121,6 +74,66 @@ export interface IpcChannels {
       | EcomFansclubParticipateMessage
       | RoomFollowMessage
   }) => void
+
+  // AIChat
+  [IPC_CHANNELS.tasks.aiChat.normalChat]: (params: {
+    messages: AIChatMessage[]
+    provider: keyof typeof providers
+    model: string
+    apiKey: string
+    customBaseURL?: string
+  }) => string | null
+  [IPC_CHANNELS.tasks.aiChat.testApiKey]: (params: {
+    apiKey: string
+    provider: keyof typeof providers
+    customBaseURL?: string
+  }) => { success: boolean; models?: string[]; error?: string }
+  [IPC_CHANNELS.tasks.aiChat.chat]: (params: {
+    // 用于启动流式传输，响应通过 stream/error 通道
+    messages: AIChatMessage[]
+    provider: keyof typeof providers
+    model: string
+    apiKey: string
+    customBaseURL?: string
+  }) => void
+  [IPC_CHANNELS.tasks.aiChat.stream]: (data: {
+    chunk: string
+    done: boolean
+    type: string
+  }) => void
+  [IPC_CHANNELS.tasks.aiChat.error]: (data: { error: string }) => void
+
+  // Updater
+  [IPC_CHANNELS.updater.checkUpdate]: (params: { source: string }) =>
+    | UpdateCheckResult
+    | { message: string; error: Error; downloadURL?: string }
+    | null
+
+  [IPC_CHANNELS.updater.startDownload]: () => void
+  [IPC_CHANNELS.updater.quitAndInstall]: () => void
+  [IPC_CHANNELS.updater.updateAvailable]: (info: VersionInfo) => void
+  [IPC_CHANNELS.updater.updateError]: (error: ErrorType) => void
+  [IPC_CHANNELS.updater.downloadProgress]: (progress: ProgressInfo) => void
+  [IPC_CHANNELS.updater.updateDownloaded]: (
+    event: UpdateDownloadedEvent,
+  ) => void
+
+  // Chrome
+  [IPC_CHANNELS.chrome.selectPath]: () => string | null
+  [IPC_CHANNELS.chrome.getPath]: (edge?: boolean) => string | null
+  [IPC_CHANNELS.chrome.toggleDevTools]: () => void
+  [IPC_CHANNELS.chrome.setPath]: (path: string) => void
+
+  // App
+  [IPC_CHANNELS.app.openLogFolder]: () => void
+
+  [IPC_CHANNELS.account.switch]: (params: {
+    accountId: string
+    accountNames: Account[]
+  }) => void
+
+  // Log
+  [IPC_CHANNELS.log]: (message: LogMessage) => void
 }
 
 export interface ElectronAPI {
