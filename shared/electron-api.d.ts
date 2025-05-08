@@ -37,6 +37,10 @@ export interface IpcChannels {
   [IPC_CHANNELS.tasks.autoMessage.start]: (config: AutoMessageConfig) => boolean
   [IPC_CHANNELS.tasks.autoMessage.stop]: () => boolean
   [IPC_CHANNELS.tasks.autoMessage.stoppedEvent]: (id: string) => void
+  [IPC_CHANNELS.tasks.autoMessage.sendBatchMessages]: (
+    messages: string[],
+    count: number,
+  ) => boolean
 
   // AutoPopup
   [IPC_CHANNELS.tasks.autoPopUp.start]: (config: PopUpConfig) => boolean

@@ -10,6 +10,7 @@ export const IPC_CHANNELS = {
       stop: 'tasks:autoMessage:stop',
       stoppedEvent: 'tasks:autoMessage:stoppedEvent',
       updateConfig: 'tasks:autoMessage:updateConfig',
+      sendBatchMessages: 'tasks:autoMessage:sendBatchMessages',
     },
     autoPopUp: {
       start: 'tasks:autoPopUp:start',

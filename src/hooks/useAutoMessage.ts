@@ -25,6 +25,7 @@ interface AutoMessageConfig {
 interface AutoMessageContext {
   isRunning: boolean
   config: AutoMessageConfig
+  batchCount?: number
 }
 
 const defaultContext = (): AutoMessageContext => ({
@@ -43,6 +44,7 @@ interface AutoMessageStore {
   contexts: Record<string, AutoMessageContext>
   setIsRunning: (accountId: string, running: boolean) => void
   setConfig: (accountId: string, config: Partial<AutoMessageConfig>) => void
+  setBatchCount: (accountId: string, batchCount: number) => void
 }
 
 export const useAutoMessageStore = create<AutoMessageStore>()(
@@ -60,24 +62,32 @@ export const useAutoMessageStore = create<AutoMessageStore>()(
         })
       })
 
+      const ensureContext = (state: AutoMessageStore, accountId: string) => {
+        if (!state.contexts[accountId]) {
+          state.contexts[accountId] = defaultContext()
+        }
+        return state.contexts[accountId]
+      }
+
       return {
         contexts: { default: defaultContext() },
         setIsRunning: (accountId, running) =>
           set(state => {
-            if (!state.contexts[accountId]) {
-              state.contexts[accountId] = defaultContext()
-            }
-            state.contexts[accountId].isRunning = running
+            const context = ensureContext(state, accountId)
+            context.isRunning = running
           }),
         setConfig: (accountId, config) =>
           set(state => {
-            if (!state.contexts[accountId]) {
-              state.contexts[accountId] = defaultContext()
-            }
-            state.contexts[accountId].config = {
+            const context = ensureContext(state, accountId)
+            context.config = {
               ...state.contexts[accountId].config,
               ...config,
             }
+          }),
+        setBatchCount: (accountId, count) =>
+          set(state => {
+            const context = ensureContext(state, accountId)
+            context.batchCount = count
           }),
       }
     }),
@@ -142,6 +152,7 @@ export const useAutoMessageStore = create<AutoMessageStore>()(
 export const useAutoMessageActions = () => {
   const setIsRunning = useAutoMessageStore(state => state.setIsRunning)
   const setConfig = useAutoMessageStore(state => state.setConfig)
+  const setBatchCount = useAutoMessageStore(state => state.setBatchCount)
   const currentAccountId = useAccounts(state => state.currentAccountId)
   const updateConfig = useMemoizedFn(
     (newConfig: Partial<AutoMessageConfig>) => {
@@ -158,8 +169,9 @@ export const useAutoMessageActions = () => {
       setMessages: (messages: Message[]) => updateConfig({ messages }),
       setRandom: (random: boolean) => updateConfig({ random }),
       setExtraSpaces: (extraSpaces: boolean) => updateConfig({ extraSpaces }),
+      setBatchCount: (count: number) => setBatchCount(currentAccountId, count),
     }),
-    [currentAccountId, setIsRunning, updateConfig],
+    [currentAccountId, setIsRunning, updateConfig, setBatchCount],
   )
 }
 

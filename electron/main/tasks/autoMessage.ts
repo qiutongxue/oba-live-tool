@@ -6,7 +6,7 @@ import { createLogger } from '#/logger'
 import type { Account } from '#/taskManager'
 import { pageManager } from '#/taskManager'
 import { LiveController } from '#/tasks/controller/LiveController'
-import { randomInt, takeScreenshot, typedIpcMainHandle } from '#/utils'
+import { randomInt, sleep, takeScreenshot, typedIpcMainHandle } from '#/utils'
 import windowManager from '#/windowManager'
 import type { BaseConfig } from './scheduler'
 import { TaskScheduler } from './scheduler'
@@ -29,6 +29,9 @@ interface MessageConfig extends BaseConfig {
 function insertRandomSpaces(text: string, insertionProbability = 0.3): string {
   // 不处理空字符串或概率为0的情况
   if (!text || insertionProbability <= 0) return text
+  // 不能超过 50 个字符
+  let maxSpaces = 50 - text.length
+  if (maxSpaces <= 0) return text
 
   // 限制概率在合理范围内
   const probability = Math.min(Math.max(insertionProbability, 0), 1)
@@ -39,7 +42,9 @@ function insertRandomSpaces(text: string, insertionProbability = 0.3): string {
   for (let i = 0; i < text.length; i++) {
     const char = text[i]
     result.push(char)
-
+    if (maxSpaces <= 0) {
+      continue
+    }
     // 不在空格后立即再插入空格，避免过多空格影响阅读
     if (
       !lastWasSpace &&
@@ -49,8 +54,9 @@ function insertRandomSpaces(text: string, insertionProbability = 0.3): string {
       Math.random() < probability
     ) {
       // 随机决定插入1个还是2个空格(小概率)
-      const spacesToInsert = Math.random() < 0.9 ? 1 : 2
+      const spacesToInsert = Math.min(maxSpaces, Math.random() < 0.9 ? 1 : 2)
       result.push(' '.repeat(spacesToInsert))
+      maxSpaces -= spacesToInsert
       lastWasSpace = true
     } else {
       lastWasSpace = char === ' '
@@ -214,6 +220,26 @@ function setupIpcHandlers() {
     pageManager.stopTask(TASK_NAME)
     return true
   })
+
+  typedIpcMainHandle(
+    IPC_CHANNELS.tasks.autoMessage.sendBatchMessages,
+    async (_, messages, count) => {
+      try {
+        const page = pageManager.getPage()
+        const controller = new LiveController(page)
+        for (let i = 0; i < count; i++) {
+          const messageIndex = randomInt(0, messages.length - 1)
+          const message = insertRandomSpaces(messages[messageIndex])
+          await controller.sendMessage(message)
+          // 以防万一，加一个 1s 的小停顿
+          await sleep(1000)
+        }
+        return true
+      } catch {
+        return false
+      }
+    },
+  )
 
   // typedIpcMainHandle(
   //   IPC_CHANNELS.tasks.autoMessage.updateConfig,
