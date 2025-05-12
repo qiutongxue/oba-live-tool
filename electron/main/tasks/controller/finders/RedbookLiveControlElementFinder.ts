@@ -1,5 +1,5 @@
 import type { ElementHandle } from 'playwright'
-import { redbook as redbookConst } from '#/constants'
+import { error, redbook as redbookConst } from '#/constants'
 import { LiveControlElementFinder } from '../LiveControlElementFinder'
 
 export class RedbookLiveControlElementFinder extends LiveControlElementFinder {
@@ -10,7 +10,7 @@ export class RedbookLiveControlElementFinder extends LiveControlElementFinder {
       redbookConst.selectors.goodsItem.OPERATION_PANNEL,
     )
     if (!pannel) {
-      throw new Error('找不到操作栏')
+      throw new Error(error.elementFinder.ACTION_PANEL_NOT_FOUND)
     }
     const operations = await pannel.$$(
       redbookConst.selectors.goodsItem.OPERATION_ITEM,
@@ -28,25 +28,23 @@ export class RedbookLiveControlElementFinder extends LiveControlElementFinder {
             ),
           )
         ) {
-          throw new Error(
-            `无法点击${redbookConst.selectors.goodsItem.POPUP_BUTTON_TEXT}，可能未开播`,
-          )
+          throw new Error(error.elementFinder.PROMOTING_BTN_DISABLED)
         }
         return operation
       }
     }
-    throw new Error(
-      `找不到${redbookConst.selectors.goodsItem.POPUP_BUTTON_TEXT}按钮`,
-    )
+    throw new Error(error.elementFinder.PROMOTING_BTN_NOT_FOUND)
   }
 
   public async getIdFromGoodsItem(
     item: ElementHandle<SVGElement | HTMLElement>,
   ): Promise<number> {
     const input = await item.$(redbookConst.selectors.goodsItem.ID)
-    return Number.parseInt(
-      (await input?.evaluate(el => (el as HTMLInputElement).value)) ?? '',
-    )
+    const id = Number.parseInt((await input?.inputValue()) ?? '')
+    if (Number.isNaN(id)) {
+      throw new Error(error.elementFinder.GOODS_ID_IS_NOT_A_NUMBER)
+    }
+    return id
   }
 
   public async getCurrentGoodsItemsList(): Promise<
@@ -75,7 +73,7 @@ export class RedbookLiveControlElementFinder extends LiveControlElementFinder {
       redbookConst.selectors.commentInput.SUBMIT_BUTTON,
     )
     if (!submitButton) {
-      throw new Error('找不到发送按钮')
+      throw new Error(error.elementFinder.SUBMIT_BTN_NOT_FOUND)
     }
     if (
       await submitButton.evaluate(el =>
@@ -84,7 +82,7 @@ export class RedbookLiveControlElementFinder extends LiveControlElementFinder {
         ),
       )
     ) {
-      throw new Error('无法点击发送按钮，可能未输入文字')
+      throw new Error(error.elementFinder.SUBMIT_BTN_DISABLED)
     }
     return submitButton
   }
