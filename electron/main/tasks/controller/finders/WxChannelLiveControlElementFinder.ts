@@ -1,5 +1,5 @@
 import type { ElementHandle, Locator } from 'playwright'
-import { wxchannel as wxchannelConst } from '#/constants'
+import { error, wxchannel as wxchannelConst } from '#/constants'
 import { LiveControlElementFinder } from '../LiveControlElementFinder'
 
 export class WxChannelLiveControlElementFinder extends LiveControlElementFinder {
@@ -19,7 +19,7 @@ export class WxChannelLiveControlElementFinder extends LiveControlElementFinder 
     const span = await item.$(wxchannelConst.selectors.goodsItem.ID)
     const id = Number.parseInt((await span?.textContent()) ?? '')
     if (Number.isNaN(id)) {
-      throw new Error('商品序号并非数字！')
+      throw new Error(error.elementFinder.GOODS_ID_IS_NOT_A_NUMBER)
     }
     return id
   }

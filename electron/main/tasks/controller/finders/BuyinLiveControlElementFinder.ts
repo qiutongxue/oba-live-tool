@@ -1,5 +1,5 @@
 import type { ElementHandle } from 'playwright'
-import { douyin as douyinConst } from '#/constants'
+import { douyin as douyinConst, error } from '#/constants'
 import { LiveControlElementFinder } from '../LiveControlElementFinder'
 
 export class BuyinLiveControlElementFinder extends LiveControlElementFinder {
@@ -18,13 +18,15 @@ export class BuyinLiveControlElementFinder extends LiveControlElementFinder {
     const submit_btn = await this.page.$(
       douyinConst.selectors.commentInput.SUBMIT_BUTTON,
     )
+    if (!submit_btn) {
+      throw new Error(error.elementFinder.SUBMIT_BTN_NOT_FOUND)
+    }
     if (
-      !submit_btn ||
       (await submit_btn.getAttribute('class'))?.includes(
         douyinConst.selectors.commentInput.SUBMIT_BUTTON_DISABLED,
       )
     ) {
-      throw new Error('无法点击发布按钮')
+      throw new Error(error.elementFinder.SUBMIT_BTN_DISABLED)
     }
     return submit_btn
   }
@@ -34,7 +36,7 @@ export class BuyinLiveControlElementFinder extends LiveControlElementFinder {
   ) {
     const goodsAction = await item.$(douyinConst.selectors.goodsItem.ACTION)
     if (!goodsAction) {
-      throw new Error('找不到商品操作按钮')
+      throw new Error(error.elementFinder.ACTION_PANEL_NOT_FOUND)
     }
     // 默认获取第一个元素，就是讲解按钮所在的位置
     const button = await goodsAction.$(
@@ -42,7 +44,7 @@ export class BuyinLiveControlElementFinder extends LiveControlElementFinder {
     )
     // const button = await presBtnWrap?.$('button')
     if (!button) {
-      throw new Error('找不到讲解按钮')
+      throw new Error(error.elementFinder.PROMOTING_BTN_NOT_FOUND)
     }
     return button
   }
@@ -59,9 +61,11 @@ export class BuyinLiveControlElementFinder extends LiveControlElementFinder {
     item: ElementHandle<SVGElement | HTMLElement>,
   ) {
     const idInput = await item.$(douyinConst.selectors.goodsItem.ID)
-    return Number.parseInt(
-      (await idInput?.evaluate(el => (el as HTMLInputElement).value)) ?? '',
-    )
+    const id = Number.parseInt((await idInput?.inputValue()) ?? '')
+    if (Number.isNaN(id)) {
+      throw new Error(error.elementFinder.GOODS_ID_IS_NOT_A_NUMBER)
+    }
+    return id
   }
 
   public async getCommentTextarea() {

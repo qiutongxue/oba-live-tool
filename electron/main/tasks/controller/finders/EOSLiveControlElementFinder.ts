@@ -1,5 +1,5 @@
 import type { ElementHandle } from 'playwright'
-import { eos as eosConst } from '#/constants'
+import { eos as eosConst, error } from '#/constants'
 import { LiveControlElementFinder } from '../LiveControlElementFinder'
 
 export class EOSLiveControlElementFinder extends LiveControlElementFinder {
@@ -16,12 +16,12 @@ export class EOSLiveControlElementFinder extends LiveControlElementFinder {
       eosConst.selectors.commentInput.SUBMIT_BUTTON,
     )
     if (!sendMessageButton) {
-      throw new Error('找不到发送按钮')
+      throw new Error(error.elementFinder.SUBMIT_BTN_NOT_FOUND)
     }
     if (
       await sendMessageButton.evaluate(el => el.className.includes('disable'))
     ) {
-      throw new Error('无法点击发送按钮，可能未输入文字')
+      throw new Error(error.elementFinder.SUBMIT_BTN_DISABLED)
     }
     return sendMessageButton
   }
@@ -31,10 +31,10 @@ export class EOSLiveControlElementFinder extends LiveControlElementFinder {
   ): Promise<ElementHandle<HTMLButtonElement>> {
     const button = await item.$(eosConst.selectors.goodsItem.POPUP_BUTTON)
     if (!button) {
-      throw new Error('找不到讲解按钮')
+      throw new Error(error.elementFinder.PROMOTING_BTN_NOT_FOUND)
     }
     if (await button.evaluate(el => el.className.includes('disabled'))) {
-      throw new Error('无法点击「讲解」按钮，因为未开播')
+      throw new Error(error.elementFinder.PROMOTING_BTN_DISABLED)
     }
     return button as ElementHandle<HTMLButtonElement>
   }
@@ -43,7 +43,11 @@ export class EOSLiveControlElementFinder extends LiveControlElementFinder {
     item: ElementHandle<SVGElement | HTMLElement>,
   ): Promise<number> {
     const idInput = await item.$(eosConst.selectors.goodsItem.ID)
-    return Number.parseInt((await idInput?.evaluate(el => el.value)) ?? '')
+    const id = Number.parseInt((await idInput?.inputValue()) ?? '')
+    if (Number.isNaN(id)) {
+      throw new Error(error.elementFinder.GOODS_ID_IS_NOT_A_NUMBER)
+    }
+    return id
   }
 
   public async getCurrentGoodsItemsList(): Promise<
