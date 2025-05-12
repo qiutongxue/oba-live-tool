@@ -67,7 +67,9 @@ export class PageManager {
         idSnapShot,
       )
       // MacOS 需要手动关闭浏览器
-      context.browser.close().catch()
+      context.browser
+        .close()
+        .catch(e => this.logger.error(`无法关闭浏览器：${e}`))
     })
     const previousContext = this.contexts.get(this.currentId) ?? {
       ...context,

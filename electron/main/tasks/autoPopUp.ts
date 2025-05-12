@@ -73,7 +73,9 @@ class PopUpManager {
       //   `执行失败: ${error instanceof Error ? error.message : String(error)}`,
       // )
       if (screenshot) {
-        await takeScreenshot(this.page, TASK_NAME, this.account.name).catch()
+        await takeScreenshot(this.page, TASK_NAME, this.account.name).catch(e =>
+          this.logger.debug(`截图失败：${e}`),
+        )
       }
       throw error
     }
