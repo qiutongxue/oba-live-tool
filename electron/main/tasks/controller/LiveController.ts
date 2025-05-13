@@ -7,13 +7,14 @@ import type { LiveControlElementFinder } from './LiveControlElementFinder'
 import { type PopUpStrategy, getPopUpStrategy } from './PopUpStrategy'
 import { BuyinLiveControlElementFinder } from './finders/BuyinLiveControlElementFinder'
 import { EOSLiveControlElementFinder } from './finders/EOSLiveControlElementFinder'
+import { KuaishouLiveControlElementFinder } from './finders/KuaishouLiveControlElementFinder'
 import { RedbookLiveControlElementFinder } from './finders/RedbookLiveControlElementFinder'
 import { WxChannelLiveControlElementFinder } from './finders/WxChannelLiveControlElementFinder'
 
 function getLiveControlElementFinder(
   platform: LiveControlPlatform,
   page: Page,
-) {
+): LiveControlElementFinder {
   switch (platform) {
     case 'eos':
       return new EOSLiveControlElementFinder(page)
@@ -21,7 +22,10 @@ function getLiveControlElementFinder(
       return new RedbookLiveControlElementFinder(page)
     case 'wxchannel':
       return new WxChannelLiveControlElementFinder(page)
-    default:
+    case 'kuaishou':
+      return new KuaishouLiveControlElementFinder(page)
+    case 'buyin':
+    case 'douyin':
       return new BuyinLiveControlElementFinder(page)
   }
 }
@@ -30,18 +34,23 @@ function getCloseOverlays(platform: LiveControlPlatform) {
   switch (platform) {
     case 'wxchannel':
       return [constants.wxchannel.selectors.overlays.CLOSE_BUTTON]
-    default:
+    case 'kuaishou':
+      return [
+        constants.kuaishou.selectors.overlays.SWITCH_TO_GROUP_BUYING,
+        constants.kuaishou.selectors.overlays.LIVE_ON,
+      ]
+    case 'douyin':
+    case 'buyin':
       return [
         constants.douyin.selectors.overlays.AFK_CLOSE_BUTTON,
         constants.douyin.selectors.overlays.LIVE_OVER_CLOSE_BUTTON,
       ]
+    default:
+      return []
   }
 }
 
 export class LiveController {
-  // protected page: Page
-  // protected logger: ReturnType<typeof createLogger>
-  // protected abortSignal?: AbortSignal
   protected elementFinder: LiveControlElementFinder
   protected popUpStrategy: PopUpStrategy
   protected closeOverlaysSelectors: string[]
@@ -84,9 +93,11 @@ export class LiveController {
   @abortable
   public async popUp(id: number) {
     await this.recoveryLive()
-    // 不用什么 waitFor 了，直接轮询，暴力的才是最好的
     const button = await this.getPopUpButtonById(id)
-    await this.popUpStrategy(button)
+
+    await this.popUpStrategy(button, this.page, () =>
+      this.getPopUpButtonById(id),
+    )
     this.logger.success(`商品 ${id} 讲解成功`)
   }
 
@@ -97,17 +108,6 @@ export class LiveController {
         await closeButton.dispatchEvent('click')
       }
     }
-  }
-
-  private async clickPopUpButton(id: number): Promise<'讲解' | '取消讲解'> {
-    const button = await this.getPopUpButtonById(id)
-    const buttonText = await button.textContent()
-    if (buttonText !== '取消讲解' && buttonText !== '讲解') {
-      throw new Error(`不是讲解按钮，是 ${buttonText} 按钮`)
-    }
-    // await button.scrollIntoViewIfNeeded()
-    await button.dispatchEvent('click')
-    return buttonText
   }
 
   protected async getPopUpButtonById(id: number) {
