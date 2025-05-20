@@ -222,6 +222,7 @@ const Settings = () => {
     updateGeneralSettings,
     updateKeywordReplyEnabled,
     updateEventReplyEnabled,
+    updateEventReplyOptions,
   } = useAutoReply()
 
   // 本地状态
@@ -284,7 +285,7 @@ const Settings = () => {
     updateEventReplyEnabled(type, checked)
   }
 
-  // 处理添加进入直播间的回复消息
+  // 处理其余消息的回复内容
   const handleMessageAdd = (
     type: Exclude<MessageType, 'comment'>,
     message: string,
@@ -297,6 +298,13 @@ const Settings = () => {
       },
     }))
     updateEventReplyContents(type, [...typeReplies[type].messages, message])
+  }
+
+  const hanldeOptionsChange = (
+    type: Exclude<MessageType, 'comment'>,
+    options: Record<string, boolean>,
+  ) => {
+    updateEventReplyOptions(type, options)
   }
 
   const handleMessageRemove = (
@@ -482,6 +490,33 @@ const Settings = () => {
                             }
                             placeholder={`例如：${type.default}`}
                           />
+                          {
+                            // 单独处理已下单、已支付的回复
+                            type.id === 'live_order' && (
+                              <>
+                                <Separator className="mt-4" />
+                                <div className="flex justify-between items-center pt-4 text-sm">
+                                  <div className="flex flex-col">
+                                    <span>仅在已支付时回复</span>
+                                    <span className="text-muted-foreground">
+                                      用户订单具有<strong>已下单</strong>和
+                                      <strong>已支付</strong>两种状态
+                                    </span>
+                                  </div>
+                                  <Switch
+                                    checked={
+                                      config[type.id]?.options?.onlyReplyPaid
+                                    }
+                                    onCheckedChange={e =>
+                                      hanldeOptionsChange(type.id, {
+                                        onlyReplyPaid: e,
+                                      })
+                                    }
+                                  />
+                                </div>
+                              </>
+                            )
+                          }
                         </CardContent>
                       </Card>
                     )}

@@ -91,6 +91,7 @@ interface AutoReplyBaseConfig {
 interface SimpleEventReply {
   enable: boolean
   messages: string[]
+  options?: Record<string, boolean>
 }
 
 type EventBasedReplies = {
@@ -130,9 +131,11 @@ interface AutoReplyAction {
   ) => void
 
   // 更新某个事件回复的内容列表 (替换整个数组)
-  updateEventReplyContents: (
+  updateEventReplyContents: <
+    T extends keyof Pick<AutoReplyConfig, Exclude<MessageType, 'comment'>>,
+  >(
     accountId: string,
-    replyType: keyof Pick<AutoReplyConfig, Exclude<MessageType, 'comment'>>,
+    replyType: T,
     contents: string[],
   ) => void
   // 更新黑名单 (替换整个数组)
@@ -150,6 +153,14 @@ interface AutoReplyAction {
     accountId: string,
     replyType: keyof Pick<AutoReplyConfig, Exclude<MessageType, 'comment'>>,
     enabled: boolean,
+  ) => void
+
+  updateEventReplyOptions: <
+    T extends keyof Pick<AutoReplyConfig, Exclude<MessageType, 'comment'>>,
+  >(
+    accountId: string,
+    typeId: T,
+    options: AutoReplyConfig[T]['options'],
   ) => void
 
   // 考虑是否需要一个方法来清理某个 accountId 的 context
@@ -189,6 +200,9 @@ const createDefaultConfig = (): AutoReplyConfig => {
     live_order: {
       enable: false,
       messages: [],
+      options: {
+        onlyReplyPaid: false,
+      },
     },
     room_follow: {
       enable: false,
@@ -331,6 +345,13 @@ export const useAutoReplyStore = create<AutoReplyState & AutoReplyAction>()(
             const context = ensureContext(state, accountId)
             if (context.config[replyType]) {
               context.config[replyType].enable = enabled
+            }
+          }),
+        updateEventReplyOptions: (accountId, replyType, options) =>
+          set(state => {
+            const context = ensureContext(state, accountId)
+            if (context.config[replyType]) {
+              context.config[replyType].options = options
             }
           }),
 
@@ -721,6 +742,16 @@ export function useAutoReply() {
         }
         break
       }
+      case 'live_order': {
+        /* 如果设置了仅已支付回复且当前非已支付时不回复 */
+        if (
+          !config.live_order.options?.onlyReplyPaid ||
+          comment.order_status === 3
+        ) {
+          sendConfiguredReply(config, comment.msg_type, comment.nick_name)
+        }
+        break
+      }
       default:
         sendConfiguredReply(config, comment.msg_type, comment.nick_name)
     }
@@ -776,6 +807,14 @@ export function useAutoReply() {
       enabled: boolean,
     ) => {
       store.updateEventReplyEnabled(currentAccountId, replyType, enabled)
+    },
+    updateEventReplyOptions: <
+      T extends keyof Pick<AutoReplyConfig, Exclude<MessageType, 'comment'>>,
+    >(
+      replyType: T,
+      options: AutoReplyConfig[T]['options'],
+    ) => {
+      store.updateEventReplyOptions(currentAccountId, replyType, options)
     },
     // 可以根据需要添加更多快捷更新配置的方法
   }
