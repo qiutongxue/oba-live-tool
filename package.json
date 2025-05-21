@@ -20,7 +20,7 @@
     "test": "vitest run",
     "prepare": "husky",
     "bump": "bumpp --no-commit --no-tag --no-push && changelogen --output",
-    "release": "bumpp --no-push --files CHANGELOG.md"
+    "release": "node ./scripts/release"
   },
   "dependencies": {
     "@radix-ui/react-alert-dialog": "^1.1.6",
