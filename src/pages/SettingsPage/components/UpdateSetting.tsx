@@ -15,7 +15,9 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
+import { Switch } from '@/components/ui/switch'
 import Update from '@/components/update'
+import { useUpdateStore } from '@/hooks/useUpdate'
 import { useState } from 'react'
 import { version } from '../../../../package.json'
 
@@ -34,6 +36,7 @@ const updateSources: UpdateSource[] = [
 export function UpdateSetting() {
   const [updateSource, setUpdateSource] = useState<string>('github')
   const [customUpdateSource, setCustomUpdateSource] = useState<string>('')
+  const { enableAutoCheckUpdate, setEnableAutoCheckUpdate } = useUpdateStore()
 
   // 获取实际的更新源
   const getActualUpdateSource = () => {
@@ -41,13 +44,14 @@ export function UpdateSetting() {
   }
 
   return (
-    <Card>
+    <Card id="update-section">
       <CardHeader>
         <CardTitle>软件更新</CardTitle>
         <CardDescription>检查并安装最新版本的应用程序</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="space-y-4">
+          {/* 手动更新 */}
           <div className="flex items-center justify-between">
             <div className="space-y-1">
               <Label>更新源</Label>
@@ -92,6 +96,22 @@ export function UpdateSetting() {
         </div>
 
         <Separator className="my-6" />
+
+        <div className="flex justify-between items-center ">
+          <div className="space-y-1">
+            <Label>有新版本时弹窗提示</Label>
+            <p className="text-sm text-muted-foreground">
+              弹窗显示新版本更新了什么内容
+            </p>
+          </div>
+          <Switch
+            checked={enableAutoCheckUpdate}
+            onCheckedChange={setEnableAutoCheckUpdate}
+          />
+        </div>
+
+        <Separator />
+
         <div className="flex items-center justify-between">
           <div className="space-y-1">
             <h4 className="text-sm font-medium leading-none">当前版本</h4>

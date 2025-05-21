@@ -29,11 +29,6 @@ jobs:
         with:
           version: 10
 
-      - name: Generate changelog
-        run: npx changelogithub --output CHANGELOG.md
-        env:
-          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
-
       - name: install dependencies
         run: pnpm install
 

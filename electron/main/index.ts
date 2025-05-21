@@ -29,7 +29,7 @@ import './tasks/autoReply'
 import './tasks/aiChat'
 import './tasks/autoReplyPlus'
 import semver from 'semver'
-import { typedIpcMainHandle } from './utils'
+import { fetchChangelog, typedIpcMainHandle } from './utils'
 
 const _require = createRequire(import.meta.url)
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -91,20 +91,28 @@ async function createWindow() {
   }
 
   // 加载完成后检查更新
-  win.webContents.on('did-finish-load', () => {
+  win.webContents.on('did-finish-load', async () => {
     const logger = createLogger('检查更新')
-    getLatestVersion()
-      .then(latestVersion => {
-        const currentVersion = app.getVersion()
-        if (semver.lt(currentVersion, latestVersion)) {
-          logger.info(
-            `检查到可用更新：${currentVersion} -> ${latestVersion}，可前往应用设置-软件更新处手动更新`,
-          )
-        }
-      })
-      .catch(err => {
-        logger.debug(`检查更新失败：${err}`)
-      })
+    try {
+      const latestVersion = await getLatestVersion()
+      const currentVersion = app.getVersion()
+      if (semver.lt(currentVersion, latestVersion)) {
+        logger.info(
+          `检查到可用更新：${currentVersion} -> ${latestVersion}，可前往应用设置-软件更新处手动更新`,
+        )
+
+        // 获取 CHANGELOG.md
+        const releaseNote = await fetchChangelog() // html
+
+        windowManager.sendToWindow('main', IPC_CHANNELS.app.notifyUpdate, {
+          currentVersion,
+          latestVersion,
+          releaseNote,
+        })
+      }
+    } catch (err) {
+      logger.debug(`检查更新失败：${err}`)
+    }
   })
 
   // Make all links open with the browser, not with the application

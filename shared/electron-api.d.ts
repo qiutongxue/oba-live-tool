@@ -130,6 +130,11 @@ export interface IpcChannels {
 
   // App
   [IPC_CHANNELS.app.openLogFolder]: () => void
+  [IPC_CHANNELS.app.notifyUpdate]: (arg: {
+    currentVersion: string
+    latestVersion: string
+    releaseNote?: string
+  }) => void
 
   [IPC_CHANNELS.account.switch]: (params: {
     accountId: string

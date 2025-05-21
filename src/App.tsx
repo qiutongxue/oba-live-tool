@@ -10,18 +10,28 @@ import {
 import { Toaster } from '@/components/ui/toaster'
 import { useDevMode } from '@/hooks/useDevMode'
 import { RefreshCwIcon, TerminalIcon } from 'lucide-react'
-import { Outlet } from 'react-router'
+import { Outlet, useNavigate, useRoutes } from 'react-router'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { Header } from './components/common/Header'
 import { useIpcListener } from './hooks/useIpc'
 import './App.css'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { HtmlRenderer } from './components/common/HtmlRenderer'
+import { Button } from './components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from './components/ui/dialog'
+import { ScrollArea } from './components/ui/scroll-area'
 import { useAccounts } from './hooks/useAccounts'
 import { useAutoMessageStore } from './hooks/useAutoMessage'
 import { useAutoPopUpStore } from './hooks/useAutoPopUp'
 import { useAutoReply } from './hooks/useAutoReply'
 import { useLiveControlStore } from './hooks/useLiveControl'
 import { useToast } from './hooks/useToast'
+import { useUpdateStore } from './hooks/useUpdate'
 
 function useGlobalIpcListener() {
   const { handleComment } = useAutoReply()
@@ -51,6 +61,63 @@ function useGlobalIpcListener() {
     setIsRunningAutoPopUp(id, false)
     toast.error('自动弹窗已停止')
   })
+}
+
+function UpdateInfo() {
+  const [isUpdateAlertShow, setIsUpdateAlertShow] = useState(false)
+  const [updateInfo, setUpdateInfo] = useState<{
+    currentVersion: string
+    latestVersion: string
+    releaseNote?: string
+  } | null>(null)
+  const updateStore = useUpdateStore()
+
+  const navigate = useNavigate()
+
+  useIpcListener(IPC_CHANNELS.app.notifyUpdate, info => {
+    if (updateStore.enableAutoCheckUpdate) {
+      setIsUpdateAlertShow(true)
+      setUpdateInfo(info)
+    }
+  })
+
+  const handleUpdateNow = () => {
+    setIsUpdateAlertShow(false)
+    navigate('/settings#update-section')
+  }
+
+  return (
+    <Dialog open={isUpdateAlertShow}>
+      <DialogContent>
+        <DialogTitle>有新版本可用</DialogTitle>
+        <DialogDescription>现在更新以体验最新功能。</DialogDescription>
+
+        <div className="flex justify-end space-x-1 items-center text-sm text-muted-foreground">
+          <span className="text-gray-400">v{updateInfo?.currentVersion}</span>
+          <span>{'→'}</span>
+          <span className="text-gray-700 font-bold">
+            v{updateInfo?.latestVersion}
+          </span>
+        </div>
+        {updateInfo?.releaseNote && (
+          <ScrollArea className="h-64">
+            <HtmlRenderer
+              className="markdown-body"
+              html={updateInfo?.releaseNote}
+            />{' '}
+          </ScrollArea>
+        )}
+        <div className="flex justify-end gap-2 mt-4">
+          <Button variant="outline" onClick={() => setIsUpdateAlertShow(false)}>
+            关闭
+          </Button>
+          <Button variant="default" onClick={handleUpdateNow}>
+            前往更新
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
 }
 
 function App() {
@@ -98,6 +165,7 @@ function App() {
               <LogDisplayer />
             </div>
           </div>
+          <UpdateInfo />
         </ContextMenuTrigger>
         {devMode && (
           <ContextMenuContent>

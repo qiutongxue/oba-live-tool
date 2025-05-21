@@ -14,6 +14,9 @@ import type { ProgressInfo } from 'electron-updater'
 import { Download, RefreshCw, Rocket } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
+import { version } from '../../../package.json'
+import { HtmlRenderer } from '../common/HtmlRenderer'
+import { ScrollArea } from '../ui/scroll-area'
 
 function Update({ source = 'github' }: { source: string }) {
   const { toast } = useToast()
@@ -51,10 +54,12 @@ function Update({ source = 'github' }: { source: string }) {
       }
     }
     setChecking(true)
+    // 这里的 result 不是 VersionInfo 的 result
     const result = await window.ipcRenderer.invoke(
       IPC_CHANNELS.updater.checkUpdate,
       { source },
     )
+
     setProgressInfo({ percent: 0 })
     setChecking(false)
     setModalOpen(true)
@@ -64,6 +69,17 @@ function Update({ source = 'github' }: { source: string }) {
       if ('downloadURL' in result && result.downloadURL) {
         setDownloadURL(result.downloadURL)
       }
+    } else {
+      // 原： 检查更新 -> 有可用更新触发事件（不处理结果） -> 处理事件展示内容
+      // 由于要检查 CHANGELOG，updateAvailable 事件会有一定的延迟，所以用已返回的结果顶一下
+      // 先： 检查更新 -> 有可用更新先处理结果展示到页面 -> 处理到 CHANGELOG 触发可用更新事件 -> 更新内容展示
+      const newVersion = result?.updateInfo.version
+      setVersionInfo({
+        // 简单比较一下
+        update: version === newVersion,
+        version,
+        newVersion,
+      })
     }
   }
 
@@ -182,6 +198,14 @@ function Update({ source = 'github' }: { source: string }) {
                     v{versionInfo?.newVersion}
                   </span>
                 </div>
+                {versionInfo?.releaseNote && (
+                  <ScrollArea className="h-64">
+                    <HtmlRenderer
+                      html={versionInfo.releaseNote}
+                      className="markdown-body"
+                    />
+                  </ScrollArea>
+                )}
                 {progressInfo?.percent !== undefined && (
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">

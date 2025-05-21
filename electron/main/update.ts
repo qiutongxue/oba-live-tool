@@ -7,9 +7,10 @@ import type {
   UpdateDownloadedEvent,
   UpdateInfo,
 } from 'electron-updater'
+
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { createLogger } from './logger'
-import { typedIpcMainHandle } from './utils'
+import { fetchChangelog, typedIpcMainHandle } from './utils'
 
 const { autoUpdater }: { autoUpdater: AppUpdater } = createRequire(
   import.meta.url,
@@ -28,14 +29,24 @@ export async function update(win: Electron.BrowserWindow) {
   // start check
   autoUpdater.on('checking-for-update', () => {})
   // update available
-  autoUpdater.on('update-available', (arg: UpdateInfo) => {
+  autoUpdater.on('update-available', async (arg: UpdateInfo) => {
     logger.info(
       `有可用更新！当前版本：${app.getVersion()}，新版本：${arg?.version}`,
     )
+
+    let releaseNote = arg.releaseNotes
+
+    // 这一段和 checkUpdate 不同步，可能已经发送了但是还没获得版本更新
+    if (!releaseNote) {
+      // 从 CHANGELOG.md 中获取
+      releaseNote = await fetchChangelog()
+    }
+
     win.webContents.send(IPC_CHANNELS.updater.updateAvailable, {
       update: true,
       version: app.getVersion(),
       newVersion: arg?.version,
+      releaseNote,
     })
   })
   // update not available
