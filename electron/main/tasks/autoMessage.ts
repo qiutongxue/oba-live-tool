@@ -26,18 +26,20 @@ interface MessageConfig extends BaseConfig {
   extraSpaces?: boolean
 }
 
-function insertRandomSpaces(text: string, insertionProbability = 0.3): string {
+function insertRandomSpaces(text: string, insertionProbability = 0.2): string {
   // 不处理空字符串或概率为0的情况
   if (!text || insertionProbability <= 0) return text
-  // 不能超过 50 个字符
-  let maxSpaces = 50 - text.length
+  // 不能超过 50 个字符，且不要添加太多的空格
+  let maxSpaces = Math.min(50 - text.length, 5)
   if (maxSpaces <= 0) return text
 
   // 限制概率在合理范围内
-  const probability = Math.min(Math.max(insertionProbability, 0), 1)
+  const probability = Math.min(Math.max(insertionProbability, 0), 0.5)
 
   const result: string[] = []
   let lastWasSpace = false // 避免连续多个空格
+
+  const SPACE_CHAR = ' '
 
   for (let i = 0; i < text.length; i++) {
     const char = text[i]
@@ -48,23 +50,30 @@ function insertRandomSpaces(text: string, insertionProbability = 0.3): string {
     // 不在空格后立即再插入空格，避免过多空格影响阅读
     if (
       !lastWasSpace &&
-      char !== ' ' &&
+      char !== SPACE_CHAR &&
       i < text.length - 1 && // 不在末尾插入
-      text[i + 1] !== ' ' && // 下一个字符不是空格
+      text[i + 1] !== SPACE_CHAR && // 下一个字符不是空格
       Math.random() < probability
     ) {
       // 随机决定插入1个还是2个空格(小概率)
       const spacesToInsert = Math.min(maxSpaces, Math.random() < 0.9 ? 1 : 2)
-      result.push(' '.repeat(spacesToInsert))
+      result.push(SPACE_CHAR.repeat(spacesToInsert))
       maxSpaces -= spacesToInsert
       lastWasSpace = true
     } else {
-      lastWasSpace = char === ' '
+      lastWasSpace = char === SPACE_CHAR
     }
+  }
+
+  // 如果没插入空格，就随便找个地方插一个
+  if (result.length === text.length) {
+    const index = randomInt(0, result.length - 1)
+    result.splice(index, 0, SPACE_CHAR)
   }
 
   return result.join('')
 }
+
 class MessageManager {
   private currentMessageIndex = -1
   private config: MessageConfig
@@ -110,13 +119,27 @@ class MessageManager {
   }
 
   private getNextMessage(): Message {
+    const messages = this.config.messages
+
     if (this.config.random) {
-      this.currentMessageIndex = randomInt(0, this.config.messages.length - 1)
+      if (messages.length <= 1) {
+        this.currentMessageIndex = 0
+      } else if (this.currentMessageIndex < 0) {
+        this.currentMessageIndex = randomInt(0, messages.length - 1)
+      } else {
+        // 不和上一条消息重复
+        const nextIndex = randomInt(0, messages.length - 2)
+        if (nextIndex < this.currentMessageIndex) {
+          this.currentMessageIndex = nextIndex
+        } else {
+          this.currentMessageIndex = nextIndex + 1
+        }
+      }
     } else {
       this.currentMessageIndex =
-        (this.currentMessageIndex + 1) % this.config.messages.length
+        (this.currentMessageIndex + 1) % messages.length
     }
-    return this.config.messages[this.currentMessageIndex]
+    return messages[this.currentMessageIndex]
   }
 
   private async execute(screenshot = false) {
