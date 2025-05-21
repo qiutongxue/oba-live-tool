@@ -19,10 +19,8 @@
     "pretest": "vite build --mode=test",
     "test": "vitest run",
     "prepare": "husky",
-    "bump:patch": "changelogen --output --bump --patch",
-    "bump:minor": "changelogen --output --bump --minor",
-    "bump:major": "changelogen --output --bump --major",
-    "release": "git push --follow-tags"
+    "bump": "bumpp --no-commit --no-tag --no-push && changelogen --output",
+    "release": "bumpp --no-push --files CHANGELOG.md"
   },
   "dependencies": {
     "@radix-ui/react-alert-dialog": "^1.1.6",
@@ -105,25 +103,5 @@
   },
   "pnpm": {
     "onlyBuiltDependencies": ["electron"]
-  },
-  "changelog": {
-    "types": {
-      "feat": {
-        "title": "🚀 Features"
-      },
-      "fix": {
-        "title": "🐞 Bug Fixes"
-      },
-      "refactor": false,
-      "docs": false,
-      "chore": false,
-      "style": false,
-      "types": false,
-      "build": false,
-      "test": false,
-      "ci": false
-    },
-    "output": "CHANGELOG.md",
-    "noAuthors": true
   }
 }
