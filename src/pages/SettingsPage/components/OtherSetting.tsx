@@ -55,7 +55,7 @@ export function OtherSetting() {
             <div className="flex gap-2">
               <Button variant="outline" size="sm" className="gap-2" asChild>
                 <a
-                  href="https://github.com/qiutongxue/oba-live-tool"
+                  href="https://github.com/TLS-802/TLS-live-tool"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -66,7 +66,7 @@ export function OtherSetting() {
               </Button>
               <Button variant="outline" size="sm" className="gap-2" asChild>
                 <a
-                  href="https://github.com/qiutongxue/oba-live-tool/issues"
+                  href="https://github.com/TLS-802/TLS-live-tool/issues"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
