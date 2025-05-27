@@ -1,7 +1,7 @@
 <div align="center">
 
   <img src="./public/favicon.png" alt="logo" width="256px" height="auto">
-  <h1> oba live tool </h1>
+  <h1> 多平台直播中控工具 </h1>
   <p> 抖音小店/巨量百应/抖音团购/小红书/视频号/快手小店直播小工具 </p>
   <br>
 
@@ -43,17 +43,7 @@
 
 ### 下载安装
 
-访问 [Releases](https://github.com/qiutongxue/oba-live-tool/releases/latest) 页面下载最新版本安装包
-
-### 源码构建
-
-```bash
-git clone https://github.com/qiutongxue/oba-live-tool.git
-cd oba-live-tool
-pnpm install
-pnpm build
-# 构建在项目根目录的 /release 文件夹下
-```
+访问 [Releases](https://github.com/TLS-802/oba-live-tool/releases/latest) 页面下载最新版本安装包
 
 
 ## 📖 使用方法
