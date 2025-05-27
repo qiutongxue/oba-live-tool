@@ -1,9 +1,6 @@
 # Changelog
 
-
 ## v1.5.4
-
-[compare changes](https://github.com/TLS-802/TLS-live-tool/compare/v1.5.3...v1.5.4)
 
 ### 🚀 Features
 
