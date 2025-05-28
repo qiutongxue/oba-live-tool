@@ -3,11 +3,6 @@
   <img src="./public/favicon.png" alt="logo" width="256px" height="auto">
   <h1> 多平台直播中控工具 </h1>
   <p> 抖音小店/巨量百应/抖音团购/小红书/视频号/快手小店直播小工具 </p>
-  <br>
-
-![GitHub Release][github release badge]
-![GitHub Release Date][github release date badge]
-![GitHub][github license badge]
 
 </div>
 
