@@ -174,15 +174,3 @@ AI 助手只支持文本对话，在使用 AI 助手功能前，请先设置好�
 ## 📑 许可证
 
 本项目遵循 MIT 许可证
-
-## Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=qiutongxue/oba-live-tool&type=Date)](https://www.star-history.com/#qiutongxue/oba-live-tool&Date)
-
-<!-- badage -->
-
-[github release badge]: https://img.shields.io/github/v/release/qiutongxue/oba-live-tool?style=for-the-badge
-
-[github release date badge]: https://img.shields.io/github/release-date/qiutongxue/oba-live-tool?style=for-the-badge
-
-[github license badge]: https://img.shields.io/badge/license-MIT-yellow?style=for-the-badge
