@@ -55,6 +55,14 @@ jobs:
         id: package-version
         run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
 
+      - name: Debug - List downloaded files
+        run: |
+          echo "=== Listing all files in release directory ==="
+          find release -type f -ls || echo "No release directory found"
+          echo "=== Checking specific patterns ==="
+          ls -la release/windows/**/*.exe 2>/dev/null || echo "No Windows exe files found"
+          ls -la release/macos/**/*.dmg 2>/dev/null || echo "No macOS dmg files found"
+
       - name: Create Release and Upload Assets
         uses: softprops/action-gh-release@v2
         with:
