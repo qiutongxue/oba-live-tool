@@ -59,9 +59,13 @@ jobs:
         run: |
           echo "=== Listing all files in release directory ==="
           find release -type f -ls || echo "No release directory found"
-          echo "=== Checking specific patterns ==="
-          ls -la release/windows/**/*.exe 2>/dev/null || echo "No Windows exe files found"
-          ls -la release/macos/**/*.dmg 2>/dev/null || echo "No macOS dmg files found"
+          echo "=== Directory structure ==="
+          tree release || find release -type d
+          echo "=== Checking for specific file types ==="
+          find release -name "*.exe" -ls || echo "No exe files found"
+          find release -name "*.dmg" -ls || echo "No dmg files found"
+          find release -name "*.blockmap" -ls || echo "No blockmap files found"
+          find release -name "latest*.yml" -ls || echo "No yml files found"
 
       - name: Create Release and Upload Assets
         uses: softprops/action-gh-release@v2
@@ -70,12 +74,10 @@ jobs:
           name: Release v${{ steps.package-version.outputs.version }}
           body: ${{ steps.changelog.outputs.notes }}
           files: |
-            release/windows/**/*.exe
-            release/windows/**/*.blockmap
-            release/windows/**/latest*.yml
-            release/macos/**/*.dmg
-            release/macos/**/*.blockmap
-            release/macos/**/latest*.yml
+            release/**/*.exe
+            release/**/*.dmg
+            release/**/*.blockmap
+            release/**/latest*.yml
           draft: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
