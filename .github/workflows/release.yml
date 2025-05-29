@@ -1,48 +1,51 @@
 name: Release
 
 on:
-  push:
-    tags:
-      - 'v*'
+  workflow_run:
+    workflows: ["Build"]
+    types:
+      - completed
 
 jobs:
   release:
-    permissions:
-      contents: write
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [windows-latest, macos-latest] 
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      # 下载 build.yml 产生的所有 artifact
+      - name: Download Windows build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: release-packages-windows-latest
+          path: release/windows
+
+      - name: Download macOS build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: release-packages-macos-latest
+          path: release/macos
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: lts/*
 
-      - name: install pnpm
+      - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 10
 
-      - name: install dependencies
+      - name: Install dependencies
         run: pnpm install
 
-      - name: build application
-        run: pnpm build
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      # 提取 changelog 里当前版本的内容，并保存到 output 中
-      # 多行内容需要使用 <<EOF 和 EOF 包裹
-      # https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/workflow-commands-for-github-actions#multiline-strings 
       - name: Extract changelog
         id: changelog
-        run: | 
+        run: |
           echo "notes<<EOF" >> $GITHUB_OUTPUT
           node scripts/extract-changelog.js >> $GITHUB_OUTPUT  
           echo "EOF" >> $GITHUB_OUTPUT
@@ -50,15 +53,15 @@ jobs:
       - name: Create Release and Upload Assets
         uses: softprops/action-gh-release@v2
         with:
-          name: ${{ github.ref_name }} # Release 名称（使用 Tag 名）
-          body: ${{ steps.changelog.outputs.notes }} # 拿到上一步提取出的 changelog 内容
+          name: Release ${{ github.run_number }}
+          body: ${{ steps.changelog.outputs.notes }}
           files: |
-            release/*/*.exe
-            release/*/*.dmg
-            release/*/*.blockmap
-            release/*/latest*.yml
-
-          draft: true
-          # prerelease: ${{ env.IS_DEV == 'true' }}
+            release/windows/*.exe
+            release/windows/*.blockmap
+            release/windows/latest*.yml
+            release/macos/*.dmg
+            release/macos/*.blockmap
+            release/macos/latest*.yml
+          draft: false
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # 自动注入的 GitHub Token
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
