@@ -4,28 +4,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
 import { useAccounts } from './useAccounts'
-
-// 从共享类型定义中导入消息类型
-export type Message = {
-  time: string
-  msg_type:
-    | 'comment'
-    | 'room_enter'
-    | 'room_like'
-    | 'room_follow'
-    | 'subscribe_merchant_brand_vip'
-    | 'live_order'
-    | 'ecom_fansclub_participate'
-  msg_id: string
-  nick_name: string
-  content?: string
-  user_id?: string
-  // 订单相关字段
-  order_status?: number
-  order_ts?: number
-  product_id?: string
-  product_title?: string
-}
+import type { Message } from './useAutoReply'
 
 interface AutoReplyPlusSettings {
   hideUserName: boolean

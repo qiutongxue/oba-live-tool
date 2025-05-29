@@ -1,5 +1,4 @@
-import { ipcMain } from 'electron'
-import type { Page, Request, Response } from 'playwright'
+import type { Page, Response } from 'playwright'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { createLogger } from '#/logger'
 import { type Account, pageManager } from '#/taskManager'
@@ -9,60 +8,6 @@ import windowManager from '#/windowManager'
 const TASK_NAME = '自动回复Plus'
 
 type Context = NonNullable<ReturnType<typeof pageManager.getContext>>
-
-export interface CommentMessage {
-  msg_type: 'comment'
-  msg_id: string
-  nick_name: string
-  conent: string
-}
-
-export interface RoomEnterMessage {
-  msg_type: 'room_enter'
-  msg_id: string
-  nick_name: string
-  user_id: string
-}
-
-export interface RoomLikeMessage {
-  msg_type: 'room_like'
-  msg_id: string
-  nick_name: string
-  user_id: string
-}
-
-export interface SubscribeMerchantBrandVipMessage {
-  msg_type: 'subscribe_merchant_brand_vip'
-  msg_id: string
-  nick_name: string
-  user_id: string
-  content: string
-}
-
-export interface RoomFollowMessage {
-  msg_type: 'room_follow'
-  msg_id: string
-  nick_name: string
-  user_id: string
-}
-
-export interface EcomFansclubParticipateMessage {
-  msg_type: 'ecom_fansclub_participate'
-  msg_id: string
-  nick_name: string
-  user_id: string
-  content: string
-}
-
-export interface LiveOrderMessage {
-  msg_type: 'live_order'
-  nick_name: string
-  msg_id: string
-  order_status: number
-  order_ts: number
-  product_id: string
-  product_title: string
-}
 
 interface MessageResponse {
   data: {
@@ -88,7 +33,7 @@ interface LiveOrderResponse {
     item_num: number
     nick_name: string
     order_id: string
-    order_status: number // 不清楚
+    order_status: number // 已知： 3 -> 已支付          0 -> 已下单
     order_ts: number
     product_id: string
     product_title: string
@@ -123,7 +68,7 @@ export class AutoReplyPlus {
       const page = context.page
       const handleResponse = async (response: Response) => {
         const url = response.url()
-        if (response.url().includes('promotions_v2?')) {
+        if (url.includes('promotions_v2?')) {
           const resData = await response.json()
           const roomId = resData?.data?.room_id
           if (roomId) {
@@ -208,15 +153,24 @@ export class AutoReplyPlus {
   }
 
   private handleLiveOrderResponse(data: LiveOrderResponse) {
-    const messages: LiveOrderMessage[] = data.data.map(item => ({
-      msg_type: 'live_order',
-      msg_id: `${item.order_id}#${item.order_status}`,
-      nick_name: item.nick_name,
-      order_status: item.order_status,
-      order_ts: item.order_ts,
-      product_id: item.product_id,
-      product_title: item.product_title,
-    }))
+    const messages: LiveOrderMessage[] = data.data.map(item => {
+      let order_status: LiveOrderMessage['order_status'] = '未知状态'
+      // TODO: 不确定已下单对应的是多少！
+      if (item.order_status <= 1) {
+        order_status = '已下单'
+      } else if (item.order_status === 3) {
+        order_status = '已付款'
+      }
+      return {
+        msg_type: 'live_order',
+        msg_id: `${item.order_id}#${item.order_status}`,
+        nick_name: item.nick_name,
+        order_status,
+        order_ts: item.order_ts,
+        product_id: item.product_id,
+        product_title: item.product_title,
+      }
+    })
     for (const message of messages) {
       windowManager.sendToWindow(
         'main',
