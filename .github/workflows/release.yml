@@ -15,14 +15,18 @@ jobs:
       - name: Download Windows build artifact
         uses: actions/download-artifact@v4
         with:
-          name: release-tls-windows-latest
+          name: release-artifact-windows-latest
           path: release/windows
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Download macOS build artifact
         uses: actions/download-artifact@v4
         with:
-          name: release-tls-macos-latest
+          name: release-artifact-macos-latest
           path: release/macos
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Checkout code
         uses: actions/checkout@v4
@@ -47,18 +51,23 @@ jobs:
           node scripts/extract-changelog.js >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
+      - name: Get package version
+        id: package-version
+        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
       - name: Create Release and Upload Assets
         uses: softprops/action-gh-release@v2
         with:
-          name: Release ${{ github.run_number }}
+          tag_name: v${{ steps.package-version.outputs.version }}
+          name: Release v${{ steps.package-version.outputs.version }}
           body: ${{ steps.changelog.outputs.notes }}
           files: |
-            release/windows/*.exe
-            release/windows/*.blockmap
-            release/windows/latest*.yml
-            release/macos/*.dmg
-            release/macos/*.blockmap
-            release/macos/latest*.yml
+            release/windows/**/*.exe
+            release/windows/**/*.blockmap
+            release/windows/**/latest*.yml
+            release/macos/**/*.dmg
+            release/macos/**/*.blockmap
+            release/macos/**/latest*.yml
           draft: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
