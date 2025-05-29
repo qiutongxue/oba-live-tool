@@ -1,3 +1,5 @@
+import { type StringFilterConfig, matchObject } from '@/utils/filter'
+import { mergeWithoutArray } from '@/utils/misc'
 import { useMemoizedFn } from 'ahooks'
 import _ from 'lodash'
 import { useMemo } from 'react'
@@ -30,29 +32,10 @@ export type MessageType =
   | 'live_order'
   | 'ecom_fansclub_participate'
 
-export interface Comment {
-  time: string
-  msg_type: MessageType
-  msg_id: string
-  nick_name: string
-  content?: string
-  user_id?: string
-  // 订单相关字段
-  order_status?: number
-  order_ts?: number
-  product_id?: string
-  product_title?: string
-}
+export type EventMessageType = Exclude<MessageType, 'comment'>
 
-// export interface Comment {
-//   msg_id: string
-//   msg_type: 'comment'
-//   nick_name: string
-//   authorTags?: string[]
-//   commentTags?: string[]
-//   content: string
-//   timestamp: string
-// }
+export type Message = DouyinLiveMessage
+export type MessageOf<T extends MessageType> = Extract<Message, { msg_type: T }>
 
 type ListeningStatus = 'waiting' | 'listening' | 'stopped' | 'error'
 
@@ -60,11 +43,7 @@ interface AutoReplyContext {
   isRunning: boolean
   isListening: ListeningStatus
   replies: ReplyPreview[]
-  comments: Comment[]
-  // prompt: string
-  // autoSend: boolean
-  // 用户屏蔽列表
-  // userBlocklist: string[]
+  comments: Message[]
   config: AutoReplyConfig
 }
 
@@ -88,14 +67,18 @@ interface AutoReplyBaseConfig {
   blockList: string[]
 }
 
-interface SimpleEventReply {
+export type SimpleEventReplyMessage =
+  | string
+  | { content: string; filter: StringFilterConfig }
+
+export interface SimpleEventReply {
   enable: boolean
-  messages: string[]
+  messages: SimpleEventReplyMessage[]
   options?: Record<string, boolean>
 }
 
 type EventBasedReplies = {
-  [K in Exclude<MessageType, 'comment'>]: SimpleEventReply
+  [K in EventMessageType]: SimpleEventReply
 }
 
 export type AutoReplyConfig = AutoReplyBaseConfig & EventBasedReplies
@@ -106,7 +89,7 @@ interface AutoReplyState {
 interface AutoReplyAction {
   setIsRunning: (accountId: string, isRunning: boolean) => void
   setIsListening: (accountId: string, isListening: ListeningStatus) => void
-  addComment: (accountId: string, comment: Comment) => void
+  addComment: (accountId: string, comment: Message) => void
   addReply: (
     accountId: string,
     commentId: string,
@@ -114,57 +97,11 @@ interface AutoReplyAction {
     content: string,
   ) => void
   removeReply: (accountId: string, commentId: string) => void
-  updateKeywordRules: (
-    accountId: string,
-    rules: AutoReplyConfig['comment']['keywordReply']['rules'],
-  ) => void
-  // 更新AI回复设置 (可以部分更新)
-  updateAIReplySettings: (
-    accountId: string,
-    aiSettings: DeepPartial<AutoReplyConfig['comment']['aiReply']>,
-  ) => void
-  // 启用/禁用某个回复类型
-  setReplyTypeEnabled: (
-    accountId: string,
-    replyType: keyof Pick<AutoReplyConfig, Exclude<MessageType, 'comment'>>, // 更精确的类型
-    enabled: boolean,
-  ) => void
 
-  // 更新某个事件回复的内容列表 (替换整个数组)
-  updateEventReplyContents: <
-    T extends keyof Pick<AutoReplyConfig, Exclude<MessageType, 'comment'>>,
-  >(
+  updateConfig: (
     accountId: string,
-    replyType: T,
-    contents: string[],
+    configUpdates: DeepPartial<AutoReplyConfig>,
   ) => void
-  // 更新黑名单 (替换整个数组)
-  updateBlockList: (accountId: string, blockList: string[]) => void
-
-  // 更新通用设置
-  updateGeneralSettings: (
-    accountId: string,
-    settings: DeepPartial<Pick<AutoReplyConfig, 'entry' | 'hideUsername'>>,
-  ) => void
-
-  updateKeywordReplyEnabled: (accountId: string, enabled: boolean) => void
-
-  updateEventReplyEnabled: (
-    accountId: string,
-    replyType: keyof Pick<AutoReplyConfig, Exclude<MessageType, 'comment'>>,
-    enabled: boolean,
-  ) => void
-
-  updateEventReplyOptions: <
-    T extends keyof Pick<AutoReplyConfig, Exclude<MessageType, 'comment'>>,
-  >(
-    accountId: string,
-    typeId: T,
-    options: AutoReplyConfig[T]['options'],
-  ) => void
-
-  // 考虑是否需要一个方法来清理某个 accountId 的 context
-  // clearAccountContext: (accountId: string) => void;
 }
 
 const defaultPrompt =
@@ -288,77 +225,13 @@ export const useAutoReplyStore = create<AutoReplyState & AutoReplyAction>()(
               reply => reply.commentId !== commentId,
             )
           }),
-        updateKeywordRules: (accountId, rules) =>
-          set(state => {
-            const context = ensureContext(state, accountId)
-            context.config.comment.keywordReply.rules = rules // 直接替换
-          }),
 
-        updateAIReplySettings: (accountId, aiSettingsUpdate) =>
+        updateConfig: (accountId, configUpdates) =>
           set(state => {
             const context = ensureContext(state, accountId)
-            context.config.comment.aiReply = {
-              ...context.config.comment.aiReply,
-              ...aiSettingsUpdate,
-            }
+            const newConfig = mergeWithoutArray(context.config, configUpdates)
+            context.config = newConfig
           }),
-
-        setReplyTypeEnabled: (accountId, replyType, enabled) =>
-          set(state => {
-            const context = ensureContext(state, accountId)
-            if (context.config[replyType]) {
-              context.config[replyType].enable = enabled
-            }
-          }),
-
-        updateEventReplyContents: (accountId, replyType, contents) =>
-          set(state => {
-            const context = ensureContext(state, accountId)
-            if (context.config[replyType]) {
-              context.config[replyType].messages = contents // 直接替换
-            }
-          }),
-
-        updateBlockList: (accountId, blockList) =>
-          set(state => {
-            const context = ensureContext(state, accountId)
-            context.config.blockList = blockList // 直接替换
-          }),
-
-        updateGeneralSettings: (accountId, settingsUpdate) =>
-          set(state => {
-            const context = ensureContext(state, accountId)
-            if (settingsUpdate.entry !== undefined) {
-              context.config.entry = settingsUpdate.entry
-            }
-            if (settingsUpdate.hideUsername !== undefined) {
-              context.config.hideUsername = settingsUpdate.hideUsername
-            }
-          }),
-        updateKeywordReplyEnabled: (accountId, enabled) =>
-          set(state => {
-            const context = ensureContext(state, accountId)
-            context.config.comment.keywordReply.enable = enabled
-          }),
-        updateEventReplyEnabled: (accountId, replyType, enabled) =>
-          set(state => {
-            const context = ensureContext(state, accountId)
-            if (context.config[replyType]) {
-              context.config[replyType].enable = enabled
-            }
-          }),
-        updateEventReplyOptions: (accountId, replyType, options) =>
-          set(state => {
-            const context = ensureContext(state, accountId)
-            if (context.config[replyType]) {
-              context.config[replyType].options = options
-            }
-          }),
-
-        // 可以添加清理 action
-        // clearAccountContext: (accountId) => set(state => {
-        //     delete state.contexts[accountId];
-        // }),
       }
     }),
     {
@@ -439,7 +312,7 @@ export const useAutoReplyStore = create<AutoReplyState & AutoReplyAction>()(
   ),
 )
 function generateAIMessages(
-  comments: Comment[],
+  comments: MessageOf<'comment'>[],
   replies: ReplyPreview[],
 ): Omit<ChatMessage, 'id' | 'timestamp'>[] {
   // 1. 按时间排序混合评论和回复
@@ -499,59 +372,29 @@ function generateAIMessages(
   return mergedMessages
 }
 
-function generateMessages(comments: Comment[], replies: ReplyPreview[]) {
-  const messages: Omit<ChatMessage, 'id' | 'timestamp'>[] = []
-  for (
-    let i = comments.length - 1, j = replies.length - 1;
-    i >= 0 || j >= 0;
-  ) {
-    if (j < 0 || (i >= 0 && comments[i].time < replies[j].time)) {
-      messages.push({
-        role: 'user',
-        content: JSON.stringify({
-          nickname: comments[i].nick_name,
-          // commentTags: comments[i].commentTags,
-          content: comments[i].content,
-        }),
-      })
-      i--
-    } else {
-      messages.push({
-        role: 'assistant',
-        content: replies[j].replyContent,
-      })
-      j--
-    }
-  }
-
-  let content = []
-  // 把连续相同角色的消息合并
-  const mergedMessages: Omit<ChatMessage, 'id' | 'timestamp'>[] = []
-  for (let i = 0, j = 0; i < messages.length; ) {
-    while (j < messages.length && messages[j].role === messages[i].role) {
-      content.push(messages[j].content)
-      j++
-    }
-    mergedMessages.push({
-      role: messages[i].role,
-      content: content.join('\n'),
-    })
-    content = []
-    i = j
-  }
-  return mergedMessages
-}
-
 function sendConfiguredReply(
   config: AutoReplyConfig,
-  key: keyof Pick<AutoReplyConfig, Exclude<MessageType, 'comment'>>,
-  username: string,
+  sourceMessage: Message,
 ): void {
-  const replyConfig = config[key]
+  const replyConfig = config[sourceMessage.msg_type as EventMessageType]
   if (replyConfig.enable && replyConfig.messages.length > 0) {
-    const content = getRandomElement(replyConfig.messages)
+    const filterMessages = []
+    const pureMessages = []
+    for (const message of replyConfig.messages) {
+      if (typeof message === 'string') {
+        pureMessages.push(message)
+      } else if (matchObject(sourceMessage, message.filter)) {
+        filterMessages.push(message.content)
+      }
+    }
+    const replyMessages = filterMessages.length ? filterMessages : pureMessages
+    const content = getRandomElement(replyMessages)
     if (content) {
-      const message = replaceUsername(content, username, config.hideUsername)
+      const message = replaceUsername(
+        content,
+        sourceMessage.nick_name,
+        config.hideUsername,
+      )
       sendMessage(message) // 注意：这里是异步的，但我们不等待它完成
     }
   }
@@ -588,15 +431,6 @@ function replaceUsername(content: string, username: string, mask: boolean) {
 }
 
 export function useAutoReply() {
-  // const {
-  //   addReply,
-  //   addComment,
-  //   contexts,
-  //   setIsRunning,
-  //   setIsListening,
-  //   // setPrompt,
-  //   // setAutoSend,
-  // } = useAutoReplyStore()
   const store = useAutoReplyStore()
   const { currentAccountId } = useAccounts()
   const accountName = useCurrentLiveControl(ctx => ctx.accountName)
@@ -613,7 +447,7 @@ export function useAutoReply() {
    * @returns boolean - 是否成功匹配并发送了关键字回复
    */
   const handleKeywordReply = useMemoizedFn(
-    (comment: Comment, config: AutoReplyConfig): boolean => {
+    (comment: MessageOf<'comment'>, config: AutoReplyConfig): boolean => {
       if (!config.comment.keywordReply.enable || !comment.content) {
         return false
       }
@@ -645,8 +479,8 @@ export function useAutoReply() {
   const handleAIReply = useMemoizedFn(
     async (
       accountId: string,
-      comment: Comment,
-      allComments: Comment[],
+      comment: MessageOf<'comment'>,
+      allComments: Message[],
       allReplies: ReplyPreview[],
       config: AutoReplyConfig,
     ) => {
@@ -659,8 +493,9 @@ export function useAutoReply() {
 
       // 筛选与该用户相关的评论和回复
       const userComments = [comment, ...allComments].filter(
-        cmt => cmt.nick_name === comment.nick_name,
-      )
+        cmt =>
+          cmt.msg_type === 'comment' && cmt.nick_name === comment.nick_name,
+      ) as MessageOf<'comment'>[]
       const userReplies = allReplies.filter(
         reply => reply.replyFor === comment.nick_name,
       )
@@ -710,7 +545,7 @@ export function useAutoReply() {
     },
   )
 
-  const handleComment = useMemoizedFn((comment: Comment, accountId: string) => {
+  const handleComment = useMemoizedFn((comment: Message, accountId: string) => {
     // const context = contexts[accountId] || createDefaultContext()
     const currentContext =
       useAutoReplyStore.getState().contexts[accountId] || createDefaultContext()
@@ -722,11 +557,11 @@ export function useAutoReply() {
     } = currentContext
 
     store.addComment(accountId, comment)
-    // 如果是主播评论就跳过
     if (
       !isRunning ||
-      // (comment.authorTags && comment.authorTags.length > 0) ||
+      // 如果是主播评论就跳过
       comment.nick_name === accountName ||
+      // 在黑名单也跳过
       config.blockList?.includes(comment.nick_name)
     ) {
       return
@@ -748,12 +583,12 @@ export function useAutoReply() {
           !config.live_order.options?.onlyReplyPaid ||
           comment.order_status === 3
         ) {
-          sendConfiguredReply(config, comment.msg_type, comment.nick_name)
+          sendConfiguredReply(config, comment)
         }
         break
       }
       default:
-        sendConfiguredReply(config, comment.msg_type, comment.nick_name)
+        sendConfiguredReply(config, comment)
     }
   })
 
@@ -778,43 +613,48 @@ export function useAutoReply() {
     updateKeywordRules: (
       rules: AutoReplyConfig['comment']['keywordReply']['rules'],
     ) => {
-      store.updateKeywordRules(currentAccountId, rules)
+      store.updateConfig(currentAccountId, {
+        comment: { keywordReply: { rules } },
+      })
     },
     updateAIReplySettings: (
       settings: DeepPartial<AutoReplyConfig['comment']['aiReply']>,
     ) => {
-      store.updateAIReplySettings(currentAccountId, settings)
+      store.updateConfig(currentAccountId, { comment: { aiReply: settings } })
     },
     updateGeneralSettings: (
       settings: DeepPartial<Pick<AutoReplyConfig, 'entry' | 'hideUsername'>>,
     ) => {
-      store.updateGeneralSettings(currentAccountId, settings)
+      store.updateConfig(currentAccountId, settings)
     },
     updateEventReplyContents: (
-      replyType: keyof Pick<AutoReplyConfig, Exclude<MessageType, 'comment'>>,
-      contents: string[],
+      replyType: EventMessageType,
+      contents: SimpleEventReplyMessage[],
     ) => {
-      store.updateEventReplyContents(currentAccountId, replyType, contents)
+      store.updateConfig(currentAccountId, {
+        [replyType]: { messages: contents },
+      })
     },
     updateBlockList: (blockList: string[]) => {
-      store.updateBlockList(currentAccountId, blockList)
+      store.updateConfig(currentAccountId, { blockList })
     },
-    updateKeywordReplyEnabled: (enabled: boolean) => {
-      store.updateKeywordReplyEnabled(currentAccountId, enabled)
+    updateKeywordReplyEnabled: (enable: boolean) => {
+      store.updateConfig(currentAccountId, {
+        comment: { keywordReply: { enable } },
+      })
     },
-    updateEventReplyEnabled: (
-      replyType: keyof Pick<AutoReplyConfig, Exclude<MessageType, 'comment'>>,
-      enabled: boolean,
-    ) => {
-      store.updateEventReplyEnabled(currentAccountId, replyType, enabled)
+    updateEventReplyEnabled: (replyType: EventMessageType, enable: boolean) => {
+      store.updateConfig(currentAccountId, {
+        [replyType]: { enable },
+      })
     },
-    updateEventReplyOptions: <
-      T extends keyof Pick<AutoReplyConfig, Exclude<MessageType, 'comment'>>,
-    >(
+    updateEventReplyOptions: <T extends EventMessageType>(
       replyType: T,
       options: AutoReplyConfig[T]['options'],
     ) => {
-      store.updateEventReplyOptions(currentAccountId, replyType, options)
+      store.updateConfig(currentAccountId, {
+        [replyType]: { options },
+      })
     },
     // 可以根据需要添加更多快捷更新配置的方法
   }
