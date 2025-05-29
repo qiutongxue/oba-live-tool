@@ -5,6 +5,10 @@ on:
     - cron: '0 0 * * 1'  # 每周一 00:00 UTC
   workflow_dispatch:  # 手动触发也可以
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   update-providers:
     runs-on: ubuntu-latest
