@@ -4,20 +4,17 @@ on:
   push:
     branches:
       - main
-      - master
 
 jobs:
   build:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-latest, macos-latest] 
+        os: [windows-latest, macos-latest]
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -34,13 +31,11 @@ jobs:
 
       - name: Build application
         run: pnpm build
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: release-tls-${{ matrix.os }}
+          name: release-artifact-${{ matrix.os }}
           path: |
             release/*/*.exe
             release/*/*.dmg
