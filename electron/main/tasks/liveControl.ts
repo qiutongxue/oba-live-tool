@@ -3,7 +3,7 @@ import { chromium } from 'playwright-extra'
 import stealth from 'puppeteer-extra-plugin-stealth'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { pageManager } from '#/taskManager'
-import { sleep, typedIpcMainHandle } from '#/utils'
+import { isDev, sleep, typedIpcMainHandle } from '#/utils'
 import * as constants from '../constants'
 import { createLogger } from '../logger'
 import { findChromium } from '../utils/checkChrome'
@@ -311,4 +311,17 @@ function setupIpcHandlers() {
   })
 }
 
-setupIpcHandlers()
+if (isDev()) {
+  typedIpcMainHandle(IPC_CHANNELS.tasks.liveControl.connect, () => {
+    return {
+      accountName: '测试中',
+      storageState: null,
+    }
+  })
+
+  typedIpcMainHandle(IPC_CHANNELS.tasks.liveControl.disconnect, () => {
+    return true
+  })
+} else {
+  setupIpcHandlers()
+}
