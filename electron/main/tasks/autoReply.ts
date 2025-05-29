@@ -5,7 +5,12 @@ import { createLogger } from '#/logger'
 import type { Account } from '#/taskManager'
 import { pageManager } from '#/taskManager'
 import { LiveController } from '#/tasks/controller/LiveController'
-import { sleep, typedIpcMainHandle } from '#/utils'
+import {
+  getRandomDouyinLiveMessage,
+  isDev,
+  sleep,
+  typedIpcMainHandle,
+} from '#/utils'
 import windowManager from '#/windowManager'
 import { AutoReplyPlus } from './autoReplyPlus'
 
@@ -408,4 +413,33 @@ function setupIpcHandlers() {
   )
 }
 
-setupIpcHandlers()
+if (isDev()) {
+  let timer: ReturnType<typeof setTimeout> | null = null
+
+  typedIpcMainHandle(IPC_CHANNELS.tasks.autoReply.startCommentListener, () => {
+    const accountId = pageManager.getActiveAccount()?.id || 'default'
+    timer = setInterval(() => {
+      windowManager.sendToWindow(
+        'main',
+        IPC_CHANNELS.tasks.autoReply.showComment,
+        {
+          comment: getRandomDouyinLiveMessage(),
+          accountId,
+        },
+      )
+    }, 1000)
+    return true
+  })
+
+  typedIpcMainHandle(IPC_CHANNELS.tasks.autoReply.stopCommentListener, () => {
+    timer && clearTimeout(timer)
+    return
+  })
+
+  typedIpcMainHandle(IPC_CHANNELS.tasks.autoReply.sendReply, (_, message) => {
+    console.log(message)
+    return
+  })
+} else {
+  setupIpcHandlers()
+}
