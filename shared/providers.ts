@@ -10,6 +10,12 @@ export const providers = {
     baseURL: 'https://openrouter.ai/api/v1',
     apiUrl: 'https://openrouter.ai/keys',
     models: [
+      'deepseek/deepseek-r1-0528:free',
+      'deepseek/deepseek-r1-0528',
+      'deepseek/deepseek-prover-v2:free',
+      'deepseek/deepseek-prover-v2',
+      'tngtech/deepseek-r1t-chimera:free',
+      'deepseek/deepseek-v3-base:free',
       'deepseek/deepseek-chat-v3-0324:free',
       'deepseek/deepseek-chat-v3-0324',
       'deepseek/deepseek-r1-zero:free',
@@ -48,6 +54,7 @@ export const providers = {
       'Pro/deepseek-ai/DeepSeek-R1',
       'Pro/deepseek-ai/DeepSeek-V3',
       'Pro/deepseek-ai/DeepSeek-V3-1226',
+      'Pro/deepseek-ai/DeepSeek-R1-0120',
     ],
   },
   volcengine: {
@@ -56,10 +63,5 @@ export const providers = {
     apiUrl: 'https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey',
     models: [],
   },
-  custom: {
-    name: '自定义',
-    baseURL: '',
-    apiUrl: '',
-    models: [],
-  },
+  custom: { name: '自定义', baseURL: '', apiUrl: '', models: [] },
 } as const
