@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
-import { useAutoReply } from '@/hooks/useAutoReply'
+import { type MessageOf, useAutoReply } from '@/hooks/useAutoReply'
 import { SendHorizontalIcon } from 'lucide-react'
 import React from 'react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
@@ -49,7 +49,7 @@ export default function PreviewList({
                 replies.map(reply => {
                   const relatedComment = comments.find(
                     c => c.msg_id === reply.commentId,
-                  )
+                  ) as MessageOf<'comment'>
                   return (
                     <div
                       key={reply.commentId}

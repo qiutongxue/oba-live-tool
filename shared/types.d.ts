@@ -66,7 +66,7 @@ interface LiveOrderMessage {
   msg_type: 'live_order'
   nick_name: string
   msg_id: string
-  order_status: number
+  order_status: '已下单' | '已付款' | '未知状态'
   order_ts: number
   product_id: string
   product_title: string

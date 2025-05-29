@@ -11,8 +11,7 @@ import { Label } from '@/components/ui/label'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
-import { useAutoReply } from '@/hooks/useAutoReply'
-import type { Message } from '@/hooks/useAutoReplyPlus'
+import { type Message, useAutoReply } from '@/hooks/useAutoReply'
 import { useCurrentLiveControl } from '@/hooks/useLiveControl'
 import { useToast } from '@/hooks/useToast'
 import { cn } from '@/lib/utils'
@@ -62,37 +61,13 @@ const getMessageText = (message: Message) => {
       return '未知消息'
   }
 }
-const getOrderStatusText = (status: number) => {
-  switch (status) {
-    case 0:
-      return '下单'
-    case 1:
-      return '待支付'
-    case 2:
-      return '已取消'
-    case 3:
-      return '已付款'
-    case 4:
-      return '已退款'
-    case 5:
-      return '部分退款'
-    default:
-      return '下单'
-  }
-}
 
-const getOrderStatusColor = (status: number) => {
+const getOrderStatusColor = (status: LiveOrderMessage['order_status']) => {
   switch (status) {
-    case 0:
-    case 1:
+    case '已下单':
       return 'text-blue-500 bg-blue-50' // 待付款状态显示蓝色
-    case 3:
+    case '已付款':
       return 'text-green-500 bg-green-50' // 已付款状态显示绿色
-    case 2:
-    case 4:
-      return 'text-red-500 bg-red-50' // 取消/退款状态显示红色
-    case 5:
-      return 'text-orange-500 bg-orange-50' // 部分退款状态显示橙色
     default:
       return 'text-foreground'
   }
@@ -121,10 +96,10 @@ const MessageItem = ({
               variant="outline"
               className={cn(
                 'text-xs px-1.5 py-0',
-                getOrderStatusColor(message.order_status || 0),
+                getOrderStatusColor(message.order_status),
               )}
             >
-              {getOrderStatusText(message.order_status || 0)}
+              {message.order_status}
             </Badge>
           )}
           <span className="text-xs text-muted-foreground ml-auto">

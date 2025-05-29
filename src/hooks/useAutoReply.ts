@@ -581,7 +581,7 @@ export function useAutoReply() {
         /* 如果设置了仅已支付回复且当前非已支付时不回复 */
         if (
           !config.live_order.options?.onlyReplyPaid ||
-          comment.order_status === 3
+          comment.order_status === '已付款'
         ) {
           sendConfiguredReply(config, comment)
         }
