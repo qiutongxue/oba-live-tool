@@ -40,7 +40,7 @@ jobs:
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: release-packages-${{ matrix.os }}
+          name: release-tls-${{ matrix.os }}
           path: |
             release/*/*.exe
             release/*/*.dmg
