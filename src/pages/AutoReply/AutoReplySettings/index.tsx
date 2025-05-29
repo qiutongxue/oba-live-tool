@@ -50,6 +50,7 @@ import { pick } from 'lodash-es'
 import {
   ArrowLeft,
   FilterIcon,
+  FunnelPlusIcon,
   Plus,
   PlusIcon,
   Trash,
@@ -182,11 +183,11 @@ function MessageFilter<T extends EventMessageType>({
     <Popover open={open}>
       <PopoverTrigger asChild>
         <Button
-          variant={'ghost'}
+          variant="ghost"
           className="w-4"
           onClick={() => setOpen(prev => !prev)}
         >
-          <FilterIcon className="w-4 h-4" />
+          <FunnelPlusIcon className="w-4 h-4" />
         </Button>
       </PopoverTrigger>
       <PopoverContent>
@@ -275,7 +276,13 @@ const FilterText: React.FC<{
     condition: StringFilter,
   ) => {
     const label = fieldNameMap[field] || field
-    const lines: string[] = []
+    const lines: {
+      prefix: string
+      suffix: string
+      label: string
+      conditionText: string
+      value: string
+    }[] = []
 
     for (const [key, values] of Object.entries(condition)) {
       if (!values || values.length === 0) return
@@ -285,12 +292,26 @@ const FilterText: React.FC<{
       values.forEach((value, index) => {
         const prefix = index === 0 ? '当' : '或'
         const suffix = index === values.length - 1 ? ' 时' : ''
-        lines.push(`${prefix} ${label} ${conditionText} ${value}${suffix}`)
+        lines.push({
+          prefix,
+          suffix,
+          label,
+          conditionText,
+          value,
+        })
       })
     }
 
-    // biome-ignore lint/suspicious/noArrayIndexKey: 用下标问题不大
-    return lines.map((line, i) => <div key={i}>{line}</div>)
+    return lines.map(({ prefix, suffix, conditionText, value, label }, i) => (
+      // biome-ignore lint/suspicious/noArrayIndexKey: 用下标问题不大
+      <div key={i}>
+        <span>{prefix}</span>
+        <span className="px-1 text-amber-200">{label}</span>
+        <span className="text-fuchsia-100">{conditionText}</span>
+        <span className="px-1 text-emerald-200">{value}</span>
+        <span>{suffix}</span>
+      </div>
+    ))
   }
 
   return (
@@ -388,7 +409,7 @@ const ReplyMessageManager: FC<{
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger>
-                        <FilterIcon className="w-4 h-4" />
+                        <FilterIcon className="w-4 h-4 text-gray-600" />
                       </TooltipTrigger>
                       <TooltipContent>
                         <FilterText filterConfig={message.filter} />
