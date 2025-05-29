@@ -155,7 +155,6 @@ AI 助手只支持文本对话，在使用 AI 助手功能前，请先设置好�
 ### 其它
 
 #### 项目结构
-TLS-live-tool/
 ├── src/                    # 前端源码
 │   ├── components/         # UI组件
 │   │   ├── common/        # 通用组件 (Sidebar等)
