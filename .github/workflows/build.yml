@@ -1,4 +1,4 @@
-name: BuildMore actions
+name: Build
 
 on:
   push:
@@ -31,7 +31,7 @@ jobs:
 
       - name: Build application
         run: pnpm build
-        
+
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
