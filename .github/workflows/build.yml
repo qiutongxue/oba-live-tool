@@ -1,11 +1,9 @@
-name: Build
+name: BuildMore actions
 
 on:
   push:
     branches:
       - main
-      - master
-      - develop
 
 jobs:
   build:
@@ -18,65 +16,22 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          python-version: '3.12'
+          node-version: lts/*
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
 
       - name: Install dependencies
-        shell: bash
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pyinstaller
-          pip install jq
-
-      - name: Debug version.json path and content
-        shell: bash
-        run: |
-          echo "Current directory:"
-          pwd
-          echo "--- Root directory listing ---"
-          ls -al
-          echo "--- config directory listing ---"
-          ls -al config || echo "No config directory"
-          echo "--- config/version.json content ---"
-          cat config/version.json || echo "No version.json"
-          echo "--- jq output ---"
-          jq . config/version.json || echo "jq parse error"
-
-      - name: Read version from config/version.json
-        id: get_version
-        shell: bash
-        run: |
-          version=$(jq -r '.version_updates[0].version' config/version.json)
-          echo "version=$version"
-          echo "version=$version" >> $GITHUB_OUTPUT
+        run: pnpm install
 
       - name: Build application
-        shell: bash
-        run: |
-          VERSION="${{ steps.get_version.outputs.version }}"
-          echo "Detected VERSION: $VERSION"
-          if [[ "${{ matrix.os }}" == "macos-latest" ]]; then
-            if [ -f "assets/icon.icns" ]; then
-              pyinstaller --noconfirm --windowed --icon "assets/icon.icns" --name "StreamCap" \
-                --add-data "assets:assets/" --add-data "config:config/" --add-data "locales:locales/" main.py
-            else
-              pyinstaller --noconfirm --windowed --name "StreamCap" \
-                --add-data "assets:assets/" --add-data "config:config/" --add-data "locales:locales/" main.py
-            fi
-            mkdir -p release/mac
-            mv "dist/StreamCap.app" release/mac/
-            hdiutil create -volname StreamCap -srcfolder release/mac -ov -format UDZO "release/StreamCap-v${VERSION}-macOS.dmg"
-          elif [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-            pyinstaller --noconfirm --onedir --windowed --icon "assets/icon.ico" --name "StreamCap" \
-              --add-data "assets;assets/" --add-data "config;config/" --add-data "locales;locales/" main.py
-            mkdir -p release/win
-            mv "dist/StreamCap" release/win/
-            # 可选：如果有需要打包为exe，可以在这里添加
-          fi
-
+        run: pnpm build
+        
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
