@@ -193,7 +193,10 @@ export default function CommentList({
       setIsListening('waiting')
       const result = await window.ipcRenderer.invoke(
         IPC_CHANNELS.tasks.autoReply.startCommentListener,
-        config.entry,
+        {
+          source: config.entry,
+          ws: config.ws?.enable ? { port: config.ws.port } : undefined,
+        },
       )
       if (!result) throw new Error('监听评论失败')
       toast.success('监听评论成功')

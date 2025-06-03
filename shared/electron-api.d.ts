@@ -5,18 +5,10 @@ import type {
   UpdateDownloadedEvent,
 } from 'electron-updater'
 import type { PopUpConfig } from 'electron/main/tasks/autoPopUp'
-import type {
-  CommentMessage,
-  EcomFansclubParticipateMessage,
-  LiveOrderMessage,
-  RoomEnterMessage,
-  RoomFollowMessage,
-  RoomLikeMessage,
-  SubscribeMerchantBrandVipMessage,
-} from 'electron/main/tasks/autoReplyPlus'
 import type { providers } from 'shared/providers'
 
 import type { Account } from '#/taskManager'
+import type { AutoReplyConfig } from '#/tasks/autoReply/index'
 import { IPC_CHANNELS } from './ipcChannels'
 
 export interface IpcChannels {
@@ -56,7 +48,7 @@ export interface IpcChannels {
 
   // AutoReply
   [IPC_CHANNELS.tasks.autoReply.startCommentListener]: (
-    type: 'control' | 'compass',
+    config: AutoReplyConfig,
   ) => boolean
   [IPC_CHANNELS.tasks.autoReply.stopCommentListener]: () => void
   [IPC_CHANNELS.tasks.autoReply.sendReply]: (replyContent: string) => void
@@ -64,19 +56,6 @@ export interface IpcChannels {
   [IPC_CHANNELS.tasks.autoReply.showComment]: (data: {
     comment: DouyinLiveMessage
     accountId: string
-  }) => void
-  [IPC_CHANNELS.tasks.autoReplyPlus.startCommentListener]: () => void
-  [IPC_CHANNELS.tasks.autoReplyPlus.stopCommentListener]: () => void
-  [IPC_CHANNELS.tasks.autoReplyPlus.message]: (data: {
-    accountId: string
-    message:
-      | CommentMessage
-      | RoomEnterMessage
-      | RoomLikeMessage
-      | SubscribeMerchantBrandVipMessage
-      | LiveOrderMessage
-      | EcomFansclubParticipateMessage
-      | RoomFollowMessage
   }) => void
 
   // AIChat

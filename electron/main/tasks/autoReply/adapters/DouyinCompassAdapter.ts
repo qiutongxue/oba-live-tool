@@ -1,13 +1,7 @@
 import type { Page, Response } from 'playwright'
-import { IPC_CHANNELS } from 'shared/ipcChannels'
-import { createLogger } from '#/logger'
-import { type Account, pageManager } from '#/taskManager'
-import { typedIpcMainHandle } from '#/utils'
-import windowManager from '#/windowManager'
-
-const TASK_NAME = '自动回复Plus'
-
-type Context = NonNullable<ReturnType<typeof pageManager.getContext>>
+import type { WebSocketService } from '#/services/WebSocketService'
+import type { Account } from '#/taskManager'
+import { BaseMessageListener } from '../BaseMessageListener'
 
 interface MessageResponse {
   data: {
@@ -41,31 +35,29 @@ interface LiveOrderResponse {
   msg: string
 }
 
-export class AutoReplyPlus {
-  public isRunning = false
-  private logger: ReturnType<typeof createLogger>
-  private page: Page | null = null
-  constructor(private account: Account) {
-    this.logger = createLogger(`${TASK_NAME} @${this.account.name}`)
+export class CompassAdapter extends BaseMessageListener {
+  private compassPage: Page | undefined
+  constructor(
+    private page: Page,
+    account: Account,
+    wsService?: WebSocketService,
+  ) {
+    super(account, '电商罗盘监听', wsService)
   }
 
   private async init() {
     try {
-      const context = pageManager.getContext()
-      if (!context) {
-        throw new Error('context is not found')
-      }
-      const liveRoomId = await this.getLiveRoomId(context)
-      await this.gotoScreen(liveRoomId, context)
+      const liveRoomId = await this.getLiveRoomId()
+      await this.gotoScreen(liveRoomId)
       this.listenResponse()
     } catch (error) {
       this.logger.error(error)
     }
   }
 
-  public async getLiveRoomId(context: Context) {
+  public async getLiveRoomId() {
     return new Promise<string>((resolve, reject) => {
-      const page = context.page
+      const page = this.page
       const handleResponse = async (response: Response) => {
         const url = response.url()
         if (url.includes('promotions_v2?')) {
@@ -86,26 +78,31 @@ export class AutoReplyPlus {
     })
   }
 
-  private async gotoScreen(liveRoomId: string, context: Context) {
-    const browserContext = context.browserContext
-    if (!browserContext) {
-      throw new Error('browserContext is not found')
-    }
-    this.page = await browserContext.newPage()
+  private async gotoScreen(liveRoomId: string) {
+    const browserContext = this.page.context()
+    this.compassPage = await browserContext.newPage()
     // 先进入罗盘，保存一下登录状态（直接访问大屏的话会让你去登录）
     // 百应的罗盘是 talent，抖店的罗盘是 shop
-    const subPath = context.platform === 'douyin' ? 'shop' : 'talent'
-    await this.page.goto(`https://compass.jinritemai.com/${subPath}`)
+    const pageUrl = this.page.url()
+    let subPath: string
+    if (/buyin\.jinritemai/.test(pageUrl)) {
+      subPath = 'talent'
+    } else if (/fxg\.jinritemai/.test(pageUrl)) {
+      subPath = 'shop'
+    } else {
+      throw new Error('不是百应|抖音平台')
+    }
+    await this.compassPage.goto(`https://compass.jinritemai.com/${subPath}`)
     this.logger.debug('正在尝试登录电商罗盘')
     // 等待罗盘自动登录
-    await this.page.waitForSelector('div[class^="userName"]')
+    await this.compassPage.waitForSelector('div[class^="userName"]')
     this.logger.debug('登录成功，正在进入大屏')
     // 再进入大屏
-    await this.page.goto(
+    await this.compassPage.goto(
       `https://compass.jinritemai.com/screen/anchor/${subPath}?live_room_id=${liveRoomId}`,
     )
     // 删除中间的直播画面，减少不必要的资源占用
-    this.page.locator('video').evaluate(el => {
+    this.compassPage.locator('video').evaluate(el => {
       const video = el as HTMLVideoElement
       // 删太快也不行，找不到更好的方法之前只能死等一会了
       setTimeout(() => {
@@ -120,6 +117,7 @@ export class AutoReplyPlus {
 
   private listenResponse() {
     this.logger.debug('开始监听评论')
+
     const handleResponse = async (response: Response) => {
       const url = response.url()
       if (url.includes('message?')) {
@@ -130,24 +128,16 @@ export class AutoReplyPlus {
         this.handleLiveOrderResponse(data)
       }
     }
-    this.page?.on('response', handleResponse)
+
+    this.compassPage?.on('response', handleResponse)
   }
 
   private handleMessageResponse(data: MessageResponse) {
     for (const messages of Object.values(data.data.messages)) {
       if (!messages) continue
       for (const message of messages) {
-        windowManager.sendToWindow(
-          'main',
-          IPC_CHANNELS.tasks.autoReply.showComment,
-          {
-            accountId: this.account.id,
-            comment: {
-              ...message,
-              time: new Date().toLocaleTimeString(),
-            },
-          },
-        )
+        const comment = { ...message, time: new Date().toLocaleTimeString() }
+        this.broadcastMessage(comment)
       }
     }
   }
@@ -172,51 +162,20 @@ export class AutoReplyPlus {
       }
     })
     for (const message of messages) {
-      windowManager.sendToWindow(
-        'main',
-        IPC_CHANNELS.tasks.autoReply.showComment,
-        {
-          accountId: this.account.id,
-          comment: {
-            ...message,
-            time: new Date().toLocaleTimeString(),
-          },
-        },
-      )
+      const comment = {
+        ...message,
+        time: new Date().toLocaleTimeString(),
+      }
+      this.broadcastMessage(comment)
     }
   }
 
-  public start() {
-    this.isRunning = true
-    this.init()
+  async start() {
+    await this.init()
   }
 
-  public stop() {
-    this.isRunning = false
-    this.page?.removeAllListeners('response')
-    this.page?.close()
+  stop() {
+    this.compassPage?.removeAllListeners('response')
+    this.compassPage?.close()
   }
-
-  public updateConfig() {}
 }
-
-function setupIpcHandlers() {
-  typedIpcMainHandle(
-    IPC_CHANNELS.tasks.autoReplyPlus.startCommentListener,
-    async () => {
-      pageManager.register(TASK_NAME, (_, account) => {
-        return new AutoReplyPlus(account)
-      })
-      pageManager.startTask(TASK_NAME)
-    },
-  )
-
-  typedIpcMainHandle(
-    IPC_CHANNELS.tasks.autoReplyPlus.stopCommentListener,
-    async () => {
-      pageManager.stopTask(TASK_NAME)
-    },
-  )
-}
-
-setupIpcHandlers()
