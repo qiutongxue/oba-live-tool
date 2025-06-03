@@ -2,7 +2,7 @@
 
 ## v1.5.6
 
-[compare changes](https://github.com/TLS-802/TLS-live-tool/compare/1.5.5...v1.5.6)
+[compare changes](https://github.com/TLS-802/TLS-live-tool/compare/v1.5.5...v1.5.6)
 
 ### 🚀 Features
 - 新增 WebSocketService 类以支持 WebSocket 服务。
