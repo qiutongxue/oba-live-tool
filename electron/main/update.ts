@@ -64,15 +64,15 @@ export async function update(win: Electron.BrowserWindow) {
   async function checkUpdateForGithub() {
     autoUpdater.setFeedURL({
       provider: 'github',
-      owner: 'qiutongxue',
-      repo: 'oba-live-tool',
+      owner: 'TLS-802',
+      repo: 'TLS-live-tool',
     })
     return await autoUpdater.checkForUpdatesAndNotify()
   }
 
   async function checkUpdateForGhProxy(source: string) {
     const version = await getLatestVersion()
-    const assetsUrl = `https://github.com/qiutongxue/oba-live-tool/releases/download/v${version}/`
+    const assetsUrl = `https://github.com/TLS-802/TLS-live-tool/releases/download/v${version}/`
     const src = ensureURL(source)
     if (!src) {
       const msg = `更新源设置错误，你的更新源为 ${source}`
@@ -165,7 +165,7 @@ function startDownload(
 export async function getLatestVersion() {
   // 从 package.json 获取最新版本号
   const version = await fetch(
-    'https://fastly.jsdelivr.net/gh/qiutongxue/oba-live-tool@main/package.json',
+    'https://fastly.jsdelivr.net/gh/TLS-802/TLS-live-tool@main/package.json',
   )
     .then(resp => resp.json())
     .then(data => data.version)
