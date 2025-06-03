@@ -11,9 +11,15 @@ import { type ChatMessage, useAIChatStore } from './useAIChat'
 import { useAccounts } from './useAccounts'
 import { useCurrentLiveControl } from './useLiveControl'
 
-type DeepPartial<T> = {
-  [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P]
-}
+type DeepPartial<T> = T extends (...args: unknown[]) => unknown
+  ? T
+  : T extends Array<infer U>
+    ? Array<DeepPartial<U>>
+    : T extends object
+      ? {
+          [P in keyof T]?: DeepPartial<T[P]>
+        }
+      : T
 
 interface ReplyPreview {
   id: string
@@ -65,6 +71,10 @@ interface AutoReplyBaseConfig {
     }
   }
   blockList: string[]
+  ws?: {
+    enable: boolean
+    port: number
+  }
 }
 
 export type SimpleEventReplyMessage =
@@ -150,6 +160,10 @@ const createDefaultConfig = (): AutoReplyConfig => {
       messages: [],
     },
     blockList: [],
+    ws: {
+      enable: false,
+      port: 12354,
+    },
   }
 }
 
@@ -655,6 +669,9 @@ export function useAutoReply() {
       store.updateConfig(currentAccountId, {
         [replyType]: { options },
       })
+    },
+    updateWSConfig: (wsConfig: DeepPartial<AutoReplyConfig['ws']>) => {
+      store.updateConfig(currentAccountId, { ws: wsConfig })
     },
     // 可以根据需要添加更多快捷更新配置的方法
   }

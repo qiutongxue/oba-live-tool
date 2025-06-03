@@ -27,7 +27,6 @@ import './tasks/autoMessage'
 import './tasks/autoPopUp'
 import './tasks/autoReply'
 import './tasks/aiChat'
-import './tasks/autoReplyPlus'
 import semver from 'semver'
 import { fetchChangelog, typedIpcMainHandle } from './utils'
 
