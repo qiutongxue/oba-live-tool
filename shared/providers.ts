@@ -10,6 +10,9 @@ export const providers = {
     baseURL: 'https://openrouter.ai/api/v1',
     apiUrl: 'https://openrouter.ai/keys',
     models: [
+      'deepseek/deepseek-r1-distill-qwen-7b',
+      'deepseek/deepseek-r1-0528-qwen3-8b:free',
+      'deepseek/deepseek-r1-0528-qwen3-8b',
       'deepseek/deepseek-r1-0528:free',
       'deepseek/deepseek-r1-0528',
       'deepseek/deepseek-prover-v2:free',
@@ -55,6 +58,7 @@ export const providers = {
       'Pro/deepseek-ai/DeepSeek-V3',
       'Pro/deepseek-ai/DeepSeek-V3-1226',
       'Pro/deepseek-ai/DeepSeek-R1-0120',
+      'deepseek-ai/DeepSeek-R1-0528-Qwen3-8B',
     ],
   },
   volcengine: {
