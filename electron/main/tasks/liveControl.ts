@@ -32,8 +32,7 @@ class LiveControlManager {
   private logger: ReturnType<typeof createLogger>
 
   constructor(private platform: LiveControlPlatform) {
-    // constants[platform]
-    this.loginConstants = constants[platform].login // loginConstants[platform] || loginConstants.douyin
+    this.loginConstants = constants[platform].login
     chromium.use(stealth())
     this.logger = createLogger(TASK_NAME)
   }
@@ -312,14 +311,30 @@ function setupIpcHandlers() {
 }
 
 if (isDev()) {
-  typedIpcMainHandle(IPC_CHANNELS.tasks.liveControl.connect, () => {
-    return {
-      accountName: '测试中',
-      storageState: null,
-    }
-  })
+  typedIpcMainHandle(
+    IPC_CHANNELS.tasks.liveControl.connect,
+    async (_, { platform = 'douyin' }) => {
+      const chromiumPath = (await findChromium()) || ''
+      const browser = await chromium.launch({
+        executablePath: chromiumPath,
+      })
+      const context = await browser.newContext()
+      const page = await context.newPage()
+      pageManager.setContext({
+        page,
+        platform,
+        browserContext: context,
+        browser,
+      })
+      return {
+        accountName: '测试中',
+        storageState: null,
+      }
+    },
+  )
 
   typedIpcMainHandle(IPC_CHANNELS.tasks.liveControl.disconnect, () => {
+    pageManager.getContext()?.browser.close()
     return true
   })
 } else {
