@@ -92,6 +92,6 @@ function setupIpcHandlers() {
   )
 }
 
-export function setupAIChatIpcHandler() {
+export function setupAIChatIpcHandlers() {
   setupIpcHandlers()
 }
