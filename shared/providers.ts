@@ -39,7 +39,7 @@ export const providers = {
   siliconflow: {
     name: '硅基流动',
     baseURL: 'https://api.siliconflow.cn/v1',
-    apiUrl: 'https://cloud.siliconflow.cn/account/ak',
+    apiUrl: 'https://cloud.siliconflow.cn/i/cVnKRPxE',
     models: [
       'deepseek-ai/DeepSeek-V2.5',
       'deepseek-ai/deepseek-vl2',
