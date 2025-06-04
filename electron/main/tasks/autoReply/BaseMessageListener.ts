@@ -24,14 +24,10 @@ export abstract class BaseMessageListener {
       ...message,
       time: new Date().toLocaleTimeString(),
     }
-    windowManager.sendToWindow(
-      'main',
-      IPC_CHANNELS.tasks.autoReply.showComment,
-      {
-        accountId: this.account.id,
-        comment: comment,
-      },
-    )
+    windowManager.send(IPC_CHANNELS.tasks.autoReply.showComment, {
+      accountId: this.account.id,
+      comment: comment,
+    })
 
     this.wsService?.broadcast(comment)
   }

@@ -12,6 +12,20 @@
 - 添加配置选项以启用或禁用 WebSocket 服务及其端口设置。
 
 
+## v1.5.6
+
+[compare changes](https://github.com/qiutongxue/oba-live-tool/compare/v1.5.5...v1.5.6)
+
+### 🚀 Features
+
+- **自动回复:** 添加 WebSocket 服务支持 ([46509f0](https://github.com/qiutongxue/oba-live-tool/commit/46509f0))
+
+### 🐞 Bug Fixes
+
+- **自动发言:** 修复小红书平台无法正常发送评论的问题 ([6bb4b71](https://github.com/qiutongxue/oba-live-tool/commit/6bb4b71))
+- **中控台:** 增加小红书连接中控台的容错 ([932640f](https://github.com/qiutongxue/oba-live-tool/commit/932640f))
+- **中控台:** 优化连接中控台时的提示内容 ([e5f226f](https://github.com/qiutongxue/oba-live-tool/commit/e5f226f))
+
 ## v1.5.5
 
 [compare changes](https://github.com/TLS-802/TLS-live-tool/compare/v1.5.4...v1.5.5)

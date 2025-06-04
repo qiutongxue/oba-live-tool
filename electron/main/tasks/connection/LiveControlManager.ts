@@ -24,9 +24,10 @@ export class LiveControlManager {
   public async connect(
     config: BrowserConfig,
   ): Promise<BrowserSession & { accountName: string | null }> {
-    this.logger.info('正在连接到中控台……')
+    this.logger.info('连接中……')
     let storageState: StorageState
     if (config.storageState) {
+      this.logger.info('检测到已保存登录状态')
       storageState = JSON.parse(config.storageState)
     }
 

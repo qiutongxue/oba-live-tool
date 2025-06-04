@@ -61,8 +61,7 @@ export class PageManager {
         task.stop()
       }
       this.contexts.delete(this.currentId)
-      windowManager.sendToWindow(
-        'main',
+      windowManager.send(
         IPC_CHANNELS.tasks.liveControl.disconnectedEvent,
         idSnapShot,
       )

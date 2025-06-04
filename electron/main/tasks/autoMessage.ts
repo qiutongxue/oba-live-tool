@@ -1,12 +1,10 @@
-import { ipcMain } from 'electron'
 import { merge } from 'lodash-es'
 import type { Page } from 'playwright'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { createLogger } from '#/logger'
 import type { Account } from '#/taskManager'
-import { pageManager } from '#/taskManager'
 import { LiveController } from '#/tasks/controller/LiveController'
-import { randomInt, sleep, takeScreenshot, typedIpcMainHandle } from '#/utils'
+import { insertRandomSpaces, randomInt, sleep, takeScreenshot } from '#/utils'
 import windowManager from '#/windowManager'
 import type { BaseConfig } from './scheduler'
 import { TaskScheduler } from './scheduler'
@@ -26,55 +24,7 @@ interface MessageConfig extends BaseConfig {
   extraSpaces?: boolean
 }
 
-function insertRandomSpaces(text: string, insertionProbability = 0.2): string {
-  // 不处理空字符串或概率为0的情况
-  if (!text || insertionProbability <= 0) return text
-  // 不能超过 50 个字符，且不要添加太多的空格
-  let maxSpaces = Math.min(50 - text.length, 5)
-  if (maxSpaces <= 0) return text
-
-  // 限制概率在合理范围内
-  const probability = Math.min(Math.max(insertionProbability, 0), 0.5)
-
-  const result: string[] = []
-  let lastWasSpace = false // 避免连续多个空格
-
-  const SPACE_CHAR = ' '
-
-  for (let i = 0; i < text.length; i++) {
-    const char = text[i]
-    result.push(char)
-    if (maxSpaces <= 0) {
-      continue
-    }
-    // 不在空格后立即再插入空格，避免过多空格影响阅读
-    if (
-      !lastWasSpace &&
-      char !== SPACE_CHAR &&
-      i < text.length - 1 && // 不在末尾插入
-      text[i + 1] !== SPACE_CHAR && // 下一个字符不是空格
-      Math.random() < probability
-    ) {
-      // 随机决定插入1个还是2个空格(小概率)
-      const spacesToInsert = Math.min(maxSpaces, Math.random() < 0.9 ? 1 : 2)
-      result.push(SPACE_CHAR.repeat(spacesToInsert))
-      maxSpaces -= spacesToInsert
-      lastWasSpace = true
-    } else {
-      lastWasSpace = char === SPACE_CHAR
-    }
-  }
-
-  // 如果没插入空格，就随便找个地方插一个
-  if (result.length === text.length) {
-    const index = randomInt(0, result.length - 1)
-    result.splice(index, 0, SPACE_CHAR)
-  }
-
-  return result.join('')
-}
-
-class MessageManager {
+export class MessageManager {
   private currentMessageIndex = -1
   private config: MessageConfig
   private readonly scheduler: TaskScheduler
@@ -107,8 +57,7 @@ class MessageManager {
         onStop: () => {
           this.logger.info('任务停止执行')
           this.abortController.abort()
-          windowManager.sendToWindow(
-            'main',
+          windowManager.send(
             IPC_CHANNELS.tasks.autoMessage.stoppedEvent,
             this.account.id,
           )
@@ -214,64 +163,24 @@ class MessageManager {
   public get isRunning() {
     return this.scheduler.isRunning
   }
-}
 
-// IPC 处理程序
-function setupIpcHandlers() {
-  typedIpcMainHandle(
-    IPC_CHANNELS.tasks.autoMessage.start,
-    async (_, config) => {
-      try {
-        pageManager.register(
-          TASK_NAME,
-          (page, account) => new MessageManager(page, account, config),
-        )
-        pageManager.startTask(TASK_NAME)
-        return true
-      } catch (error) {
-        const logger = createLogger(
-          `${TASK_NAME} @${pageManager.currentAccountName}`,
-        )
-        logger.error(
-          '启动自动发言失败:',
-          error instanceof Error ? error.message : error,
-        )
-        return false
+  public static async sendBatchMessages(
+    page: Page,
+    messages: string[],
+    count: number,
+  ) {
+    try {
+      const controller = new LiveController(page)
+      for (let i = 0; i < count; i++) {
+        const messageIndex = randomInt(0, messages.length - 1)
+        const message = insertRandomSpaces(messages[messageIndex])
+        await controller.sendMessage(message)
+        // 以防万一，加一个 1s 的小停顿
+        await sleep(1000)
       }
-    },
-  )
-
-  typedIpcMainHandle(IPC_CHANNELS.tasks.autoMessage.stop, async () => {
-    pageManager.stopTask(TASK_NAME)
-    return true
-  })
-
-  typedIpcMainHandle(
-    IPC_CHANNELS.tasks.autoMessage.sendBatchMessages,
-    async (_, messages, count) => {
-      try {
-        const page = pageManager.getPage()
-        const controller = new LiveController(page)
-        for (let i = 0; i < count; i++) {
-          const messageIndex = randomInt(0, messages.length - 1)
-          const message = insertRandomSpaces(messages[messageIndex])
-          await controller.sendMessage(message)
-          // 以防万一，加一个 1s 的小停顿
-          await sleep(1000)
-        }
-        return true
-      } catch {
-        return false
-      }
-    },
-  )
-
-  // typedIpcMainHandle(
-  //   IPC_CHANNELS.tasks.autoMessage.updateConfig,
-  //   async (_, newConfig) => {
-  //     pageManager.updateTaskConfig(TASK_NAME, newConfig)
-  //   },
-  // )
+      return true
+    } catch {
+      return false
+    }
+  }
 }
-
-setupIpcHandlers()

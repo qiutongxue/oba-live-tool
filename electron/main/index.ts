@@ -13,22 +13,16 @@ import path from 'node:path'
 //
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
-import { BrowserWindow, app, dialog, ipcMain, shell } from 'electron'
+import { BrowserWindow, app, ipcMain, shell } from 'electron'
 
-import fs from 'fs-extra'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { createLogger } from './logger'
 import { pageManager } from './taskManager'
 import { getLatestVersion, update } from './update'
-import { findChromium } from './utils/checkChrome'
 import windowManager from './windowManager'
 import './ipc'
-import './tasks/autoMessage'
-import './tasks/autoPopUp'
-import './tasks/autoReply'
-import './tasks/aiChat'
 import semver from 'semver'
-import { fetchChangelog, typedIpcMainHandle } from './utils'
+import { fetchChangelog } from './utils'
 
 const _require = createRequire(import.meta.url)
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -78,7 +72,7 @@ async function createWindow() {
     },
   })
 
-  windowManager.registerWindow('main', win)
+  windowManager.setMainWindow(win)
 
   if (VITE_DEV_SERVER_URL) {
     // #298
@@ -103,7 +97,7 @@ async function createWindow() {
         // 获取 CHANGELOG.md
         const releaseNote = await fetchChangelog() // html
 
-        windowManager.sendToWindow('main', IPC_CHANNELS.app.notifyUpdate, {
+        windowManager.send(IPC_CHANNELS.app.notifyUpdate, {
           currentVersion,
           latestVersion,
           releaseNote,
@@ -164,83 +158,4 @@ ipcMain.handle('open-win', (_, arg) => {
   } else {
     childWindow.loadFile(indexHtml, { hash: arg })
   }
-})
-
-typedIpcMainHandle(IPC_CHANNELS.chrome.getPath, async (_, edge) => {
-  const path = await findChromium(edge)
-  return path
-})
-
-typedIpcMainHandle(IPC_CHANNELS.chrome.selectPath, async () => {
-  // 打开文件选择器，选择 chrome.exe/msedge.exe
-  if (process.platform === 'darwin') {
-    dialog.showErrorBox(
-      '无法选择文件',
-      '考虑到安全性，暂时不向 MacOS 平台提供浏览器路径的选择，请使用上方的自动检测浏览器功能',
-    )
-    // const result = await dialog.showOpenDialog({
-    //   properties: ['openFile', 'treatPackageAsDirectory'],
-    //   defaultPath: '/Applications',
-    // })
-
-    // if (result.canceled || result.filePaths.length === 0) {
-    //   return null
-    // }
-
-    // const selectedPath = result.filePaths[0]
-    // const pathParts = selectedPath.split(path.sep)
-
-    // // 必须是可执行文件
-    // const looksLikeMacExecutable =
-    //   pathParts.includes('Contents') &&
-    //   pathParts.includes('MacOS') &&
-    //   fs.existsSync(selectedPath) &&
-    //   !fs.lstatSync(selectedPath).isDirectory()
-
-    // const executableName = path.basename(selectedPath)
-    // const isValidName =
-    //   executableName === 'Google Chrome' || executableName === 'Microsoft Edge'
-    // if (looksLikeMacExecutable && isValidName) {
-    //   return selectedPath
-    // }
-    // dialog.showErrorBox(
-    //   '无效的选择',
-    //   `选择的文件（${executableName}）似乎不是正确的可执行文件。\n\n请进入应用程序包（例如 Google Chrome.app）内部，找到 'Contents' -> 'MacOS' 文件夹，并选择名为 'Google Chrome' 或 'Microsoft Edge' 的文件。`,
-    // )
-  } else {
-    const result = await dialog.showOpenDialog({
-      properties: ['openFile', 'treatPackageAsDirectory'],
-      filters: [{ name: 'chrome|msedge', extensions: ['exe'] }],
-    })
-
-    if (result.canceled || result.filePaths.length === 0) {
-      return null
-    }
-
-    const selectedPath = result.filePaths[0]
-    const fileName = selectedPath.toLowerCase().split('\\').pop()
-    if (fileName === 'chrome.exe' || fileName === 'msedge.exe') {
-      return selectedPath
-    }
-    dialog.showErrorBox(
-      '无效的选择',
-      `选择的文件（${fileName}）似乎不是正确的可执行文件。\n\n请选择名为 'chrome.exe' 或 'msedge.exe' 的文件。`,
-    )
-  }
-  return null
-})
-
-typedIpcMainHandle(IPC_CHANNELS.chrome.toggleDevTools, event => {
-  const win = BrowserWindow.fromWebContents(event.sender)
-  if (win) {
-    if (win.webContents.isDevToolsOpened()) {
-      win.webContents.closeDevTools()
-    } else {
-      win.webContents.openDevTools()
-    }
-  }
-})
-
-typedIpcMainHandle(IPC_CHANNELS.app.openLogFolder, () => {
-  shell.openPath(app.getPath('logs'))
 })

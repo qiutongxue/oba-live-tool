@@ -1,7 +1,7 @@
 import type { Page } from 'playwright'
 import { WebSocketService } from '#/services/WebSocketService'
 import type { Account } from '#/taskManager'
-import { isDev } from '#/utils'
+import { isDev, isMockTest } from '#/utils'
 import type { AutoReplyConfig } from '.'
 import type { BaseMessageListener } from './BaseMessageListener'
 import { CompassAdapter } from './adapters/DouyinCompassAdapter'
@@ -26,7 +26,7 @@ export class AutoReplyManager {
       this.wsService.start(this.config.ws.port)
     }
 
-    if (isDev()) {
+    if (isDev() && isMockTest()) {
       this.listener = new LocalTestAdapter(this.account, this.wsService)
     } else if (this.config.source === 'control') {
       this.listener = new ControlPanelAdapter(

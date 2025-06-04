@@ -58,12 +58,12 @@ const useChatMessaging = () => {
 
       const removeStreamListener = window.ipcRenderer.on(
         IPC_CHANNELS.tasks.aiChat.stream,
-        ({ chunk, done, type }) => {
-          if (done) {
+        result => {
+          if ('done' in result && result.done) {
             cleanup()
             resolve()
-          } else if (chunk) {
-            handleStreamMessage({ chunk, type })
+          } else if ('chunk' in result && result.chunk) {
+            handleStreamMessage({ chunk: result.chunk, type: result.type })
           }
         },
       )

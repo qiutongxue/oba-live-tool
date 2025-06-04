@@ -18,7 +18,7 @@ electronLog.addLevel('success', 3)
 electronLog.hooks.push((message, transport) => {
   if (transport === electronLog.transports.console) {
     if (message.level !== 'debug' && message.level !== 'verbose') {
-      windowManager.sendToWindow('main', IPC_CHANNELS.log, message)
+      windowManager.send(IPC_CHANNELS.log, message)
     }
   }
   return message

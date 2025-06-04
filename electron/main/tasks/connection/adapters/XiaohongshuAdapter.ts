@@ -19,7 +19,7 @@ export class XiaohongshuAdapter extends BaseAdapter {
       const text = await item.textContent()
       if (text === '直播中控台') {
         await item.click()
-        await sleep(1000)
+        await sleep(2000)
         break
       }
     }
@@ -29,6 +29,7 @@ export class XiaohongshuAdapter extends BaseAdapter {
         const prevPage = session.page
         session.page = page
         await prevPage.close()
+        await sleep(1000)
         break
       }
     }
