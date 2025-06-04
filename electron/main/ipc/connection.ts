@@ -1,10 +1,8 @@
-import { chromium } from 'playwright-extra'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { createLogger } from '#/logger'
 import { pageManager } from '#/taskManager'
 import { LiveControlManager } from '#/tasks/connection/LiveControlManager'
-import { isDev, typedIpcMainHandle } from '#/utils'
-import { findChromium } from '#/utils/checkChrome'
+import { isDev, isMockTest, typedIpcMainHandle } from '#/utils'
 
 const TASK_NAME = '中控台'
 
@@ -86,9 +84,8 @@ function setupDevIpcHandlers() {
 }
 
 export function setupLiveControlIpcHandlers() {
-  if (isDev()) {
+  if (isDev() && isMockTest()) {
     setupDevIpcHandlers()
-    // setupIpcHandlers()
   } else {
     setupIpcHandlers()
   }

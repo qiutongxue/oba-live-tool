@@ -1,3 +1,5 @@
+import 'dotenv/config'
+
 export function randomInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min
 }
@@ -8,6 +10,10 @@ export async function sleep(ms: number) {
 
 export function isDev() {
   return process.env.NODE_ENV === 'development'
+}
+
+export function isMockTest() {
+  return process.env.MOCK_TEST === 'true'
 }
 
 export function insertRandomSpaces(
