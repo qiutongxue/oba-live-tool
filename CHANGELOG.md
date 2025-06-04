@@ -3,7 +3,7 @@
 
 ## v1.5.6
 
-[compare changes](https://github.com/qiutongxue/oba-live-tool/compare/v1.5.5...v1.5.6)
+[compare changes](https://github.com/TLS-802/TLS-live-tool/compare/v1.5.5...v1.5.6)
 
 ### 🚀 Features
 
