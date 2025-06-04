@@ -79,11 +79,14 @@ export interface IpcChannels {
     apiKey: string
     customBaseURL?: string
   }) => void
-  [IPC_CHANNELS.tasks.aiChat.stream]: (data: {
-    chunk: string
-    done: boolean
-    type: string
-  }) => void
+  [IPC_CHANNELS.tasks.aiChat.stream]: (
+    data:
+      | {
+          chunk: string
+          type: 'content' | 'reasoning'
+        }
+      | { done: boolean },
+  ) => void
   [IPC_CHANNELS.tasks.aiChat.error]: (data: { error: string }) => void
 
   // Updater
