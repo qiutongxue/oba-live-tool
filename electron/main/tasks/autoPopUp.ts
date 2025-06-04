@@ -53,8 +53,7 @@ class PopUpManager {
         onStop: () => {
           this.logger.info('任务停止执行')
           this.abortController.abort()
-          windowManager.sendToWindow(
-            'main',
+          windowManager.send(
             IPC_CHANNELS.tasks.autoPopUp.stoppedEvent,
             this.account.id,
           )

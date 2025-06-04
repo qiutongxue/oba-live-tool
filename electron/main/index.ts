@@ -78,7 +78,7 @@ async function createWindow() {
     },
   })
 
-  windowManager.registerWindow('main', win)
+  windowManager.setMainWindow(win)
 
   if (VITE_DEV_SERVER_URL) {
     // #298
@@ -103,7 +103,7 @@ async function createWindow() {
         // 获取 CHANGELOG.md
         const releaseNote = await fetchChangelog() // html
 
-        windowManager.sendToWindow('main', IPC_CHANNELS.app.notifyUpdate, {
+        windowManager.send(IPC_CHANNELS.app.notifyUpdate, {
           currentVersion,
           latestVersion,
           releaseNote,
