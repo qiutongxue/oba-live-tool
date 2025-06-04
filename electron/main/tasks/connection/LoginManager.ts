@@ -13,6 +13,7 @@ export class LoginManager {
   }
 
   public async checkIfLoginRequired(session: BrowserSession): Promise<boolean> {
+    this.logger.info('尝试前往中控台……')
     await this.visitLiveControlAndCheck(session)
     this.logger.debug(`当前页面: ${session.page.url()}`)
 
