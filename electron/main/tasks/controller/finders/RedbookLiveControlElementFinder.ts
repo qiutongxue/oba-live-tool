@@ -22,10 +22,12 @@ export class RedbookLiveControlElementFinder extends LiveControlElementFinder {
         )
       ) {
         if (
-          await operation.evaluate(e =>
-            e.classList.contains(
-              redbookConst.selectors.goodsItem.POPUP_BUTTON_DISABLED,
-            ),
+          await operation.evaluate(
+            (e, redbookConst) =>
+              e.classList.contains(
+                redbookConst.selectors.goodsItem.POPUP_BUTTON_DISABLED,
+              ),
+            redbookConst,
           )
         ) {
           throw new Error(error.elementFinder.PROMOTING_BTN_DISABLED)
@@ -76,10 +78,12 @@ export class RedbookLiveControlElementFinder extends LiveControlElementFinder {
       throw new Error(error.elementFinder.SUBMIT_BTN_NOT_FOUND)
     }
     if (
-      await submitButton.evaluate(el =>
-        el.className.includes(
-          redbookConst.selectors.commentInput.SUBMIT_BUTTON_DISABLED,
-        ),
+      await submitButton.evaluate(
+        (el, redbookConst) =>
+          el.className.includes(
+            redbookConst.selectors.commentInput.SUBMIT_BUTTON_DISABLED,
+          ),
+        redbookConst,
       )
     ) {
       throw new Error(error.elementFinder.SUBMIT_BTN_DISABLED)
