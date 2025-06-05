@@ -5,10 +5,10 @@
   <p> 抖音小店/巨量百应/抖音团购/小红书/视频号/快手小店直播小工具 </p>
   <br>
 
-![GitHub Release][github release badge]
-![GitHub Release Date][github release date badge]
+[![GitHub Release][github release badge]](https://github.com/qiutongxue/oba-live-tool/releases/latest)
 ![GitHub][github license badge]
-
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/qiutongxue/oba-live-tool)
+ 
 </div>
 
 ---
@@ -191,8 +191,8 @@ AI 助手只支持文本对话，在使用 AI 助手功能前，请先设置好�
 
 <!-- badage -->
 
-[github release badge]: https://img.shields.io/github/v/release/qiutongxue/oba-live-tool?style=for-the-badge
+[github release badge]: https://img.shields.io/github/v/release/qiutongxue/oba-live-tool?style=flat&logo=github&labelColor=%2324292e&color=%231abc9c
 
-[github release date badge]: https://img.shields.io/github/release-date/qiutongxue/oba-live-tool?style=for-the-badge
 
-[github license badge]: https://img.shields.io/badge/license-MIT-yellow?style=for-the-badge
+[github license badge]: https://img.shields.io/badge/license-MIT-4caf50?style=flat&labelColor=24292e
+
