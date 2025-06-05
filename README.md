@@ -191,8 +191,8 @@ AI 助手只支持文本对话，在使用 AI 助手功能前，请先设置好�
 
 <!-- badage -->
 
-[github release badge]: https://img.shields.io/github/v/release/qiutongxue/oba-live-tool?style=flat&logo=github&labelColor=%2324292e&color=%231abc9c
+[github release badge]: https://img.shields.io/github/v/release/qiutongxue/oba-live-tool?style=flat&logo=github&labelColor=%2324292e&color=%231a7f37
 
 
-[github license badge]: https://img.shields.io/badge/license-MIT-4caf50?style=flat&labelColor=24292e
+[github license badge]: https://img.shields.io/badge/license-MIT-5c6bc0?style=flat&labelColor=24292e
 
