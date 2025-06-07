@@ -20,7 +20,7 @@ import {
 import type { AIProvider, ProviderConfig } from '@/hooks/useAIChat'
 import { useAIChatStore } from '@/hooks/useAIChat'
 import { useToast } from '@/hooks/useToast'
-import { CheckIcon, SettingsIcon } from 'lucide-react'
+import { CheckIcon, Eye, EyeOff, SettingsIcon } from 'lucide-react'
 import { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { providers } from 'shared/providers'
@@ -178,6 +178,7 @@ const ApiKeyInput = memo(
   }) => {
     const isCustom = provider === 'custom'
     const providerInfo = providers[provider as keyof typeof providers]
+    const [showPassword, setShowPassword] = useState(false)
 
     return (
       <div className="space-y-2">
@@ -196,13 +197,28 @@ const ApiKeyInput = memo(
             </Button>
           </div>
         </div>
-        <Input
-          type="password"
-          value={apiKey}
-          onChange={e => onChange(e.target.value)}
-          placeholder={`请输入您的 ${providerInfo?.name || '自定义服务'} API Key`}
-          className="font-mono"
-        />
+        <div className="relative w-full max-w-sm">
+          <Input
+            type={showPassword ? 'text' : 'password'}
+            value={apiKey}
+            onChange={e => onChange(e.target.value)}
+            placeholder={`请输入您的 ${providerInfo?.name || '自定义服务'} API Key`}
+            className="font-mono pr-10"
+          />
+          <Button
+            type="button"
+            variant="link"
+            size="icon"
+            onClick={() => setShowPassword(prev => !prev)}
+            className="absolute right-1 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+          >
+            {showPassword ? (
+              <EyeOff className="w-4 h-4" />
+            ) : (
+              <Eye className="w-4 h-4" />
+            )}
+          </Button>
+        </div>
         {!isCustom && providerInfo && (
           <p className="text-xs text-muted-foreground">
             您可以在
