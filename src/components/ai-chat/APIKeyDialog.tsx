@@ -66,14 +66,23 @@ const VolcengineEndpoint = memo(
   }: { model: string; onChange: (model: string) => void }) => {
     return (
       <div className="space-y-2">
-        <Label>接入点名称</Label>
+        <Label>模型或接入点 ID</Label>
         <Input
           value={model}
           onChange={e => onChange(e.target.value)}
-          placeholder="请输入火山引擎的接入点名称"
+          placeholder="请输入火山引擎的模型 ID 或接入点 ID"
         />
         <p className="text-xs text-muted-foreground">
           您可以在
+          <a
+            href="https://www.volcengine.com/docs/82379/1330310"
+            rel="noreferrer"
+            target="_blank"
+            className="px-1 text-primary hover:underline"
+          >
+            模型列表
+          </a>
+          获取模型 ID，或在
           <a
             href="https://console.volcengine.com/ark/region:ark+cn-beijing/endpoint"
             rel="noreferrer"
@@ -82,7 +91,7 @@ const VolcengineEndpoint = memo(
           >
             火山引擎控制台
           </a>
-          获取接入点名称。
+          获取接入点 ID。
         </p>
       </div>
     )
