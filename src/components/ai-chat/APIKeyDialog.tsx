@@ -184,18 +184,20 @@ const ApiKeyInput = memo(
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <Label>API Key</Label>
-          <div className="flex items-center gap-2">
-            {testSuccess && <CheckIcon className="h-4 w-4 text-green-500" />}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={onTest}
-              disabled={!apiKey || testLoading}
-            >
-              {testLoading ? '测试中...' : '测试连接'}
-            </Button>
-          </div>
+          {provider !== 'volcengine' && (
+            <div className="flex items-center gap-2">
+              {testSuccess && <CheckIcon className="h-4 w-4 text-green-500" />}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={onTest}
+                disabled={!apiKey || testLoading}
+              >
+                {testLoading ? '测试中...' : '测试连接'}
+              </Button>
+            </div>
+          )}
         </div>
         <div className="relative w-full max-w-sm">
           <Input
@@ -338,7 +340,7 @@ export function APIKeyDialog() {
       if (result.success) {
         setTestSuccess(true)
       } else {
-        toast.error('连接错误')
+        toast.error(result.error ?? '测试连接失败')
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : '未知错误')
