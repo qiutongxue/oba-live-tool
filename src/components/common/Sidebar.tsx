@@ -5,6 +5,7 @@ import { useCurrentLiveControl } from '@/hooks/useLiveControl'
 import { cn } from '@/lib/utils'
 import { NavLink } from 'react-router'
 import {
+  CarbonAudioSynthesis,
   CarbonBlockStorage,
   CarbonChat,
   CarbonContentDeliveryNetwork,
@@ -34,6 +35,11 @@ export default function Sidebar() {
       id: '/',
       name: '打开中控台',
       icon: <CarbonContentDeliveryNetwork className="w-5 h-5" />,
+    },
+    {
+      id: '/AudioSynthesis',
+      name: '音频播放',
+      icon: <CarbonAudioSynthesis className="w-5 h-5" />,
     },
     {
       id: '/auto-message',

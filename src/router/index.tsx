@@ -1,4 +1,5 @@
 import AIChat from '@/pages/AIChat'
+import AudioSynthesis from '@/pages/AudioSynthesis'
 import AutoMessage from '@/pages/AutoMessage'
 import AutoPopUp from '@/pages/AutoPopUp'
 import AutoReply from '@/pages/AutoReply'
@@ -40,6 +41,10 @@ export const router = createHashRouter([
       {
         path: '/auto-reply/settings',
         element: <AutoReplySettings />,
+      },
+      {
+        path: '/AudioSynthesis',
+        element: <AudioSynthesis />,
       },
     ],
   },

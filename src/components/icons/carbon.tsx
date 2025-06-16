@@ -192,18 +192,60 @@ export function CarbonRenew(props: SVGProps<SVGSVGElement>) {
   )
 }
 
-
 export function CarbonPlayFilledAlt(props: SVGProps<SVGSVGElement>) {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 32 32" {...props}>
-      <path fill="currentColor" d="M7 28a1 1 0 0 1-1-1V5a1 1 0 0 1 1.482-.876l20 11a1 1 0 0 1 0 1.752l-20 11A1 1 0 0 1 7 28"></path></svg>
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="1em"
+      height="1em"
+      viewBox="0 0 32 32"
+      {...props}
+      role="img"
+      aria-label="播放"
+    >
+      <title>播放</title>
+      <path
+        fill="currentColor"
+        d="M7 28a1 1 0 0 1-1-1V5a1 1 0 0 1 1.482-.876l20 11a1 1 0 0 1 0 1.752l-20 11A1 1 0 0 1 7 28"
+      />
+    </svg>
   )
 }
 
-
 export function CarbonStopFilledAlt(props: SVGProps<SVGSVGElement>) {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 32 32" {...props}>
-      <path fill="currentColor" d="M24 6H8a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2"></path></svg>
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="1em"
+      height="1em"
+      viewBox="0 0 32 32"
+      {...props}
+      role="img"
+      aria-label="停止"
+    >
+      <title>停止</title>
+      <path
+        fill="currentColor"
+        d="M24 6H8a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2"
+      />
+    </svg>
+  )
+}
+
+export function CarbonAudioSynthesis(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      height="20px"
+      viewBox="0 -960 960 960"
+      width="20px"
+      fill="#5f6368"
+      {...props}
+      role="img"
+      aria-label="音频合成"
+    >
+      <title>音频合成</title>
+      <path d="m760-353-46-57q37-31 57.5-73.82 20.5-42.83 20.5-91Q792-623 771.5-666 751-709 714-740l46-56q49 42 76.5 99.28T864-575q0 64-28 122t-76 100Zm-92-112-46-55q13-10 19.5-24.5T648-575q0-16-6.5-30T622-629l46-56q25 20 38.5 49t13.5 61q0 32-13.5 61T668-465Zm-284 33q-60 0-102-41.5t-42-101.37q0-59.86 42-102.5Q324-720 384-720t102 42.63q42 42.64 42 102.5 0 59.87-42 101.37Q444-432 384-432ZM96-144v-97q0-24 13-44t34-33q55-33 116-50t125-17q64 0 125 17t116 50q20 13 33.5 33t13.5 44v97H96Zm72-72h432v-25q0-4.55-3-8.28-3-3.72-8-6.72-47-29-99-43t-106-14q-54 0-106 14t-99 43q-5 3-8 6.72-3 3.73-3 8.28v25Zm216.21-288Q414-504 435-524.5t21-50.58q0-30.08-21.21-51.5t-51-21.42Q354-648 333-626.58t-21 51.5q0 30.08 21.21 50.58t51 20.5Zm-.21-71Zm0 359Z" />
+    </svg>
   )
 }
