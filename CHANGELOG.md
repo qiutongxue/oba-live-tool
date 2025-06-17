@@ -1,6 +1,20 @@
 # Changelog
 
 
+## v1.5.7
+
+[compare changes](https://github.com/qiutongxue/oba-live-tool/compare/v1.5.6...v1.5.7)
+
+### 🚀 Features
+
+- **ui:** API Key 输入栏添加隐藏/显示功能 ([66269aa](https://github.com/qiutongxue/oba-live-tool/commit/66269aa))
+
+### 🐞 Bug Fixes
+
+- **ui:** 修复火山引擎配置中可能会造成歧义的信息 ([10f65f3](https://github.com/qiutongxue/oba-live-tool/commit/10f65f3))
+- **ai:** 修复 API Key 测试连接的部分问题 ([47a147a](https://github.com/qiutongxue/oba-live-tool/commit/47a147a))
+- **中控台:** 修复视频号无法登录的问题 fix #149 ([#149](https://github.com/qiutongxue/oba-live-tool/issues/149))
+
 ## v1.5.6
 
 [compare changes](https://github.com/qiutongxue/oba-live-tool/compare/v1.5.5...v1.5.6)
