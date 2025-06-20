@@ -33,6 +33,7 @@ export class LoginManager {
   private async visitLiveControlAndCheck(
     session: BrowserSession,
   ): Promise<void> {
+    await session.page.goto(this.loginConstants.liveControlUrl)
     if (this.platform === 'wxchannel') {
       const indexRegex = /platform\/?$/
       await Promise.race([
@@ -50,7 +51,6 @@ export class LoginManager {
         throw new Error('视频号未开播的情况下无法连接到中控台，请先开播')
       }
     } else {
-      await session.page.goto(this.loginConstants.liveControlUrl)
       await Promise.race([
         session.page.waitForURL(this.loginConstants.loginUrlRegex, {
           timeout: 0,

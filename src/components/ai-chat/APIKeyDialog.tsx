@@ -20,7 +20,7 @@ import {
 import type { AIProvider, ProviderConfig } from '@/hooks/useAIChat'
 import { useAIChatStore } from '@/hooks/useAIChat'
 import { useToast } from '@/hooks/useToast'
-import { CheckIcon, SettingsIcon } from 'lucide-react'
+import { CheckIcon, Eye, EyeOff, SettingsIcon } from 'lucide-react'
 import { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { providers } from 'shared/providers'
@@ -66,14 +66,23 @@ const VolcengineEndpoint = memo(
   }: { model: string; onChange: (model: string) => void }) => {
     return (
       <div className="space-y-2">
-        <Label>接入点名称</Label>
+        <Label>模型或接入点 ID</Label>
         <Input
           value={model}
           onChange={e => onChange(e.target.value)}
-          placeholder="请输入火山引擎的接入点名称"
+          placeholder="请输入火山引擎的模型 ID 或接入点 ID"
         />
         <p className="text-xs text-muted-foreground">
           您可以在
+          <a
+            href="https://www.volcengine.com/docs/82379/1330310"
+            rel="noreferrer"
+            target="_blank"
+            className="px-1 text-primary hover:underline"
+          >
+            模型列表
+          </a>
+          获取模型 ID，或在
           <a
             href="https://console.volcengine.com/ark/region:ark+cn-beijing/endpoint"
             rel="noreferrer"
@@ -82,7 +91,7 @@ const VolcengineEndpoint = memo(
           >
             火山引擎控制台
           </a>
-          获取接入点名称。
+          获取接入点 ID。
         </p>
       </div>
     )
@@ -169,31 +178,49 @@ const ApiKeyInput = memo(
   }) => {
     const isCustom = provider === 'custom'
     const providerInfo = providers[provider as keyof typeof providers]
+    const [showPassword, setShowPassword] = useState(false)
 
     return (
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <Label>API Key</Label>
-          <div className="flex items-center gap-2">
-            {testSuccess && <CheckIcon className="h-4 w-4 text-green-500" />}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={onTest}
-              disabled={!apiKey || testLoading}
-            >
-              {testLoading ? '测试中...' : '测试连接'}
-            </Button>
-          </div>
+          {provider !== 'volcengine' && (
+            <div className="flex items-center gap-2">
+              {testSuccess && <CheckIcon className="h-4 w-4 text-green-500" />}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={onTest}
+                disabled={!apiKey || testLoading}
+              >
+                {testLoading ? '测试中...' : '测试连接'}
+              </Button>
+            </div>
+          )}
         </div>
-        <Input
-          type="password"
-          value={apiKey}
-          onChange={e => onChange(e.target.value)}
-          placeholder={`请输入您的 ${providerInfo?.name || '自定义服务'} API Key`}
-          className="font-mono"
-        />
+        <div className="relative w-full max-w-sm">
+          <Input
+            type={showPassword ? 'text' : 'password'}
+            value={apiKey}
+            onChange={e => onChange(e.target.value)}
+            placeholder={`请输入您的 ${providerInfo?.name || '自定义服务'} API Key`}
+            className="font-mono pr-10"
+          />
+          <Button
+            type="button"
+            variant="link"
+            size="icon"
+            onClick={() => setShowPassword(prev => !prev)}
+            className="absolute right-1 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+          >
+            {showPassword ? (
+              <EyeOff className="w-4 h-4" />
+            ) : (
+              <Eye className="w-4 h-4" />
+            )}
+          </Button>
+        </div>
         {!isCustom && providerInfo && (
           <p className="text-xs text-muted-foreground">
             您可以在
@@ -313,7 +340,7 @@ export function APIKeyDialog() {
       if (result.success) {
         setTestSuccess(true)
       } else {
-        toast.error('连接错误')
+        toast.error(result.error ?? '测试连接失败')
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : '未知错误')

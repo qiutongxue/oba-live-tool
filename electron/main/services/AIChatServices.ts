@@ -1,4 +1,4 @@
-import OpenAI, { OpenAIError } from 'openai'
+import OpenAI, { AuthenticationError, NotFoundError } from 'openai'
 import { providers } from 'shared/providers'
 import { createLogger } from '#/logger'
 
@@ -9,10 +9,32 @@ interface ChatMessage {
   content: string
 }
 
+const checkAPIKeyErrors = {
+  NotFoundError: '目标平台不支持测试 API KEY，你可以跳过测试直接使用',
+  AuthenticationError: 'API KEY 验证失败，请确认是否输入正确',
+  UnknownError: '未知错误',
+} as const
+
+interface CheckAPIKeySuccess {
+  kind: 'success'
+}
+
+interface CheckAPIKeyFail {
+  kind: 'fail'
+  type: keyof typeof checkAPIKeyErrors
+  message?: string
+}
+
+type CheckAPIKeyResult = CheckAPIKeySuccess | CheckAPIKeyFail
+
 export class AIChatService {
   private logger: ReturnType<typeof createLogger> = createLogger('AI对话')
   private openai: OpenAI
-  private constructor(apiKey: string, baseURL: string) {
+  private constructor(
+    private apiKey: string,
+    private baseURL: string,
+    private provider: ProviderType,
+  ) {
     this.openai = new OpenAI({ apiKey, baseURL })
   }
 
@@ -31,7 +53,7 @@ export class AIChatService {
       baseURL = providers[provider].baseURL
     }
 
-    return new AIChatService(apiKey, baseURL)
+    return new AIChatService(apiKey, baseURL, provider)
   }
 
   public async *chatStream(messages: ChatMessage[], model: string) {
@@ -93,14 +115,85 @@ export class AIChatService {
   }
 
   public async checkAPIKey() {
+    let result: CheckAPIKeyResult
+    if (this.provider === 'openrouter') {
+      result = await this.checkOpenRouterAPIKey()
+    } else {
+      result = await this.checkDefaultAPIKey()
+    }
+
+    if (result.kind === 'fail') {
+      switch (result.type) {
+        case 'NotFoundError':
+          this.logger.error(checkAPIKeyErrors.NotFoundError)
+          throw new Error(checkAPIKeyErrors.NotFoundError)
+        case 'AuthenticationError':
+          this.logger.error(checkAPIKeyErrors.AuthenticationError)
+          throw new Error(checkAPIKeyErrors.AuthenticationError)
+        default: {
+          const errorMessage = `${checkAPIKeyErrors.UnknownError}: ${result.message}`
+          this.logger.error(errorMessage)
+          throw new Error(errorMessage)
+        }
+      }
+    }
+
+    this.logger.success('API Key 通过测试！你的 API Key 大概率是有效的')
+  }
+
+  private async checkDefaultAPIKey(): Promise<CheckAPIKeyResult> {
     try {
       await this.openai.models.list()
+      return {
+        kind: 'success',
+      }
     } catch (error) {
-      this.logger.error(
-        'APIKEY 测试失败，可能是 APIKEY 无效，也可能平台或网络等原因',
-        error,
-      )
-      throw error
+      if (error instanceof NotFoundError) {
+        return {
+          kind: 'fail',
+          type: 'NotFoundError',
+        }
+      }
+      if (error instanceof AuthenticationError) {
+        return {
+          kind: 'fail',
+          type: 'AuthenticationError',
+        }
+      }
+      return {
+        kind: 'fail',
+        type: 'UnknownError',
+        message: error instanceof Error ? error.message : String(error),
+      }
+    }
+  }
+
+  private async checkOpenRouterAPIKey(): Promise<CheckAPIKeyResult> {
+    const url = `${providers.openrouter.baseURL}/credits`
+    const options = {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${this.apiKey}` },
+    }
+    const resp = await fetch(url, options)
+    const data = await resp.json()
+    switch (resp.status) {
+      case 200:
+        return {
+          kind: 'success',
+        }
+      case 401: {
+        return {
+          kind: 'fail',
+          type: 'AuthenticationError',
+        }
+      }
+      default: {
+        return {
+          kind: 'fail',
+          type: 'UnknownError',
+          message: `${data?.error?.message}, CODE: ${data?.error?.code}`,
+        }
+      }
     }
   }
 }
