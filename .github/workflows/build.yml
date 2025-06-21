@@ -39,5 +39,3 @@ jobs:
           path: |
             release/*/*.exe
             release/*/*.dmg
-            release/*/*.blockmap
-            release/*/latest*.yml
