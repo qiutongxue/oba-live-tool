@@ -5,7 +5,6 @@ import { useMemoizedFn } from 'ahooks'
 import { Pencil, Plus } from 'lucide-react'
 import { useState } from 'react'
 import React from 'react'
-import type { Account } from '#/taskManager'
 import { Button } from '../ui/button'
 import {
   Dialog,

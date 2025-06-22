@@ -4,10 +4,10 @@ import type {
   UpdateCheckResult,
   UpdateDownloadedEvent,
 } from 'electron-updater'
-import type { PopUpConfig } from 'electron/main/tasks/autoPopUp'
+import type { AutoPopUpConfig } from 'electron/main/tasks/autoPopUp'
 import type { providers } from 'shared/providers'
 
-import type { Account } from '#/taskManager'
+import type { Account } from '#/managers/AccountManager'
 import type { AutoReplyConfig } from '#/tasks/autoReply/index'
 import { IPC_CHANNELS } from './ipcChannels'
 
@@ -35,11 +35,11 @@ export interface IpcChannels {
   ) => boolean
 
   // AutoPopup
-  [IPC_CHANNELS.tasks.autoPopUp.start]: (config: PopUpConfig) => boolean
+  [IPC_CHANNELS.tasks.autoPopUp.start]: (config: AutoPopUpConfig) => boolean
   [IPC_CHANNELS.tasks.autoPopUp.stop]: () => boolean
   [IPC_CHANNELS.tasks.autoPopUp.stoppedEvent]: (id: string) => void
   [IPC_CHANNELS.tasks.autoPopUp.updateConfig]: (
-    config: Parital<PopUpConfig>,
+    config: Parital<AutoPopUpConfig>,
   ) => void
   [IPC_CHANNELS.tasks.autoPopUp.registerShortcuts]: (
     shortcuts: { accelerator: string; goodsIds: number[] }[],
@@ -119,8 +119,7 @@ export interface IpcChannels {
   }) => void
 
   [IPC_CHANNELS.account.switch]: (params: {
-    accountId: string
-    accountNames: Account[]
+    account: Account
   }) => void
 
   // Log

@@ -125,10 +125,10 @@ function App() {
   const { accounts, currentAccountId } = useAccounts()
 
   useEffect(() => {
-    window.ipcRenderer.invoke(IPC_CHANNELS.account.switch, {
-      accountId: currentAccountId,
-      accountNames: accounts,
-    })
+    const account = accounts.find(acc => acc.id === currentAccountId)
+    if (account) {
+      window.ipcRenderer.invoke(IPC_CHANNELS.account.switch, { account })
+    }
   }, [accounts, currentAccountId])
 
   useGlobalIpcListener()
