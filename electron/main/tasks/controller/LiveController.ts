@@ -1,7 +1,7 @@
 import type { ElementHandle, Page } from 'playwright'
 import * as constants from '#/constants'
 import { createLogger } from '#/logger'
-import { pageManager } from '#/taskManager'
+import { contextManager } from '#/managers/BrowserContextManager'
 import { abortable } from '#/utils/decorators'
 import type { LiveControlElementFinder } from './LiveControlElementFinder'
 import { type PopUpStrategy, getPopUpStrategy } from './PopUpStrategy'
@@ -60,7 +60,7 @@ export class LiveController {
     protected logger = createLogger('LiveController'),
     public abortSignal?: AbortSignal,
   ) {
-    const platform = pageManager.getContext()?.platform
+    const platform = contextManager.getCurrentContext().platform
     if (!platform) {
       throw new Error('平台不存在')
     }

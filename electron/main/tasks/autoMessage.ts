@@ -2,7 +2,6 @@ import { merge } from 'lodash-es'
 import type { Page } from 'playwright'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { createLogger } from '#/logger'
-import type { Account } from '#/taskManager'
 import { LiveController } from '#/tasks/controller/LiveController'
 import { insertRandomSpaces, randomInt, sleep, takeScreenshot } from '#/utils'
 import windowManager from '#/windowManager'
@@ -17,16 +16,16 @@ interface Message {
   pinTop: boolean
 }
 
-interface MessageConfig extends BaseConfig {
+interface AutoMessageConfig extends BaseConfig {
   messages: Message[]
   pinTops?: boolean | number[]
   random?: boolean
   extraSpaces?: boolean
 }
 
-export class MessageManager {
+export class AutoMessageTask {
   private currentMessageIndex = -1
-  private config: MessageConfig
+  private config: AutoMessageConfig
   private readonly scheduler: TaskScheduler
   private controller: LiveController
   private logger: ReturnType<typeof createLogger>
@@ -35,7 +34,7 @@ export class MessageManager {
   constructor(
     private readonly page: Page,
     private account: Account,
-    userConfig: MessageConfig,
+    userConfig: AutoMessageConfig,
   ) {
     this.logger = createLogger(`${TASK_NAME} @${account.name}`)
     this.validateConfig(userConfig)
@@ -113,7 +112,7 @@ export class MessageManager {
     }
   }
 
-  private validateConfig(userConfig: MessageConfig) {
+  private validateConfig(userConfig: AutoMessageConfig) {
     if (userConfig.messages.length === 0) {
       throw new Error('消息配置验证失败: 必须提供至少一条消息')
     }
@@ -144,7 +143,7 @@ export class MessageManager {
     this.scheduler.stop()
   }
 
-  public updateConfig(newConfig: Partial<MessageConfig>) {
+  public updateConfig(newConfig: Partial<AutoMessageConfig>) {
     const config = merge({}, this.config, newConfig)
     this.validateConfig(config)
     if (config.scheduler) {

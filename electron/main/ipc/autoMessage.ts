@@ -1,7 +1,9 @@
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { createLogger } from '#/logger'
-import { pageManager } from '#/taskManager'
-import { MessageManager } from '#/tasks/autoMessage'
+import { accountManager } from '#/managers/AccountManager'
+import { contextManager } from '#/managers/BrowserContextManager'
+import { taskManager } from '#/managers/TaskManager'
+import { AutoMessageTask } from '#/tasks/autoMessage'
 import { typedIpcMainHandle } from '#/utils'
 
 const TASK_NAME = '自动发言'
@@ -12,15 +14,15 @@ function setupIpcHandlers() {
     IPC_CHANNELS.tasks.autoMessage.start,
     async (_, config) => {
       try {
-        pageManager.register(
+        taskManager.register(
           TASK_NAME,
-          (page, account) => new MessageManager(page, account, config),
+          (page, account) => new AutoMessageTask(page, account, config),
         )
-        pageManager.startTask(TASK_NAME)
+        taskManager.startTask(TASK_NAME)
         return true
       } catch (error) {
         const logger = createLogger(
-          `${TASK_NAME} @${pageManager.currentAccountName}`,
+          `${TASK_NAME} @${accountManager.getActiveAccount().name}`,
         )
         logger.error(
           '启动自动发言失败:',
@@ -32,15 +34,15 @@ function setupIpcHandlers() {
   )
 
   typedIpcMainHandle(IPC_CHANNELS.tasks.autoMessage.stop, async () => {
-    pageManager.stopTask(TASK_NAME)
+    taskManager.stopTask(TASK_NAME)
     return true
   })
 
   typedIpcMainHandle(
     IPC_CHANNELS.tasks.autoMessage.sendBatchMessages,
     async (_, messages, count) => {
-      const page = pageManager.getPage()
-      return MessageManager.sendBatchMessages(page, messages, count)
+      const page = contextManager.getCurrentContext().page
+      return AutoMessageTask.sendBatchMessages(page, messages, count)
     },
   )
 }

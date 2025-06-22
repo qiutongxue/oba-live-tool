@@ -2,7 +2,6 @@ import { merge } from 'lodash-es'
 import type { Page } from 'playwright'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { createLogger } from '#/logger'
-import type { Account } from '#/taskManager'
 import { LiveController } from '#/tasks/controller/LiveController'
 import { randomInt, takeScreenshot } from '#/utils'
 import windowManager from '#/windowManager'
@@ -11,14 +10,14 @@ import { TaskScheduler } from './scheduler'
 
 const TASK_NAME = '自动弹窗'
 
-export interface PopUpConfig extends BaseConfig {
+export interface AutoPopUpConfig extends BaseConfig {
   goodsIds: number[]
   random?: boolean
 }
 
-export class PopUpManager {
+export class AutoPopUpTask {
   private currentGoodIndex = 0
-  private config: PopUpConfig
+  private config: AutoPopUpConfig
   private readonly scheduler: TaskScheduler
   private controller: LiveController
   private logger: ReturnType<typeof createLogger>
@@ -27,7 +26,7 @@ export class PopUpManager {
   constructor(
     private readonly page: Page,
     private account: Account,
-    userConfig: PopUpConfig,
+    userConfig: AutoPopUpConfig,
   ) {
     this.logger = createLogger(`${TASK_NAME} @${account.name}`)
     this.validateConfig(userConfig)
@@ -88,7 +87,7 @@ export class PopUpManager {
     return this.config.goodsIds[this.currentGoodIndex]
   }
 
-  private validateConfig(userConfig: PopUpConfig) {
+  private validateConfig(userConfig: AutoPopUpConfig) {
     if (userConfig.goodsIds.length === 0)
       throw new Error('商品配置验证失败: 必须提供至少一个商品ID')
 
@@ -107,7 +106,7 @@ export class PopUpManager {
     this.scheduler.stop()
   }
 
-  public updateConfig(newConfig: Partial<PopUpConfig>) {
+  public updateConfig(newConfig: Partial<AutoPopUpConfig>) {
     try {
       const config = merge({}, this.config, newConfig)
       this.validateConfig(config)

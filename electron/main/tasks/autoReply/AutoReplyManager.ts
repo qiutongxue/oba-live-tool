@@ -1,6 +1,5 @@
 import type { Page } from 'playwright'
 import { WebSocketService } from '#/services/WebSocketService'
-import type { Account } from '#/taskManager'
 import { isDev, isMockTest } from '#/utils'
 import type { AutoReplyConfig } from '.'
 import type { BaseMessageListener } from './BaseMessageListener'
