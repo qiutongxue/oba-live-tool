@@ -1,8 +1,8 @@
 import { useAccounts } from '@/hooks/useAccounts'
 import { useCurrentLiveControl } from '@/hooks/useLiveControl'
 import { useToast } from '@/hooks/useToast'
-import { TrashIcon } from 'lucide-react'
 import { useMemoizedFn } from 'ahooks'
+import { TrashIcon } from 'lucide-react'
 import { BanIcon } from 'lucide-react'
 import { useState } from 'react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
@@ -57,15 +57,27 @@ export function AccountSetting() {
             <span className="font-medium">{currentAccount?.name}</span>
           </div>
           {currentAccountId !== 'default' ? (
-            <Button
-              variant="destructive"
-              size="sm"
-              className="gap-2"
-              onClick={() => setIsDeleteDialogOpen(true)}
-            >
-              <TrashIcon className="h-4 w-4" />
-              <span>删除账号</span>
-            </Button>
+            isConnected === 'disconnected' ? (
+              <Button
+                variant="destructive"
+                size="sm"
+                className="gap-2"
+                onClick={() => setIsDeleteDialogOpen(true)}
+              >
+                <TrashIcon className="h-4 w-4" />
+                <span>删除账号</span>
+              </Button>
+            ) : (
+              <Button
+                variant="destructive"
+                size="sm"
+                className="gap-2"
+                disabled
+              >
+                <TrashIcon className="h-4 w-4" />
+                <span>请先断开中控台连接</span>
+              </Button>
+            )
           ) : (
             <Button disabled size="sm" className="gap-2">
               <BanIcon className="h-4 w-4" />

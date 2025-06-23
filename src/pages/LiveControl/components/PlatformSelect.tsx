@@ -18,6 +18,7 @@ const platforms: Record<LiveControlPlatform, string> = {
   redbook: '小红书',
   wxchannel: '视频号',
   kuaishou: '快手小店',
+  taobao: '淘宝',
 } as const
 
 const PlatformSelect = React.memo(() => {

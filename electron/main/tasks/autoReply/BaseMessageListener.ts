@@ -1,7 +1,6 @@
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { createLogger } from '#/logger'
 import type { WebSocketService } from '#/services/WebSocketService'
-import type { Account } from '#/taskManager'
 import windowManager from '#/windowManager'
 
 export abstract class BaseMessageListener {

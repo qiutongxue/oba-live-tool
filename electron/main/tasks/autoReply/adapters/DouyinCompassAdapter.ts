@@ -1,6 +1,5 @@
 import type { Page, Response } from 'playwright'
 import type { WebSocketService } from '#/services/WebSocketService'
-import type { Account } from '#/taskManager'
 import { BaseMessageListener } from '../BaseMessageListener'
 
 interface MessageResponse {

@@ -1,7 +1,8 @@
 import type { ElementHandle, Page } from 'playwright'
 import * as constants from '#/constants'
 import { createLogger } from '#/logger'
-import { pageManager } from '#/taskManager'
+import { contextManager } from '#/managers/BrowserContextManager'
+import { sleep } from '#/utils'
 import { abortable } from '#/utils/decorators'
 import type { LiveControlElementFinder } from './LiveControlElementFinder'
 import { type PopUpStrategy, getPopUpStrategy } from './PopUpStrategy'
@@ -9,6 +10,7 @@ import { BuyinLiveControlElementFinder } from './finders/BuyinLiveControlElement
 import { EOSLiveControlElementFinder } from './finders/EOSLiveControlElementFinder'
 import { KuaishouLiveControlElementFinder } from './finders/KuaishouLiveControlElementFinder'
 import { RedbookLiveControlElementFinder } from './finders/RedbookLiveControlElementFinder'
+import { TaobaoLiveControlElementFinder } from './finders/TaobaoLiveControlElementFinder'
 import { WxChannelLiveControlElementFinder } from './finders/WxChannelLiveControlElementFinder'
 
 function getLiveControlElementFinder(
@@ -24,6 +26,8 @@ function getLiveControlElementFinder(
       return new WxChannelLiveControlElementFinder(page)
     case 'kuaishou':
       return new KuaishouLiveControlElementFinder(page)
+    case 'taobao':
+      return new TaobaoLiveControlElementFinder(page)
     case 'buyin':
     case 'douyin':
       return new BuyinLiveControlElementFinder(page)
@@ -60,7 +64,7 @@ export class LiveController {
     protected logger = createLogger('LiveController'),
     public abortSignal?: AbortSignal,
   ) {
-    const platform = pageManager.getContext()?.platform
+    const platform = contextManager.getCurrentContext().platform
     if (!platform) {
       throw new Error('平台不存在')
     }
@@ -120,7 +124,7 @@ export class LiveController {
   @abortable
   private async findGoodsItemById(
     id: number,
-    prevScrollTop = 0,
+    prevScrollTop = Number.NaN,
   ): Promise<ElementHandle<SVGElement | HTMLElement>> {
     const { element, found } = await this.getCurrentGoodsItem(id)
     if (found) {
@@ -136,13 +140,17 @@ export class LiveController {
     }
 
     // 等待 1 秒，等新的商品加载完
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    await sleep(1000)
     const currentScrollTop = await scrollContainer.evaluate(el => el.scrollTop)
     // 没法滚了，说明加载完了还找不到东西
     if (
+      !Number.isNaN(prevScrollTop) &&
       prevScrollTop - 10 <= currentScrollTop &&
       currentScrollTop <= prevScrollTop + 10
     ) {
+      this.logger.debug(
+        `prevScrollTop: ${prevScrollTop}, currentScrollTop: ${currentScrollTop}`,
+      )
       throw new Error('找不到商品，请确认商品 id 是否正确')
     }
     return this.findGoodsItemById(id, currentScrollTop)
@@ -152,35 +160,58 @@ export class LiveController {
   private async getCurrentGoodsItem(id: number) {
     const currentGoodsItems =
       await this.elementFinder.getCurrentGoodsItemsList()
+
+    // 先尝试从当前的列表找到匹配的元素
+    try {
+      // 并发执行，效率比顺序遍历快了10倍以上
+      const element = await Promise.any(
+        currentGoodsItems.map(async goodsItem => {
+          const itemId = await this.elementFinder.getIdFromGoodsItem(goodsItem)
+          if (itemId !== id) {
+            throw new Error('未匹配')
+          }
+          return goodsItem
+        }),
+      )
+      return {
+        element,
+        found: true,
+      }
+    } catch {}
+
     const firstGoodsItem = currentGoodsItems[0]
-    if (!firstGoodsItem) {
+    const lastGoodsItem = currentGoodsItems[currentGoodsItems.length - 1]
+    if (!firstGoodsItem || !lastGoodsItem) {
       throw new Error('没有上架任何商品')
     }
+
     const firstIdValue =
       await this.elementFinder.getIdFromGoodsItem(firstGoodsItem)
+    const lastIdValue =
+      await this.elementFinder.getIdFromGoodsItem(lastGoodsItem)
 
-    if (id < firstIdValue) {
+    const isReversed = firstIdValue > lastIdValue
+
+    // 需要往上滚
+    if (
+      (!isReversed && id < firstIdValue) ||
+      (isReversed && id > firstIdValue)
+    ) {
       this.logger.warn(
-        `商品 ${id} 不在当前商品的范围 [${firstIdValue} ~ ${firstIdValue + currentGoodsItems.length - 1}]，继续查找中...`,
+        `商品 ${id} 不在当前商品的范围 [${firstIdValue} ~ ${lastIdValue}]，继续查找中...`,
       )
-      // 需要往上滚
+
       return {
         element: currentGoodsItems[0],
       }
     }
-    if (id >= firstIdValue + currentGoodsItems.length) {
-      this.logger.warn(
-        `商品 ${id} 不在当前商品的范围 [${firstIdValue} ~ ${firstIdValue + currentGoodsItems.length - 1}]，继续查找中...`,
-      )
-      // 需要往下滚
-      return {
-        element: currentGoodsItems[currentGoodsItems.length - 1],
-      }
-    }
-    // 找到了
+
+    // 需要往下滚
+    this.logger.warn(
+      `商品 ${id} 不在当前商品的范围 [${firstIdValue} ~ ${lastIdValue}]，继续查找中...`,
+    )
     return {
-      element: currentGoodsItems[id - firstIdValue],
-      found: true,
+      element: currentGoodsItems[currentGoodsItems.length - 1],
     }
   }
 

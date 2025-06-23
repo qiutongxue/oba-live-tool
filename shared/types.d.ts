@@ -1,3 +1,8 @@
+type Account = {
+  readonly id: string
+  name: string
+}
+
 type LiveControlPlatform =
   | 'douyin'
   | 'buyin'
@@ -5,6 +10,7 @@ type LiveControlPlatform =
   | 'redbook'
   | 'wxchannel'
   | 'kuaishou'
+  | 'taobao'
 
 type DouyinLiveMessage = {
   time: string

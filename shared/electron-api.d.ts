@@ -4,10 +4,9 @@ import type {
   UpdateCheckResult,
   UpdateDownloadedEvent,
 } from 'electron-updater'
-import type { PopUpConfig } from 'electron/main/tasks/autoPopUp'
+import type { AutoPopUpConfig } from 'electron/main/tasks/autoPopUp'
 import type { providers } from 'shared/providers'
 
-import type { Account } from '#/taskManager'
 import type { AutoReplyConfig } from '#/tasks/autoReply/index'
 import { IPC_CHANNELS } from './ipcChannels'
 
@@ -19,7 +18,6 @@ export interface IpcChannels {
     storageState?: string
     platform?: LiveControlPlatform
   }) => {
-    storageState: string | null
     accountName: string | null
   } | null
   [IPC_CHANNELS.tasks.liveControl.disconnect]: () => boolean
@@ -35,11 +33,11 @@ export interface IpcChannels {
   ) => boolean
 
   // AutoPopup
-  [IPC_CHANNELS.tasks.autoPopUp.start]: (config: PopUpConfig) => boolean
+  [IPC_CHANNELS.tasks.autoPopUp.start]: (config: AutoPopUpConfig) => boolean
   [IPC_CHANNELS.tasks.autoPopUp.stop]: () => boolean
   [IPC_CHANNELS.tasks.autoPopUp.stoppedEvent]: (id: string) => void
   [IPC_CHANNELS.tasks.autoPopUp.updateConfig]: (
-    config: Parital<PopUpConfig>,
+    config: Parital<AutoPopUpConfig>,
   ) => void
   [IPC_CHANNELS.tasks.autoPopUp.registerShortcuts]: (
     shortcuts: { accelerator: string; goodsIds: number[] }[],
@@ -109,6 +107,7 @@ export interface IpcChannels {
   [IPC_CHANNELS.chrome.getPath]: (edge?: boolean) => string | null
   [IPC_CHANNELS.chrome.toggleDevTools]: () => void
   [IPC_CHANNELS.chrome.setPath]: (path: string) => void
+  [IPC_CHANNELS.chrome.saveState]: (accountId: string, state: string) => void
 
   // App
   [IPC_CHANNELS.app.openLogFolder]: () => void
@@ -119,8 +118,7 @@ export interface IpcChannels {
   }) => void
 
   [IPC_CHANNELS.account.switch]: (params: {
-    accountId: string
-    accountNames: Account[]
+    account: Account
   }) => void
 
   // Log

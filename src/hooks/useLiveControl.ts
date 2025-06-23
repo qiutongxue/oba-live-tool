@@ -1,3 +1,4 @@
+import { EVENTS, eventEmitter } from '@/utils/events'
 import { useMemo } from 'react'
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
@@ -31,6 +32,12 @@ function defaultContext(): LiveControlContext {
 
 export const useLiveControlStore = create<LiveControlStore>()(
   immer(set => {
+    eventEmitter.on(EVENTS.ACCOUNT_REMOVED, (accountId: string) => {
+      set(state => {
+        delete state.contexts[accountId]
+      })
+    })
+
     const ensureContext = (state: LiveControlStore, accountId: string) => {
       if (!state.contexts[accountId]) {
         state.contexts[accountId] = defaultContext()

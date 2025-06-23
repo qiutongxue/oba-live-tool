@@ -17,11 +17,11 @@ import { BrowserWindow, app, ipcMain, shell } from 'electron'
 
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { createLogger } from './logger'
-import { pageManager } from './taskManager'
 import { getLatestVersion, update } from './update'
 import windowManager from './windowManager'
 import './ipc'
 import semver from 'semver'
+import { taskManager } from './managers/TaskManager'
 import { fetchChangelog } from './utils'
 
 const _require = createRequire(import.meta.url)
@@ -122,7 +122,7 @@ app.whenReady().then(createWindow)
 
 app.on('window-all-closed', async () => {
   win = null
-  pageManager.cleanup()
+  taskManager.cleanup()
   if (process.platform !== 'darwin') app.quit()
 })
 

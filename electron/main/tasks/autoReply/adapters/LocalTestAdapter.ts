@@ -1,5 +1,4 @@
 import type { WebSocketService } from '#/services/WebSocketService'
-import type { Account } from '#/taskManager'
 import { getRandomDouyinLiveMessage } from '#/utils'
 import { BaseMessageListener } from '../BaseMessageListener'
 
