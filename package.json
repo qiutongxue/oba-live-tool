@@ -3,8 +3,8 @@
   "type": "module",
   "version": "1.5.7",
   "private": true,
-  "description": "抖音直播工具，用于直播带货，能自动弹窗，自动发言",
-  "author": "OBA Douyin Live Streaming Department",
+  "description": "直播工具，用于直播带货，能自动弹窗，自动发言",
+  "author": "qiutongxue",
   "license": "MIT",
   "main": "dist-electron/main/index.js",
   "debug": {
