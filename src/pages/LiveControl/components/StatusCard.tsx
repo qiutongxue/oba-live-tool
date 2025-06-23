@@ -94,12 +94,10 @@ const ConnectToLiveControl = React.memo(() => {
   const storageState = useCurrentChromeConfig(context => context.storageState)
   const { enabled: devMode } = useDevMode()
   const { toast } = useToast()
-  const [isLoading, setIsLoading] = useState(false)
 
   const connectLiveControl = useMemoizedFn(async () => {
     try {
       setIsConnected('connecting')
-      setIsLoading(true)
       const result = await window.ipcRenderer.invoke(
         IPC_CHANNELS.tasks.liveControl.connect,
         { headless: !devMode, chromePath, storageState, platform },
@@ -116,13 +114,12 @@ const ConnectToLiveControl = React.memo(() => {
       setIsConnected('disconnected')
       toast.error(error instanceof Error ? error.message : '连接直播控制台失败')
     } finally {
-      setIsLoading(false)
+      setIsConnected('disconnected')
     }
   })
 
   const disconnectLiveControl = useMemoizedFn(async () => {
     try {
-      setIsLoading(true)
       await window.ipcRenderer.invoke(IPC_CHANNELS.tasks.liveControl.disconnect)
       setAccountName('')
       toast.success('已断开连接')
@@ -130,7 +127,6 @@ const ConnectToLiveControl = React.memo(() => {
       toast.error(error instanceof Error ? error.message : '断开连接失败')
     } finally {
       setIsConnected('disconnected')
-      setIsLoading(false)
     }
   })
 
@@ -146,7 +142,7 @@ const ConnectToLiveControl = React.memo(() => {
     <DisconnectButton handleButtonClick={handleButtonClick} />
   ) : (
     <ConnectButton
-      isLoading={isLoading}
+      isLoading={isConnected === 'connecting'}
       handleButtonClick={handleButtonClick}
     />
   )
