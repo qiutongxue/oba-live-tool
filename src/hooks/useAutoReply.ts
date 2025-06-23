@@ -1,3 +1,4 @@
+import { EVENTS, eventEmitter } from '@/utils/events'
 import { type StringFilterConfig, matchObject } from '@/utils/filter'
 import { mergeWithoutArray } from '@/utils/misc'
 import { useMemoizedFn } from 'ahooks'
@@ -180,6 +181,12 @@ const USERNAME_PLACEHOLDER = '{用户名}'
 export const useAutoReplyStore = create<AutoReplyState & AutoReplyAction>()(
   persist(
     immer(set => {
+      eventEmitter.on(EVENTS.ACCOUNT_REMOVED, (accountId: string) => {
+        set(state => {
+          delete state.contexts[accountId]
+        })
+      })
+
       // 迁移之前版本设置的 prompt
       const previousPrompt = localStorage.getItem('autoReplyPrompt')
       if (previousPrompt) {
