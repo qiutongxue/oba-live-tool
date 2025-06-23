@@ -16,6 +16,7 @@ export class LiveControlManager {
   private readonly browserFactory: BrowserSessionManager
   private readonly loginManager: LoginManager
   private readonly platformAdapter: BaseAdapter
+  private tempSession: BrowserSession | undefined
 
   constructor(platform: LiveControlPlatform) {
     this.browserFactory = BrowserSessionManager.getInstance()
@@ -37,11 +38,13 @@ export class LiveControlManager {
       config.headless,
       storageState,
     )
+    this.tempSession = initialSession
 
     const authenticatedSession = await this.loginManager.ensureAuthenticated(
       initialSession,
       config.headless,
     )
+    this.tempSession = authenticatedSession
 
     // 这个时候就已经登录成功了，可以保存登录状态，避免因为未开播还要重新登录
     const state = JSON.stringify(
@@ -69,5 +72,11 @@ export class LiveControlManager {
 
   public setChromePath(path: string) {
     this.browserFactory.setChromePath(path)
+  }
+
+  public async disconnect() {
+    if (this.tempSession) {
+      await this.tempSession.browser.close()
+    }
   }
 }

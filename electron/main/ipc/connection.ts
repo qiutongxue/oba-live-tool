@@ -11,11 +11,11 @@ function setupIpcHandlers() {
   typedIpcMainHandle(
     IPC_CHANNELS.tasks.liveControl.connect,
     async (_, { chromePath, headless, storageState, platform = 'douyin' }) => {
-      try {
-        const account = accountManager.getActiveAccount()
+      const account = accountManager.getActiveAccount()
 
-        const manager = new LiveControlManager(platform)
-        if (chromePath) manager.setChromePath(chromePath)
+      const manager = new LiveControlManager(platform)
+      if (chromePath) manager.setChromePath(chromePath)
+      try {
         const { browser, context, page, accountName } = await manager.connect({
           headless,
           storageState,
@@ -32,6 +32,7 @@ function setupIpcHandlers() {
           accountName,
         }
       } catch (error) {
+        await manager.disconnect()
         const logger = createLogger(TASK_NAME)
         logger.error(
           '连接直播控制台失败:',
