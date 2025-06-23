@@ -32,8 +32,12 @@ class AccountManager {
 
   public switchAccount(account: Account) {
     const targetAccount = this.getNotNullAcconut(account.id, account)
-    this.activeAccount = targetAccount
-    this.logger.info(`切换到账号 <${this.activeAccount.name}>`)
+    if (this.activeAccount.id !== targetAccount.id) {
+      this.activeAccount = targetAccount
+      this.logger.info(`切换到账号 <${this.activeAccount.name}>`)
+    } else if (targetAccount.name !== account.name) {
+      targetAccount.name = account.name
+    }
   }
 
   public updateAccountName(id: string, updatedName: string) {
