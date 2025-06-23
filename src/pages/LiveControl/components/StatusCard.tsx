@@ -25,23 +25,42 @@ import PlatformSelect from './PlatformSelect'
 
 const StatusAlert = React.memo(() => {
   const platform = useCurrentLiveControl(state => state.platform)
-  return platform === 'wxchannel' ? (
-    <Alert>
-      <CircleAlert className="h-4 w-4" />
-      <AlertTitle>你选择了视频号平台，请注意以下事项：</AlertTitle>
-      <AlertDescription>
-        <ol className="list-decimal list-inside">
-          <li>
-            请先确认<strong>开播后</strong>再连接中控台
-          </li>
-          <li>
-            视频号助手无法<strong>一号多登</strong>，在别处登录视频号助手会
-            <strong>中断连接</strong>!
-          </li>
-        </ol>
-      </AlertDescription>
-    </Alert>
-  ) : null
+  if (platform === 'wxchannel') {
+    return (
+      <Alert>
+        <CircleAlert className="h-4 w-4" />
+        <AlertTitle>你选择了视频号平台，请注意以下事项：</AlertTitle>
+        <AlertDescription>
+          <ol className="list-decimal list-inside">
+            <li>
+              请先确认<strong>开播后</strong>再连接中控台
+            </li>
+            <li>
+              视频号助手无法<strong>一号多登</strong>，在别处登录视频号助手会
+              <strong>中断连接</strong>!
+            </li>
+          </ol>
+        </AlertDescription>
+      </Alert>
+    )
+  }
+  if (platform === 'taobao') {
+    return (
+      <Alert>
+        <CircleAlert className="h-4 w-4" />
+        <AlertTitle>你选择了淘宝平台，请注意以下事项：</AlertTitle>
+        <AlertDescription>
+          <ol className="list-decimal list-inside">
+            <li>
+              请先确认<strong>开播后</strong>
+              再连接中控台，因为进入淘宝中控台需要获取<strong>直播间ID</strong>
+            </li>
+          </ol>
+        </AlertDescription>
+      </Alert>
+    )
+  }
+  return null
 })
 
 const StatusCard = React.memo(() => {
