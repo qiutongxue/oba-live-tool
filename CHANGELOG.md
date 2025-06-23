@@ -1,6 +1,14 @@
 # Changelog
 
 
+## v1.5.9
+
+[compare changes](https://github.com/qiutongxue/oba-live-tool/compare/v1.5.8...v1.5.9)
+
+### 🐞 Bug Fixes
+
+- 修复登录控制台成功以后页面状态更新问题, fix #154 ([#154](https://github.com/qiutongxue/oba-live-tool/issues/154))
+
 ## v1.5.8
 
 [compare changes](https://github.com/qiutongxue/oba-live-tool/compare/v1.5.7...v1.5.8)
