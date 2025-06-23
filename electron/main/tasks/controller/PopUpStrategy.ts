@@ -12,7 +12,8 @@ export type PopUpStrategy = (
 const logger = createLogger('弹窗')
 
 const redbookPopUpStrategy: PopUpStrategy = async element => {
-  await element.click()
+  // 使用 dispatchEvent 避免元素未处于可见区时产生滚动 BUG
+  await element.dispatchEvent('click')
 }
 
 const togglePopUp = async (
@@ -84,6 +85,7 @@ const kuaishouPopUpStrategy: PopUpStrategy = async (
 export function getPopUpStrategy(platform: LiveControlPlatform): PopUpStrategy {
   switch (platform) {
     case 'redbook':
+    case 'taobao':
       return redbookPopUpStrategy
     case 'wxchannel':
       return wxchannelPopUpStrategy
