@@ -28,9 +28,7 @@ function setupIpcHandlers() {
           platform,
         })
 
-        const state = JSON.stringify(await context.storageState())
         return {
-          storageState: state,
           accountName,
         }
       } catch (error) {
@@ -39,6 +37,7 @@ function setupIpcHandlers() {
           '连接直播控制台失败:',
           error instanceof Error ? error.message : String(error),
         )
+
         return null
       }
     },

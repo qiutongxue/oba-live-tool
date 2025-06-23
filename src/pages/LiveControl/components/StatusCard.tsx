@@ -73,7 +73,6 @@ const ConnectToLiveControl = React.memo(() => {
   const isConnected = useCurrentLiveControl(context => context.isConnected)
   const chromePath = useCurrentChromeConfig(context => context.path)
   const storageState = useCurrentChromeConfig(context => context.storageState)
-  const { setStorageState } = useCurrentChromeConfigActions()
   const { enabled: devMode } = useDevMode()
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
@@ -90,7 +89,6 @@ const ConnectToLiveControl = React.memo(() => {
       if (result) {
         setIsConnected('connected')
         setAccountName(result.accountName || '')
-        setStorageState(result.storageState || '')
         toast.success('已连接到直播控制台')
       } else {
         throw new Error('连接直播控制台失败')

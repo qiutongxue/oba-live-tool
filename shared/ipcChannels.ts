@@ -47,6 +47,7 @@ export const IPC_CHANNELS = {
     setPath: 'chrome:setPath',
     selectPath: 'chrome:selectPath',
     toggleDevTools: 'chrome:toggleDevTools',
+    saveState: 'chrome:saveState',
   },
   updater: {
     checkUpdate: 'updater:checkUpdate',
