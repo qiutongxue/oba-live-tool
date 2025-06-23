@@ -19,7 +19,6 @@ export interface IpcChannels {
     storageState?: string
     platform?: LiveControlPlatform
   }) => {
-    storageState: string | null
     accountName: string | null
   } | null
   [IPC_CHANNELS.tasks.liveControl.disconnect]: () => boolean
@@ -109,6 +108,7 @@ export interface IpcChannels {
   [IPC_CHANNELS.chrome.getPath]: (edge?: boolean) => string | null
   [IPC_CHANNELS.chrome.toggleDevTools]: () => void
   [IPC_CHANNELS.chrome.setPath]: (path: string) => void
+  [IPC_CHANNELS.chrome.saveState]: (accountId: string, state: string) => void
 
   // App
   [IPC_CHANNELS.app.openLogFolder]: () => void

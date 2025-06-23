@@ -1,6 +1,8 @@
-import * as constants from '#/constants'
+import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { createLogger } from '#/logger'
+import { accountManager } from '#/managers/AccountManager'
 import { isDev } from '#/utils'
+import windowManager from '#/windowManager'
 import { BrowserSessionManager } from './BrowserSessionManager'
 import { LoginManager } from './LoginManager'
 import { getPlatformAdapter } from './adapters'
@@ -40,6 +42,13 @@ export class LiveControlManager {
       initialSession,
       config.headless,
     )
+
+    // 这个时候就已经登录成功了，可以保存登录状态，避免因为未开播还要重新登录
+    const state = JSON.stringify(
+      await authenticatedSession.context.storageState(),
+    )
+    const account = accountManager.getActiveAccount()
+    windowManager.send(IPC_CHANNELS.chrome.saveState, account.id, state)
 
     await this.platformAdapter.afterLogin(authenticatedSession)
     const accountName =

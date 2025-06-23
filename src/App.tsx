@@ -29,6 +29,7 @@ import { useAccounts } from './hooks/useAccounts'
 import { useAutoMessageStore } from './hooks/useAutoMessage'
 import { useAutoPopUpStore } from './hooks/useAutoPopUp'
 import { useAutoReply } from './hooks/useAutoReply'
+import { useChromeConfigStore } from './hooks/useChromeConfig'
 import { useLiveControlStore } from './hooks/useLiveControl'
 import { useToast } from './hooks/useToast'
 import { useUpdateStore } from './hooks/useUpdate'
@@ -38,6 +39,7 @@ function useGlobalIpcListener() {
   const { setIsConnected } = useLiveControlStore()
   const { setIsRunning: setIsRunningAutoMessage } = useAutoMessageStore()
   const { setIsRunning: setIsRunningAutoPopUp } = useAutoPopUpStore()
+  const { setStorageState } = useChromeConfigStore()
   const { toast } = useToast()
 
   useIpcListener(
@@ -60,6 +62,10 @@ function useGlobalIpcListener() {
   useIpcListener(IPC_CHANNELS.tasks.autoPopUp.stoppedEvent, id => {
     setIsRunningAutoPopUp(id, false)
     toast.error('自动弹窗已停止')
+  })
+
+  useIpcListener(IPC_CHANNELS.chrome.saveState, (id, state) => {
+    setStorageState(id, state)
   })
 }
 
