@@ -10,6 +10,7 @@ type LiveControlPlatform =
   | 'redbook'
   | 'wxchannel'
   | 'kuaishou'
+  | 'taobao'
 
 type DouyinLiveMessage = {
   time: string
