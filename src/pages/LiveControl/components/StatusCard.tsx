@@ -1,3 +1,7 @@
+import { useMemoizedFn } from 'ahooks'
+import { CheckIcon, CircleAlert, GlobeIcon, XIcon } from 'lucide-react'
+import React, { useState } from 'react'
+import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import {
@@ -17,10 +21,6 @@ import {
   useCurrentLiveControlActions,
 } from '@/hooks/useLiveControl'
 import { useToast } from '@/hooks/useToast'
-import { useMemoizedFn } from 'ahooks'
-import { CheckIcon, CircleAlert, GlobeIcon, XIcon } from 'lucide-react'
-import React, { useState } from 'react'
-import { IPC_CHANNELS } from 'shared/ipcChannels'
 import PlatformSelect from './PlatformSelect'
 
 const StatusAlert = React.memo(() => {
@@ -113,8 +113,6 @@ const ConnectToLiveControl = React.memo(() => {
     } catch (error) {
       setIsConnected('disconnected')
       toast.error(error instanceof Error ? error.message : '连接直播控制台失败')
-    } finally {
-      setIsConnected('disconnected')
     }
   })
 
@@ -152,7 +150,10 @@ const ConnectButton = React.memo(
   ({
     isLoading,
     handleButtonClick,
-  }: { isLoading: boolean; handleButtonClick: () => void }) => {
+  }: {
+    isLoading: boolean
+    handleButtonClick: () => void
+  }) => {
     return (
       <Button
         variant={'default'}
