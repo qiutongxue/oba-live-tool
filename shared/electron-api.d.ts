@@ -7,7 +7,6 @@ import type {
 import type { AutoPopUpConfig } from 'electron/main/tasks/autoPopUp'
 import type { providers } from 'shared/providers'
 
-import type { Account } from '#/managers/AccountManager'
 import type { AutoReplyConfig } from '#/tasks/autoReply/index'
 import { IPC_CHANNELS } from './ipcChannels'
 
