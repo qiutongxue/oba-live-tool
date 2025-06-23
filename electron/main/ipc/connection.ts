@@ -32,12 +32,13 @@ function setupIpcHandlers() {
           accountName,
         }
       } catch (error) {
-        await manager.disconnect()
         const logger = createLogger(TASK_NAME)
         logger.error(
           '连接直播控制台失败:',
           error instanceof Error ? error.message : String(error),
         )
+
+        manager.disconnect()
 
         return null
       }
