@@ -1,71 +1,64 @@
 name: Release
 
 on:
-  workflow_run:
-    workflows: ["Build"]
-    types:
-      - completed
+  push:
+    tags:
+      - 'v*'
 
 jobs:
   release:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
-    runs-on: ubuntu-latest
-
+    permissions:
+      contents: write
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest] 
     steps:
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v4
-
-      - name: Download Windows build artifact
-        uses: dawidd6/action-download-artifact@v6
         with:
-          name: release-artifact-windows-latest
-          path: release/windows
-          run_id: ${{ github.event.workflow_run.id }}
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Download macOS build artifact
-        uses: dawidd6/action-download-artifact@v6
-        with:
-          name: release-artifact-macos-latest
-          path: release/macos
-          run_id: ${{ github.event.workflow_run.id }}
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: lts/*
 
-      - name: Install pnpm
+      - name: install pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 10
 
-      - name: Install dependencies
+      - name: install dependencies
         run: pnpm install
 
+      - name: build application
+        run: pnpm build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # 提取 changelog 里当前版本的内容，并保存到 output 中
+      # 多行内容需要使用 <<EOF 和 EOF 包裹
+      # https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/workflow-commands-for-github-actions#multiline-strings 
       - name: Extract changelog
         id: changelog
-        run: |
+        run: | 
           echo "notes<<EOF" >> $GITHUB_OUTPUT
-          node scripts/extract-changelog.js >> $GITHUB_OUTPUT
+          node scripts/extract-changelog.js >> $GITHUB_OUTPUT  
           echo "EOF" >> $GITHUB_OUTPUT
-
-      - name: Get package version
-        id: package-version
-        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
 
       - name: Create Release and Upload Assets
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ steps.package-version.outputs.version }}
-          name: Release v${{ steps.package-version.outputs.version }}
-          body: ${{ steps.changelog.outputs.notes }}
+          name: ${{ github.ref_name }} # Release 名称（使用 Tag 名）
+          body: ${{ steps.changelog.outputs.notes }} # 拿到上一步提取出的 changelog 内容
           files: |
-            release/**/*.exe
-            release/**/*.dmg
-            release/**/*.blockmap
-            release/**/latest*.yml
-          draft: false
+            release/*/*.exe
+            release/*/*.dmg
+            release/*/*.blockmap
+            release/*/latest*.yml
+
+          draft: true
+          # prerelease: ${{ env.IS_DEV == 'true' }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # 自动注入的 GitHub Token
