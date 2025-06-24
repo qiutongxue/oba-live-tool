@@ -17,7 +17,7 @@ export async function fetchChangelog() {
   try {
     // 去 CDN 找
     const changelogURL =
-      'https://fastly.jsdelivr.net/gh/qiutongxue/oba-live-tool@main/CHANGELOG.md'
+      'https://fastly.jsdelivr.net/gh/TLS-802/TLS-live-tool@main/CHANGELOG.md'
     const changelogContent = await fetchWithRetry(changelogURL).then(res =>
       res?.text(),
     )
