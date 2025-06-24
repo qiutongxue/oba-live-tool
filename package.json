@@ -1,7 +1,7 @@
 {
   "name": "TLS-live-tool",
   "type": "module",
-  "version": "1.5.8",
+  "version": "1.5.9",
   "private": true,
   "description": "直播工具，用于直播带货，能自动弹窗，自动发言",
   "author": "qiutongxue",
