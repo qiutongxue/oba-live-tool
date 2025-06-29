@@ -1,5 +1,6 @@
 import * as constants from '#/constants'
 import { createLogger } from '#/logger'
+import { sleep } from '#/utils'
 import { BrowserSessionManager } from './BrowserSessionManager'
 import type { BrowserSession, StorageState } from './types'
 
@@ -33,7 +34,9 @@ export class LoginManager {
   private async visitLiveControlAndCheck(
     session: BrowserSession,
   ): Promise<void> {
-    await session.page.goto(this.loginConstants.liveControlUrl)
+    await session.page.goto(this.loginConstants.liveControlUrl, {
+      waitUntil: 'domcontentloaded', // 抖音小店针对自动化故意延迟加载，所以不能用默认的 load
+    })
     if (this.platform === 'wxchannel') {
       const indexRegex = /platform\/?$/
       await Promise.race([
@@ -54,6 +57,7 @@ export class LoginManager {
       await Promise.race([
         session.page.waitForURL(this.loginConstants.loginUrlRegex, {
           timeout: 0,
+          waitUntil: 'domcontentloaded',
         }),
         session.page.waitForSelector(
           this.loginConstants.isInLiveControlSelector,
@@ -84,18 +88,7 @@ export class LoginManager {
       this.storageState,
     )
 
-    // 导航到登录页面
-    await visibleSession.page.goto(this.loginConstants.loginUrl)
-    // 等待用户登录成功
-    await visibleSession.page.waitForSelector(
-      this.loginConstants.isLoggedInSelector,
-      {
-        timeout: 0,
-      },
-    )
-
-    // 保存登录状态
-    this.storageState = await visibleSession.context.storageState()
+    await this.handleCommonLogin(visibleSession)
     this.logger.info('登录成功，将关闭当前浏览器，以无头模式重新启动，请稍等')
 
     // 关闭当前浏览器
@@ -111,17 +104,44 @@ export class LoginManager {
   }
 
   private async handleVisibleLogin(session: BrowserSession) {
-    await session.page.goto(this.loginConstants.loginUrl)
-    await session.page.waitForSelector(this.loginConstants.isLoggedInSelector, {
-      timeout: 0,
-    })
+    await this.handleCommonLogin(session)
     this.logger.info('登录完成，将跳转到中控台')
     // 抖音小店和小红书千帆登陆成功后都能直接跳转到中控台
     if (this.platform !== 'douyin' && this.platform !== 'redbook') {
       await session.page.goto(this.loginConstants.liveControlUrl)
     }
     // 保存状态
-    this.storageState = await session.context.storageState()
     return session
+  }
+
+  private async handleCommonLogin(session: BrowserSession) {
+    if (this.platform === 'douyin') {
+      // 抖店目前 (2025.6.29) 有一个小反爬，会打乱登录页面的样式
+      // 解决方法：通过控件主动打开登录页面
+      await session.page.evaluate(loginUrl => {
+        const el = document.createElement('a')
+        el.href = loginUrl
+        el.target = '_blank'
+        el.click()
+      }, this.loginConstants.loginUrl)
+
+      await sleep(500)
+      await session.page.close()
+      // 保留登录页面
+      for (const page of session.context.pages()) {
+        if (this.loginConstants.loginUrlRegex.test(page.url())) {
+          session.page = page
+        }
+      }
+    } else {
+      // 导航到登录页面
+      await session.page.goto(this.loginConstants.loginUrl)
+    }
+    // 等待用户登录成功
+    await session.page.waitForSelector(this.loginConstants.isLoggedInSelector, {
+      timeout: 0,
+    })
+    // 保存登录状态
+    this.storageState = await session.context.storageState()
   }
 }
