@@ -22,7 +22,6 @@ export const providers = {
       'deepseek/deepseek-chat-v3-0324',
       'deepseek/deepseek-r1-distill-llama-8b',
       'deepseek/deepseek-r1-distill-qwen-1.5b',
-      'deepseek/deepseek-r1-distill-qwen-32b:free',
       'deepseek/deepseek-r1-distill-qwen-32b',
       'deepseek/deepseek-r1-distill-qwen-14b:free',
       'deepseek/deepseek-r1-distill-qwen-14b',
