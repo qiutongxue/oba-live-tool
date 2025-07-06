@@ -1,6 +1,6 @@
 import { createRequire } from 'node:module'
 import { platform } from 'node:os'
-import { app, ipcMain } from 'electron'
+import { app } from 'electron'
 import type {
   AppUpdater,
   ProgressInfo,

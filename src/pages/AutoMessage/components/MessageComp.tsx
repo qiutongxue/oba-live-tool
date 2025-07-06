@@ -1,9 +1,9 @@
+import { TrashIcon } from 'lucide-react'
+import React from 'react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import type { Message } from '@/hooks/useAutoMessage'
-import { TrashIcon } from 'lucide-react'
-import React from 'react'
 
 const MessageComp = React.memo(
   ({

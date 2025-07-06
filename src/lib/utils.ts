@@ -1,6 +1,6 @@
-import type { ChatMessage } from '@/hooks/useAIChat'
 import { type ClassValue, clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
+import type { ChatMessage } from '@/hooks/useAIChat'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))

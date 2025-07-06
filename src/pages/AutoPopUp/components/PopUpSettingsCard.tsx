@@ -1,10 +1,10 @@
+import { useMemoizedFn } from 'ahooks'
+import React, { useId } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { useAutoPopUpActions, useCurrentAutoPopUp } from '@/hooks/useAutoPopUp'
-import { useMemoizedFn } from 'ahooks'
-import React from 'react'
 
 // 弹窗设置卡片组件
 const PopUpSettingsCard = React.memo(() => {
@@ -21,6 +21,8 @@ const PopUpSettingsCard = React.memo(() => {
     })
   })
 
+  const randomPopUpId = useId()
+
   return (
     <Card>
       <CardContent className="pt-6">
@@ -34,11 +36,11 @@ const PopUpSettingsCard = React.memo(() => {
             </div>
             <div className="flex items-center space-x-2">
               <Switch
-                id="random"
+                id={randomPopUpId}
                 checked={random}
                 onCheckedChange={setRandom}
               />
-              <Label htmlFor="random" className="cursor-pointer">
+              <Label htmlFor={randomPopUpId} className="cursor-pointer">
                 随机弹窗
               </Label>
             </div>

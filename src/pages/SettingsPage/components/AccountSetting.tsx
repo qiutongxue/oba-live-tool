@@ -1,11 +1,10 @@
+import { useMemoizedFn } from 'ahooks'
+import { BanIcon, TrashIcon } from 'lucide-react'
+import { useState } from 'react'
+import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { useAccounts } from '@/hooks/useAccounts'
 import { useCurrentLiveControl } from '@/hooks/useLiveControl'
 import { useToast } from '@/hooks/useToast'
-import { useMemoizedFn } from 'ahooks'
-import { TrashIcon } from 'lucide-react'
-import { BanIcon } from 'lucide-react'
-import { useState } from 'react'
-import { IPC_CHANNELS } from 'shared/ipcChannels'
 import {
   AlertDialog,
   AlertDialogAction,

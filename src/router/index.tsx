@@ -1,3 +1,4 @@
+import { createHashRouter } from 'react-router'
 import AIChat from '@/pages/AIChat'
 import AutoMessage from '@/pages/AutoMessage'
 import AutoPopUp from '@/pages/AutoPopUp'
@@ -5,7 +6,6 @@ import AutoReply from '@/pages/AutoReply'
 import AutoReplySettings from '@/pages/AutoReply/AutoReplySettings'
 import LiveControl from '@/pages/LiveControl'
 import Settings from '@/pages/SettingsPage'
-import { createHashRouter } from 'react-router'
 import App from '../App'
 
 export const router = createHashRouter([

@@ -1,3 +1,7 @@
+import { CheckIcon, Eye, EyeOff, SettingsIcon } from 'lucide-react'
+import { memo, useCallback, useEffect, useMemo, useState } from 'react'
+import { IPC_CHANNELS } from 'shared/ipcChannels'
+import { providers } from 'shared/providers'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -20,10 +24,6 @@ import {
 import type { AIProvider, ProviderConfig } from '@/hooks/useAIChat'
 import { useAIChatStore } from '@/hooks/useAIChat'
 import { useToast } from '@/hooks/useToast'
-import { CheckIcon, Eye, EyeOff, SettingsIcon } from 'lucide-react'
-import { memo, useCallback, useEffect, useMemo, useState } from 'react'
-import { IPC_CHANNELS } from 'shared/ipcChannels'
-import { providers } from 'shared/providers'
 import { ScrollArea } from '../ui/scroll-area'
 
 const PresetModelSelector = memo(
@@ -63,7 +63,10 @@ const VolcengineEndpoint = memo(
   ({
     model,
     onChange,
-  }: { model: string; onChange: (model: string) => void }) => {
+  }: {
+    model: string
+    onChange: (model: string) => void
+  }) => {
     return (
       <div className="space-y-2">
         <Label>模型或接入点 ID</Label>
@@ -102,7 +105,10 @@ const CustomModelInput = memo(
   ({
     model,
     onChange,
-  }: { model: string; onChange: (model: string) => void }) => {
+  }: {
+    model: string
+    onChange: (model: string) => void
+  }) => {
     return (
       <div className="space-y-2">
         <Label>模型名称</Label>
@@ -350,7 +356,7 @@ export function APIKeyDialog() {
   }, [tempConfig.provider, tempKeys, tempCustomBaseURL, toast])
 
   // 当切换提供商时重置测试状态
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+  // biome-ignore lint/correctness/useExhaustiveDependencies: 需要依赖 provider 的变化（可能有更好的方法）
   useEffect(() => {
     setTestSuccess(false)
   }, [tempConfig.provider])

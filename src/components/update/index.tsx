@@ -1,3 +1,7 @@
+import type { ProgressInfo } from 'electron-updater'
+import { Download, RefreshCw, Rocket } from 'lucide-react'
+import { useCallback, useState } from 'react'
+import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -10,10 +14,6 @@ import {
 import { Progress } from '@/components/ui/progress'
 import { useIpcListener } from '@/hooks/useIpc'
 import { useToast } from '@/hooks/useToast'
-import type { ProgressInfo } from 'electron-updater'
-import { Download, RefreshCw, Rocket } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
-import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { version } from '../../../package.json'
 import { HtmlRenderer } from '../common/HtmlRenderer'
 import { ScrollArea } from '../ui/scroll-area'

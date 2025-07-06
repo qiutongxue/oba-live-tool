@@ -91,8 +91,14 @@
 }
 
 .markdown-body input {
-  font: 13px / 1.4 Helvetica, arial, freesans, clean, sans-serif,
-    "Segoe UI Emoji", "Segoe UI Symbol";
+  font:
+    13px / 1.4 Helvetica,
+    arial,
+    freesans,
+    clean,
+    sans-serif,
+    "Segoe UI Emoji",
+    "Segoe UI Symbol";
 }
 
 .markdown-body a {
@@ -197,25 +203,39 @@
 }
 
 .markdown-body code {
-  font: 12px Consolas, "Liberation Mono", Menlo, Courier, monospace;
+  font:
+    12px Consolas,
+    "Liberation Mono",
+    Menlo,
+    Courier,
+    monospace;
 }
 
 .markdown-body pre {
   margin-top: 0;
   margin-bottom: 0;
-  font: 12px Consolas, "Liberation Mono", Menlo, Courier, monospace;
+  font:
+    12px Consolas,
+    "Liberation Mono",
+    Menlo,
+    Courier,
+    monospace;
 }
 
 .markdown-body kbd {
   background-color: #e7e7e7;
-  background-image: -webkit-linear-gradient(#fefefe, #e7e7e7);
   background-image: linear-gradient(#fefefe, #e7e7e7);
   background-repeat: repeat-x;
   border-radius: 2px;
   border: 1px solid #cfcfcf;
   color: #000;
   padding: 3px 5px;
-  font: 11px Consolas, "Liberation Mono", Menlo, Courier, monospace;
+  font:
+    11px Consolas,
+    "Liberation Mono",
+    Menlo,
+    Courier,
+    monospace;
   line-height: 10px;
   display: inline-block;
 }
@@ -392,7 +412,6 @@
   display: block;
   width: 100%;
   overflow: auto;
-  word-break: normal;
   word-break: keep-all;
 }
 
@@ -676,7 +695,9 @@
 }
 
 .markdown-body .octicon {
-  font: normal normal 16px octicons-anchor, sans-serif;
+  font:
+    normal normal 16px octicons-anchor,
+    sans-serif;
   line-height: 1;
   display: inline-block;
   text-decoration: none;

@@ -1,3 +1,6 @@
+import { RefreshCwIcon, TerminalIcon } from 'lucide-react'
+import { Outlet, useNavigate } from 'react-router'
+import { IPC_CHANNELS } from 'shared/ipcChannels'
 import LogDisplayer from '@/components/common/LogDisplayer'
 import Sidebar from '@/components/common/Sidebar'
 import {
@@ -9,9 +12,6 @@ import {
 } from '@/components/ui/context-menu'
 import { Toaster } from '@/components/ui/toaster'
 import { useDevMode } from '@/hooks/useDevMode'
-import { RefreshCwIcon, TerminalIcon } from 'lucide-react'
-import { Outlet, useNavigate, useRoutes } from 'react-router'
-import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { Header } from './components/common/Header'
 import { useIpcListener } from './hooks/useIpc'
 import './App.css'

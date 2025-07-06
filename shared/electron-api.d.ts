@@ -1,10 +1,10 @@
+import type { AutoPopUpConfig } from 'electron/main/tasks/autoPopUp'
 import type { LogMessage } from 'electron-log'
 import type {
   ProgressInfo,
   UpdateCheckResult,
   UpdateDownloadedEvent,
 } from 'electron-updater'
-import type { AutoPopUpConfig } from 'electron/main/tasks/autoPopUp'
 import type { providers } from 'shared/providers'
 
 import type { AutoReplyConfig } from '#/tasks/autoReply/index'
@@ -88,7 +88,9 @@ export interface IpcChannels {
   [IPC_CHANNELS.tasks.aiChat.error]: (data: { error: string }) => void
 
   // Updater
-  [IPC_CHANNELS.updater.checkUpdate]: (params: { source: string }) =>
+  [IPC_CHANNELS.updater.checkUpdate]: (params: {
+    source: string
+  }) =>
     | UpdateCheckResult
     | { message: string; error: Error; downloadURL?: string }
     | null
@@ -117,9 +119,7 @@ export interface IpcChannels {
     releaseNote?: string
   }) => void
 
-  [IPC_CHANNELS.account.switch]: (params: {
-    account: Account
-  }) => void
+  [IPC_CHANNELS.account.switch]: (params: { account: Account }) => void
 
   // Log
   [IPC_CHANNELS.log]: (message: LogMessage) => void
@@ -130,7 +130,7 @@ export interface ElectronAPI {
     invoke: <Channel extends keyof IpcChannels>(
       channel: Channel,
       ...args: Parameters<IpcChannels[Channel]>
-    ) => ReturnType<IpcChannels[Channel]> extends Promise<infer U>
+    ) => ReturnType<IpcChannels[Channel]> extends Promise<infer _U>
       ? ReturnType<IpcChannels[Channel]>
       : Promise<ReturnType<IpcChannels[Channel]>>
 

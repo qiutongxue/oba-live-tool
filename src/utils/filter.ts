@@ -1,5 +1,3 @@
-import { endsWith, startsWith } from 'lodash-es'
-
 export type StringFilter = {
   eq?: string[]
   includes?: string[]
@@ -32,7 +30,7 @@ export function matchString(value: string, condition: StringFilter): boolean {
 }
 
 export function matchObject(
-  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  // biome-ignore lint/suspicious/noExplicitAny: 不用 any 我用什么啊
   obj: Record<string, any>,
   config: StringFilterConfig,
 ): boolean {

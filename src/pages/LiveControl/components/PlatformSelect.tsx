@@ -1,3 +1,4 @@
+import React from 'react'
 import {
   Select,
   SelectContent,
@@ -9,7 +10,6 @@ import {
   useCurrentLiveControl,
   useCurrentLiveControlActions,
 } from '@/hooks/useLiveControl'
-import React from 'react'
 
 const platforms: Record<LiveControlPlatform, string> = {
   douyin: '抖音小店',

@@ -8,7 +8,7 @@ export function abortable<
   Return,
 >(
   originalMethod: (...args: Args) => Promise<Return> | Return,
-  context: ClassMethodDecoratorContext<
+  _context: ClassMethodDecoratorContext<
     This,
     (this: This, ...args: Args) => Promise<Return> | Return
   >,

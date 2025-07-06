@@ -1,4 +1,3 @@
-import { EVENTS, eventEmitter } from '@/utils/events'
 import { useMemoizedFn, useThrottleFn } from 'ahooks'
 import { useEffect, useMemo, useRef } from 'react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
@@ -6,6 +5,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
 import { useShallow } from 'zustand/react/shallow'
+import { EVENTS, eventEmitter } from '@/utils/events'
 import { useAccounts } from './useAccounts'
 import { useOSPlatform } from './useOSPlatform'
 

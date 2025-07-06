@@ -1,9 +1,9 @@
+import { RotateCw } from 'lucide-react'
+import { useCallback, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import type { ChatMessage } from '@/hooks/useAIChat'
 import { useAIChatStore } from '@/hooks/useAIChat'
-import { RotateCw } from 'lucide-react'
-import { useCallback, useMemo } from 'react'
 import { MessageContent } from './MessageContent'
 
 export function Message({

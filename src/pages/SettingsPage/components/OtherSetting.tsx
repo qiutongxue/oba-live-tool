@@ -1,3 +1,5 @@
+import { BugIcon, ExternalLinkIcon, FileTextIcon } from 'lucide-react'
+import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { SimpleIconsGithub } from '@/components/icons/simpleIcons'
 import { Button } from '@/components/ui/button'
 import {
@@ -7,12 +9,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import {
-  ExternalLinkIcon,
-  FileTextIcon,
-} from 'lucide-react'
-import { BugIcon } from 'lucide-react'
-import { IPC_CHANNELS } from 'shared/ipcChannels'
 
 export function OtherSetting() {
   const handleOpenLogFolder = async () => {

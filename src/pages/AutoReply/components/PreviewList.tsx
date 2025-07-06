@@ -1,3 +1,5 @@
+import { SendHorizontalIcon } from 'lucide-react'
+import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -9,13 +11,12 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { type MessageOf, useAutoReply } from '@/hooks/useAutoReply'
-import { SendHorizontalIcon } from 'lucide-react'
-import React from 'react'
-import { IPC_CHANNELS } from 'shared/ipcChannels'
 
 export default function PreviewList({
   setHighLight,
-}: { setHighLight: (commentId: string | null) => void }) {
+}: {
+  setHighLight: (commentId: string | null) => void
+}) {
   const { replies, comments } = useAutoReply()
 
   const handleSendReply = async (replyContent: string, _commentId: string) => {
@@ -51,6 +52,7 @@ export default function PreviewList({
                     c => c.msg_id === reply.commentId,
                   ) as MessageOf<'comment'>
                   return (
+                    // biome-ignore lint/a11y/noStaticElementInteractions: 不用管 a11y
                     <div
                       key={reply.commentId}
                       className="group px-3 py-1.5 text-sm hover:bg-muted/50 rounded-lg transition-colors"

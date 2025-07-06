@@ -1,10 +1,10 @@
+import { useDebounceEffect, useEventListener, useMemoizedFn } from 'ahooks'
+import React, { useEffect, useRef } from 'react'
+import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { LoadingIcon } from '@/components/icons/loading'
 import { Card, CardContent } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { type ChatMessage, useAIChatStore } from '@/hooks/useAIChat'
-import { useDebounceEffect, useEventListener, useMemoizedFn } from 'ahooks'
-import React, { useEffect, useRef, useState } from 'react'
-import { IPC_CHANNELS } from 'shared/ipcChannels'
 import ChatInput from './ChatInput'
 import { Message } from './Message'
 

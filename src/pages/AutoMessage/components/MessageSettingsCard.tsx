@@ -1,3 +1,5 @@
+import { useMemoizedFn } from 'ahooks'
+import React, { useId } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -6,14 +8,14 @@ import {
   useAutoMessageActions,
   useCurrentAutoMessage,
 } from '@/hooks/useAutoMessage'
-import { useMemoizedFn } from 'ahooks'
-import React from 'react'
 
 const MessageSettingsCard = React.memo(() => {
   const { scheduler, random, extraSpaces } = useCurrentAutoMessage(
     context => context.config,
   )
   const { setScheduler, setRandom, setExtraSpaces } = useAutoMessageActions()
+  const randomId = useId()
+  const extraSpacesId = useId()
 
   const handleIntervalChange = useMemoizedFn((index: 0 | 1, value: string) => {
     const numValue = Number(value) * 1000
@@ -38,11 +40,11 @@ const MessageSettingsCard = React.memo(() => {
             </div>
             <div className="flex items-center space-x-2">
               <Switch
-                id="random"
+                id={randomId}
                 checked={random}
                 onCheckedChange={setRandom}
               />
-              <Label htmlFor="random" className="cursor-pointer">
+              <Label htmlFor={randomId} className="cursor-pointer">
                 随机发送
               </Label>
             </div>
@@ -77,11 +79,11 @@ const MessageSettingsCard = React.memo(() => {
 
           <div className="flex items-center space-x-2">
             <Switch
-              id="extraSpaces"
+              id={extraSpacesId}
               checked={extraSpaces}
               onCheckedChange={setExtraSpaces}
             />
-            <Label htmlFor="extraSpaces" className="cursor-pointer">
+            <Label htmlFor={extraSpacesId} className="cursor-pointer">
               插入随机空格
             </Label>
           </div>

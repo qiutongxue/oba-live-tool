@@ -1,3 +1,7 @@
+import { motion } from 'framer-motion'
+import { Pause, Play, RefreshCcw } from 'lucide-react'
+import { useId, useMemo, useState } from 'react'
+import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -15,10 +19,6 @@ import { type Message, useAutoReply } from '@/hooks/useAutoReply'
 import { useCurrentLiveControl } from '@/hooks/useLiveControl'
 import { useToast } from '@/hooks/useToast'
 import { cn } from '@/lib/utils'
-import { AnimatePresence, motion } from 'framer-motion'
-import { Pause, Play, RefreshCcw } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
-import { IPC_CHANNELS } from 'shared/ipcChannels'
 
 const getMessageColor = (type: Message['msg_type']) => {
   switch (type) {
@@ -76,7 +76,10 @@ const getOrderStatusColor = (status: LiveOrderMessage['order_status']) => {
 const MessageItem = ({
   message,
   isHighlighted,
-}: { message: Message; isHighlighted: boolean }) => {
+}: {
+  message: Message
+  isHighlighted: boolean
+}) => {
   const displayName = message.nick_name
 
   return (
@@ -122,7 +125,7 @@ const MessageItem = ({
   )
 }
 
-const EnterRoomMessage = ({ message }: { message: Message }) => {
+const _EnterRoomMessage = ({ message }: { message: Message }) => {
   const displayName = message.nick_name
 
   return (
@@ -136,38 +139,6 @@ const EnterRoomMessage = ({ message }: { message: Message }) => {
       <span className="font-medium">{displayName}</span>
       <span className="text-sm text-blue-500">进入直播间</span>
     </motion.div>
-  )
-}
-
-// 评论项组件
-const CommentItem = ({
-  comment,
-  isHost,
-  isHighlighted,
-}: {
-  comment: { msg_id: string; nick_name: string; content: string }
-  isHost: boolean
-  isHighlighted: boolean
-}) => {
-  return (
-    <div
-      className={cn(
-        'group flex items-start gap-3 px-3 py-2 rounded-lg transition-colors',
-        isHighlighted ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-muted/50',
-      )}
-    >
-      <div className="flex-1 min-w-0">
-        <span className={cn('text-sm', 'text-gray-500')}>
-          {/* {isHost && (
-            <span className="mr-1.5 font-normal text-xs px-1.5 py-0.5 rounded-sm bg-pink-50 text-pink-600 border border-pink-200">
-              主播
-            </span> 
-          )} */}
-          {comment.nick_name}：
-        </span>
-        <span className="text-sm text-gray-700">{comment.content}</span>
-      </div>
-    </div>
   )
 }
 
@@ -201,7 +172,7 @@ export default function CommentList({
       if (!result) throw new Error('监听评论失败')
       toast.success('监听评论成功')
       setIsListening('listening')
-    } catch (error) {
+    } catch (_error) {
       setIsListening('error')
       toast.error('监听评论失败')
     }
@@ -215,7 +186,7 @@ export default function CommentList({
       )
       setIsListening('stopped')
       toast.success('已停止监听评论')
-    } catch (error) {
+    } catch (_error) {
       toast.error('停止监听评论失败')
     }
   }
@@ -234,6 +205,8 @@ export default function CommentList({
     isListening === 'waiting' ||
     isConnected !== 'connected' ||
     (platform !== 'douyin' && platform !== 'buyin')
+
+  const userCommentOnlyId = useId()
 
   return (
     <Card className="shadow-sm">
@@ -291,11 +264,11 @@ export default function CommentList({
               {isListening === 'listening' && (
                 <div className="flex items-center gap-2 ml-2">
                   <Switch
-                    id="hide-host"
+                    id={userCommentOnlyId}
                     checked={hideHost}
                     onCheckedChange={setHideHost}
                   />
-                  <Label htmlFor="hide-host">仅用户评论</Label>
+                  <Label htmlFor={userCommentOnlyId}>仅用户评论</Label>
                 </div>
               )}
             </>

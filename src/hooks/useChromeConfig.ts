@@ -1,8 +1,8 @@
-import { EVENTS, eventEmitter } from '@/utils/events'
 import { useMemo } from 'react'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
+import { EVENTS, eventEmitter } from '@/utils/events'
 import { useAccounts } from './useAccounts'
 
 interface ChromeConfigV1 {

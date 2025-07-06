@@ -1,7 +1,7 @@
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { TrashIcon } from 'lucide-react'
 import React from 'react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 
 // 商品列表项组件
 const GoodsListItem = React.memo(function GoodsListItem({

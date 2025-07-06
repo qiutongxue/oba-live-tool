@@ -1,8 +1,8 @@
-import { type IpcRendererEvent, contextBridge, ipcRenderer } from 'electron'
+import { contextBridge, type IpcRendererEvent, ipcRenderer } from 'electron'
 import type { ElectronAPI, IpcChannels } from 'shared/electron-api'
 
 type IpcRendererInvokeReturnType<Channel extends keyof IpcChannels> =
-  ReturnType<IpcChannels[Channel]> extends Promise<infer U>
+  ReturnType<IpcChannels[Channel]> extends Promise<infer _U>
     ? ReturnType<IpcChannels[Channel]>
     : Promise<ReturnType<IpcChannels[Channel]>>
 
@@ -130,7 +130,7 @@ function useLoading() {
 
 // ----------------------------------------------------------------------
 
-// eslint-disable-next-line react-hooks/rules-of-hooks
+// biome-ignore lint/correctness/useHookAtTopLevel: 这不是 hook
 const { appendLoading, removeLoading } = useLoading()
 domReady().then(appendLoading)
 

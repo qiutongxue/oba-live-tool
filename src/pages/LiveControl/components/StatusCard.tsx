@@ -11,10 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import {
-  useCurrentChromeConfig,
-  useCurrentChromeConfigActions,
-} from '@/hooks/useChromeConfig'
+import { useCurrentChromeConfig } from '@/hooks/useChromeConfig'
 import { useDevMode } from '@/hooks/useDevMode'
 import {
   useCurrentLiveControl,

@@ -4,14 +4,14 @@ import { createLogger } from '#/logger'
 import { contextManager } from '#/managers/BrowserContextManager'
 import { sleep } from '#/utils'
 import { abortable } from '#/utils/decorators'
-import type { LiveControlElementFinder } from './LiveControlElementFinder'
-import { type PopUpStrategy, getPopUpStrategy } from './PopUpStrategy'
 import { BuyinLiveControlElementFinder } from './finders/BuyinLiveControlElementFinder'
 import { EOSLiveControlElementFinder } from './finders/EOSLiveControlElementFinder'
 import { KuaishouLiveControlElementFinder } from './finders/KuaishouLiveControlElementFinder'
 import { RedbookLiveControlElementFinder } from './finders/RedbookLiveControlElementFinder'
 import { TaobaoLiveControlElementFinder } from './finders/TaobaoLiveControlElementFinder'
 import { WxChannelLiveControlElementFinder } from './finders/WxChannelLiveControlElementFinder'
+import type { LiveControlElementFinder } from './LiveControlElementFinder'
+import { getPopUpStrategy, type PopUpStrategy } from './PopUpStrategy'
 
 function getLiveControlElementFinder(
   platform: LiveControlPlatform,

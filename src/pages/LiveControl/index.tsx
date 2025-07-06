@@ -1,12 +1,4 @@
 import { Title } from '@/components/common/Title'
-import {
-  useCurrentChromeConfig,
-  useCurrentChromeConfigActions,
-} from '@/hooks/useChromeConfig'
-
-import { useIpcListener } from '@/hooks/useIpc'
-import React, { useCallback } from 'react'
-import { IPC_CHANNELS } from 'shared/ipcChannels'
 import InstructionsCard from './components/InstructionsCard'
 import StatusCard from './components/StatusCard'
 

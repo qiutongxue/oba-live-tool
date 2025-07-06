@@ -13,7 +13,7 @@ import path from 'node:path'
 //
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
-import { BrowserWindow, app, ipcMain, shell } from 'electron'
+import { app, BrowserWindow, ipcMain, shell } from 'electron'
 
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { createLogger } from './logger'

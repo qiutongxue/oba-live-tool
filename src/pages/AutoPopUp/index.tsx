@@ -1,3 +1,6 @@
+import { useMemoizedFn } from 'ahooks'
+import { useCallback } from 'react'
+import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { TaskButton } from '@/components/common/TaskButton'
 import { Title } from '@/components/common/Title'
 import {
@@ -6,9 +9,6 @@ import {
   useShortcutListener,
 } from '@/hooks/useAutoPopUp'
 import { useToast } from '@/hooks/useToast'
-import { useMemoizedFn } from 'ahooks'
-import React, { useCallback, useState } from 'react'
-import { IPC_CHANNELS } from 'shared/ipcChannels'
 import GoodsListCard from './components/GoodsListCard'
 import PopUpSettingsCard from './components/PopUpSettingsCard'
 
