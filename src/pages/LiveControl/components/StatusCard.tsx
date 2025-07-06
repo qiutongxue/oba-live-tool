@@ -11,8 +11,12 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { useCurrentChromeConfig } from '@/hooks/useChromeConfig'
-import { useDevMode } from '@/hooks/useDevMode'
+import { Separator } from '@/components/ui/separator'
+import { Switch } from '@/components/ui/switch'
+import {
+  useCurrentChromeConfig,
+  useCurrentChromeConfigActions,
+} from '@/hooks/useChromeConfig'
 import {
   useCurrentLiveControl,
   useCurrentLiveControlActions,
@@ -52,6 +56,10 @@ const StatusAlert = React.memo(() => {
               请先确认<strong>开播后</strong>
               再连接中控台，因为进入淘宝中控台需要获取<strong>直播间ID</strong>
             </li>
+            <li>
+              目前淘宝会触发人机验证，所以将<strong>强制关闭无头模式</strong>
+              ，除了登录和人机验证之外请尽量不要操作浏览器
+            </li>
           </ol>
         </AlertDescription>
       </Alert>
@@ -77,6 +85,8 @@ const StatusCard = React.memo(() => {
             </div>
           </div>
           <StatusAlert />
+          <Separator />
+          <HeadlessSetting />
         </div>
       </CardContent>
     </Card>
@@ -89,7 +99,11 @@ const ConnectToLiveControl = React.memo(() => {
   const isConnected = useCurrentLiveControl(context => context.isConnected)
   const chromePath = useCurrentChromeConfig(context => context.path)
   const storageState = useCurrentChromeConfig(context => context.storageState)
-  const { enabled: devMode } = useDevMode()
+  let headless = useCurrentChromeConfig(context => context.headless)
+  if (platform === 'taobao') {
+    headless = false
+  }
+
   const { toast } = useToast()
 
   const connectLiveControl = useMemoizedFn(async () => {
@@ -97,7 +111,7 @@ const ConnectToLiveControl = React.memo(() => {
       setIsConnected('connecting')
       const result = await window.ipcRenderer.invoke(
         IPC_CHANNELS.tasks.liveControl.connect,
-        { headless: !devMode, chromePath, storageState, platform },
+        { headless, chromePath, storageState, platform },
       )
 
       if (result) {
@@ -208,5 +222,27 @@ const ConnectState = React.memo(() => {
     </div>
   )
 })
+
+const HeadlessSetting = () => {
+  const headless = useCurrentChromeConfig(context => context.headless ?? false)
+  const platform = useCurrentLiveControl(context => context.platform)
+  const isConnected = useCurrentLiveControl(context => context.isConnected)
+  const { setHeadless } = useCurrentChromeConfigActions()
+  return (
+    <div className="flex justify-between items-center">
+      <div>
+        <div className="text-sm">无头模式</div>
+        <div className="text-muted-foreground text-xs">
+          开启后浏览器将在后台运行，不会在桌面显示
+        </div>
+      </div>
+      <Switch
+        checked={headless && platform !== 'taobao'}
+        disabled={platform === 'taobao' || isConnected !== 'disconnected'}
+        onCheckedChange={v => setHeadless(v)}
+      />
+    </div>
+  )
+}
 
 export default StatusCard
