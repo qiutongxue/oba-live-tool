@@ -5,7 +5,7 @@ import { taskManager } from '#/managers/TaskManager'
 import type { AutoReplyConfig } from '#/tasks/autoReply'
 import { AutoReplyManager } from '#/tasks/autoReply/AutoReplyManager'
 import { LiveController } from '#/tasks/controller/LiveController'
-import { typedIpcMainHandle } from '#/utils'
+import { replaceVariant, typedIpcMainHandle } from '#/utils'
 import { currentAccountName } from './utils'
 
 const TASK_NAME = '监听评论'
@@ -53,7 +53,7 @@ function setupIpcHandlers() {
       try {
         const page = contextManager.getCurrentContext().page
         const controller = new LiveController(page)
-        await controller.sendMessage(message)
+        await controller.sendMessage(replaceVariant(message))
       } catch (error) {
         logger.error(
           '发送回复失败:',

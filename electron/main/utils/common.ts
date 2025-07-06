@@ -66,3 +66,14 @@ export function insertRandomSpaces(
 
   return result.join('')
 }
+
+// 消息存在变量，用 {A/B/C} 表示
+const VAR_REG = /\{([^}]+)\}/g
+
+export function replaceVariant(msg: string) {
+  return msg.replace(VAR_REG, (_match, group) => {
+    const options = group.split('/')
+    const randomIndex = randomInt(0, options.length - 1)
+    return options[randomIndex]
+  })
+}

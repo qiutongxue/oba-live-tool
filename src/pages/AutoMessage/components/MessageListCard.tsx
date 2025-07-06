@@ -25,6 +25,20 @@ const MessageListCard = React.memo(() => {
           </div>
 
           <div className="space-y-4">
+            <div>
+              <p className="text-xs text-muted-foreground">
+                提示：可以使用变量{' '}
+                <span className="bg-gray-100 font-bold">{'{候选A/候选B}'}</span>
+                ，发送时将自动从候选项中随机选择一个替换
+              </p>
+              <p className="text-xs text-muted-foreground">
+                如：{'欢迎'}
+                <span className="bg-gray-100 font-bold">
+                  {'{宝宝/家人/老铁}'}
+                </span>
+                {'进入直播间 -> 欢迎家人进入直播间'}
+              </p>
+            </div>
             <MessageEditor
               messages={messages}
               onChange={messages => setMessages(messages)}
