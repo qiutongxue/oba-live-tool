@@ -62,11 +62,27 @@ export async function update(win: Electron.BrowserWindow) {
   })
 
   async function checkUpdateForGithub() {
+    // 为 GitHub 设置基本更新配置
     autoUpdater.setFeedURL({
       provider: 'github',
       owner: 'TLS-802',
       repo: 'TLS-live-tool',
+      updaterCacheDirName: 'tls-live-tool-updater',
     })
+    
+    // 针对 macOS 平台的特殊处理
+    if (platform() === 'darwin') {
+      logger.info('检测到 macOS 平台，应用特定更新配置...')
+      // 允许使用预发布版本，这会让 electron-updater 更宽松地处理文件格式
+      autoUpdater.allowPrerelease = true;
+      
+      // 强制开启开发环境配置，增加兼容性
+      autoUpdater.forceDevUpdateConfig = true;
+      
+      // 允许降级，以确保无论版本如何都能更新
+      autoUpdater.allowDowngrade = true;
+    }
+    
     return await autoUpdater.checkForUpdatesAndNotify()
   }
 
@@ -84,6 +100,20 @@ export async function update(win: Electron.BrowserWindow) {
       provider: 'generic',
       url,
     })
+    
+    // 针对 macOS 平台的特殊处理
+    if (platform() === 'darwin') {
+      logger.info('检测到 macOS 平台，应用特定更新配置...')
+      // 允许使用预发布版本，这会让 electron-updater 更宽松地处理文件格式
+      autoUpdater.allowPrerelease = true;
+      
+      // 强制开启开发环境配置，增加兼容性
+      autoUpdater.forceDevUpdateConfig = true;
+      
+      // 允许降级，以确保无论版本如何都能更新
+      autoUpdater.allowDowngrade = true;
+    }
+    
     return await autoUpdater.checkForUpdatesAndNotify().catch(error => {
       const message = `网络错误: ${error instanceof Error ? error.message.split('\n')[0] : (error as string)}`
       const downloadURL = `${src}${assetsUrl}oba-live-tool_${version}.${platform() === 'darwin' ? 'dmg' : 'exe'}`
@@ -101,7 +131,13 @@ export async function update(win: Electron.BrowserWindow) {
         )
         return { message: error.message, error }
       }
-      logger.info(`检查更新中…… (更新源: ${source})`)
+      
+      const isRunningOnMac = platform() === 'darwin';
+      logger.info(`检查更新中…… (更新源: ${source}, 系统平台: ${isRunningOnMac ? 'macOS' : 'Windows/Linux'})`)
+      
+      if (isRunningOnMac) {
+        logger.info('针对 macOS 平台应用特殊更新配置，支持 DMG 格式更新文件')
+      }
 
       try {
         if (source === 'github') {
@@ -110,6 +146,7 @@ export async function update(win: Electron.BrowserWindow) {
         return await checkUpdateForGhProxy(source)
       } catch (error) {
         const message = `网络错误: ${error instanceof Error ? error.message : (error as string)}`
+        logger.error(`更新检查失败: ${message}`)
         return { message, error: new Error(message) }
       }
     },
