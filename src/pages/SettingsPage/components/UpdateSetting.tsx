@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   Card,
   CardContent,
@@ -15,10 +15,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
 import Update from '@/components/update'
 import { useUpdateStore } from '@/hooks/useUpdate'
+import { useOSPlatform } from '@/hooks/useOSPlatform'
 import { version } from '../../../../package.json'
 
 interface UpdateSource {
@@ -37,6 +39,8 @@ export function UpdateSetting() {
   const [updateSource, setUpdateSource] = useState<string>('github')
   const [customUpdateSource, setCustomUpdateSource] = useState<string>('')
   const { enableAutoCheckUpdate, setEnableAutoCheckUpdate } = useUpdateStore()
+  const platform = useOSPlatform()
+  const isMac = platform === 'darwin'
 
   // 获取实际的更新源
   const getActualUpdateSource = () => {
@@ -51,6 +55,14 @@ export function UpdateSetting() {
         <CardDescription>检查并安装最新版本的应用程序</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        {isMac && (
+          <Alert>
+            <AlertDescription>
+              检测到您使用的是 macOS 系统，更新将通过浏览器打开下载链接，请手动下载并安装。
+            </AlertDescription>
+          </Alert>
+        )}
+      
         <div className="space-y-4">
           {/* 手动更新 */}
           <div className="flex items-center justify-between">

@@ -1,6 +1,6 @@
 import { createRequire } from 'node:module'
 import { platform } from 'node:os'
-import { app } from 'electron'
+import { app, shell } from 'electron'
 import type {
   AppUpdater,
   ProgressInfo,
@@ -25,6 +25,14 @@ export async function update(win: Electron.BrowserWindow) {
   autoUpdater.autoDownload = false
   autoUpdater.disableWebInstaller = false
   autoUpdater.allowDowngrade = false
+
+  // macOS平台处理：强制使用DMG格式
+  if (platform() === 'darwin') {
+    // @ts-ignore - 这些是私有API，但我们需要强制设置这个选项
+    autoUpdater.updateConfigPath = { updaterCacheDirName: 'tls-live-tool-updater' }
+    // @ts-ignore - 设置macOS下允许使用DMG格式更新
+    autoUpdater.configOnDisk.mac = { ...autoUpdater.configOnDisk.mac, useDoubleContent: false }
+  }
 
   // start check
   autoUpdater.on('checking-for-update', () => {})
@@ -62,12 +70,51 @@ export async function update(win: Electron.BrowserWindow) {
   })
 
   async function checkUpdateForGithub() {
+    // macOS 平台的特殊处理，由于只有 DMG 文件，而 electron-updater 寻找 ZIP
+    if (platform() === 'darwin') {
+      return await checkMacOSUpdate()
+    }
+
+    // 非 macOS 平台继续使用原有逻辑
     autoUpdater.setFeedURL({
       provider: 'github',
       owner: 'TLS-802',
       repo: 'TLS-live-tool',
     })
     return await autoUpdater.checkForUpdatesAndNotify()
+  }
+
+  async function checkMacOSUpdate() {
+    const version = await getLatestVersion()
+    const currentVersion = app.getVersion()
+    
+    // 检查是否需要更新
+    if (version === currentVersion) {
+      logger.info(`当前版本已是最新：${currentVersion}`)
+      return { updateInfo: { version: currentVersion } }
+    }
+    
+    // 构建 DMG 下载链接
+    const downloadURL = `https://github.com/TLS-802/TLS-live-tool/releases/download/v${version}/TLS-live-tool_${version}.dmg`
+    
+    // 模拟 updateInfo 对象
+    const updateInfo = { 
+      version, 
+      files: [{ url: downloadURL }],
+      path: downloadURL,
+      sha512: '', // 不提供校验值
+      releaseName: `v${version}`
+    }
+    
+    // 通知前端有可用更新
+    win.webContents.send(IPC_CHANNELS.updater.updateAvailable, {
+      update: true,
+      version: currentVersion,
+      newVersion: version,
+      releaseNote: await fetchChangelog()
+    })
+    
+    return { updateInfo }
   }
 
   async function checkUpdateForGhProxy(source: string) {
@@ -80,15 +127,41 @@ export async function update(win: Electron.BrowserWindow) {
     }
     // 自定义更新源
     const url = `${src}${assetsUrl}`
+    
+    // macOS 平台的特殊处理
+    if (platform() === 'darwin') {
+      const downloadURL = `${src}${assetsUrl}TLS-live-tool_${version}.dmg`
+      return { 
+        updateInfo: { 
+          version,
+          files: [{ url: downloadURL }],
+          path: downloadURL,
+        },
+        downloadURL
+      }
+    }
+    
     autoUpdater.setFeedURL({
       provider: 'generic',
       url,
     })
     return await autoUpdater.checkForUpdatesAndNotify().catch(error => {
       const message = `网络错误: ${error instanceof Error ? error.message.split('\n')[0] : (error as string)}`
-      const downloadURL = `${src}${assetsUrl}oba-live-tool_${version}.${platform() === 'darwin' ? 'dmg' : 'exe'}`
+      const downloadURL = `${src}${assetsUrl}TLS-live-tool_${version}.${platform() === 'darwin' ? 'dmg' : 'exe'}`
       return { message, error, downloadURL }
     })
+  }
+
+  // 添加一个自定义下载 DMG 文件的函数
+  async function downloadDMGFile(url: string): Promise<boolean> {
+    try {
+      // 对于 macOS，直接打开下载链接让用户手动下载和安装
+      await shell.openExternal(url)
+      return true
+    } catch (error) {
+      logger.error('打开下载链接失败:', error)
+      return false
+    }
   }
 
   // Checking for updates
@@ -118,7 +191,24 @@ export async function update(win: Electron.BrowserWindow) {
   // Start downloading and feedback on progress
   typedIpcMainHandle(
     IPC_CHANNELS.updater.startDownload,
-    (event: Electron.IpcMainInvokeEvent) => {
+    async (event: Electron.IpcMainInvokeEvent, url?: string) => {
+      // 如果提供了URL且是macOS平台，使用自定义下载方式
+      if (url && platform() === 'darwin') {
+        const success = await downloadDMGFile(url)
+        if (success) {
+          // 通知前端下载完成
+          event.sender.send(IPC_CHANNELS.updater.updateDownloaded)
+        } else {
+          // 通知前端下载失败
+          event.sender.send(IPC_CHANNELS.updater.updateError, {
+            message: '打开下载链接失败',
+            error: new Error('Failed to open download URL'),
+          })
+        }
+        return
+      }
+      
+      // 原有的下载逻辑
       startDownload(
         (error, progressInfo) => {
           if (error) {
