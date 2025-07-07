@@ -10,6 +10,7 @@ export class LoginManager {
   private loginConstants: LoginConstants
 
   constructor(private platform: LiveControlPlatform) {
+    // biome-ignore lint/performance/noDynamicNamespaceImportAccess: 暂时先这么写，之后会重构
     this.loginConstants = constants[platform].login
   }
 

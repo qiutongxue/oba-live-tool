@@ -1,8 +1,8 @@
-import { EVENTS, eventEmitter } from '@/utils/events'
 import { useMemo } from 'react'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
+import { EVENTS, eventEmitter } from '@/utils/events'
 import { useAccounts } from './useAccounts'
 
 interface ChromeConfigV1 {
@@ -22,17 +22,20 @@ interface ChromeConfigV2 {
 interface ChromeConfig {
   path: string
   storageState: string
+  headless: boolean
 }
 
 interface ChromeConfigStore {
   contexts: Record<string, ChromeConfig>
   setPath: (accountId: string, path: string) => void
   setStorageState: (accountId: string, storageState: string) => void
+  setHeadless: (accountId: string, headless: boolean) => void
 }
 
 const defaultContext = (): ChromeConfig => ({
   path: '',
   storageState: '',
+  headless: false,
 })
 
 export const useChromeConfigStore = create<ChromeConfigStore>()(
@@ -64,6 +67,12 @@ export const useChromeConfigStore = create<ChromeConfigStore>()(
           set(state => {
             const context = ensureContext(state, accountId)
             context.storageState = storageState
+          })
+        },
+        setHeadless: (accountId, headless) => {
+          set(state => {
+            const context = ensureContext(state, accountId)
+            context.headless = headless
           })
         },
       }
@@ -128,6 +137,7 @@ export function useCurrentChromeConfig<T>(
 export function useCurrentChromeConfigActions() {
   const setPath = useChromeConfigStore(state => state.setPath)
   const setStorageState = useChromeConfigStore(state => state.setStorageState)
+  const setHeadless = useChromeConfigStore(state => state.setHeadless)
   const currentAccountId = useAccounts(state => state.currentAccountId)
 
   return useMemo(
@@ -135,7 +145,9 @@ export function useCurrentChromeConfigActions() {
       setPath: (path: string) => setPath(currentAccountId, path),
       setStorageState: (storageState: string) =>
         setStorageState(currentAccountId, storageState),
+      setHeadless: (headless: boolean) =>
+        setHeadless(currentAccountId, headless),
     }),
-    [currentAccountId, setPath, setStorageState],
+    [currentAccountId, setPath, setStorageState, setHeadless],
   )
 }

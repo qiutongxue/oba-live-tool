@@ -6,7 +6,7 @@ type EventKey = keyof EventMap
 type EventPayload<K extends EventKey> = EventMap[K]
 type Handler<K extends EventKey> = (payload: EventPayload<K>) => void
 
-// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+// biome-ignore lint/suspicious/noExplicitAny: 我不用 any 用什么啊你告诉我
 const listeners: Map<EventKey, Handler<any>[]> = new Map()
 const logger = createLogger('EventBus')
 

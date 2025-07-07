@@ -1,11 +1,11 @@
+import { useMemoizedFn } from 'ahooks'
+import { SendIcon } from 'lucide-react'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { useAIChatStore } from '@/hooks/useAIChat'
 import { useToast } from '@/hooks/useToast'
 import { messagesToContext } from '@/lib/utils'
-import { useMemoizedFn } from 'ahooks'
-import { SendIcon } from 'lucide-react'
-import { useState } from 'react'
 
 export default function ChatInput({
   onSubmit,

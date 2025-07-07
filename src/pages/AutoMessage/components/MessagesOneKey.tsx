@@ -1,3 +1,5 @@
+import { useMemo, useState } from 'react'
+import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -7,8 +9,6 @@ import {
   useCurrentAutoMessage,
 } from '@/hooks/useAutoMessage'
 import { useCurrentLiveControl } from '@/hooks/useLiveControl'
-import { useMemo, useState } from 'react'
-import { IPC_CHANNELS } from 'shared/ipcChannels'
 
 export function MessageOneKey() {
   const [isRunning, setIsRunning] = useState(false)

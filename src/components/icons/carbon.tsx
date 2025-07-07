@@ -1,4 +1,4 @@
-import React, { type SVGProps } from 'react'
+import type { SVGProps } from 'react'
 
 export function CarbonContentDeliveryNetwork(props: SVGProps<SVGSVGElement>) {
   return (
@@ -192,18 +192,38 @@ export function CarbonRenew(props: SVGProps<SVGSVGElement>) {
   )
 }
 
-
 export function CarbonPlayFilledAlt(props: SVGProps<SVGSVGElement>) {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 32 32" {...props}>
-      <path fill="currentColor" d="M7 28a1 1 0 0 1-1-1V5a1 1 0 0 1 1.482-.876l20 11a1 1 0 0 1 0 1.752l-20 11A1 1 0 0 1 7 28"></path></svg>
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="1em"
+      height="1em"
+      viewBox="0 0 32 32"
+      {...props}
+    >
+      <title>PlayFilledAlt</title>
+      <path
+        fill="currentColor"
+        d="M7 28a1 1 0 0 1-1-1V5a1 1 0 0 1 1.482-.876l20 11a1 1 0 0 1 0 1.752l-20 11A1 1 0 0 1 7 28"
+      />
+    </svg>
   )
 }
 
-
 export function CarbonStopFilledAlt(props: SVGProps<SVGSVGElement>) {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 32 32" {...props}>
-      <path fill="currentColor" d="M24 6H8a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2"></path></svg>
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="1em"
+      height="1em"
+      viewBox="0 0 32 32"
+      {...props}
+    >
+      <title>StopFilledAlt</title>
+      <path
+        fill="currentColor"
+        d="M24 6H8a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2"
+      />
+    </svg>
   )
 }

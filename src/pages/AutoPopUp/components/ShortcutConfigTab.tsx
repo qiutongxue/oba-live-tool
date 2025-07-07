@@ -1,11 +1,10 @@
+import { useMemoizedFn } from 'ahooks'
+import { PlusIcon } from 'lucide-react'
+import React, { useCallback, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { useAutoPopUpActions, useCurrentAutoPopUp } from '@/hooks/useAutoPopUp'
-import { useMemoizedFn } from 'ahooks'
-import { PlusIcon } from 'lucide-react'
-import React from 'react'
-import { useCallback, useState } from 'react'
 import ShortcutListItem from './ShortcutListItem'
 
 const ShortcutConfigTab = React.memo(() => {
@@ -83,7 +82,7 @@ const ShortcutConfigTab = React.memo(() => {
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-3">
-            {shortcuts.map((shortcut, index) => (
+            {shortcuts.map((shortcut, _index) => (
               <ShortcutListItem
                 key={`shortcut-${shortcut.id}`}
                 shortcut={shortcut}

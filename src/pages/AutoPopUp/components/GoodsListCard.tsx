@@ -1,12 +1,12 @@
+import { useMemoizedFn } from 'ahooks'
+import { PlusIcon } from 'lucide-react'
+import React from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useAutoPopUpActions, useCurrentAutoPopUp } from '@/hooks/useAutoPopUp'
 import { useToast } from '@/hooks/useToast'
-import { useMemoizedFn } from 'ahooks'
-import { PlusIcon } from 'lucide-react'
-import React, { useState } from 'react'
 import GoodsListItem from './GoodsListItem'
 import ShortcutConfigTab from './ShortcutConfigTab'
 
@@ -54,7 +54,7 @@ const CommonList = () => {
       <div className="space-y-4">
         {goodsIds.map((id, index) => (
           <GoodsListItem
-            // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+            // biome-ignore lint/suspicious/noArrayIndexKey: 下标不影响
             key={index}
             id={id}
             index={index}

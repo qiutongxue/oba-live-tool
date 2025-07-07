@@ -1,3 +1,6 @@
+import { EraserIcon, FolderSearchIcon, SearchIcon } from 'lucide-react'
+import { useId, useState } from 'react'
+import { IPC_CHANNELS } from 'shared/ipcChannels'
 import {
   SimpleIconsGooglechrome,
   SimpleIconsMicrosoftedge,
@@ -7,9 +10,6 @@ import {
   useCurrentChromeConfigActions,
 } from '@/hooks/useChromeConfig'
 import { useToast } from '@/hooks/useToast'
-import { EraserIcon, FolderSearchIcon, SearchIcon } from 'lucide-react'
-import { useState } from 'react'
-import { IPC_CHANNELS } from 'shared/ipcChannels'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -81,6 +81,9 @@ export function BrowserSetting() {
       setIsDetecting(false)
     }
   }
+
+  const edgeFirstId = useId()
+
   return (
     <Card>
       <CardHeader>
@@ -115,12 +118,12 @@ export function BrowserSetting() {
 
             <div className="flex items-center space-x-2">
               <Switch
-                id="edge-first"
+                id={edgeFirstId}
                 checked={edgeFirst}
                 onCheckedChange={setEdgeFirst}
               />
               <Label
-                htmlFor="edge-first"
+                htmlFor={edgeFirstId}
                 className="text-sm text-muted-foreground"
               >
                 优先使用 Edge 浏览器

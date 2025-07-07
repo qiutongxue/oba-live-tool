@@ -1,4 +1,19 @@
 
+## v1.5.10
+
+[compare changes](https://github.com/qiutongxue/oba-live-tool/compare/v1.5.9...v1.5.10)
+
+### 🚀 Features
+
+- **自动发言:** 优化自动发言的消息编辑界面 ([6424ef0](https://github.com/qiutongxue/oba-live-tool/commit/6424ef0))
+- **自动回复:** 添加关键字回复的批量编辑功能 ([7a27d9c](https://github.com/qiutongxue/oba-live-tool/commit/7a27d9c))
+- **自动发言&自动回复:** 支持在文本中使用形如 {选项A/选项B/选项C} 的变量 ([499d973](https://github.com/qiutongxue/oba-live-tool/commit/499d973))
+- **中控台:** 添加无头模式开关 ([94587c3](https://github.com/qiutongxue/oba-live-tool/commit/94587c3))
+
+### 🐞 Bug Fixes
+
+- 修复抖音小店登录页面样式混乱的问题, fix #158 ([#158](https://github.com/qiutongxue/oba-live-tool/issues/158))
+
 ## v1.5.9
 
 ### 🐞 Bug Fixes

@@ -2,10 +2,10 @@ import type { Page } from 'playwright'
 import { WebSocketService } from '#/services/WebSocketService'
 import { isDev, isMockTest } from '#/utils'
 import type { AutoReplyConfig } from '.'
-import type { BaseMessageListener } from './BaseMessageListener'
 import { CompassAdapter } from './adapters/DouyinCompassAdapter'
 import { ControlPanelAdapter } from './adapters/DouyinControlPanelAdapter'
 import { LocalTestAdapter } from './adapters/LocalTestAdapter'
+import type { BaseMessageListener } from './BaseMessageListener'
 
 export class AutoReplyManager {
   private listener: BaseMessageListener | null = null

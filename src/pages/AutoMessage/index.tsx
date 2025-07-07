@@ -1,3 +1,6 @@
+import { useMemoizedFn } from 'ahooks'
+import { useCallback, useState } from 'react'
+import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { TaskButton } from '@/components/common/TaskButton'
 import { Title } from '@/components/common/Title'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -6,10 +9,6 @@ import {
   useCurrentAutoMessage,
 } from '@/hooks/useAutoMessage'
 import { useToast } from '@/hooks/useToast'
-
-import { useMemoizedFn } from 'ahooks'
-import React, { useCallback, useState } from 'react'
-import { IPC_CHANNELS } from 'shared/ipcChannels'
 import MessageListCard from './components/MessageListCard'
 import MessageSettingsCard from './components/MessageSettingsCard'
 import { MessageOneKey } from './components/MessagesOneKey'

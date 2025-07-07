@@ -1,4 +1,3 @@
-import { useMemoizedFn } from 'ahooks'
 import { useEffect, useRef } from 'react'
 
 const api = window.ipcRenderer

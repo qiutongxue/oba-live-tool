@@ -1,12 +1,12 @@
+import { useMemoizedFn } from 'ahooks'
+import type { LogMessage } from 'electron-log'
+import { useCallback, useEffect, useId, useRef, useState } from 'react'
+import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Switch } from '@/components/ui/switch'
 import { useIpcListener } from '@/hooks/useIpc'
 import { cn } from '@/lib/utils'
-import { useMemoizedFn } from 'ahooks'
-import type { LogMessage } from 'electron-log'
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { IPC_CHANNELS } from 'shared/ipcChannels'
 
 interface ParsedLog {
   id: string
@@ -83,6 +83,8 @@ export default function LogDisplayer() {
 
   useIpcListener(IPC_CHANNELS.log, handleLogMessage)
 
+  const autoScrollId = useId()
+
   return (
     <div className="h-full flex flex-col bg-background">
       {/* 日志头部 */}
@@ -97,12 +99,12 @@ export default function LogDisplayer() {
           {/* 自动滚动开关 */}
           <div className="flex items-center gap-2">
             <Switch
-              id="auto-scroll"
+              id={autoScrollId}
               checked={autoScroll}
               onCheckedChange={setAutoScroll}
             />
             <label
-              htmlFor="auto-scroll"
+              htmlFor={autoScrollId}
               className="text-xs text-muted-foreground cursor-pointer select-none"
             >
               自动滚动

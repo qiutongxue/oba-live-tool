@@ -1,7 +1,7 @@
-import { EVENTS, eventEmitter } from '@/utils/events'
 import { useMemo } from 'react'
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
+import { EVENTS, eventEmitter } from '@/utils/events'
 import { useAccounts } from './useAccounts'
 
 type ConnectionStatus = 'connecting' | 'connected' | 'disconnected'

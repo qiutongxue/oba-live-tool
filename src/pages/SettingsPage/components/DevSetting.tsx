@@ -33,7 +33,7 @@ export function DevSetting() {
               开发者模式
             </h4>
             <p className="text-sm text-muted-foreground">
-              开启后可以打开控制台调试，直播控制台将关闭无头模式
+              开启后可以通过鼠标右键打开开发者工具
             </p>
           </div>
           <Switch checked={devMode} onCheckedChange={handleToggleDevMode} />

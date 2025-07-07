@@ -1,5 +1,5 @@
-import { useAIChatStore } from '@/hooks/useAIChat'
 import { providers } from 'shared/providers'
+import { useAIChatStore } from '@/hooks/useAIChat'
 import { Badge } from '../ui/badge'
 
 export default function AIModelInfo() {

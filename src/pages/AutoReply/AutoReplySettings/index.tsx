@@ -1,7 +1,22 @@
+import { PopoverClose } from '@radix-ui/react-popover'
+import { useMemoizedFn } from 'ahooks'
+import { pick } from 'lodash-es'
+import {
+  ArrowLeft,
+  FilterIcon,
+  FunnelPlusIcon,
+  Plus,
+  PlusIcon,
+  Trash,
+  Trash2Icon,
+  X,
+  XIcon,
+} from 'lucide-react'
+import { type FC, useCallback, useId, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router'
 import AIModelInfo from '@/components/ai-chat/AIModelInfo'
 import { APIKeyDialog } from '@/components/ai-chat/APIKeyDialog'
 import ValidatedNumberInput from '@/components/common/ValidateNumberInput'
-
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -11,7 +26,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -45,22 +59,7 @@ import {
 } from '@/hooks/useAutoReply'
 import { useToast } from '@/hooks/useToast'
 import type { StringFilter, StringFilterConfig } from '@/utils/filter'
-import { PopoverClose } from '@radix-ui/react-popover'
-import { useMemoizedFn } from 'ahooks'
-import { pick } from 'lodash-es'
-import {
-  ArrowLeft,
-  FilterIcon,
-  FunnelPlusIcon,
-  Plus,
-  PlusIcon,
-  Trash,
-  Trash2Icon,
-  X,
-  XIcon,
-} from 'lucide-react'
-import { type FC, useCallback, useState } from 'react'
-import { useNavigate } from 'react-router'
+import KeywordReplyEditor from './components/KeywordReplyEditor'
 
 // 监听源类型
 type ListeningSource = AutoReplyConfig['entry']
@@ -400,7 +399,7 @@ const ReplyMessageManager: FC<{
           </div>
         ) : (
           messages.map((message, index) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+            // biome-ignore lint/suspicious/noArrayIndexKey: 下标无妨
             <div key={index} className="flex items-center gap-2 group">
               <div className="flex-1 text-sm p-2 rounded bg-muted/50 flex justify-between">
                 <span>
@@ -486,7 +485,7 @@ const BlocklistManager: FC = () => {
           </div>
         ) : (
           blockedUsers.map((user, index) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+            // biome-ignore lint/suspicious/noArrayIndexKey: 下标无妨
             <div key={index} className="flex items-center gap-2 group">
               <div className="flex-1 text-sm p-2 rounded bg-muted/50">
                 {user}
@@ -578,6 +577,10 @@ const Settings = () => {
     updateEventReplyContents(type, newMessages)
   }
 
+  const hideUserNameId = useId()
+  const websocketId = useId()
+  const keywordReplyId = useId()
+
   return (
     <div className="container py-8 space-y-4">
       <div className="flex items-center justify-between mb-4">
@@ -628,13 +631,13 @@ const Settings = () => {
           <div className="space-y-2">
             <div className="flex items-center space-x-2">
               <Switch
-                id="hide-username"
+                id={hideUserNameId}
                 checked={config.hideUsername}
                 onCheckedChange={checked =>
                   updateGeneralSettings({ hideUsername: checked })
                 }
               />
-              <Label htmlFor="hide-username">隐藏用户名</Label>
+              <Label htmlFor={hideUserNameId}>隐藏用户名</Label>
             </div>
             <p className="text-xs text-muted-foreground">
               系统会自动将
@@ -678,11 +681,11 @@ const Settings = () => {
               <TabsContent value="keyword" className="space-y-4">
                 <div className="flex items-center space-x-2">
                   <Switch
-                    id="keyword-reply"
+                    id={keywordReplyId}
                     checked={keywordReplyEnabled}
                     onCheckedChange={handleKeywordEnabledChange}
                   />
-                  <Label htmlFor="keyword-reply">启用关键词回复</Label>
+                  <Label htmlFor={keywordReplyId}>启用关键词回复</Label>
                 </div>
 
                 {keywordReplyEnabled && (
@@ -795,13 +798,13 @@ const Settings = () => {
             <div className="flex justify-between">
               <div className="flex items-center space-x-2">
                 <Switch
-                  id="hide-username"
+                  id={websocketId}
                   checked={!!config.ws?.enable}
                   onCheckedChange={checked =>
                     updateWSConfig({ enable: checked })
                   }
                 />
-                <Label htmlFor="hide-username">启用 WebSocket 服务</Label>
+                <Label htmlFor={websocketId}>启用 WebSocket 服务</Label>
               </div>
               <div className="flex space-x-1 items-center">
                 <Label>端口号：</Label>
@@ -848,6 +851,8 @@ const KeywordReplyManager = () => {
   // const [rules, setRules] = useState(config.comment.keywordReply.rules)
   const rules = config.comment.keywordReply.rules
 
+  const [showEditor, setShowEditor] = useState(false)
+
   // 保存所有规则
   const saveRules = useMemoizedFn((rulesToSave = rules) => {
     updateKeywordRules(rulesToSave)
@@ -881,10 +886,13 @@ const KeywordReplyManager = () => {
   }
 
   // 删除规则
-  const removeRule = (index: number) => {
-    const newRules = rules.filter((_, i) => i !== index)
-    saveRules(newRules)
-  }
+  const removeRule = useCallback(
+    (index: number) => {
+      const newRules = rules.filter((_, i) => i !== index)
+      saveRules(newRules)
+    },
+    [rules, saveRules],
+  )
 
   // 添加关键词
   const addKeyword = useCallback(
@@ -932,139 +940,169 @@ const KeywordReplyManager = () => {
     [updateRuleNestedArray],
   )
 
+  const commonKeywordManager = useMemo(() => {
+    return rules.length === 0 ? (
+      <div className="text-center py-8 border rounded-md bg-muted/30">
+        <p className="text-muted-foreground">暂无规则，请点击"添加规则"创建</p>
+      </div>
+    ) : (
+      <div className="space-y-4">
+        {rules.map((rule, ruleIndex) => (
+          // biome-ignore lint/suspicious/noArrayIndexKey: 下标无妨
+          <Card key={ruleIndex} className="border-dashed">
+            <CardHeader className="pb-2 flex flex-row items-center justify-between">
+              <CardTitle className="text-base">规则 {ruleIndex + 1}</CardTitle>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => removeRule(ruleIndex)}
+              >
+                <Trash className="h-4 w-4 text-destructive" />
+              </Button>
+            </CardHeader>
+
+            <CardContent className="space-y-4">
+              {/* 关键词列表 */}
+              <div>
+                <h4 className="text-sm font-medium mb-2">关键词</h4>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {rule.keywords.map((keyword, keywordIndex) => (
+                    <div
+                      // biome-ignore lint/suspicious/noArrayIndexKey: 下标无妨
+                      key={keywordIndex}
+                      className="bg-secondary text-secondary-foreground px-2 py-1 rounded-md text-sm flex items-center"
+                    >
+                      {keyword}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-5 w-5 ml-1"
+                        onClick={() => removeKeyword(ruleIndex, keywordIndex)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="输入关键词..."
+                    className="flex-1"
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        addKeyword(ruleIndex, e.currentTarget.value)
+                        e.currentTarget.value = ''
+                      }
+                    }}
+                  />
+                  <Button
+                    variant="outline"
+                    onClick={e => {
+                      const input = e.currentTarget
+                        .previousSibling as HTMLInputElement
+                      addKeyword(ruleIndex, input.value)
+                      input.value = ''
+                    }}
+                  >
+                    添加
+                  </Button>
+                </div>
+              </div>
+
+              {/* 回复内容列表 */}
+              <div>
+                <h4 className="text-sm font-medium mb-2">回复内容</h4>
+                <div className="space-y-2 mb-2">
+                  {rule.contents.map((content, contentIndex) => (
+                    <div
+                      // biome-ignore lint/suspicious/noArrayIndexKey: 下标无妨
+                      key={contentIndex}
+                      className="bg-muted p-2 rounded-md text-sm flex items-start justify-between group"
+                    >
+                      <div>{content}</div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => removeContent(ruleIndex, contentIndex)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="输入回复内容..."
+                    className="flex-1"
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        addContent(ruleIndex, e.currentTarget.value)
+                        e.currentTarget.value = ''
+                      }
+                    }}
+                  />
+                  <Button
+                    variant="outline"
+                    onClick={e => {
+                      const input = e.currentTarget
+                        .previousSibling as HTMLInputElement
+                      addContent(ruleIndex, input.value)
+                      input.value = ''
+                    }}
+                  >
+                    添加
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    )
+  }, [
+    addContent,
+    addKeyword,
+    removeContent,
+    rules.map,
+    removeKeyword,
+    removeRule,
+    rules.length,
+  ])
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-sm font-medium">关键词回复规则</h3>
-        <Button size="sm" onClick={addRule} className="flex items-center gap-1">
-          <Plus className="h-4 w-4" /> 添加规则
-        </Button>
+        <div className="flex items-center gap-x-2">
+          <Button
+            variant={'outline'}
+            size="sm"
+            onClick={() => setShowEditor(prev => !prev)}
+          >
+            {showEditor ? '普通模式' : '批量编辑'}
+          </Button>
+          <Button
+            size="sm"
+            onClick={addRule}
+            className="flex items-center gap-1"
+          >
+            <Plus className="h-4 w-4" /> 添加规则
+          </Button>
+        </div>
       </div>
 
-      {rules.length === 0 ? (
-        <div className="text-center py-8 border rounded-md bg-muted/30">
-          <p className="text-muted-foreground">
-            暂无规则，请点击"添加规则"创建
-          </p>
-        </div>
+      {showEditor ? (
+        <KeywordReplyEditor
+          rules={rules}
+          onSave={rules => {
+            updateKeywordRules(rules)
+          }}
+        />
       ) : (
-        <div className="space-y-4">
-          {rules.map((rule, ruleIndex) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
-            <Card key={ruleIndex} className="border-dashed">
-              <CardHeader className="pb-2 flex flex-row items-center justify-between">
-                <CardTitle className="text-base">
-                  规则 {ruleIndex + 1}
-                </CardTitle>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => removeRule(ruleIndex)}
-                >
-                  <Trash className="h-4 w-4 text-destructive" />
-                </Button>
-              </CardHeader>
-
-              <CardContent className="space-y-4">
-                {/* 关键词列表 */}
-                <div>
-                  <h4 className="text-sm font-medium mb-2">关键词</h4>
-                  <div className="flex flex-wrap gap-2 mb-2">
-                    {rule.keywords.map((keyword, keywordIndex) => (
-                      <div
-                        // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
-                        key={keywordIndex}
-                        className="bg-secondary text-secondary-foreground px-2 py-1 rounded-md text-sm flex items-center"
-                      >
-                        {keyword}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-5 w-5 ml-1"
-                          onClick={() => removeKeyword(ruleIndex, keywordIndex)}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="输入关键词..."
-                      className="flex-1"
-                      onKeyDown={e => {
-                        if (e.key === 'Enter') {
-                          addKeyword(ruleIndex, e.currentTarget.value)
-                          e.currentTarget.value = ''
-                        }
-                      }}
-                    />
-                    <Button
-                      variant="outline"
-                      onClick={e => {
-                        const input = e.currentTarget
-                          .previousSibling as HTMLInputElement
-                        addKeyword(ruleIndex, input.value)
-                        input.value = ''
-                      }}
-                    >
-                      添加
-                    </Button>
-                  </div>
-                </div>
-
-                {/* 回复内容列表 */}
-                <div>
-                  <h4 className="text-sm font-medium mb-2">回复内容</h4>
-                  <div className="space-y-2 mb-2">
-                    {rule.contents.map((content, contentIndex) => (
-                      <div
-                        // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
-                        key={contentIndex}
-                        className="bg-muted p-2 rounded-md text-sm flex items-start justify-between group"
-                      >
-                        <div>{content}</div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() => removeContent(ruleIndex, contentIndex)}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="输入回复内容..."
-                      className="flex-1"
-                      onKeyDown={e => {
-                        if (e.key === 'Enter') {
-                          addContent(ruleIndex, e.currentTarget.value)
-                          e.currentTarget.value = ''
-                        }
-                      }}
-                    />
-                    <Button
-                      variant="outline"
-                      onClick={e => {
-                        const input = e.currentTarget
-                          .previousSibling as HTMLInputElement
-                        addContent(ruleIndex, input.value)
-                        input.value = ''
-                      }}
-                    >
-                      添加
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        commonKeywordManager
       )}
 
       {/* {rules.length > 0 && (
@@ -1094,25 +1132,28 @@ const AIAutoReplyConfig = () => {
     updateAIReplySettings({ autoSend: checked })
   }
 
+  const aiReplyId = useId()
+  const autoSendId = useId()
+
   return (
     <>
       <div className="flex flex-col space-y-4">
         <div className="flex items-center space-x-2">
           <Switch
-            id="ai-reply"
+            id={aiReplyId}
             checked={aiReplyEnabled}
             onCheckedChange={handleAiReplyChange}
           />
-          <Label htmlFor="ai-reply">启用AI自动回复</Label>
+          <Label htmlFor={aiReplyId}>启用AI自动回复</Label>
         </div>
         <div>
           <div className="flex items-center space-x-2">
             <Switch
-              id="auto-send"
+              id={autoSendId}
               checked={autoSend}
               onCheckedChange={handleAutoSendChange}
             />
-            <Label htmlFor="auto-send">自动发送</Label>
+            <Label htmlFor={autoSendId}>自动发送</Label>
           </div>
           <div className="text-xs text-muted-foreground mt-2 pl-2">
             <p>

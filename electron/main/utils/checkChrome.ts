@@ -4,6 +4,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { promisify } from 'node:util'
 import { createLogger } from '../logger'
+
 const execAsync = promisify(exec)
 const logger = createLogger('ChromiumChecker')
 

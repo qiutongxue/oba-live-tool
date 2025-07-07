@@ -1,10 +1,10 @@
-import { EVENTS, eventEmitter } from '@/utils/events'
 import { useMemoizedFn } from 'ahooks'
 import { useMemo, useRef } from 'react'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
 import { useShallow } from 'zustand/react/shallow'
+import { EVENTS, eventEmitter } from '@/utils/events'
 import { useAccounts } from './useAccounts'
 
 export interface Message {

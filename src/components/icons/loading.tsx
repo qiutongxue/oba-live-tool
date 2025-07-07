@@ -29,7 +29,6 @@ export function LoadingIcon({
         style={{
           animationDuration: '0.6s',
         }}
-        aria-label="Loading"
       />
       <span className="sr-only">Loading...</span>
     </div>

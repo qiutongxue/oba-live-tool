@@ -1,3 +1,7 @@
+import { useMemoizedFn } from 'ahooks'
+import { ArrowBigRightDash, Edit2Icon, Save, Trash2Icon, X } from 'lucide-react'
+import type React from 'react'
+import { useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -5,10 +9,6 @@ import { Toggle } from '@/components/ui/toggle'
 import { type ShortcutMapping, useAutoPopUpActions } from '@/hooks/useAutoPopUp'
 import { useOSPlatform } from '@/hooks/useOSPlatform'
 import { useToast } from '@/hooks/useToast'
-import { useMemoizedFn } from 'ahooks'
-import { ArrowBigRightDash, Edit2Icon, Save, Trash2Icon, X } from 'lucide-react'
-import type React from 'react'
-import { useState } from 'react'
 
 interface ShortcutListItemProps {
   shortcut: ShortcutMapping
@@ -190,7 +190,7 @@ const ShortcutListItem: React.FC<ShortcutListItemProps> = ({
               {shortcut.goodsIds.map((id, index) => (
                 <span
                   key={`display-${
-                    // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+                    // biome-ignore lint/suspicious/noArrayIndexKey: 使用下标不影响
                     index
                   }`}
                   className="bg-muted px-2 py-0.5 rounded text-sm"

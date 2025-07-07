@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
   Card,
   CardContent,
@@ -18,7 +19,6 @@ import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
 import Update from '@/components/update'
 import { useUpdateStore } from '@/hooks/useUpdate'
-import { useState } from 'react'
 import { version } from '../../../../package.json'
 
 interface UpdateSource {
@@ -44,6 +44,7 @@ export function UpdateSetting() {
   }
 
   return (
+    // biome-ignore lint/nursery/useUniqueElementIds: 检查更新跳转的锚点，需要知道 id 的具体名称
     <Card id="update-section">
       <CardHeader>
         <CardTitle>软件更新</CardTitle>

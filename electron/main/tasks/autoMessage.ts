@@ -3,7 +3,13 @@ import type { Page } from 'playwright'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { createLogger } from '#/logger'
 import { LiveController } from '#/tasks/controller/LiveController'
-import { insertRandomSpaces, randomInt, sleep, takeScreenshot } from '#/utils'
+import {
+  insertRandomSpaces,
+  randomInt,
+  replaceVariant,
+  sleep,
+  takeScreenshot,
+} from '#/utils'
 import windowManager from '#/windowManager'
 import type { BaseConfig } from './scheduler'
 import { TaskScheduler } from './scheduler'
@@ -93,12 +99,14 @@ export class AutoMessageTask {
   private async execute(screenshot = false) {
     try {
       const message = this.getNextMessage()
+      // 替换变量
+      let content = replaceVariant(message.content)
       // 添加随机空格
       if (this.config.extraSpaces) {
-        message.content = insertRandomSpaces(message.content)
+        content = insertRandomSpaces(content)
       }
       const isPinTop = message.pinTop
-      await this.controller.sendMessage(message.content, isPinTop)
+      await this.controller.sendMessage(content, isPinTop)
     } catch (error) {
       // this.logger.error(
       //   `执行失败: ${error instanceof Error ? error.message : String(error)}`,
@@ -118,12 +126,18 @@ export class AutoMessageTask {
     }
 
     const badIndex = userConfig.messages.findIndex(
-      msg => msg.content.length > 50,
+      msg => msg.content.length > 50 && maxLength(msg.content) > 50,
     )
     if (badIndex >= 0) {
       throw new Error(
         `消息配置验证失败: 第 ${badIndex + 1} 条消息字数超出 50 字`,
       )
+    }
+    const emptyMessageIndex = userConfig.messages.findIndex(
+      msg => msg.content.trim().length === 0,
+    )
+    if (emptyMessageIndex >= 0) {
+      throw new Error(`消息配置验证失败: 第 ${badIndex + 1} 条消息为空`)
     }
 
     if (userConfig.scheduler.interval[0] > userConfig.scheduler.interval[1]) {
@@ -172,7 +186,9 @@ export class AutoMessageTask {
       const controller = new LiveController(page)
       for (let i = 0; i < count; i++) {
         const messageIndex = randomInt(0, messages.length - 1)
-        const message = insertRandomSpaces(messages[messageIndex])
+        const message = insertRandomSpaces(
+          replaceVariant(messages[messageIndex]),
+        )
         await controller.sendMessage(message)
         // 以防万一，加一个 1s 的小停顿
         await sleep(1000)
@@ -182,4 +198,27 @@ export class AutoMessageTask {
       return false
     }
   }
+}
+
+function maxLength(msg: string) {
+  let length = 0
+  for (let i = 0; i < msg.length; i++) {
+    if (msg[i] === '{') {
+      const j = msg.indexOf('}', i + 1)
+      if (j === -1) {
+        // 找不到匹配括号，按正常的字符串长度计算
+        length += msg.length - i
+        break
+      }
+      const subLength = msg
+        .slice(i + 1, j)
+        .split('/')
+        .reduce((max, v) => Math.max(max, v.length), 0)
+      length += subLength
+      i = j
+    } else {
+      length += 1
+    }
+  }
+  return length
 }

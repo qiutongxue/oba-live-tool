@@ -1,5 +1,6 @@
-import AIModelInfo from '@/components/ai-chat/AIModelInfo'
-import { APIKeyDialog } from '@/components/ai-chat/APIKeyDialog'
+import { Settings2 } from 'lucide-react'
+import { useState } from 'react'
+import { useNavigate } from 'react-router'
 import { TaskButton } from '@/components/common/TaskButton'
 import { Title } from '@/components/common/Title'
 import { Button } from '@/components/ui/button'
@@ -7,9 +8,6 @@ import { useAutoReply } from '@/hooks/useAutoReply'
 import { useCurrentLiveControl } from '@/hooks/useLiveControl'
 import CommentList from '@/pages/AutoReply/components/CommentList'
 import PreviewList from '@/pages/AutoReply/components/PreviewList'
-import { Settings2 } from 'lucide-react'
-import { useState } from 'react'
-import { useNavigate } from 'react-router'
 
 export default function AutoReply() {
   const { isRunning, setIsRunning } = useAutoReply()

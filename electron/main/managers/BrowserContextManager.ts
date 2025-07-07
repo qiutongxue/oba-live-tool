@@ -1,9 +1,8 @@
+import type { Browser, BrowserContext, Page } from 'playwright'
+import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { emitter } from '#/event/eventBus'
 import { createLogger } from '#/logger'
 import windowManager from '#/windowManager'
-
-import type { Browser, BrowserContext, Page } from 'playwright'
-import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { accountManager } from './AccountManager'
 
 interface Context {
