@@ -1,6 +1,6 @@
 import type { ProgressInfo } from 'electron-updater'
 import { Download, RefreshCw, Rocket } from 'lucide-react'
-import { useCallback, useState, useEffect } from 'react'
+import { useCallback, useState } from 'react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { Button } from '@/components/ui/button'
 import {
@@ -94,9 +94,7 @@ function Update({ source = 'github' }: { source: string }) {
         okText: '立即更新',
         onOk: () => {
           setDownloading(true)
-          // 检查是否有直接下载链接（macOS DMG）
-          const downloadURL = (arg1 as any)?.downloadURL
-          window.ipcRenderer.invoke(IPC_CHANNELS.updater.startDownload, downloadURL)
+          window.ipcRenderer.invoke(IPC_CHANNELS.updater.startDownload)
         },
       }))
       setUpdateAvailable(true)
@@ -131,13 +129,6 @@ function Update({ source = 'github' }: { source: string }) {
     setModalOpen(false)
     window.open(downloadURL, '_blank')
   }, [downloadURL])
-
-  useEffect(() => {
-    // 如果是 macOS 平台，检查是否有直接下载链接
-    if ((versionInfo as any)?.downloadURL) {
-      setDownloadURL((versionInfo as any).downloadURL)
-    }
-  }, [versionInfo])
 
   const getUpdateButtonContent = () => {
     if (downloading) {
