@@ -12,6 +12,10 @@
       {
         "target": "dmg",
         "arch": ["universal"]
+      },
+      {
+        "target": "zip",
+        "arch": ["universal"]
       }
     ],
     "icon": "public/favicon.png"
@@ -32,5 +36,12 @@
     "allowToChangeInstallationDirectory": true,
     "deleteAppDataOnUninstall": false,
     "differentialPackage": true
-  }
+  },
+  "publish": [
+    {
+      "provider": "github",
+      "owner": "TLS-802",
+      "repo": "TLS-live-tool"
+    }
+  ]
 }
