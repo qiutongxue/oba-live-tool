@@ -1,6 +1,5 @@
 import * as constants from '#/constants'
 import { createLogger } from '#/logger'
-import { sleep } from '#/utils'
 import { BrowserSessionManager } from './BrowserSessionManager'
 import type { BrowserSession, StorageState } from './types'
 
@@ -119,21 +118,17 @@ export class LoginManager {
     if (this.platform === 'douyin') {
       // 抖店目前 (2025.6.29) 有一个小反爬，会打乱登录页面的样式
       // 解决方法：通过控件主动打开登录页面
-      await session.page.evaluate(loginUrl => {
-        const el = document.createElement('a')
-        el.href = loginUrl
-        el.target = '_blank'
-        el.click()
-      }, this.loginConstants.loginUrl)
-
-      await sleep(500)
+      const [newPage] = await Promise.all([
+        session.context.waitForEvent('page'),
+        session.page.evaluate(loginUrl => {
+          const el = document.createElement('a')
+          el.href = loginUrl
+          el.target = '_blank'
+          el.click()
+        }, this.loginConstants.loginUrl),
+      ])
       await session.page.close()
-      // 保留登录页面
-      for (const page of session.context.pages()) {
-        if (this.loginConstants.loginUrlRegex.test(page.url())) {
-          session.page = page
-        }
-      }
+      session.page = newPage
     } else {
       // 导航到登录页面
       await session.page.goto(this.loginConstants.loginUrl)

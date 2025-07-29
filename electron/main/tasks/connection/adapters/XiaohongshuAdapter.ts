@@ -1,4 +1,3 @@
-import { sleep } from '#/utils'
 import type { BrowserSession } from '../types'
 import { BaseAdapter } from './BaseAdapter'
 
@@ -15,23 +14,20 @@ export class XiaohongshuAdapter extends BaseAdapter {
     const contentMenuItems = await session.page.$$(
       '#root-menu-wrapper .menu-item',
     )
-    for (const item of contentMenuItems) {
-      const text = await item.textContent()
-      if (text === '直播中控台') {
-        await item.click()
-        await sleep(2000)
-        break
-      }
-    }
+    const [newPage] = await Promise.all([
+      session.context.waitForEvent('page'),
+      (async () => {
+        for (const item of contentMenuItems) {
+          const text = await item.textContent()
+          if (text?.trim() === '直播中控台') {
+            await item.click()
+            return
+          }
+        }
+      })(),
+    ])
     // 保留新页面作为当前页面
-    for (const page of session.context.pages()) {
-      if (page.url().includes('live_center_control')) {
-        const prevPage = session.page
-        session.page = page
-        await prevPage.close()
-        await sleep(1000)
-        break
-      }
-    }
+    await session.page.close()
+    session.page = newPage
   }
 }
