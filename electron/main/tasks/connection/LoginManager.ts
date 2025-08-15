@@ -115,7 +115,7 @@ export class LoginManager {
   }
 
   private async handleCommonLogin(session: BrowserSession) {
-    if (this.platform === 'douyin') {
+    if (this.platform === 'douyin' || this.platform === 'buyin') {
       // 抖店目前 (2025.6.29) 有一个小反爬，会打乱登录页面的样式
       // 解决方法：通过控件主动打开登录页面
       const [newPage] = await Promise.all([
