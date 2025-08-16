@@ -1,4 +1,13 @@
 
+## v1.5.11
+
+[compare changes](https://github.com/qiutongxue/oba-live-tool/compare/v1.5.10...v1.5.11)
+
+### 🐞 Bug Fixes
+
+- **中控台:** 修复抖音小店&小红书打开新页面可能造成的问题 ([dc00ebb](https://github.com/qiutongxue/oba-live-tool/commit/dc00ebb))
+- **中控台:** 修复巨量百应登录页面样式错误的问题 ([f184e34](https://github.com/qiutongxue/oba-live-tool/commit/f184e34))
+
 ## v1.5.10
 
 ### 🚀 Features
