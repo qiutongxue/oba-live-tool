@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
+import { useAccounts } from '@/hooks/useAccounts'
 import {
   useCurrentChromeConfig,
   useCurrentChromeConfigActions,
@@ -100,6 +101,8 @@ const ConnectToLiveControl = React.memo(() => {
   const chromePath = useCurrentChromeConfig(context => context.path)
   const storageState = useCurrentChromeConfig(context => context.storageState)
   let headless = useCurrentChromeConfig(context => context.headless)
+  const account = useAccounts(store => store.getCurrentAccount())
+
   if (platform === 'taobao') {
     headless = false
   }
@@ -108,10 +111,14 @@ const ConnectToLiveControl = React.memo(() => {
 
   const connectLiveControl = useMemoizedFn(async () => {
     try {
+      if (!account) {
+        toast.error('找不到对应账号')
+        return
+      }
       setIsConnected('connecting')
       const result = await window.ipcRenderer.invoke(
         IPC_CHANNELS.tasks.liveControl.connect,
-        { headless, chromePath, storageState, platform },
+        { headless, chromePath, storageState, platform, account },
       )
 
       if (result) {

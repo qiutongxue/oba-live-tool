@@ -1,33 +1,31 @@
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { createLogger } from '#/logger'
-import { accountManager } from '#/managers/AccountManager'
+import { accountManager } from '#/managers/AccountManager2'
 import { contextManager } from '#/managers/BrowserContextManager'
-import { LiveControlManager } from '#/tasks/connection/LiveControlManager'
-import { isDev, isMockTest, typedIpcMainHandle } from '#/utils'
+import { BrowserSessionManager } from '#/tasks/connection/BrowserSessionManager'
+import { typedIpcMainHandle } from '#/utils'
 
 const TASK_NAME = '中控台'
 
 function setupIpcHandlers() {
   typedIpcMainHandle(
     IPC_CHANNELS.tasks.liveControl.connect,
-    async (_, { chromePath, headless, storageState, platform = 'douyin' }) => {
-      const account = accountManager.getActiveAccount()
+    async (_, { chromePath, headless, storageState, platform, account }) => {
+      const browserManager = BrowserSessionManager.getInstance()
+      if (chromePath) {
+        browserManager.setChromePath(chromePath)
+      }
 
-      const manager = new LiveControlManager(platform)
-      if (chromePath) manager.setChromePath(chromePath)
+      const accountSession = await accountManager.createSession(
+        platform,
+        account,
+      )
+
       try {
-        const { browser, context, page, accountName } = await manager.connect({
+        const { accountName } = await accountSession.connect({
           headless,
           storageState,
         })
-
-        contextManager.setContext(account.id, {
-          browser,
-          browserContext: context,
-          page,
-          platform,
-        })
-
         return {
           accountName,
         }
@@ -38,7 +36,7 @@ function setupIpcHandlers() {
           error instanceof Error ? error.message : String(error),
         )
 
-        manager.disconnect()
+        accountSession.disconnect()
 
         return null
       }
@@ -61,38 +59,6 @@ function setupIpcHandlers() {
   })
 }
 
-function setupDevIpcHandlers() {
-  typedIpcMainHandle(
-    IPC_CHANNELS.tasks.liveControl.connect,
-    async (_, { platform = 'douyin' }) => {
-      const manager = new LiveControlManager(platform)
-      const { browser, context, page, accountName } =
-        await manager.connectTest()
-      contextManager.setContext(accountManager.getActiveAccount().id, {
-        browser,
-        browserContext: context,
-        page,
-        platform,
-      })
-      return {
-        storageState: '',
-        accountName,
-      }
-    },
-  )
-
-  typedIpcMainHandle(IPC_CHANNELS.tasks.liveControl.disconnect, () => {
-    contextManager
-      .getContext(accountManager.getActiveAccount().id)
-      .browser.close()
-    return true
-  })
-}
-
 export function setupLiveControlIpcHandlers() {
-  if (isDev() && isMockTest()) {
-    setupDevIpcHandlers()
-  } else {
-    setupIpcHandlers()
-  }
+  setupIpcHandlers()
 }

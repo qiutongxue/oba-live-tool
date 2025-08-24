@@ -16,6 +16,13 @@ export function isMockTest() {
   return process.env.MOCK_TEST === 'true'
 }
 
+export function errorMessage(error: unknown) {
+  if (error instanceof Error) {
+    return error.message
+  }
+  return String(error)
+}
+
 export function insertRandomSpaces(
   text: string,
   insertionProbability = 0.2,
