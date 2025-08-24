@@ -1,48 +1,67 @@
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { createLogger } from '#/logger'
-import { accountManager } from '#/managers/AccountManager'
-import { contextManager } from '#/managers/BrowserContextManager'
-import { taskManager } from '#/managers/TaskManager'
-import { AutoMessageTask } from '#/tasks/autoMessage'
-import { typedIpcMainHandle } from '#/utils'
+import { accountManager } from '#/managers/AccountManager2'
+import { errorMessage, typedIpcMainHandle } from '#/utils'
 
 const TASK_NAME = '自动发言'
+const TASK_TYPE: LiveControlTask['type'] = 'auto-comment'
 
 // IPC 处理程序
 function setupIpcHandlers() {
   typedIpcMainHandle(
     IPC_CHANNELS.tasks.autoMessage.start,
-    async (_, config) => {
+    async (_, accountId, config) => {
+      const accountSession = accountManager.getSession(accountId)
+      if (!accountSession) {
+        return false
+      }
       try {
-        taskManager.register(
-          TASK_NAME,
-          (page, account) => new AutoMessageTask(page, account, config),
-        )
-        taskManager.startTask(TASK_NAME)
+        await accountSession.startTask({
+          type: TASK_TYPE,
+          config,
+        })
         return true
       } catch (error) {
         const logger = createLogger(
-          `${TASK_NAME} @${accountManager.getActiveAccount().name}`,
+          `${TASK_NAME} @${accountManager.getAccountName(accountId)}`,
         )
-        logger.error(
-          '启动自动发言失败:',
-          error instanceof Error ? error.message : error,
-        )
+        logger.error('启动自动发言失败:', errorMessage(error))
         return false
       }
     },
   )
 
-  typedIpcMainHandle(IPC_CHANNELS.tasks.autoMessage.stop, async () => {
-    taskManager.stopTask(TASK_NAME)
-    return true
-  })
+  typedIpcMainHandle(
+    IPC_CHANNELS.tasks.autoMessage.stop,
+    async (_, accountId) => {
+      try {
+        const accountSession = accountManager.getSession(accountId)
+        accountSession.stopTask(TASK_TYPE)
+        return true
+      } catch (error) {
+        const logger = createLogger(
+          `${TASK_NAME} @${accountManager.getAccountName(accountId)}`,
+        )
+        logger.error('停止自动发言失败:', errorMessage(error))
+        return false
+      }
+    },
+  )
 
   typedIpcMainHandle(
     IPC_CHANNELS.tasks.autoMessage.sendBatchMessages,
-    async (_, messages, count) => {
-      const page = contextManager.getCurrentContext().page
-      return AutoMessageTask.sendBatchMessages(page, messages, count)
+    async (_, accountId, messages, count) => {
+      try {
+        const accountSession = accountManager.getSession(accountId)
+        await accountSession.startTask({
+          type: 'send-batch-messages',
+          config: { messages, count },
+        })
+        return true
+      } catch {
+        // TODO: 错误处理
+        return false
+      }
     },
   )
 }

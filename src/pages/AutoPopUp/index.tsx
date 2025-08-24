@@ -3,6 +3,7 @@ import { useCallback } from 'react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { TaskButton } from '@/components/common/TaskButton'
 import { Title } from '@/components/common/Title'
+import { useAccounts } from '@/hooks/useAccounts'
 import {
   useAutoPopUpActions,
   useCurrentAutoPopUp,
@@ -17,10 +18,12 @@ const useTaskControl = () => {
   const config = useCurrentAutoPopUp(context => context.config)
   const { setIsRunning } = useAutoPopUpActions()
   const { toast } = useToast()
+  const accountId = useAccounts(store => store.currentAccountId)
 
   const onStartTask = useCallback(async () => {
     const result = await window.ipcRenderer.invoke(
       IPC_CHANNELS.tasks.autoPopUp.start,
+      accountId,
       config,
     )
     if (result) {
@@ -30,12 +33,15 @@ const useTaskControl = () => {
       setIsRunning(false)
       toast.error('自动弹窗任务启动失败')
     }
-  }, [config, setIsRunning, toast])
+  }, [config, setIsRunning, toast, accountId])
 
   const onStopTask = useCallback(async () => {
-    await window.ipcRenderer.invoke(IPC_CHANNELS.tasks.autoPopUp.stop)
+    await window.ipcRenderer.invoke(
+      IPC_CHANNELS.tasks.autoPopUp.stop,
+      accountId,
+    )
     setIsRunning(false)
-  }, [setIsRunning])
+  }, [setIsRunning, accountId])
 
   return {
     isRunning,

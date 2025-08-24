@@ -1,4 +1,3 @@
-import type { AutoPopUpConfig } from 'electron/main/tasks/autoPopUp'
 import type { LogMessage } from 'electron-log'
 import type {
   ProgressInfo,
@@ -16,7 +15,8 @@ export interface IpcChannels {
     chromePath?: string
     headless?: boolean
     storageState?: string
-    platform?: LiveControlPlatform
+    platform: LiveControlPlatform
+    account: Account
   }) => {
     accountName: string | null
   } | null
@@ -24,22 +24,31 @@ export interface IpcChannels {
   [IPC_CHANNELS.tasks.liveControl.disconnectedEvent]: (id: string) => void
 
   // AutoMessage
-  [IPC_CHANNELS.tasks.autoMessage.start]: (config: AutoMessageConfig) => boolean
-  [IPC_CHANNELS.tasks.autoMessage.stop]: () => boolean
+  [IPC_CHANNELS.tasks.autoMessage.start]: (
+    accountId: string,
+    config: AutoMessageConfig,
+  ) => boolean
+  [IPC_CHANNELS.tasks.autoMessage.stop]: (accountId: string) => boolean
   [IPC_CHANNELS.tasks.autoMessage.stoppedEvent]: (id: string) => void
   [IPC_CHANNELS.tasks.autoMessage.sendBatchMessages]: (
+    accountId: string,
     messages: string[],
     count: number,
   ) => boolean
 
   // AutoPopup
-  [IPC_CHANNELS.tasks.autoPopUp.start]: (config: AutoPopUpConfig) => boolean
-  [IPC_CHANNELS.tasks.autoPopUp.stop]: () => boolean
+  [IPC_CHANNELS.tasks.autoPopUp.start]: (
+    accountId: string,
+    config: AutoPopupConfig,
+  ) => boolean
+  [IPC_CHANNELS.tasks.autoPopUp.stop]: (accountId: string) => boolean
   [IPC_CHANNELS.tasks.autoPopUp.stoppedEvent]: (id: string) => void
   [IPC_CHANNELS.tasks.autoPopUp.updateConfig]: (
-    config: Parital<AutoPopUpConfig>,
+    accountId: string,
+    config: Parital<AutoPopupConfig>,
   ) => void
   [IPC_CHANNELS.tasks.autoPopUp.registerShortcuts]: (
+    accountId: string,
     shortcuts: { accelerator: string; goodsIds: number[] }[],
   ) => void
   [IPC_CHANNELS.tasks.autoPopUp.unregisterShortcuts]: () => void

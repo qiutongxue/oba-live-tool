@@ -1,9 +1,9 @@
-type Account = {
+declare type Account = {
   readonly id: string
   name: string
 }
 
-type LiveControlPlatform =
+declare type LiveControlPlatform =
   | 'douyin'
   | 'buyin'
   | 'eos'
@@ -11,6 +11,49 @@ type LiveControlPlatform =
   | 'wxchannel'
   | 'kuaishou'
   | 'taobao'
+
+declare type AutoPopupConfig = {
+  scheduler: {
+    interval: [number, number]
+  }
+  goodsIds: number[]
+  random?: boolean
+}
+
+declare type AutoPopupTask = {
+  type: 'auto-popup'
+  config: AutoPopupConfig
+}
+
+declare type AutoCommentConfig = {
+  scheduler: {
+    interval: [number, number]
+  }
+  messages: {
+    content: string
+    pinTop: boolean
+  }[]
+  random?: boolean
+  extraSpaces?: boolean
+}
+
+declare type AutoCommentTask = {
+  type: 'auto-comment'
+  config: AutoCommentConfig
+}
+
+declare type SendBatchMessagesTask = {
+  type: 'send-batch-messages'
+  config: {
+    messages: string[]
+    count: number
+  }
+}
+
+declare type LiveControlTask =
+  | AutoPopupTask
+  | AutoCommentTask
+  | SendBatchMessagesTask
 
 type DouyinLiveMessage = {
   time: string

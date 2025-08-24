@@ -1,4 +1,4 @@
-import electronLog from 'electron-log'
+import electronLog, { type LogFunctions } from 'electron-log'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import windowManager from './windowManager'
 
@@ -24,8 +24,19 @@ electronLog.hooks.push((message, transport) => {
   return message
 })
 
-export function createLogger(name: string) {
-  return electronLog.scope(name)
+export interface ScopedLogger extends LogFunctions {
+  scope(name: string): ScopedLogger
+}
+
+export function createLogger(name: string): ScopedLogger {
+  const logger = electronLog.scope(name)
+  return {
+    scope(scopeName: string) {
+      const newScopeName = `${name} -> ${scopeName}`
+      return createLogger(newScopeName)
+    },
+    ...logger,
+  }
 }
 
 export default electronLog

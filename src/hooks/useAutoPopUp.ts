@@ -225,6 +225,7 @@ export const useShortcutListener = () => {
   const isRunning = useCurrentAutoPopUp(context => context.isRunning)
   const isGlobalShortcut = useCurrentAutoPopUp(ctx => ctx.isGlobalShortcut)
   const platform = useOSPlatform()
+  const accountId = useAccounts(s => s.currentAccountId)
 
   // 全局的
   useEffect(() => {
@@ -250,6 +251,7 @@ export const useShortcutListener = () => {
 
     window.ipcRenderer.invoke(
       IPC_CHANNELS.tasks.autoPopUp.registerShortcuts,
+      accountId,
       mappedShortcuts,
     )
 
@@ -258,7 +260,7 @@ export const useShortcutListener = () => {
         IPC_CHANNELS.tasks.autoPopUp.unregisterShortcuts,
       )
     }
-  }, [isGlobalShortcut, shortcuts, isRunning])
+  }, [isGlobalShortcut, shortcuts, isRunning, accountId])
 
   const throttledKeydown = useThrottleFn(
     (e: KeyboardEvent, shortcuts: ShortcutMapping[]) => {
@@ -274,9 +276,13 @@ export const useShortcutListener = () => {
         !!shortcut.alt === e.altKey &&
         !!shortcut.shift === e.shiftKey
       ) {
-        window.ipcRenderer.invoke(IPC_CHANNELS.tasks.autoPopUp.updateConfig, {
-          goodsIds: shortcut.goodsIds,
-        })
+        window.ipcRenderer.invoke(
+          IPC_CHANNELS.tasks.autoPopUp.updateConfig,
+          accountId,
+          {
+            goodsIds: shortcut.goodsIds,
+          },
+        )
       }
     },
     { wait: 1000, trailing: false },
