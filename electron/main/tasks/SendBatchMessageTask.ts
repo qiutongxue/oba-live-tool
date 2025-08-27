@@ -1,16 +1,12 @@
 import { uniqueId } from 'lodash-es'
 import { insertRandomSpaces, randomInt, replaceVariant, sleep } from '#/utils'
 import type { IPerformComment } from './../platforms/IPlatform'
-import { type ITask, TaskStopReason } from './ITask'
+import { type ITask, type TaskStopCallback, TaskStopReason } from './ITask'
 
 export class SendBatchMessageTask implements ITask {
   private isRunning = false
   private readonly taskId = uniqueId('batch-message-task')
-  private _onStopCallback: (
-    id: string,
-    reason: TaskStopReason,
-    error?: unknown,
-  ) => void = () => {}
+  private _onStopCallback: TaskStopCallback = () => {}
 
   constructor(
     private platform: IPerformComment,
@@ -26,9 +22,7 @@ export class SendBatchMessageTask implements ITask {
     this.execute()
   }
 
-  onStop(
-    callback: (id: string, reason: TaskStopReason, error?: unknown) => void,
-  ): void {
+  onStop(callback: TaskStopCallback): void {
     this._onStopCallback = callback
   }
 

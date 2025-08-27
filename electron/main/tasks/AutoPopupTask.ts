@@ -5,11 +5,10 @@ import type { IPerformPopup } from '#/platforms/IPlatform'
 import { errorMessage, randomInt, takeScreenshot } from '#/utils'
 import { IntervalTask } from './IntervalTask'
 
-export class AutoPopupTask extends IntervalTask<AutoPopupTask> {
-  static NAME = '自动弹窗'
+const TASK_NAME = '自动弹窗'
 
+export class AutoPopupTask extends IntervalTask<AutoPopupTask> {
   private arrayIndex = -1
-  private abortController = new AbortController()
 
   constructor(
     private page: Page,
@@ -19,8 +18,8 @@ export class AutoPopupTask extends IntervalTask<AutoPopupTask> {
     logger: ScopedLogger,
   ) {
     super({
-      taskName: AutoPopupTask.NAME,
-      logger: logger.scope(AutoPopupTask.NAME),
+      taskName: TASK_NAME,
+      logger,
       options: {
         maxRetries: 3,
         retryDelay: 1000,
@@ -69,6 +68,6 @@ export class AutoPopupTask extends IntervalTask<AutoPopupTask> {
   }
 
   protected onRetryError(): void {
-    takeScreenshot(this.page, AutoPopupTask.NAME, this.account.name)
+    takeScreenshot(this.page, TASK_NAME, this.account.name)
   }
 }

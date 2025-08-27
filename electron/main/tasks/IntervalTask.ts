@@ -14,37 +14,31 @@ export abstract class IntervalTask<Cfg> extends BaseTask<Cfg> {
     this.interval = interval
   }
 
-  // start() 方法现在是具体实现，不再是 abstract
   public start(): void {
     if (this.isRunning) {
-      this.logger.warn('Task is already running.')
       return
     }
-    this.logger.info('Interval task starting...')
     this.isRunning = true
 
     // 立即启动第一次执行，然后由它自己调度下一次
     this.scheduleNextRun()
   }
 
-  // stop() 方法也在这里实现
   public stop(): void {
-    super.stop() // 调用 BaseTask 的 stop，将 isRunning 置为 false
+    super.stop()
     if (this.timer) {
       clearTimeout(this.timer)
-      this.logger.info('Task scheduling has been stopped.')
     }
   }
 
-  // 调度逻辑被封装在基类中
   private async scheduleNextRun(): Promise<void> {
     if (!this.isRunning) {
       return
     }
 
+    // 错误已经处理过了，不用捕获
     await this.runWithRetries()
 
-    // 只要任务没被停止，就调度下一次
     if (this.isRunning) {
       const interval = this.calculateNextInterval()
       this.logger.info(`任务将在 ${interval / 1000} 秒后继续执行。`)
@@ -79,8 +73,5 @@ export abstract class IntervalTask<Cfg> extends BaseTask<Cfg> {
     }
   }
 
-  // 注意：execute() 方法仍然是 abstract。
-  // IntervalTask 不知道具体要执行什么，它只负责调度。
-  // 继承它的子类必须提供 execute() 的实现。
   protected abstract execute(): Promise<void>
 }
