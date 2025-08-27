@@ -9,8 +9,9 @@ import {
 } from '#/utils'
 import { IntervalTask } from './IntervalTask'
 
+const TASK_NAME = '自动评论'
+
 export class AutoCommentTask extends IntervalTask<AutoCommentConfig> {
-  static NAME = '自动评论'
   private arrayIndex = -1
   constructor(
     private page: Page,
@@ -20,8 +21,8 @@ export class AutoCommentTask extends IntervalTask<AutoCommentConfig> {
     logger: ScopedLogger,
   ) {
     super({
-      taskName: AutoCommentTask.NAME,
-      logger: logger.scope(AutoCommentTask.NAME),
+      taskName: TASK_NAME,
+      logger,
       options: {
         maxRetries: 3,
         retryDelay: 1000,
@@ -92,7 +93,7 @@ export class AutoCommentTask extends IntervalTask<AutoCommentConfig> {
   }
 
   protected onRetryError(): void {
-    takeScreenshot(this.page, AutoCommentTask.NAME, this.account.name)
+    takeScreenshot(this.page, TASK_NAME, this.account.name)
   }
 }
 

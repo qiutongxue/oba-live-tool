@@ -1,7 +1,7 @@
 import { uniqueId } from 'lodash-es'
 import type { ScopedLogger } from '#/logger'
 import { errorMessage, sleep } from '#/utils'
-import { type ITask, TaskStopReason } from './ITask'
+import { type ITask, type TaskStopCallback, TaskStopReason } from './ITask'
 
 export interface TaskOptions {
   /** 最大重试次数 */
@@ -21,13 +21,10 @@ export abstract class BaseTask<Cfg> implements ITask<Cfg> {
   protected readonly taskId: string
   protected isRunning = false
   protected readonly logger: ScopedLogger
-  private _onStop: (
-    id: string,
-    reason: TaskStopReason,
-    error?: unknown,
-  ) => void = () => {}
+  private taskName: string
+  private _onStop: TaskStopCallback = () => {}
 
-  protected abstract execute(): Promise<void>
+  protected abstract execute(): Promise<void> | void
 
   constructor({ taskName, logger, options }: BaseTaskProps) {
     this.options = {
@@ -35,6 +32,7 @@ export abstract class BaseTask<Cfg> implements ITask<Cfg> {
       retryDelay: 2000, // 默认延迟2秒
       ...options,
     }
+    this.taskName = taskName
     this.taskId = uniqueId(taskName)
     this.logger = logger.scope(taskName)
   }
@@ -43,9 +41,7 @@ export abstract class BaseTask<Cfg> implements ITask<Cfg> {
     return this.taskId
   }
 
-  public onStop(
-    cb: (id: string, reason: TaskStopReason, error?: unknown) => void,
-  ) {
+  public onStop(cb: TaskStopCallback) {
     this._onStop = cb
   }
 
@@ -53,7 +49,6 @@ export abstract class BaseTask<Cfg> implements ITask<Cfg> {
 
   public stop(): void {
     if (this.isRunning) {
-      this.logger.info('停止任务……')
       this.internalStop(TaskStopReason.MANUAL)
     }
   }
@@ -77,7 +72,7 @@ export abstract class BaseTask<Cfg> implements ITask<Cfg> {
           `第 ${attempt + 1}/${this.options.maxRetries} 次执行失败：${errorMessage(error)}`,
         )
 
-        this.onRetryError()
+        this.onRetryError(error)
 
         if (attempt >= maxRetries - 1) {
           this.internalStop(
@@ -93,13 +88,17 @@ export abstract class BaseTask<Cfg> implements ITask<Cfg> {
     }
   }
 
+  public getTaskName() {
+    return this.taskName
+  }
+
   protected internalStop(reason: TaskStopReason, err?: unknown) {
     if (!this.isRunning) return
     this.isRunning = false
-    // 调用回调，通知管理者！
+    this.logger.info('任务已停止')
     this._onStop(this.taskId, reason, err)
   }
 
   /** 执行的过程中发生错误就调用该函数 */
-  protected abstract onRetryError(): void
+  protected abstract onRetryError(error: unknown): void
 }
