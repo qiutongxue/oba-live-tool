@@ -7,6 +7,7 @@ import { DouyinPlatform } from '#/platforms/douyin'
 import { DouyinEosPlatform } from '#/platforms/douyin-eos'
 import {
   type IPlatform,
+  isCommentListener,
   isPerformComment,
   isPerformPopup,
 } from '#/platforms/IPlatform'
@@ -16,6 +17,7 @@ import { WechatChannelPlatform } from '#/platforms/wechat-channels'
 import { XiaohongshuPlatform } from '#/platforms/xiaohongshu'
 import { AutoCommentTask } from '#/tasks/AutoCommentTask'
 import { AutoPopupTask } from '#/tasks/AutoPopupTask'
+import { CommentListenerTask } from '#/tasks/CommentListenerTask'
 import { BrowserSessionManager } from '#/tasks/connection/BrowserSessionManager'
 import type { BrowserSession, StorageState } from '#/tasks/connection/types'
 import type { ITask } from '#/tasks/ITask'
@@ -40,7 +42,7 @@ export class AccountSession {
   async connect(config: { headless?: boolean; storageState?: string }) {
     let storageState: StorageState
     if (config.storageState) {
-      //   this.logger.info('检测到已保存登录状态')
+      this.logger.info('检测到已保存登录状态')
       storageState = JSON.parse(config.storageState)
     }
 
@@ -139,8 +141,19 @@ export class AccountSession {
         throw new Error(`暂未为${this.platform.platformName}实现批量评论功能`)
       }
       newTask = new SendBatchMessageTask(this.platform, task.config)
+    } else if (task.type === 'comment-listener') {
+      if (!isCommentListener(this.platform)) {
+        throw new Error(`暂未为${this.platform.platformName}实现评论监听功能`)
+      }
+      newTask = new CommentListenerTask(
+        this.browserSession.page,
+        this.platform,
+        task.config,
+        this.account,
+        this.logger,
+      )
     } else {
-      throw new Error('还没实现')
+      throw new Error(`暂不支持的任务：${task}`)
     }
 
     // 任务停止时从任务列表中移除

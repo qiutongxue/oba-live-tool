@@ -14,10 +14,7 @@ export class SendBatchMessageTask implements ITask {
 
   constructor(
     private platform: IPerformComment,
-    private config: {
-      messages: string[]
-      count: number
-    },
+    private config: SendBatchMessagesConfig,
   ) {}
 
   getTaskId(): string {
@@ -43,9 +40,11 @@ export class SendBatchMessageTask implements ITask {
           break
         }
         const messageIndex = randomInt(0, messages.length - 1)
-        const message = insertRandomSpaces(
-          replaceVariant(messages[messageIndex]),
-        )
+        let message = replaceVariant(messages[messageIndex])
+        if (!this.config.noSpace) {
+          message = insertRandomSpaces(message)
+        }
+
         await this.platform.performComment(message)
         // 以防万一，加一个 1s 的小停顿
         await sleep(1000)

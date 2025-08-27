@@ -1,6 +1,26 @@
 import type { Page } from 'playwright'
 import type { BrowserSession } from '#/tasks/connection/types'
 
+export interface ICommentListener {
+  startCommentListener(
+    onComment: (comment: DouyinLiveMessage) => void,
+    /** 暂定，control 为中控台互动评论监听， compass 为直播大屏监听 */
+    source: 'control' | 'compass',
+  ): void
+  stopCommentListener(): void
+}
+
+export function isCommentListener(
+  platform: IPlatform,
+): platform is IPlatform & ICommentListener {
+  return (
+    'startCommentListener' in platform &&
+    'stopCommentListener' in platform &&
+    typeof platform.startCommentListener === 'function' &&
+    typeof platform.stopCommentListener === 'function'
+  )
+}
+
 export interface IPerformPopup {
   _isPerformPopup: true
   /** 弹窗指定商品序号 */

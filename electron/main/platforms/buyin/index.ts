@@ -1,6 +1,7 @@
 import type { Page } from 'playwright'
 import { buyin as constants } from '#/constants'
 import type { BrowserSession } from '#/tasks/connection/types'
+import { CompassListener, ControlListener } from '../douyin/commentListener'
 // 百应和抖店共用
 import { douyinElementFinder as elementFinder } from '../douyin/element-finder'
 import {
@@ -10,7 +11,12 @@ import {
   toggleButton,
   virtualScroller,
 } from '../helper'
-import type { IPerformComment, IPerformPopup, IPlatform } from '../IPlatform'
+import type {
+  ICommentListener,
+  IPerformComment,
+  IPerformPopup,
+  IPlatform,
+} from '../IPlatform'
 import { REGEXPS, SELECTORS, URLS } from './constant'
 
 const { login: loginConstants } = constants
@@ -20,11 +26,12 @@ const PLATFORM_NAME = '巨量百应' as const
  * 巨量百应
  */
 export class BuyinPlatform
-  implements IPlatform, IPerformPopup, IPerformComment
+  implements IPlatform, IPerformPopup, IPerformComment, ICommentListener
 {
   readonly _isPerformComment = true
   readonly _isPerformPopup = true
   private mainPage: Page | null = null
+  private commentListener: ICommentListener | null = null
 
   get platformName() {
     return PLATFORM_NAME
@@ -45,7 +52,7 @@ export class BuyinPlatform
 
   async login(browserSession: BrowserSession) {
     // 进入登录页面
-    // 抖店目前 (2025.6.29) 有一个小反爬，会打乱登录页面的样式
+    // 巨量百应（2025.8）也有和抖店同样的问题
     // 解决方法：通过控件主动打开登录页面
     const [newPage] = await Promise.all([
       browserSession.context.waitForEvent('page'),
@@ -91,6 +98,23 @@ export class BuyinPlatform
     ensurePage(this.mainPage)
     const result = await comment(this.mainPage, elementFinder, message, pinTop)
     return result.pinTop
+  }
+
+  startCommentListener(
+    onComment: (comment: DouyinLiveMessage) => void,
+    source: 'control' | 'compass',
+  ): void {
+    ensurePage(this.mainPage)
+    if (source === 'control') {
+      this.commentListener = new ControlListener(this.mainPage)
+    } else {
+      this.commentListener = new CompassListener('buyin', this.mainPage)
+    }
+    this.commentListener.startCommentListener(onComment, source)
+  }
+
+  stopCommentListener(): void {
+    this.commentListener?.stopCommentListener()
   }
 
   getPopupPage(): Page {
