@@ -3,7 +3,17 @@ export const URLS = {
     'https://fxg.jinritemai.com/ffa/buyin/dashboard/live/control',
   LOGIN_PAGE:
     'https://fxg.jinritemai.com/login/common?extra=%7B%22target_url%22%3A%22https%3A%2F%2Ffxg.jinritemai.com%2Fffa%2Fbuyin%2Fdashboard%2Flive%2Fcontrol%22%7D',
-}
+  /** 抖店的电商罗盘主页 */
+  DOUYIN_COMPASS_INDEX_PREFIX: 'https://compass.jinritemai.com/shop',
+  /** 抖店电商大屏（主播版） */
+  DOUYIN_COMPASS_SCREEN_WITH_LIVE_ROOM_ID:
+    'https://compass.jinritemai.com/screen/anchor/shop?live_room_id=',
+  /** 巨量百应的电商罗盘主页 */
+  BUYIN_COMPASS_INDEX_PREFIX: 'https://compass.jinritemai.com/talent',
+  /** 巨量百应电商大屏（主播版） */
+  BUYIN_COMPASS_SCREEN_WITH_LIVE_ROOM_ID:
+    'https://compass.jinritemai.com/screen/anchor/talent?live_room_id=',
+} as const
 
 export const REGEXPS = {
   LOGIN_PAGE: /.*fxg\.jinritemai\.com\/login\/common.*/,
@@ -37,6 +47,10 @@ export const SELECTORS = {
     LIVE_OVER_CLOSE_BUTTON:
       'div.auxo-modal-content svg[class^="liveOverCloseIcon"]',
   },
+  /** 有新的评论时会弹出的按钮，点击后刷新新评论 */
+  NEW_COMMENT_LABEL: '[class^="newCommentLabel"]',
+  /** 电商罗盘已登录状态 */
+  COMPASS_LOGGED_IN: `div[class^="userName"]`,
 } as const
 
 /**

@@ -42,20 +42,36 @@ declare type AutoCommentTask = {
   config: AutoCommentConfig
 }
 
+declare type SendBatchMessagesConfig = {
+  messages: string[]
+  count: number
+  noSpace?: boolean
+}
+
 declare type SendBatchMessagesTask = {
   type: 'send-batch-messages'
-  config: {
-    messages: string[]
-    count: number
+  config: SendBatchMessagesConfig
+}
+
+declare interface CommentListenerConfig {
+  source: 'compass' | 'control'
+  ws?: {
+    port: number
   }
+}
+
+declare type CommentListenerTask = {
+  type: 'comment-listener'
+  config: CommentListenerConfig
 }
 
 declare type LiveControlTask =
   | AutoPopupTask
   | AutoCommentTask
   | SendBatchMessagesTask
+  | CommentListenerTask
 
-type DouyinLiveMessage = {
+declare type DouyinLiveMessage = {
   time: string
 } & (
   | CommentMessage

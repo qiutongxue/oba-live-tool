@@ -9,7 +9,13 @@ import {
   toggleButton,
   virtualScroller,
 } from '../helper'
-import type { IPerformComment, IPerformPopup, IPlatform } from '../IPlatform'
+import type {
+  ICommentListener,
+  IPerformComment,
+  IPerformPopup,
+  IPlatform,
+} from '../IPlatform'
+import { CompassListener, ControlListener } from './commentListener'
 import { REGEXPS, SELECTORS, URLS } from './constant'
 import { douyinElementFinder as elementFinder } from './element-finder'
 
@@ -19,12 +25,13 @@ const PLATFORM_NAME = '抖音小店' as const
  * 抖音小店
  */
 export class DouyinPlatform
-  implements IPlatform, IPerformPopup, IPerformComment
+  implements IPlatform, IPerformPopup, IPerformComment, ICommentListener
 {
   readonly _isPerformComment = true
   readonly _isPerformPopup = true
   public mainPage: Page | null = null
   private logger = createLogger('抖音小店')
+  private commentListener: ICommentListener | null = null
 
   async connect(browserSession: BrowserSession) {
     const { page } = browserSession
@@ -94,6 +101,27 @@ export class DouyinPlatform
   getCommentPage(): Page {
     ensurePage(this.mainPage)
     return this.mainPage
+  }
+
+  startCommentListener(
+    onComment: (comment: DouyinLiveMessage) => void,
+    source: 'control' | 'compass',
+  ): void {
+    ensurePage(this.mainPage)
+    if (source === 'control') {
+      this.commentListener = new ControlListener(this.mainPage)
+    } else {
+      this.commentListener = new CompassListener('douyin', this.mainPage)
+    }
+    this.commentListener.startCommentListener(onComment, source)
+  }
+
+  stopCommentListener(): void {
+    this.commentListener?.stopCommentListener()
+  }
+
+  handleComment(): void {
+    throw new Error('Method not implemented.')
   }
 
   get platformName() {
