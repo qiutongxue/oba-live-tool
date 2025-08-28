@@ -6,7 +6,6 @@ import type {
 } from 'electron-updater'
 import type { providers } from 'shared/providers'
 
-import type { AutoReplyConfig } from '#/tasks/autoReply/index'
 import { IPC_CHANNELS } from './ipcChannels'
 
 export interface IpcChannels {
@@ -20,13 +19,13 @@ export interface IpcChannels {
   }) => {
     accountName: string | null
   } | null
-  [IPC_CHANNELS.tasks.liveControl.disconnect]: () => boolean
+  [IPC_CHANNELS.tasks.liveControl.disconnect]: (accountId: string) => boolean
   [IPC_CHANNELS.tasks.liveControl.disconnectedEvent]: (id: string) => void
 
   // AutoMessage
   [IPC_CHANNELS.tasks.autoMessage.start]: (
     accountId: string,
-    config: AutoMessageConfig,
+    config: AutoCommentConfig,
   ) => boolean
   [IPC_CHANNELS.tasks.autoMessage.stop]: (accountId: string) => boolean
   [IPC_CHANNELS.tasks.autoMessage.stoppedEvent]: (id: string) => void
@@ -55,10 +54,16 @@ export interface IpcChannels {
 
   // AutoReply
   [IPC_CHANNELS.tasks.autoReply.startCommentListener]: (
-    config: AutoReplyConfig,
+    accountId: string,
+    config: CommentListenerConfig,
   ) => boolean
-  [IPC_CHANNELS.tasks.autoReply.stopCommentListener]: () => void
-  [IPC_CHANNELS.tasks.autoReply.sendReply]: (replyContent: string) => void
+  [IPC_CHANNELS.tasks.autoReply.stopCommentListener]: (
+    accountId: string,
+  ) => void
+  [IPC_CHANNELS.tasks.autoReply.sendReply]: (
+    accountId: string,
+    replyContent: string,
+  ) => void
   [IPC_CHANNELS.tasks.autoReply.listenerStopped]: () => void
   [IPC_CHANNELS.tasks.autoReply.showComment]: (data: {
     comment: DouyinLiveMessage
@@ -79,7 +84,6 @@ export interface IpcChannels {
     customBaseURL?: string
   }) => { success: boolean; models?: string[]; error?: string }
   [IPC_CHANNELS.tasks.aiChat.chat]: (params: {
-    // 用于启动流式传输，响应通过 stream/error 通道
     messages: AIChatMessage[]
     provider: keyof typeof providers
     model: string

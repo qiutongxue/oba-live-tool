@@ -1,9 +1,10 @@
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { createLogger } from '#/logger'
 import { accountManager } from '#/managers/AccountManager2'
-import { typedIpcMainHandle } from '#/utils'
+import { errorMessage, typedIpcMainHandle } from '#/utils'
 
 const TASK_NAME = '监听评论'
+const TASK_TYPE = 'comment-listener'
 
 function setupIpcHandlers() {
   typedIpcMainHandle(
@@ -12,7 +13,7 @@ function setupIpcHandlers() {
       try {
         const accountSession = accountManager.getSession(accountId)
         accountSession.startTask({
-          type: 'comment-listener',
+          type: TASK_TYPE,
           config: config,
         })
         return true
@@ -37,10 +38,7 @@ function setupIpcHandlers() {
           `${TASK_NAME} @${accountManager.getAccountName(accountId)}`,
         )
 
-        logger.error(
-          '停止监听评论失败:',
-          error instanceof Error ? error.message : String(error),
-        )
+        logger.error('停止监听评论失败:', errorMessage(error))
       }
     },
   )
@@ -63,10 +61,7 @@ function setupIpcHandlers() {
         const logger = createLogger(
           `${TASK_NAME} @${accountManager.getAccountName(accountId)}`,
         )
-        logger.error(
-          '发送回复失败:',
-          error instanceof Error ? error.message : String(error),
-        )
+        logger.error('发送回复失败:', errorMessage(error))
         throw error
       }
     },

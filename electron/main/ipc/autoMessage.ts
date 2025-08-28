@@ -4,7 +4,7 @@ import { accountManager } from '#/managers/AccountManager2'
 import { errorMessage, typedIpcMainHandle } from '#/utils'
 
 const TASK_NAME = '自动发言'
-const TASK_TYPE: LiveControlTask['type'] = 'auto-comment'
+const TASK_TYPE = 'auto-comment'
 
 // IPC 处理程序
 function setupIpcHandlers() {
