@@ -1,9 +1,8 @@
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { createLogger } from '#/logger'
 import { accountManager } from '#/managers/AccountManager2'
-import { contextManager } from '#/managers/BrowserContextManager'
 import { BrowserSessionManager } from '#/tasks/connection/BrowserSessionManager'
-import { typedIpcMainHandle } from '#/utils'
+import { errorMessage, typedIpcMainHandle } from '#/utils'
 
 const TASK_NAME = '中控台'
 
@@ -30,11 +29,8 @@ function setupIpcHandlers() {
           accountName,
         }
       } catch (error) {
-        const logger = createLogger(TASK_NAME)
-        logger.error(
-          '连接直播控制台失败:',
-          error instanceof Error ? error.message : String(error),
-        )
+        const logger = createLogger(`${TASK_NAME} ${account.name}}`)
+        logger.error('连接直播控制台失败:', errorMessage(error))
 
         accountSession.disconnect()
 
@@ -43,20 +39,22 @@ function setupIpcHandlers() {
     },
   )
 
-  typedIpcMainHandle(IPC_CHANNELS.tasks.liveControl.disconnect, async () => {
-    try {
-      const currentContext = contextManager.getCurrentContext()
-      await currentContext.browser.close()
-      return true
-    } catch (error) {
-      const logger = createLogger(TASK_NAME)
-      logger.error(
-        '断开连接失败:',
-        error instanceof Error ? error.message : String(error),
-      )
-      return false
-    }
-  })
+  typedIpcMainHandle(
+    IPC_CHANNELS.tasks.liveControl.disconnect,
+    async (_, accountId) => {
+      try {
+        const accountSession = accountManager.getSession(accountId)
+        accountSession.disconnect()
+        return true
+      } catch (error) {
+        const logger = createLogger(
+          `TASK_NAME @${accountManager.getAccountName(accountId)}`,
+        )
+        logger.error('断开连接失败:', errorMessage(error))
+        return false
+      }
+    },
+  )
 }
 
 export function setupLiveControlIpcHandlers() {
