@@ -34,7 +34,10 @@ export function AccountSetting() {
     if (currentAccountId === 'default') return
     // 先断开连接
     if (isConnected === 'connected') {
-      await window.ipcRenderer.invoke(IPC_CHANNELS.tasks.liveControl.disconnect)
+      await window.ipcRenderer.invoke(
+        IPC_CHANNELS.tasks.liveControl.disconnect,
+        currentAccountId,
+      )
     }
     removeAccount(currentAccountId)
     setIsDeleteDialogOpen(false)
