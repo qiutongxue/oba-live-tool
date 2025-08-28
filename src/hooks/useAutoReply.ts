@@ -393,6 +393,7 @@ function generateAIMessages(
 }
 
 function sendConfiguredReply(
+  accountId: string,
   config: AutoReplyConfig,
   sourceMessage: Message,
 ): void {
@@ -415,7 +416,7 @@ function sendConfiguredReply(
         sourceMessage.nick_name,
         config.hideUsername,
       )
-      sendMessage(message) // 注意：这里是异步的，但我们不等待它完成
+      sendMessage(accountId, message) // 注意：这里是异步的，但我们不等待它完成
     }
   }
 }
@@ -426,11 +427,12 @@ function getRandomElement<T>(arr: T[]): T | undefined {
   return arr[randomIndex]
 }
 
-async function sendMessage(content: string) {
+async function sendMessage(accountId: string, content: string) {
   if (!content) return
   try {
     await window.ipcRenderer.invoke(
       IPC_CHANNELS.tasks.autoReply.sendReply,
+      accountId,
       content,
     )
   } catch (err) {
@@ -484,7 +486,7 @@ export function useAutoReply() {
             comment.nick_name,
             config.hideUsername,
           )
-          sendMessage(message)
+          sendMessage(currentAccountId, message)
           // 注意：关键字回复不通过 addReply 添加到界面，直接发送
           return true // 匹配成功
         }
@@ -524,7 +526,6 @@ export function useAutoReply() {
       const plainMessages = generateAIMessages(userComments, userReplies)
 
       // 构造系统提示
-      // 优化提示词，明确指出 JSON 格式
       const systemPrompt = `你将接收到一个或多个 JSON 字符串，每个字符串代表用户的评论，格式为 {"nickname": "用户昵称", "content": "评论内容"}。请分析所有评论，并根据以下要求生成一个回复：\n${prompt}`
 
       const messages = [
@@ -545,7 +546,6 @@ export function useAutoReply() {
         )
 
         if (replyContent && typeof replyContent === 'string') {
-          // 将 AI 回复添加到状态中
           store.addReply(
             accountId,
             comment.msg_id,
@@ -553,9 +553,9 @@ export function useAutoReply() {
             replyContent,
           )
 
-          // 如果开启自动发送，则发送
+          // 自动发送
           if (autoSend) {
-            sendMessage(replyContent)
+            sendMessage(accountId, replyContent)
           }
         }
       } catch (err) {
@@ -603,12 +603,12 @@ export function useAutoReply() {
           !config.live_order.options?.onlyReplyPaid ||
           comment.order_status === '已付款'
         ) {
-          sendConfiguredReply(config, comment)
+          sendConfiguredReply(accountId, config, comment)
         }
         break
       }
       default:
-        sendConfiguredReply(config, comment)
+        sendConfiguredReply(accountId, config, comment)
     }
   })
 
@@ -679,6 +679,5 @@ export function useAutoReply() {
     updateWSConfig: (wsConfig: DeepPartial<AutoReplyConfig['ws']>) => {
       store.updateConfig(currentAccountId, { ws: wsConfig })
     },
-    // 可以根据需要添加更多快捷更新配置的方法
   }
 }

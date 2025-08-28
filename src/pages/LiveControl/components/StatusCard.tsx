@@ -135,8 +135,15 @@ const ConnectToLiveControl = React.memo(() => {
   })
 
   const disconnectLiveControl = useMemoizedFn(async () => {
+    if (!account) {
+      toast.error('找不到对应账号')
+      return
+    }
     try {
-      await window.ipcRenderer.invoke(IPC_CHANNELS.tasks.liveControl.disconnect)
+      await window.ipcRenderer.invoke(
+        IPC_CHANNELS.tasks.liveControl.disconnect,
+        account.id,
+      )
       setAccountName('')
       toast.success('已断开连接')
     } catch (error) {
