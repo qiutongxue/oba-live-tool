@@ -1,11 +1,10 @@
-import type { Page } from 'playwright'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import type { ScopedLogger } from '#/logger'
 import type { ICommentListener } from '#/platforms/IPlatform'
 import { WebSocketService } from '#/services/WebSocketService'
-import { takeScreenshot } from '#/utils'
 import windowManager from '#/windowManager'
 import { BaseTask } from './BaseTask'
+import { TaskStopReason } from './ITask'
 
 const TASK_NAME = '自动回复'
 
@@ -13,7 +12,6 @@ export class CommentListenerTask extends BaseTask<CommentListenerConfig> {
   private wsService: WebSocketService | null = null
 
   constructor(
-    private page: Page,
     private platform: ICommentListener,
     private config: CommentListenerConfig,
     private account: Account,
@@ -22,18 +20,15 @@ export class CommentListenerTask extends BaseTask<CommentListenerConfig> {
     super({
       taskName: TASK_NAME,
       logger,
-      options: {
-        maxRetries: 1,
-      },
     })
   }
 
-  public start(): void {
+  public async start() {
     if (this.isRunning) {
       return
     }
     this.isRunning = true
-    this.runWithRetries()
+    await this.execute()
   }
 
   public stop() {
@@ -42,16 +37,20 @@ export class CommentListenerTask extends BaseTask<CommentListenerConfig> {
     this.platform.stopCommentListener()
   }
 
-  protected execute() {
-    if (this.config.ws) {
-      this.wsService = new WebSocketService()
-      this.wsService.start(this.config.ws.port)
+  protected async execute() {
+    try {
+      if (this.config.ws) {
+        this.wsService = new WebSocketService()
+        this.wsService.start(this.config.ws.port)
+      }
+      await this.platform.startCommentListener(
+        this.broadcastMessage.bind(this),
+        this.config.source,
+      )
+      this.logger.log('开始监听评论')
+    } catch (err) {
+      this.internalStop(TaskStopReason.ERROR, err)
     }
-    this.platform.startCommentListener(
-      this.broadcastMessage.bind(this),
-      this.config.source,
-    )
-    this.logger.log('开始监听评论')
   }
 
   private broadcastMessage(message: DouyinLiveMessage) {
@@ -84,9 +83,5 @@ export class CommentListenerTask extends BaseTask<CommentListenerConfig> {
         cfg.source,
       )
     }
-  }
-
-  protected onRetryError(_error: unknown): void {
-    takeScreenshot(this.page, TASK_NAME, this.account.name)
   }
 }

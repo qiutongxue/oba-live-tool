@@ -119,7 +119,6 @@ export class AccountSession {
         throw new Error(`暂未为${this.platform.platformName}实现自动弹窗功能`)
       }
       newTask = new AutoPopupTask(
-        this.platform.getPopupPage(),
         this.platform,
         task.config,
         this.account,
@@ -130,7 +129,6 @@ export class AccountSession {
         throw new Error(`暂未为${this.platform.platformName}实现自动评论功能`)
       }
       newTask = new AutoCommentTask(
-        this.platform.getCommentPage(),
         this.platform,
         task.config,
         this.account,
@@ -140,13 +138,16 @@ export class AccountSession {
       if (!isPerformComment(this.platform)) {
         throw new Error(`暂未为${this.platform.platformName}实现批量评论功能`)
       }
-      newTask = new SendBatchMessageTask(this.platform, task.config)
+      newTask = new SendBatchMessageTask(
+        this.platform,
+        task.config,
+        this.logger,
+      )
     } else if (task.type === 'comment-listener') {
       if (!isCommentListener(this.platform)) {
         throw new Error(`暂未为${this.platform.platformName}实现评论监听功能`)
       }
       newTask = new CommentListenerTask(
-        this.browserSession.page,
         this.platform,
         task.config,
         this.account,
@@ -161,7 +162,7 @@ export class AccountSession {
       this.activeTasks.delete(task.type)
     })
     this.activeTasks.set(task.type, newTask)
-    newTask.start()
+    await newTask.start()
   }
 
   public stopTask(taskType: LiveControlTask['type']) {

@@ -4,6 +4,8 @@ import type { ICommentListener } from '../IPlatform'
 import { SELECTORS, URLS } from './constant'
 
 export class ControlListener implements ICommentListener {
+  readonly _isCommentListener = true
+
   private isRunning = false
   private handleComment: (comment: DouyinLiveMessage) => void = () => {}
   constructor(private page: Page) {
@@ -55,6 +57,10 @@ export class ControlListener implements ICommentListener {
     await sleep(3000)
     this.keepPageRunning()
   }
+
+  getCommentListenerPage(): Page {
+    return this.page
+  }
 }
 
 interface CompassMessageResponse {
@@ -90,6 +96,8 @@ interface LiveOrderResponse {
 }
 
 export class CompassListener implements ICommentListener {
+  readonly _isCommentListener = true
+
   protected compassPage: Page | undefined
   private handleComment: (comment: DouyinLiveMessage) => void = () => {}
   constructor(
@@ -219,5 +227,9 @@ export class CompassListener implements ICommentListener {
   stopCommentListener() {
     this.compassPage?.removeAllListeners('response')
     this.compassPage?.close()
+  }
+
+  getCommentListenerPage(): Page {
+    return this.compassPage ?? this.page
   }
 }

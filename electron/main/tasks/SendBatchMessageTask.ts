@@ -1,17 +1,22 @@
-import { uniqueId } from 'lodash-es'
+import type { ScopedLogger } from '#/logger'
 import { insertRandomSpaces, randomInt, replaceVariant, sleep } from '#/utils'
 import type { IPerformComment } from './../platforms/IPlatform'
-import { type ITask, type TaskStopCallback, TaskStopReason } from './ITask'
+import { BaseTask } from './BaseTask'
+import { TaskStopReason } from './ITask'
 
-export class SendBatchMessageTask implements ITask {
-  private isRunning = false
-  private readonly taskId = uniqueId('batch-message-task')
-  private _onStopCallback: TaskStopCallback = () => {}
+const TASK_NAME = '一键评论'
 
+export class SendBatchMessageTask extends BaseTask<SendBatchMessagesConfig> {
   constructor(
     private platform: IPerformComment,
     private config: SendBatchMessagesConfig,
-  ) {}
+    logger: ScopedLogger,
+  ) {
+    super({
+      taskName: TASK_NAME,
+      logger,
+    })
+  }
 
   getTaskId(): string {
     return this.taskId
@@ -20,10 +25,6 @@ export class SendBatchMessageTask implements ITask {
   start(): void {
     this.isRunning = true
     this.execute()
-  }
-
-  onStop(callback: TaskStopCallback): void {
-    this._onStopCallback = callback
   }
 
   async execute() {
@@ -44,15 +45,11 @@ export class SendBatchMessageTask implements ITask {
         await sleep(1000)
       }
       this.isRunning = false
-      this._onStopCallback('', TaskStopReason.COMPLETED)
+      this.logger.success(`成功批量发送了 ${count} 条评论`)
+      this.internalStop(TaskStopReason.COMPLETED)
     } catch (error) {
       this.isRunning = false
-      this._onStopCallback('', TaskStopReason.ERROR, error)
+      this.internalStop(TaskStopReason.ERROR, error)
     }
-  }
-
-  stop(): void {
-    this.isRunning = false
-    this._onStopCallback('', TaskStopReason.MANUAL)
   }
 }

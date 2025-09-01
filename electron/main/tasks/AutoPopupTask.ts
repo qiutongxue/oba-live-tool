@@ -1,17 +1,23 @@
 import { merge } from 'lodash-es'
-import type { Page } from 'playwright'
+import { IPC_CHANNELS } from 'shared/ipcChannels'
 import type { ScopedLogger } from '#/logger'
 import type { IPerformPopup } from '#/platforms/IPlatform'
 import { errorMessage, randomInt, takeScreenshot } from '#/utils'
+import windowManager from '#/windowManager'
 import { IntervalTask } from './IntervalTask'
+import { runWithRetry } from './retry'
 
 const TASK_NAME = '自动弹窗'
+
+const retryOptions = {
+  maxRetries: 3,
+  retryDelay: 1000,
+}
 
 export class AutoPopupTask extends IntervalTask<AutoPopupTask> {
   private arrayIndex = -1
 
   constructor(
-    private page: Page,
     protected platform: IPerformPopup,
     private config: AutoPopupConfig,
     private account: Account,
@@ -20,17 +26,36 @@ export class AutoPopupTask extends IntervalTask<AutoPopupTask> {
     super({
       taskName: TASK_NAME,
       logger,
-      options: {
-        maxRetries: 3,
-        retryDelay: 1000,
-      },
       interval: config.scheduler.interval,
     })
   }
 
   protected async execute() {
-    const goodsId = this.getNextGoodsId()
-    await this.platform.performPopup(goodsId)
+    try {
+      runWithRetry(
+        async () => {
+          const goodsId = this.getNextGoodsId()
+          await this.platform.performPopup(goodsId)
+          this.logger.success(`商品 ${goodsId} 讲解成功`)
+        },
+        {
+          ...retryOptions,
+          logger: this.logger,
+          onRetryError: () =>
+            takeScreenshot(
+              this.platform.getPopupPage(),
+              TASK_NAME,
+              this.account.name,
+            ),
+        },
+      )
+    } catch (err) {
+      windowManager.send(
+        IPC_CHANNELS.tasks.autoPopUp.stoppedEvent,
+        this.account.id,
+      )
+      throw err
+    }
   }
 
   private getNextGoodsId(): number {
@@ -65,9 +90,5 @@ export class AutoPopupTask extends IntervalTask<AutoPopupTask> {
     this.logger.info(
       `商品配置验证通过，共加载 ${userConfig.goodsIds.length} 个商品`,
     )
-  }
-
-  protected onRetryError(): void {
-    takeScreenshot(this.page, TASK_NAME, this.account.name)
   }
 }

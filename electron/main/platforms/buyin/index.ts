@@ -30,6 +30,8 @@ export class BuyinPlatform
 {
   readonly _isPerformComment = true
   readonly _isPerformPopup = true
+  readonly _isCommentListener = true
+
   private mainPage: Page | null = null
   private commentListener: ICommentListener | null = null
 
@@ -103,18 +105,25 @@ export class BuyinPlatform
   startCommentListener(
     onComment: (comment: DouyinLiveMessage) => void,
     source: 'control' | 'compass',
-  ): void {
+  ) {
     ensurePage(this.mainPage)
     if (source === 'control') {
       this.commentListener = new ControlListener(this.mainPage)
     } else {
       this.commentListener = new CompassListener('buyin', this.mainPage)
     }
-    this.commentListener.startCommentListener(onComment, source)
+    return this.commentListener.startCommentListener(onComment, source)
   }
 
   stopCommentListener(): void {
     this.commentListener?.stopCommentListener()
+  }
+
+  getCommentListenerPage(): Page {
+    if (!this.commentListener) {
+      throw new Error('未找到评论监听页面')
+    }
+    return this.commentListener?.getCommentListenerPage() ?? this.mainPage
   }
 
   getPopupPage(): Page {

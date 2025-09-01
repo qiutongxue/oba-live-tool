@@ -1,4 +1,4 @@
-import type { Page } from 'playwright'
+import { IPC_CHANNELS } from 'shared/ipcChannels'
 import type { ScopedLogger } from '#/logger'
 import type { IPerformComment } from '#/platforms/IPlatform'
 import {
@@ -7,14 +7,20 @@ import {
   replaceVariant,
   takeScreenshot,
 } from '#/utils'
+import windowManager from '#/windowManager'
 import { IntervalTask } from './IntervalTask'
+import { runWithRetry } from './retry'
 
 const TASK_NAME = '自动评论'
+
+const retryOptions = {
+  maxRetries: 3,
+  retryDelay: 1000,
+}
 
 export class AutoCommentTask extends IntervalTask<AutoCommentConfig> {
   private arrayIndex = -1
   constructor(
-    private page: Page,
     protected platform: IPerformComment,
     private config: AutoCommentConfig,
     private account: Account,
@@ -23,24 +29,48 @@ export class AutoCommentTask extends IntervalTask<AutoCommentConfig> {
     super({
       taskName: TASK_NAME,
       logger,
-      options: {
-        maxRetries: 3,
-        retryDelay: 1000,
-      },
       interval: config.scheduler.interval,
     })
     this.validateConfig(config)
   }
 
   protected async execute(): Promise<void> {
-    const message = this.getNextMessage()
-    // 替换变量
-    let content = replaceVariant(message.content)
-    // 添加随机空格
-    if (this.config.extraSpaces) {
-      content = insertRandomSpaces(content)
+    try {
+      runWithRetry(
+        async () => {
+          const message = this.getNextMessage()
+          // 替换变量
+          let content = replaceVariant(message.content)
+          // 添加随机空格
+          if (this.config.extraSpaces) {
+            content = insertRandomSpaces(content)
+          }
+          const isPinTop = await this.platform.performComment(
+            content,
+            message.pinTop,
+          )
+          this.logger.success(
+            `发送${isPinTop ? '「置顶」' : ''}消息: ${content}`,
+          )
+        },
+        {
+          ...retryOptions,
+          logger: this.logger,
+          onRetryError: () =>
+            takeScreenshot(
+              this.platform.getCommentPage(),
+              TASK_NAME,
+              this.account.name,
+            ),
+        },
+      )
+    } catch (err) {
+      windowManager.send(
+        IPC_CHANNELS.tasks.autoMessage.stoppedEvent,
+        this.account.id,
+      )
+      throw err
     }
-    await this.platform.performComment(content, message.pinTop)
   }
 
   private getNextMessage() {
@@ -90,10 +120,6 @@ export class AutoCommentTask extends IntervalTask<AutoCommentConfig> {
     this.logger.info(
       `消息配置验证通过，共加载 ${userConfig.messages.length} 条消息`,
     )
-  }
-
-  protected onRetryError(): void {
-    takeScreenshot(this.page, TASK_NAME, this.account.name)
   }
 }
 
