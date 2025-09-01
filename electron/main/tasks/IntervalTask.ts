@@ -26,15 +26,14 @@ export abstract class IntervalTask<Cfg> extends BaseTask<Cfg> {
 
   public stop(): void {
     super.stop()
-    if (this.timer) {
-      clearTimeout(this.timer)
-    }
+    this.clearTimer()
   }
 
   private async scheduleNextRun(): Promise<void> {
     if (!this.isRunning) {
       return
     }
+    this.clearTimer()
 
     // 错误已经处理过了，不用捕获
     await this.runWithRetries()
@@ -53,6 +52,13 @@ export abstract class IntervalTask<Cfg> extends BaseTask<Cfg> {
     }
     const [mn, mx] = [Math.min(...interval), Math.max(...interval)]
     return randomInt(mn, mx)
+  }
+
+  private clearTimer() {
+    if (this.timer) {
+      clearTimeout(this.timer)
+      this.timer = null
+    }
   }
 
   public updateInterval(interval: IntervalTaskProps['interval']) {
