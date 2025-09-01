@@ -70,7 +70,7 @@ export class AutoPopupTask extends IntervalTask<AutoPopupTask> {
   public updateConfig(newConfig: Partial<AutoPopupConfig>) {
     try {
       const config = merge({}, this.config, newConfig)
-      // this.validateConfig(config)
+      this.validateConfig(config)
       if (newConfig.scheduler?.interval)
         this.updateInterval(config.scheduler.interval)
       this.config = config

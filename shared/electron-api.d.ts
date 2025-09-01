@@ -34,6 +34,10 @@ export interface IpcChannels {
     messages: string[],
     count: number,
   ) => boolean
+  [IPC_CHANNELS.tasks.autoMessage.updateConfig]: (
+    accountId: string,
+    config: Parital<AutoCommentConfig>,
+  ) => void
 
   // AutoPopup
   [IPC_CHANNELS.tasks.autoPopUp.start]: (

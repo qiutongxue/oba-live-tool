@@ -64,6 +64,18 @@ function setupIpcHandlers() {
       }
     },
   )
+
+  typedIpcMainHandle(
+    IPC_CHANNELS.tasks.autoMessage.updateConfig,
+    async (_, accountId, newConfig) => {
+      try {
+        const accountSession = accountManager.getSession(accountId)
+        accountSession.updateTaskConfig(TASK_TYPE, newConfig)
+      } catch {
+        // TODO: 错误处理
+      }
+    },
+  )
 }
 
 export function setupAutoMessageIpcHandlers() {

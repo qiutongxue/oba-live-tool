@@ -1,7 +1,9 @@
+import { merge } from 'lodash-es'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import type { ScopedLogger } from '#/logger'
 import type { IPerformComment } from '#/platforms/IPlatform'
 import {
+  errorMessage,
   insertRandomSpaces,
   randomInt,
   replaceVariant,
@@ -120,6 +122,20 @@ export class AutoCommentTask extends IntervalTask<AutoCommentConfig> {
     this.logger.info(
       `消息配置验证通过，共加载 ${userConfig.messages.length} 条消息`,
     )
+  }
+
+  public updateConfig(newConfig: Partial<AutoCommentConfig>) {
+    try {
+      const config = merge({}, this.config, newConfig)
+      this.validateConfig(config)
+      if (newConfig.scheduler?.interval) {
+        this.updateInterval(config.scheduler.interval)
+      }
+      this.config = config
+    } catch (error) {
+      this.logger.error(`配置更新失败: ${errorMessage(error)}`)
+      throw error
+    }
   }
 }
 
