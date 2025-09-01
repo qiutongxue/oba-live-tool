@@ -1,14 +1,16 @@
 import { randomInt } from '#/utils'
 import { BaseTask, type BaseTaskProps } from './BaseTask'
+import { TaskStopReason } from './ITask'
 
-// 定义所有间隔任务都必须包含的配置
 export interface IntervalTaskProps extends BaseTaskProps {
+  /** 定时执行的间隔，可以是区间也可以是定值 */
   interval: [number, number] | number
 }
 
 export abstract class IntervalTask<Cfg> extends BaseTask<Cfg> {
   private timer: NodeJS.Timeout | null = null
   private interval: IntervalTaskProps['interval']
+
   constructor({ interval, ...params }: IntervalTaskProps) {
     super(params)
     this.interval = interval
@@ -35,8 +37,11 @@ export abstract class IntervalTask<Cfg> extends BaseTask<Cfg> {
     }
     this.clearTimer()
 
-    // 错误已经处理过了，不用捕获
-    await this.runWithRetries()
+    try {
+      this.execute()
+    } catch (error) {
+      this.internalStop(TaskStopReason.ERROR, error)
+    }
 
     if (this.isRunning) {
       const interval = this.calculateNextInterval()
@@ -79,5 +84,5 @@ export abstract class IntervalTask<Cfg> extends BaseTask<Cfg> {
     }
   }
 
-  protected abstract execute(): Promise<void>
+  protected abstract execute(): Promise<void> | void
 }

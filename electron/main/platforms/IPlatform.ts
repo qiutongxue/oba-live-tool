@@ -2,22 +2,21 @@ import type { Page } from 'playwright'
 import type { BrowserSession } from '#/tasks/connection/types'
 
 export interface ICommentListener {
+  _isCommentListener: true
   startCommentListener(
     onComment: (comment: DouyinLiveMessage) => void,
     /** 暂定，control 为中控台互动评论监听， compass 为直播大屏监听 */
     source: 'control' | 'compass',
-  ): void
+  ): void | Promise<void>
   stopCommentListener(): void
+  getCommentListenerPage(): Page
 }
 
 export function isCommentListener(
   platform: IPlatform,
 ): platform is IPlatform & ICommentListener {
   return (
-    'startCommentListener' in platform &&
-    'stopCommentListener' in platform &&
-    typeof platform.startCommentListener === 'function' &&
-    typeof platform.stopCommentListener === 'function'
+    '_isCommentListener' in platform && platform._isCommentListener === true
   )
 }
 
