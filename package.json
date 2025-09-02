@@ -50,7 +50,7 @@
     "immer": "^10.1.1",
     "lodash-es": "^4.17.21",
     "lucide-react": "0.525.0",
-    "marked": "16.0.0",
+    "marked": "16.2.1",
     "motion": "^12.6.2",
     "openai": "5.8.2",
     "playwright": "^1.50.0",
