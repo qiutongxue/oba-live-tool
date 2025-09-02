@@ -64,10 +64,13 @@ export class AccountSession {
     const accountName = await this.platform.getAccountName(this.browserSession)
 
     // 浏览器被外部主动关闭时，程序自动断开所有操作
-    this.browserSession.context.on('close', () => {
-      // 通知 AccountManager 关闭该 session，同时会调用 disconnect()
+    // 不用 browserContext close 或 browser disconnected 的原因：
+    // Windows 手动关闭浏览器时（点击右上角的x或标签页的x）无法触发相应事件
+    // 只会触发 page close，所以没办法
+    this.browserSession.page.on('close', () => {
       emitter.emit('page-closed', { accountId: this.account.id })
     })
+    this.logger.success('成功与中控台建立连接')
     return {
       accountName,
       storageState: state,
@@ -80,7 +83,13 @@ export class AccountSession {
     this.browserSession?.browser
       .close()
       .catch(e => this.logger.error(`无法关闭浏览器：${e}`))
+    // 关闭所有正在进行的任务
     this.activeTasks.values().forEach(task => task.stop())
+    // 通知渲染层
+    windowManager.send(
+      IPC_CHANNELS.tasks.liveControl.disconnectedEvent,
+      this.account.id,
+    )
   }
 
   private async ensureAuthenticated(session: BrowserSession, headless = true) {
