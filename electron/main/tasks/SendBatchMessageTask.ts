@@ -41,11 +41,11 @@ export class SendBatchMessageTask extends BaseTask<SendBatchMessagesConfig> {
         }
 
         await this.platform.performComment(message)
+        this.logger.success(`成功发送第 ${i + 1}/${count} 条评论：${message}`)
         // 以防万一，加一个 1s 的小停顿
         await sleep(1000)
       }
       this.isRunning = false
-      this.logger.success(`成功批量发送了 ${count} 条评论`)
       this.internalStop(TaskStopReason.COMPLETED)
     } catch (error) {
       this.isRunning = false
