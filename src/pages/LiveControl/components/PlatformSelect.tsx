@@ -11,7 +11,7 @@ import {
   useCurrentLiveControlActions,
 } from '@/hooks/useLiveControl'
 
-const platforms: Record<LiveControlPlatform, string> = {
+const basePlatforms: Record<LiveControlPlatform, string> = {
   douyin: '抖音小店',
   buyin: '巨量百应',
   eos: '抖音团购',
@@ -19,7 +19,17 @@ const platforms: Record<LiveControlPlatform, string> = {
   wxchannel: '视频号',
   kuaishou: '快手小店',
   taobao: '淘宝',
-} as const
+  dev: '测试平台',
+}
+
+const platforms = (() => {
+  const isDev = process.env.NODE_ENV === 'development'
+  if (isDev) {
+    return basePlatforms
+  }
+  const { dev: _, ...productionPlatforms } = basePlatforms
+  return productionPlatforms
+})()
 
 const PlatformSelect = React.memo(() => {
   const platform = useCurrentLiveControl(context => context.platform)
