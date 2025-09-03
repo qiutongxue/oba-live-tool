@@ -23,9 +23,9 @@ function setupIpcHandlers() {
         return true
       } catch (error) {
         const logger = createLogger(
-          `${TASK_NAME} @${accountManager.getAccountName(accountId)}`,
-        )
-        logger.error('启动自动发言失败:', errorMessage(error))
+          `@${accountManager.getAccountName(accountId)}`,
+        ).scope(TASK_NAME)
+        logger.error(`启动任务失败：${errorMessage(error)}`)
         return false
       }
     },
@@ -40,9 +40,9 @@ function setupIpcHandlers() {
         return true
       } catch (error) {
         const logger = createLogger(
-          `${TASK_NAME} @${accountManager.getAccountName(accountId)}`,
-        )
-        logger.error('停止自动发言失败:', errorMessage(error))
+          `@${accountManager.getAccountName(accountId)}`,
+        ).scope(TASK_NAME)
+        logger.error(`停止任务失败：${errorMessage(error)}`)
         return false
       }
     },

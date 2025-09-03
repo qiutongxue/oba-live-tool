@@ -29,7 +29,7 @@ function setupIpcHandlers() {
           accountName,
         }
       } catch (error) {
-        const logger = createLogger(`${TASK_NAME} ${account.name}}`)
+        const logger = createLogger(`@${account.name}}`).scope(TASK_NAME)
         logger.error('连接直播控制台失败:', errorMessage(error))
 
         accountSession.disconnect()
@@ -48,8 +48,8 @@ function setupIpcHandlers() {
         return true
       } catch (error) {
         const logger = createLogger(
-          `TASK_NAME @${accountManager.getAccountName(accountId)}`,
-        )
+          `@${accountManager.getAccountName(accountId)}`,
+        ).scope(TASK_NAME)
         logger.error('断开连接失败:', errorMessage(error))
         return false
       }
