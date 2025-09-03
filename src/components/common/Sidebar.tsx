@@ -52,7 +52,7 @@ export default function Sidebar() {
       name: '自动回复',
       isRunning: isAutoReplyRunning,
       icon: <CarbonIbmEventAutomation className="w-5 h-5" />,
-      platform: ['douyin', 'buyin'],
+      platform: ['douyin', 'buyin', 'dev'],
     },
     {
       id: '/ai-chat',

@@ -11,6 +11,7 @@ declare type LiveControlPlatform =
   | 'wxchannel'
   | 'kuaishou'
   | 'taobao'
+  | 'dev'
 
 declare type AutoPopupConfig = {
   scheduler: {

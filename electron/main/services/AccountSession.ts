@@ -1,20 +1,22 @@
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { emitter } from '#/event/eventBus'
 import { createLogger } from '#/logger'
-import { BuyinPlatform } from '#/platforms/buyin'
-import { DevPlatform } from '#/platforms/dev'
-import { DouyinPlatform } from '#/platforms/douyin'
-import { DouyinEosPlatform } from '#/platforms/douyin-eos'
+import {
+  BuyinPlatform,
+  DevPlatform,
+  DouyinEosPlatform,
+  DouyinPlatform,
+  KuaishouPlatform,
+  TaobaoPlatform,
+  WechatChannelPlatform,
+  XiaohongshuPlatform,
+} from '#/platforms'
 import {
   type IPlatform,
   isCommentListener,
   isPerformComment,
   isPerformPopup,
 } from '#/platforms/IPlatform'
-import { KuaishouPlatform } from '#/platforms/kuaishou'
-import { TaobaoPlatform } from '#/platforms/taobao'
-import { WechatChannelPlatform } from '#/platforms/wechat-channels'
-import { XiaohongshuPlatform } from '#/platforms/xiaohongshu'
 import { AutoCommentTask } from '#/tasks/AutoCommentTask'
 import { AutoPopupTask } from '#/tasks/AutoPopupTask'
 import { CommentListenerTask } from '#/tasks/CommentListenerTask'
@@ -170,8 +172,8 @@ export class AccountSession {
     newTask.onStop(() => {
       this.activeTasks.delete(task.type)
     })
+    newTask.start()
     this.activeTasks.set(task.type, newTask)
-    await newTask.start()
   }
 
   public stopTask(taskType: LiveControlTask['type']) {
@@ -194,10 +196,7 @@ export class AccountSession {
   }
 }
 
-const platformFactory: Record<
-  LiveControlPlatform | 'dev',
-  { new (): IPlatform }
-> = {
+const platformFactory: Record<LiveControlPlatform, { new (): IPlatform }> = {
   buyin: BuyinPlatform,
   douyin: DouyinPlatform,
   redbook: XiaohongshuPlatform,
