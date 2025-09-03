@@ -15,7 +15,7 @@ function setupIpcHandlers() {
     async (_, accountId, config) => {
       try {
         const accountSession = accountManager.getSession(accountId)
-        accountSession.startTask({
+        await accountSession.startTask({
           type: TASK_TYPE,
           config,
         })
@@ -23,9 +23,9 @@ function setupIpcHandlers() {
         return true
       } catch (error) {
         const logger = createLogger(
-          `${TASK_NAME} ${accountManager.getAccountName(accountId)}}`,
-        )
-        logger.error('启动自动弹窗失败:', errorMessage(error))
+          `@${accountManager.getAccountName(accountId)}`,
+        ).scope(TASK_NAME)
+        logger.error(`启动任务失败：${errorMessage(error)}`)
         return false
       }
     },
@@ -38,7 +38,11 @@ function setupIpcHandlers() {
         const accountSession = accountManager.getSession(accountId)
         accountSession.stopTask(TASK_TYPE)
         return true
-      } catch {
+      } catch (error) {
+        const logger = createLogger(
+          `@${accountManager.getAccountName(accountId)}`,
+        ).scope(TASK_NAME)
+        logger.error(`停止任务失败：${errorMessage(error)}`)
         return false
       }
     },
@@ -50,8 +54,11 @@ function setupIpcHandlers() {
       try {
         const accountSession = accountManager.getSession(accountId)
         accountSession.updateTaskConfig(TASK_TYPE, newConfig)
-      } catch {
-        // TODO: 错误处理
+      } catch (error) {
+        const logger = createLogger(
+          `@${accountManager.getAccountName(accountId)}`,
+        ).scope(TASK_NAME)
+        logger.error(`更新配置失败：${errorMessage(error)}`)
       }
     },
   )

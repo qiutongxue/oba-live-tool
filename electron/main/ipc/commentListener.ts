@@ -19,8 +19,8 @@ function setupIpcHandlers() {
         return true
       } catch (error) {
         const logger = createLogger(
-          `${TASK_NAME} @${accountManager.getAccountName(accountId)}`,
-        )
+          `@${accountManager.getAccountName(accountId)}`,
+        ).scope(TASK_NAME)
         logger.error('启动失败:', error)
         return false
       }
@@ -35,8 +35,8 @@ function setupIpcHandlers() {
         accountSession.stopTask('comment-listener')
       } catch (error) {
         const logger = createLogger(
-          `${TASK_NAME} @${accountManager.getAccountName(accountId)}`,
-        )
+          `@${accountManager.getAccountName(accountId)}`,
+        ).scope(TASK_NAME)
 
         logger.error('停止监听评论失败:', errorMessage(error))
       }
@@ -59,8 +59,8 @@ function setupIpcHandlers() {
         })
       } catch (error) {
         const logger = createLogger(
-          `${TASK_NAME} @${accountManager.getAccountName(accountId)}`,
-        )
+          `@${accountManager.getAccountName(accountId)}`,
+        ).scope(TASK_NAME)
         logger.error('发送回复失败:', errorMessage(error))
         throw error
       }
