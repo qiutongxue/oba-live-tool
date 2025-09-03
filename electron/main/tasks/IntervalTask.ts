@@ -38,7 +38,7 @@ export abstract class IntervalTask<Cfg> extends BaseTask<Cfg> {
     this.clearTimer()
 
     try {
-      this.execute()
+      await this.execute()
     } catch (error) {
       this.internalStop(TaskStopReason.ERROR, error)
     }

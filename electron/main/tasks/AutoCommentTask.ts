@@ -38,7 +38,7 @@ export class AutoCommentTask extends IntervalTask<AutoCommentConfig> {
 
   protected async execute(): Promise<void> {
     try {
-      runWithRetry(
+      await runWithRetry(
         async () => {
           const message = this.getNextMessage()
           // 替换变量

@@ -32,7 +32,7 @@ export class AutoPopupTask extends IntervalTask<AutoPopupTask> {
 
   protected async execute() {
     try {
-      runWithRetry(
+      await runWithRetry(
         async () => {
           const goodsId = this.getNextGoodsId()
           await this.platform.performPopup(goodsId)
