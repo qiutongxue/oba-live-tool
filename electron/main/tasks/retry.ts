@@ -33,12 +33,11 @@ export async function runWithRetry<T>(
       const canRetry = shouldRetry(err, attempt)
 
       if (isLast || !canRetry) {
-        throw new Error(`达到最大重试次数，任务失败：${String(err)}`)
+        throw new Error('达到最大重试次数，任务失败')
       }
 
       await sleep(retryDelay)
     }
   }
-
-  throw new Error('Unexpected retry flow')
+  throw new Error('未知错误')
 }

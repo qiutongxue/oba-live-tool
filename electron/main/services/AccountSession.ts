@@ -17,13 +17,13 @@ import {
   isPerformComment,
   isPerformPopup,
 } from '#/platforms/IPlatform'
-import { AutoCommentTask } from '#/tasks/AutoCommentTask'
-import { AutoPopupTask } from '#/tasks/AutoPopupTask'
-import { CommentListenerTask } from '#/tasks/CommentListenerTask'
+import { createAutoCommentTask } from '#/tasks/AutoCommentTask'
+import { createAutoPopupTask } from '#/tasks/AutoPopupTask'
+import { createCommentListenerTask } from '#/tasks/CommentListenerTask'
 import { BrowserSessionManager } from '#/tasks/connection/BrowserSessionManager'
 import type { BrowserSession, StorageState } from '#/tasks/connection/types'
 import type { ITask } from '#/tasks/ITask'
-import { SendBatchMessageTask } from '#/tasks/SendBatchMessageTask'
+import { createSendBatchMessageTask } from '#/tasks/SendBatchMessageTask'
 import windowManager from '#/windowManager'
 
 const browserFactory = BrowserSessionManager.getInstance()
@@ -129,7 +129,7 @@ export class AccountSession {
       if (!isPerformPopup(this.platform)) {
         throw new Error(`暂未为${this.platform.platformName}实现自动弹窗功能`)
       }
-      newTask = new AutoPopupTask(
+      newTask = createAutoPopupTask(
         this.platform,
         task.config,
         this.account,
@@ -139,7 +139,7 @@ export class AccountSession {
       if (!isPerformComment(this.platform)) {
         throw new Error(`暂未为${this.platform.platformName}实现自动评论功能`)
       }
-      newTask = new AutoCommentTask(
+      newTask = createAutoCommentTask(
         this.platform,
         task.config,
         this.account,
@@ -149,7 +149,7 @@ export class AccountSession {
       if (!isPerformComment(this.platform)) {
         throw new Error(`暂未为${this.platform.platformName}实现批量评论功能`)
       }
-      newTask = new SendBatchMessageTask(
+      newTask = createSendBatchMessageTask(
         this.platform,
         task.config,
         this.logger,
@@ -158,7 +158,7 @@ export class AccountSession {
       if (!isCommentListener(this.platform)) {
         throw new Error(`暂未为${this.platform.platformName}实现评论监听功能`)
       }
-      newTask = new CommentListenerTask(
+      newTask = createCommentListenerTask(
         this.platform,
         task.config,
         this.account,
@@ -169,7 +169,7 @@ export class AccountSession {
     }
 
     // 任务停止时从任务列表中移除
-    newTask.onStop(() => {
+    newTask.addStopListener(() => {
       this.activeTasks.delete(task.type)
     })
     newTask.start()
