@@ -3,85 +3,77 @@ import type { ScopedLogger } from '#/logger'
 import type { ICommentListener } from '#/platforms/IPlatform'
 import { WebSocketService } from '#/services/WebSocketService'
 import windowManager from '#/windowManager'
-import { BaseTask } from './BaseTask'
+import { createTask } from './BaseTask'
 import { TaskStopReason } from './ITask'
 
 const TASK_NAME = '自动回复'
 
-export class CommentListenerTask extends BaseTask<CommentListenerConfig> {
-  private wsService: WebSocketService | null = null
+export function createCommentListenerTask(
+  platform: ICommentListener,
+  config: CommentListenerConfig,
+  account: Account,
+  _logger: ScopedLogger,
+) {
+  const logger = _logger.scope(TASK_NAME)
+  let wsService: WebSocketService
 
-  constructor(
-    private platform: ICommentListener,
-    private config: CommentListenerConfig,
-    private account: Account,
-    logger: ScopedLogger,
-  ) {
-    super({
-      taskName: TASK_NAME,
-      logger,
-    })
-  }
-
-  public async start() {
-    if (this.isRunning) {
-      return
-    }
-    this.isRunning = true
-    await this.execute()
-  }
-
-  public stop() {
-    super.stop()
-    this.wsService?.stop()
-    this.platform.stopCommentListener()
-  }
-
-  protected async execute() {
+  async function execute() {
     try {
-      if (this.config.ws) {
-        this.wsService = new WebSocketService()
-        this.wsService.start(this.config.ws.port)
+      if (config.ws) {
+        wsService = new WebSocketService()
+        wsService.start(config.ws.port)
       }
-      await this.platform.startCommentListener(
-        this.broadcastMessage.bind(this),
-        this.config.source,
-      )
-      this.logger.log('开始监听评论')
+      await platform.startCommentListener(broadcastMessage, config.source)
+      logger.info('开始监听评论')
     } catch (err) {
-      this.internalStop(TaskStopReason.ERROR, err)
+      // TODO: 失败了怎么办？还要告诉渲染层关闭按钮
+      task.stop(TaskStopReason.ERROR, err)
     }
   }
 
-  private broadcastMessage(message: DouyinLiveMessage) {
+  function broadcastMessage(message: DouyinLiveMessage) {
     const comment: DouyinLiveMessage = {
       ...message,
       time: new Date().toLocaleTimeString(),
     }
     windowManager.send(IPC_CHANNELS.tasks.autoReply.showComment, {
-      accountId: this.account.id,
+      accountId: account.id,
       comment: comment,
     })
 
-    this.wsService?.broadcast(comment)
+    wsService?.broadcast(comment)
   }
 
-  updateConfig(cfg: Partial<CommentListenerConfig>) {
-    if (cfg.ws && cfg.ws.port !== this.config.ws?.port) {
-      this.config.ws = cfg.ws
-      if (!this.wsService) {
-        this.wsService = new WebSocketService()
+  function updateConfig(cfg: Partial<CommentListenerConfig>) {
+    if (cfg.ws && cfg.ws.port !== config.ws?.port) {
+      config.ws = cfg.ws
+      if (!wsService) {
+        wsService = new WebSocketService()
       }
-      this.wsService.stop()
-      this.wsService.start(this.config.ws.port)
+      wsService.stop()
+      wsService.start(config.ws.port)
     }
-    if (cfg.source && this.config.source !== cfg.source) {
-      this.config.source = cfg.source
-      this.platform.stopCommentListener()
-      this.platform.startCommentListener(
-        this.broadcastMessage.bind(this),
-        cfg.source,
-      )
+    if (cfg.source && config.source !== cfg.source) {
+      config.source = cfg.source
+      platform.stopCommentListener()
+      platform.startCommentListener(broadcastMessage, cfg.source)
     }
+  }
+
+  const task = createTask(
+    {
+      taskName: TASK_NAME,
+      logger,
+    },
+    {
+      onStart: () => {
+        execute()
+      },
+    },
+  )
+
+  return {
+    ...task,
+    updateConfig,
   }
 }

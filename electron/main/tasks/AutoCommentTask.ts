@@ -10,7 +10,7 @@ import {
   takeScreenshot,
 } from '#/utils'
 import windowManager from '#/windowManager'
-import { IntervalTask } from './IntervalTask'
+import { createIntervalTask } from './IntervalTask'
 import { runWithRetry } from './retry'
 
 const TASK_NAME = '自动评论'
@@ -20,86 +20,41 @@ const retryOptions = {
   retryDelay: 1000,
 }
 
-export class AutoCommentTask extends IntervalTask<AutoCommentConfig> {
-  private arrayIndex = -1
-  constructor(
-    protected platform: IPerformComment,
-    private config: AutoCommentConfig,
-    private account: Account,
-    logger: ScopedLogger,
-  ) {
-    super({
-      taskName: TASK_NAME,
-      logger,
-      interval: config.scheduler.interval,
-    })
-    this.validateConfig(config)
-  }
+export function createAutoCommentTask(
+  platform: IPerformComment,
+  taskConfig: AutoCommentConfig,
+  account: Account,
+  lgr: ScopedLogger,
+) {
+  const logger = lgr.scope(TASK_NAME)
+  let arrayIndex = -1
+  let config = { ...taskConfig }
 
-  protected async execute(): Promise<void> {
-    try {
-      await runWithRetry(
-        async () => {
-          const message = this.getNextMessage()
-          // 替换变量
-          let content = replaceVariant(message.content)
-          // 添加随机空格
-          if (this.config.extraSpaces) {
-            content = insertRandomSpaces(content)
-          }
-          const isPinTop = await this.platform.performComment(
-            content,
-            message.pinTop,
-          )
-          this.logger.success(
-            `发送${isPinTop ? '「置顶」' : ''}消息: ${content}`,
-          )
-        },
-        {
-          ...retryOptions,
-          logger: this.logger,
-          onRetryError: () =>
-            takeScreenshot(
-              this.platform.getCommentPage(),
-              TASK_NAME,
-              this.account.name,
-            ),
-        },
-      )
-    } catch (err) {
-      windowManager.send(
-        IPC_CHANNELS.tasks.autoMessage.stoppedEvent,
-        this.account.id,
-      )
-      throw err
-    }
-  }
+  function getNextMessage() {
+    const messages = config.messages
 
-  private getNextMessage() {
-    const messages = this.config.messages
-
-    if (this.config.random) {
+    if (config.random) {
       if (messages.length <= 1) {
-        this.arrayIndex = 0
-      } else if (this.arrayIndex < 0) {
-        this.arrayIndex = randomInt(0, messages.length - 1)
+        arrayIndex = 0
+      } else if (arrayIndex < 0) {
+        arrayIndex = randomInt(0, messages.length - 1)
       } else {
         // 不和上一条消息重复
         const nextIndex = randomInt(0, messages.length - 2)
-        if (nextIndex < this.arrayIndex) {
-          this.arrayIndex = nextIndex
+        if (nextIndex < arrayIndex) {
+          arrayIndex = nextIndex
         } else {
-          this.arrayIndex = nextIndex + 1
+          arrayIndex = nextIndex + 1
         }
       }
     } else {
-      this.arrayIndex = (this.arrayIndex + 1) % messages.length
+      arrayIndex = (arrayIndex + 1) % messages.length
     }
-    return messages[this.arrayIndex]
+    return messages[arrayIndex]
   }
 
-  private validateConfig(userConfig: AutoCommentConfig) {
-    super.validateInterval(userConfig.scheduler.interval)
+  function validateConfig(userConfig: AutoCommentConfig) {
+    intervalTask.validateInterval(userConfig.scheduler.interval)
     if (userConfig.messages.length === 0) {
       throw new Error('消息配置验证失败: 必须提供至少一条消息')
     }
@@ -119,23 +74,65 @@ export class AutoCommentTask extends IntervalTask<AutoCommentConfig> {
       throw new Error(`消息配置验证失败: 第 ${badIndex + 1} 条消息为空`)
     }
 
-    this.logger.info(
-      `消息配置验证通过，共加载 ${userConfig.messages.length} 条消息`,
-    )
+    logger.info(`消息配置验证通过，共加载 ${userConfig.messages.length} 条消息`)
   }
 
-  public updateConfig(newConfig: Partial<AutoCommentConfig>) {
+  validateConfig(config)
+
+  const execute = async () => {
     try {
-      const config = merge({}, this.config, newConfig)
-      this.validateConfig(config)
-      if (newConfig.scheduler?.interval) {
-        this.updateInterval(config.scheduler.interval)
-      }
-      this.config = config
-    } catch (error) {
-      this.logger.error(`配置更新失败: ${errorMessage(error)}`)
-      throw error
+      await runWithRetry(
+        async () => {
+          const message = getNextMessage()
+          // 替换变量
+          let content = replaceVariant(message.content)
+          // 添加随机空格
+          if (config.extraSpaces) {
+            content = insertRandomSpaces(content)
+          }
+          const isPinTop = await platform.performComment(
+            content,
+            message.pinTop,
+          )
+          logger.success(`发送${isPinTop ? '「置顶」' : ''}消息: ${content}`)
+        },
+        {
+          ...retryOptions,
+          logger,
+          onRetryError: () =>
+            takeScreenshot(platform.getCommentPage(), TASK_NAME, account.name),
+        },
+      )
+    } catch (err) {
+      windowManager.send(
+        IPC_CHANNELS.tasks.autoMessage.stoppedEvent,
+        account.id,
+      )
+      throw err
     }
+  }
+
+  const intervalTask = createIntervalTask(execute, {
+    interval: config.scheduler.interval,
+    logger,
+    taskName: TASK_NAME,
+  })
+
+  return {
+    ...intervalTask,
+    updateConfig(newConfig: Partial<AutoCommentConfig>) {
+      try {
+        const mergedConfig = merge({}, config, newConfig)
+        validateConfig(mergedConfig)
+        if (newConfig.scheduler?.interval) {
+          intervalTask.updateInterval(config.scheduler.interval)
+        }
+        config = mergedConfig
+      } catch (error) {
+        logger.error(`配置更新失败: ${errorMessage(error)}`)
+        throw error
+      }
+    },
   }
 }
 
