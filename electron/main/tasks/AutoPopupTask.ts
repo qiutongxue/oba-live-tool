@@ -1,8 +1,12 @@
-import { merge } from 'lodash-es'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import type { ScopedLogger } from '#/logger'
 import type { IPerformPopup } from '#/platforms/IPlatform'
-import { errorMessage, randomInt, takeScreenshot } from '#/utils'
+import {
+  errorMessage,
+  mergeWithoutArray,
+  randomInt,
+  takeScreenshot,
+} from '#/utils'
 import windowManager from '#/windowManager'
 import { createIntervalTask } from './IntervalTask'
 import { runWithRetry } from './retry'
@@ -24,10 +28,13 @@ export function createAutoPopupTask(
   let arrayIndex = -1
   let config = { ...taskConfig }
 
-  async function execute() {
+  async function execute(signal: AbortSignal) {
     try {
       await runWithRetry(
         async () => {
+          if (signal.aborted) {
+            return
+          }
           const goodsId = getNextGoodsId()
           await platform.performPopup(goodsId)
           logger.success(`商品 ${goodsId} 讲解成功`)
@@ -56,7 +63,7 @@ export function createAutoPopupTask(
 
   function updateConfig(newConfig: Partial<AutoPopupConfig>) {
     try {
-      const mergedConfig = merge({}, config, newConfig)
+      const mergedConfig = mergeWithoutArray(config, newConfig)
       validateConfig(mergedConfig)
       if (newConfig.scheduler?.interval)
         intervalTask.updateInterval(config.scheduler.interval)

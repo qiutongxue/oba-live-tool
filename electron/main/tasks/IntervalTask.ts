@@ -8,12 +8,13 @@ export interface IntervalTaskProps extends BaseTaskProps {
 }
 
 export function createIntervalTask(
-  execute: () => Promise<void>,
+  execute: (signal: AbortSignal) => Promise<void>,
   props: IntervalTaskProps,
 ) {
   const { logger } = props
   let timer: ReturnType<typeof setTimeout> | null = null
   let interval = props.interval
+  let abortController: AbortController | null = null
 
   const clearTimer = () => {
     if (timer) {
@@ -36,25 +37,38 @@ export function createIntervalTask(
     },
     onStop: () => {
       clearTimer()
+      if (abortController) {
+        abortController.abort()
+        abortController = null
+      }
     },
   })
 
   async function scheduleNextRun() {
-    if (task.isRunning()) {
+    if (!task.isRunning()) {
       return
     }
     clearTimer()
 
+    // 中止上一个任务
+    if (abortController) {
+      abortController.abort()
+    }
+
+    abortController = new AbortController()
+    const { signal } = abortController
+
     try {
-      await execute()
+      // TODO: restart 时还要把之前的 execute 停止
+      await execute(signal)
     } catch (error) {
       task.stop(TaskStopReason.ERROR, error)
     }
 
-    if (task.isRunning()) {
+    if (task.isRunning() && !signal.aborted) {
       const interval = calculateNextInterval()
-      logger.info(`任务将在 ${interval / 1000} 秒后继续执行。`)
       timer = setTimeout(() => scheduleNextRun(), interval)
+      logger.info(`任务将在 ${interval / 1000} 秒后继续执行。`)
     }
   }
 
