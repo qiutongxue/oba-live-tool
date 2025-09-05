@@ -77,12 +77,13 @@ export function createAutoCommentTask(
     logger.info(`消息配置验证通过，共加载 ${userConfig.messages.length} 条消息`)
   }
 
-  validateConfig(config)
-
-  const execute = async () => {
+  const execute = async (signal: AbortSignal) => {
     try {
       await runWithRetry(
         async () => {
+          if (signal.aborted) {
+            return
+          }
           const message = getNextMessage()
           // 替换变量
           let content = replaceVariant(message.content)
@@ -117,6 +118,8 @@ export function createAutoCommentTask(
     logger,
     taskName: TASK_NAME,
   })
+
+  validateConfig(config)
 
   return {
     ...intervalTask,
