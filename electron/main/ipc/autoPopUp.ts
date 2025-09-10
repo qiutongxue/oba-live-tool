@@ -2,7 +2,7 @@ import { globalShortcut } from 'electron'
 import { throttle } from 'lodash-es'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { createLogger } from '#/logger'
-import { accountManager } from '#/managers/AccountManager2'
+import { accountManager } from '#/managers/AccountManager'
 import { errorMessage, typedIpcMainHandle } from '#/utils'
 
 const TASK_NAME = '自动弹窗'

@@ -1,7 +1,20 @@
+import type playwright from 'playwright'
 import { chromium } from 'playwright-extra'
 import stealth from 'puppeteer-extra-plugin-stealth'
 import { findChromium } from '#/utils/checkChrome'
-import type { BrowserSession, StorageState } from './types'
+
+export interface BrowserSession {
+  browser: playwright.Browser
+  context: playwright.BrowserContext
+  page: playwright.Page
+}
+
+export interface BrowserConfig {
+  headless?: boolean
+  storageState?: string
+}
+
+export type StorageState = playwright.BrowserContextOptions['storageState']
 
 chromium.use(stealth())
 

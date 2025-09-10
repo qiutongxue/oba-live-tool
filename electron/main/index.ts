@@ -21,7 +21,7 @@ import { getLatestVersion, update } from './update'
 import windowManager from './windowManager'
 import './ipc'
 import semver from 'semver'
-import { taskManager } from './managers/TaskManager'
+import { accountManager } from './managers/AccountManager'
 import { fetchChangelog } from './utils'
 
 const _require = createRequire(import.meta.url)
@@ -122,7 +122,7 @@ app.whenReady().then(createWindow)
 
 app.on('window-all-closed', async () => {
   win = null
-  taskManager.cleanup()
+  accountManager.cleanup()
   if (process.platform !== 'darwin') app.quit()
 })
 

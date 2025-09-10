@@ -1,7 +1,7 @@
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { createLogger } from '#/logger'
-import { accountManager } from '#/managers/AccountManager2'
-import { BrowserSessionManager } from '#/tasks/connection/BrowserSessionManager'
+import { accountManager } from '#/managers/AccountManager'
+import { BrowserSessionManager } from '#/managers/BrowserSessionManager'
 import { errorMessage, typedIpcMainHandle } from '#/utils'
 
 const TASK_NAME = '中控台'

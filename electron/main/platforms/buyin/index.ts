@@ -1,6 +1,6 @@
 import type { Page } from 'playwright'
 import { buyin as constants } from '#/constants'
-import type { BrowserSession } from '#/tasks/connection/types'
+import type { BrowserSession } from '#/managers/BrowserSessionManager'
 import { CompassListener, ControlListener } from '../douyin/commentListener'
 // 百应和抖店共用
 import { douyinElementFinder as elementFinder } from '../douyin/element-finder'

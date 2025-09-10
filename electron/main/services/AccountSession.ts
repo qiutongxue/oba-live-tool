@@ -2,6 +2,11 @@ import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { emitter } from '#/event/eventBus'
 import { createLogger } from '#/logger'
 import {
+  type BrowserSession,
+  BrowserSessionManager,
+  type StorageState,
+} from '#/managers/BrowserSessionManager'
+import {
   BuyinPlatform,
   DevPlatform,
   DouyinEosPlatform,
@@ -20,8 +25,6 @@ import {
 import { createAutoCommentTask } from '#/tasks/AutoCommentTask'
 import { createAutoPopupTask } from '#/tasks/AutoPopupTask'
 import { createCommentListenerTask } from '#/tasks/CommentListenerTask'
-import { BrowserSessionManager } from '#/tasks/connection/BrowserSessionManager'
-import type { BrowserSession, StorageState } from '#/tasks/connection/types'
 import type { ITask } from '#/tasks/ITask'
 import { createSendBatchMessageTask } from '#/tasks/SendBatchMessageTask'
 import windowManager from '#/windowManager'
