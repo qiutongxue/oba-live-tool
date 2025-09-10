@@ -1,6 +1,27 @@
 # Changelog
 
 
+## v1.5.12-beta.1
+
+[compare changes](https://github.com/qiutongxue/oba-live-tool/compare/v1.5.11...v1.5.12-beta.1)
+
+### 🚀 Features
+
+- 添加更新自动评论配置（主进程） ([1ad858d](https://github.com/qiutongxue/oba-live-tool/commit/1ad858d))
+- 增加中断控制 ([72fd5a4](https://github.com/qiutongxue/oba-live-tool/commit/72fd5a4))
+- 主线程监听评论失败时通知渲染层 ([2841969](https://github.com/qiutongxue/oba-live-tool/commit/2841969))
+
+### 🐞 Bug Fixes
+
+- 修复部分类型错误以及遗留问题 ([c000776](https://github.com/qiutongxue/oba-live-tool/commit/c000776))
+- 修复ipc传参缺失 accountId 的问题 ([3e7135c](https://github.com/qiutongxue/oba-live-tool/commit/3e7135c))
+- 修复更新配置时计时器未重置的问题 ([12150cb](https://github.com/qiutongxue/oba-live-tool/commit/12150cb))
+- 进一步补充连接中控台的功能 ([bc8f622](https://github.com/qiutongxue/oba-live-tool/commit/bc8f622))
+- 优化一键发送时的日志提示内容 ([081cf3d](https://github.com/qiutongxue/oba-live-tool/commit/081cf3d))
+- 修复定时任务的部分错误 ([a214d0d](https://github.com/qiutongxue/oba-live-tool/commit/a214d0d))
+- 修复中控台连接中断时的部分错误 ([ae3b7d0](https://github.com/qiutongxue/oba-live-tool/commit/ae3b7d0))
+- 修复无头模式登录报错的问题 ([89396de](https://github.com/qiutongxue/oba-live-tool/commit/89396de))
+
 ## v1.5.11
 
 [compare changes](https://github.com/qiutongxue/oba-live-tool/compare/v1.5.10...v1.5.11)
