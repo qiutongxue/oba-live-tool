@@ -102,6 +102,7 @@ export class AccountSession {
       // 无头模式，需要先关闭原先的无头模式，启用有头模式给用户登录
       if (headless) {
         await this.browserSession.browser.close()
+        this.logger.info('需要登录，请在打开的浏览器中登录')
         this.browserSession = await browserFactory.createSession(false)
       }
       // 等待登录
@@ -111,12 +112,13 @@ export class AccountSession {
       // 无头模式，需要先关闭当前的有头模式，重新打开无头模式
       if (headless) {
         await this.browserSession.browser.close()
+        this.logger.info('登录成功，浏览器将继续以无头模式运行')
         this.browserSession = await browserFactory.createSession(
           headless,
           storageState,
         )
       }
-      await this.ensureAuthenticated(session, headless)
+      await this.ensureAuthenticated(this.browserSession, headless)
     }
   }
 
