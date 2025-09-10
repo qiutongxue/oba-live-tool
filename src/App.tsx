@@ -28,7 +28,7 @@ import { ScrollArea } from './components/ui/scroll-area'
 import { useAccounts } from './hooks/useAccounts'
 import { useAutoMessageStore } from './hooks/useAutoMessage'
 import { useAutoPopUpStore } from './hooks/useAutoPopUp'
-import { useAutoReply } from './hooks/useAutoReply'
+import { useAutoReply, useAutoReplyStore } from './hooks/useAutoReply'
 import { useChromeConfigStore } from './hooks/useChromeConfig'
 import { useLiveControlStore } from './hooks/useLiveControl'
 import { useToast } from './hooks/useToast'
@@ -36,6 +36,7 @@ import { useUpdateStore } from './hooks/useUpdate'
 
 function useGlobalIpcListener() {
   const { handleComment } = useAutoReply()
+  const { setIsListening } = useAutoReplyStore()
   const { setIsConnected } = useLiveControlStore()
   const { setIsRunning: setIsRunningAutoMessage } = useAutoMessageStore()
   const { setIsRunning: setIsRunningAutoPopUp } = useAutoPopUpStore()
@@ -62,6 +63,10 @@ function useGlobalIpcListener() {
   useIpcListener(IPC_CHANNELS.tasks.autoPopUp.stoppedEvent, id => {
     setIsRunningAutoPopUp(id, false)
     toast.error('自动弹窗已停止')
+  })
+
+  useIpcListener(IPC_CHANNELS.tasks.autoReply.listenerStopped, id => {
+    setIsListening(id, 'stopped')
   })
 
   useIpcListener(IPC_CHANNELS.chrome.saveState, (id, state) => {

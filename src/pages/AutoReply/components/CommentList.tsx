@@ -206,9 +206,7 @@ export default function CommentList({
   )
 
   const isButtonDisabled =
-    isListening === 'waiting' ||
-    isConnected !== 'connected' ||
-    (platform !== 'douyin' && platform !== 'buyin')
+    isListening === 'waiting' || isConnected !== 'connected'
 
   const userCommentOnlyId = useId()
 

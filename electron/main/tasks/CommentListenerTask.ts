@@ -26,7 +26,11 @@ export function createCommentListenerTask(
       await platform.startCommentListener(broadcastMessage, config.source)
       logger.info('开始监听评论')
     } catch (err) {
-      // TODO: 失败了怎么办？还要告诉渲染层关闭按钮
+      // 失败了还要告诉渲染层关闭按钮
+      windowManager.send(
+        IPC_CHANNELS.tasks.autoReply.listenerStopped,
+        account.id,
+      )
       task.stop(TaskStopReason.ERROR, err)
     }
   }
