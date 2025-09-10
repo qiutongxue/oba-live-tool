@@ -1,52 +1,57 @@
+import { emitter } from '#/event/eventBus'
 import { createLogger } from '#/logger'
+import { AccountSession } from '#/services/AccountSession'
 
-class AccountManager {
-  private accounts: Map<string, Account> = new Map()
-  private activeAccount: Account
-
-  constructor() {
-    this.activeAccount = {
-      id: 'default',
-      name: '默认账号',
-    }
-  }
-
+export class AccountManager {
+  accountSessions: Map<string, AccountSession> = new Map()
+  accountNames: Map<string, string> = new Map()
   private logger = createLogger('账号管理')
 
-  public setAccount(account: Account) {
-    this.accounts.set(account.id, account)
+  constructor() {
+    emitter.on('page-closed', ({ accountId }) => {
+      this.closeSession(accountId)
+    })
   }
 
-  public getAccount(id: string) {
-    return this.accounts.get(id)
-  }
-
-  private getNotNullAcconut(id: string, fallback: Account) {
-    let account = this.accounts.get(id)
-    if (!account) {
-      account = fallback
-      this.setAccount(fallback)
+  async createSession(platformName: LiveControlPlatform, account: Account) {
+    this.setAccountName(account.id, account.name)
+    const existSession = this.accountSessions.get(account.id)
+    if (existSession) {
+      this.logger.warn('检测到已存在建立的连接，将关闭已建立的连接')
+      await existSession.disconnect()
     }
-    return account
+
+    const accountSession = new AccountSession(platformName, account)
+    this.accountSessions.set(account.id, accountSession)
+    return accountSession
   }
 
-  public switchAccount(account: Account) {
-    const targetAccount = this.getNotNullAcconut(account.id, account)
-    if (this.activeAccount.id !== targetAccount.id) {
-      this.activeAccount = targetAccount
-      this.logger.info(`切换到账号 <${this.activeAccount.name}>`)
-    } else if (targetAccount.name !== account.name) {
-      targetAccount.name = account.name
+  getSession(accountId: string) {
+    const accountSession = this.accountSessions.get(accountId)
+    if (!accountSession) {
+      throw new Error('找不到对应的账户')
     }
+    return accountSession
   }
 
-  public updateAccountName(id: string, updatedName: string) {
-    const account = this.getNotNullAcconut(id, { id, name: updatedName })
-    account.name = updatedName
+  setAccountName(accountId: string, accountName: string) {
+    this.accountNames.set(accountId, accountName)
   }
 
-  public getActiveAccount(): Readonly<Account> {
-    return this.activeAccount
+  getAccountName(accountId: string) {
+    return this.accountNames.get(accountId) ?? '未定义账号'
+  }
+
+  closeSession(accountId: string) {
+    const accountSession = this.accountSessions.get(accountId)
+    if (!accountSession) return
+
+    accountSession.disconnect()
+    this.accountSessions.delete(accountId)
+  }
+
+  cleanup() {
+    this.accountSessions.values().forEach(session => session.disconnect())
   }
 }
 

@@ -1,5 +1,5 @@
 import type { Page } from 'playwright'
-import type { BrowserSession } from '#/tasks/connection/types'
+import type { BrowserSession } from '#/managers/BrowserSessionManager'
 import {
   comment,
   connect,

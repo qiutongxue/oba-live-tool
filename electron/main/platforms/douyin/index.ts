@@ -1,6 +1,6 @@
 import type { Page } from 'playwright'
 import { createLogger } from '#/logger'
-import type { BrowserSession } from '#/tasks/connection/types'
+import type { BrowserSession } from '#/managers/BrowserSessionManager'
 import {
   comment,
   connect,

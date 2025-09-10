@@ -1,6 +1,6 @@
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { createLogger } from '#/logger'
-import { accountManager } from '#/managers/AccountManager2'
+import { accountManager } from '#/managers/AccountManager'
 import { errorMessage, typedIpcMainHandle } from '#/utils'
 
 const TASK_NAME = '监听评论'
