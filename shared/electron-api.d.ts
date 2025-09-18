@@ -1,4 +1,3 @@
-import type { AutoPopUpConfig } from 'electron/main/tasks/autoPopUp'
 import type { LogMessage } from 'electron-log'
 import type {
   ProgressInfo,
@@ -7,7 +6,6 @@ import type {
 } from 'electron-updater'
 import type { providers } from 'shared/providers'
 
-import type { AutoReplyConfig } from '#/tasks/autoReply/index'
 import { IPC_CHANNELS } from './ipcChannels'
 
 export interface IpcChannels {
@@ -16,41 +14,61 @@ export interface IpcChannels {
     chromePath?: string
     headless?: boolean
     storageState?: string
-    platform?: LiveControlPlatform
+    platform: LiveControlPlatform
+    account: Account
   }) => {
     accountName: string | null
   } | null
-  [IPC_CHANNELS.tasks.liveControl.disconnect]: () => boolean
+  [IPC_CHANNELS.tasks.liveControl.disconnect]: (accountId: string) => boolean
   [IPC_CHANNELS.tasks.liveControl.disconnectedEvent]: (id: string) => void
 
   // AutoMessage
-  [IPC_CHANNELS.tasks.autoMessage.start]: (config: AutoMessageConfig) => boolean
-  [IPC_CHANNELS.tasks.autoMessage.stop]: () => boolean
+  [IPC_CHANNELS.tasks.autoMessage.start]: (
+    accountId: string,
+    config: AutoCommentConfig,
+  ) => boolean
+  [IPC_CHANNELS.tasks.autoMessage.stop]: (accountId: string) => boolean
   [IPC_CHANNELS.tasks.autoMessage.stoppedEvent]: (id: string) => void
   [IPC_CHANNELS.tasks.autoMessage.sendBatchMessages]: (
+    accountId: string,
     messages: string[],
     count: number,
   ) => boolean
+  [IPC_CHANNELS.tasks.autoMessage.updateConfig]: (
+    accountId: string,
+    config: Parital<AutoCommentConfig>,
+  ) => void
 
   // AutoPopup
-  [IPC_CHANNELS.tasks.autoPopUp.start]: (config: AutoPopUpConfig) => boolean
-  [IPC_CHANNELS.tasks.autoPopUp.stop]: () => boolean
+  [IPC_CHANNELS.tasks.autoPopUp.start]: (
+    accountId: string,
+    config: AutoPopupConfig,
+  ) => boolean
+  [IPC_CHANNELS.tasks.autoPopUp.stop]: (accountId: string) => boolean
   [IPC_CHANNELS.tasks.autoPopUp.stoppedEvent]: (id: string) => void
   [IPC_CHANNELS.tasks.autoPopUp.updateConfig]: (
-    config: Parital<AutoPopUpConfig>,
+    accountId: string,
+    config: Parital<AutoPopupConfig>,
   ) => void
   [IPC_CHANNELS.tasks.autoPopUp.registerShortcuts]: (
+    accountId: string,
     shortcuts: { accelerator: string; goodsIds: number[] }[],
   ) => void
   [IPC_CHANNELS.tasks.autoPopUp.unregisterShortcuts]: () => void
 
   // AutoReply
   [IPC_CHANNELS.tasks.autoReply.startCommentListener]: (
-    config: AutoReplyConfig,
+    accountId: string,
+    config: CommentListenerConfig,
   ) => boolean
-  [IPC_CHANNELS.tasks.autoReply.stopCommentListener]: () => void
-  [IPC_CHANNELS.tasks.autoReply.sendReply]: (replyContent: string) => void
-  [IPC_CHANNELS.tasks.autoReply.listenerStopped]: () => void
+  [IPC_CHANNELS.tasks.autoReply.stopCommentListener]: (
+    accountId: string,
+  ) => void
+  [IPC_CHANNELS.tasks.autoReply.sendReply]: (
+    accountId: string,
+    replyContent: string,
+  ) => void
+  [IPC_CHANNELS.tasks.autoReply.listenerStopped]: (accountId: string) => void
   [IPC_CHANNELS.tasks.autoReply.showComment]: (data: {
     comment: DouyinLiveMessage
     accountId: string
@@ -70,7 +88,6 @@ export interface IpcChannels {
     customBaseURL?: string
   }) => { success: boolean; models?: string[]; error?: string }
   [IPC_CHANNELS.tasks.aiChat.chat]: (params: {
-    // 用于启动流式传输，响应通过 stream/error 通道
     messages: AIChatMessage[]
     provider: keyof typeof providers
     model: string

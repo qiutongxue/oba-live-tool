@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
+import { useAccounts } from '@/hooks/useAccounts'
 import { type MessageOf, useAutoReply } from '@/hooks/useAutoReply'
 
 export default function PreviewList({
@@ -18,11 +19,12 @@ export default function PreviewList({
   setHighLight: (commentId: string | null) => void
 }) {
   const { replies, comments } = useAutoReply()
-
+  const { currentAccountId } = useAccounts()
   const handleSendReply = async (replyContent: string, _commentId: string) => {
     try {
       await window.ipcRenderer.invoke(
         IPC_CHANNELS.tasks.autoReply.sendReply,
+        currentAccountId,
         replyContent,
       )
       // removeReply(commentId)

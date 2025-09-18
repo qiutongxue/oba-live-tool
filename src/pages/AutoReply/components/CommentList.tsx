@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
+import { useAccounts } from '@/hooks/useAccounts'
 import { type Message, useAutoReply } from '@/hooks/useAutoReply'
 import { useCurrentLiveControl } from '@/hooks/useLiveControl'
 import { useToast } from '@/hooks/useToast'
@@ -152,6 +153,7 @@ export default function CommentList({
   const platform = useCurrentLiveControl(context => context.platform)
   const { toast } = useToast()
   const [hideHost, setHideHost] = useState(false)
+  const { currentAccountId } = useAccounts()
 
   // 手动启动监听评论
   const startListening = async () => {
@@ -164,6 +166,7 @@ export default function CommentList({
       setIsListening('waiting')
       const result = await window.ipcRenderer.invoke(
         IPC_CHANNELS.tasks.autoReply.startCommentListener,
+        currentAccountId,
         {
           source: config.entry,
           ws: config.ws?.enable ? { port: config.ws.port } : undefined,
@@ -183,6 +186,7 @@ export default function CommentList({
     try {
       await window.ipcRenderer.invoke(
         IPC_CHANNELS.tasks.autoReply.stopCommentListener,
+        currentAccountId,
       )
       setIsListening('stopped')
       toast.success('已停止监听评论')
@@ -202,9 +206,7 @@ export default function CommentList({
   )
 
   const isButtonDisabled =
-    isListening === 'waiting' ||
-    isConnected !== 'connected' ||
-    (platform !== 'douyin' && platform !== 'buyin')
+    isListening === 'waiting' || isConnected !== 'connected'
 
   const userCommentOnlyId = useId()
 

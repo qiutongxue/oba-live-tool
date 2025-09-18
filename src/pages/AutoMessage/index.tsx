@@ -4,6 +4,7 @@ import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { TaskButton } from '@/components/common/TaskButton'
 import { Title } from '@/components/common/Title'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { useAccounts } from '@/hooks/useAccounts'
 import {
   useAutoMessageActions,
   useCurrentAutoMessage,
@@ -18,10 +19,12 @@ const useTaskControl = () => {
   const config = useCurrentAutoMessage(context => context.config)
   const { setIsRunning } = useAutoMessageActions()
   const { toast } = useToast()
+  const accountId = useAccounts(store => store.currentAccountId)
 
   const onStartTask = useCallback(async () => {
     const result = await window.ipcRenderer.invoke(
       IPC_CHANNELS.tasks.autoMessage.start,
+      accountId,
       config,
     )
     if (result) {
@@ -31,12 +34,15 @@ const useTaskControl = () => {
       setIsRunning(false)
       toast.error('自动消息任务启动失败')
     }
-  }, [config, setIsRunning, toast])
+  }, [config, setIsRunning, toast, accountId])
 
   const onStopTask = useCallback(async () => {
-    await window.ipcRenderer.invoke(IPC_CHANNELS.tasks.autoMessage.stop)
+    await window.ipcRenderer.invoke(
+      IPC_CHANNELS.tasks.autoMessage.stop,
+      accountId,
+    )
     setIsRunning(false)
-  }, [setIsRunning])
+  }, [setIsRunning, accountId])
 
   return {
     isRunning,

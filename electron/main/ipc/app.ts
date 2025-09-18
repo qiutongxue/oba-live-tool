@@ -20,7 +20,7 @@ function setupIpcHandlers() {
   })
 
   typedIpcMainHandle(IPC_CHANNELS.account.switch, (_, { account }) => {
-    accountManager.switchAccount(account)
+    accountManager.setAccountName(account.id, account.name)
   })
 }
 

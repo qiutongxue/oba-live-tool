@@ -2,8 +2,8 @@ import { setupAIChatIpcHandlers } from './aichat'
 import { setupAppIpcHandlers } from './app'
 import { setupAutoMessageIpcHandlers } from './autoMessage'
 import { setupAutoPopUpIpcHandlers } from './autoPopUp'
-import { setupAutoReplyIpcHandlers } from './autoReply'
 import { setupBrowserIpcHandlers } from './browser'
+import { setupAutoReplyIpcHandlers } from './commentListener'
 import { setupLiveControlIpcHandlers } from './connection'
 
 setupLiveControlIpcHandlers()

@@ -1,9 +1,9 @@
-type Account = {
+declare type Account = {
   readonly id: string
   name: string
 }
 
-type LiveControlPlatform =
+declare type LiveControlPlatform =
   | 'douyin'
   | 'buyin'
   | 'eos'
@@ -11,8 +11,68 @@ type LiveControlPlatform =
   | 'wxchannel'
   | 'kuaishou'
   | 'taobao'
+  | 'dev'
 
-type DouyinLiveMessage = {
+declare type AutoPopupConfig = {
+  scheduler: {
+    interval: [number, number]
+  }
+  goodsIds: number[]
+  random?: boolean
+}
+
+declare type AutoPopupTask = {
+  type: 'auto-popup'
+  config: AutoPopupConfig
+}
+
+declare type AutoCommentConfig = {
+  scheduler: {
+    interval: [number, number]
+  }
+  messages: {
+    content: string
+    pinTop: boolean
+  }[]
+  random?: boolean
+  extraSpaces?: boolean
+}
+
+declare type AutoCommentTask = {
+  type: 'auto-comment'
+  config: AutoCommentConfig
+}
+
+declare type SendBatchMessagesConfig = {
+  messages: string[]
+  count: number
+  noSpace?: boolean
+}
+
+declare type SendBatchMessagesTask = {
+  type: 'send-batch-messages'
+  config: SendBatchMessagesConfig
+}
+
+declare interface CommentListenerConfig {
+  source: 'compass' | 'control'
+  ws?: {
+    port: number
+  }
+}
+
+declare type CommentListenerTask = {
+  type: 'comment-listener'
+  config: CommentListenerConfig
+}
+
+declare type LiveControlTask =
+  | AutoPopupTask
+  | AutoCommentTask
+  | SendBatchMessagesTask
+  | CommentListenerTask
+
+declare type DouyinLiveMessage = {
   time: string
 } & (
   | CommentMessage

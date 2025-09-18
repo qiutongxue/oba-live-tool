@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { useAccounts } from '@/hooks/useAccounts'
 import {
   useAutoMessageActions,
   useCurrentAutoMessage,
@@ -16,6 +17,7 @@ export function MessageOneKey() {
   const { setBatchCount } = useAutoMessageActions()
   const messages = useCurrentAutoMessage(ctx => ctx.config.messages)
   const isConnected = useCurrentLiveControl(ctx => ctx.isConnected)
+  const accountId = useAccounts(s => s.currentAccountId)
 
   const mappedMessages = useMemo(
     () => messages.map(msg => msg.content),
@@ -26,6 +28,7 @@ export function MessageOneKey() {
     setIsRunning(true)
     await window.ipcRenderer.invoke(
       IPC_CHANNELS.tasks.autoMessage.sendBatchMessages,
+      accountId,
       mappedMessages,
       batchCount,
     )
