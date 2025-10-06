@@ -12,6 +12,8 @@ permissions:
 jobs:
   update-providers:
     runs-on: ubuntu-latest
+    env:
+      HUSKY: 0  # Disable Husky hooks in CI
 
     steps:
       - name: Checkout repo
