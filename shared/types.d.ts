@@ -8,6 +8,7 @@ declare type LiveControlPlatform =
   | 'buyin'
   | 'eos'
   | 'redbook'
+  | 'pgy'
   | 'wxchannel'
   | 'kuaishou'
   | 'taobao'
