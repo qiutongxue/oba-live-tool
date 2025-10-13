@@ -14,6 +14,7 @@ import {
   KuaishouPlatform,
   TaobaoPlatform,
   WechatChannelPlatform,
+  XiaohongshuPgyPlatform,
   XiaohongshuPlatform,
 } from '#/platforms'
 import {
@@ -210,4 +211,5 @@ const platformFactory: Record<LiveControlPlatform, { new (): IPlatform }> = {
   kuaishou: KuaishouPlatform,
   eos: DouyinEosPlatform,
   dev: DevPlatform,
+  pgy: XiaohongshuPgyPlatform,
 }
