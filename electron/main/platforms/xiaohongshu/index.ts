@@ -77,7 +77,7 @@ export class XiaohongshuPlatform
     ensurePage(this.mainPage)
     const item = await virtualScroller(this.mainPage, elementFinder, id)
     const btn = await elementFinder.getPopUpButtonFromGoodsItem(item)
-    await btn.dispatchEvent('click')
+    await btn.click()
   }
 
   async performComment(message: string, pinTop?: boolean): Promise<boolean> {
