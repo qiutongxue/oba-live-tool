@@ -1,18 +1,17 @@
 # Changelog
 
 
-## v1.5.12-beta.1
+## v1.5.12
 
-[compare changes](https://github.com/qiutongxue/oba-live-tool/compare/v1.5.11...v1.5.12-beta.1)
+[compare changes](https://github.com/qiutongxue/oba-live-tool/compare/v1.5.11...v1.5.12)
 
 ### 🚀 Features
 
-- 添加更新自动评论配置（主进程） ([1ad858d](https://github.com/qiutongxue/oba-live-tool/commit/1ad858d))
-- 增加中断控制 ([72fd5a4](https://github.com/qiutongxue/oba-live-tool/commit/72fd5a4))
-- 主线程监听评论失败时通知渲染层 ([2841969](https://github.com/qiutongxue/oba-live-tool/commit/2841969))
+- 新增小红书蒲公英平台 ([0e7bf11](https://github.com/qiutongxue/oba-live-tool/commit/0e7bf11))
 
 ### 🐞 Bug Fixes
 
+- **小红书千帆:** 修复小红书千帆自动弹窗无效的问题 ([3ce60c5](https://github.com/qiutongxue/oba-live-tool/commit/3ce60c5))
 - 修复部分类型错误以及遗留问题 ([c000776](https://github.com/qiutongxue/oba-live-tool/commit/c000776))
 - 修复ipc传参缺失 accountId 的问题 ([3e7135c](https://github.com/qiutongxue/oba-live-tool/commit/3e7135c))
 - 修复更新配置时计时器未重置的问题 ([12150cb](https://github.com/qiutongxue/oba-live-tool/commit/12150cb))
