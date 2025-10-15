@@ -1,22 +1,16 @@
 import type { Page } from 'playwright'
 import type { BrowserSession } from '#/managers/BrowserSessionManager'
-import {
-  comment,
-  connect,
-  ensurePage,
-  getAccountName,
-  virtualScroller,
-} from '../helper'
+import { comment, ensurePage, getAccountName, virtualScroller } from '../helper'
 import type { IPerformComment, IPerformPopup, IPlatform } from '../IPlatform'
+import { xiaohongshuElementFinder as elementFinder } from '../xiaohongshu/elment-finder'
 import { REGEXPS, SELECTORS, URLS } from './constant'
-import { xiaohongshuElementFinder as elementFinder } from './elment-finder'
 
-const PLATFORM_NAME = '小红书' as const
+const PLATFORM_NAME = '蒲公英' as const
 
 /**
- * 小红书（千帆）
+ * 蒲公英
  */
-export class XiaohongshuPlatform
+export class XiaohongshuPgyPlatform
   implements IPlatform, IPerformPopup, IPerformComment
 {
   readonly _isPerformComment = true
@@ -25,11 +19,21 @@ export class XiaohongshuPlatform
 
   async connect(browserSession: BrowserSession) {
     const { page } = browserSession
-    const isConnected = await connect(page, {
-      isInLiveControlSelector: SELECTORS.IN_LIVE_CONTROL,
-      liveControlUrl: URLS.LIVE_CONTROL_PAGE,
-      loginUrlRegex: REGEXPS.LOGIN_PAGE,
+    // 蒲公英用不了传统方法，得先进入首页
+    await page.goto(URLS.INDEX_PAGE, {
+      waitUntil: 'domcontentloaded',
     })
+    await Promise.race([
+      page.waitForURL(REGEXPS.LOGIN_PAGE, {
+        timeout: 0,
+        waitUntil: 'domcontentloaded',
+      }),
+      page.waitForSelector(SELECTORS.ACCOUNT_NAME, {
+        timeout: 0,
+      }),
+    ])
+
+    const isConnected = !REGEXPS.LOGIN_PAGE.test(page.url())
 
     if (isConnected) {
       // 小红书反爬，直接用 goto 进入中控台加载不出元素
@@ -46,6 +50,8 @@ export class XiaohongshuPlatform
       await page.close()
       browserSession.page = newPage
       this.mainPage = newPage
+      // 等待中控台页面加载（大概要 3~5 秒）
+      await this.mainPage.waitForSelector(SELECTORS.IN_LIVE_CONTROL)
     }
     return isConnected
   }
@@ -55,13 +61,18 @@ export class XiaohongshuPlatform
     if (!REGEXPS.LOGIN_PAGE.test(page.url())) {
       await page.goto(URLS.LOGIN_PAGE)
     }
+    // 蒲公英登录可以帮用户点击登录按钮
+    const loginButton = await page.waitForSelector(SELECTORS.LOGIN_BUTTON, {
+      timeout: 0,
+    })
+    await loginButton.click()
+
     await page.waitForSelector(SELECTORS.LOGGED_IN, {
       timeout: 0,
     })
   }
 
   async getAccountName(session: BrowserSession) {
-    await session.page.hover(SELECTORS.ACCOUNT_NAME_HOVER)
     const accountName = await getAccountName(
       session.page,
       SELECTORS.ACCOUNT_NAME,
@@ -77,6 +88,7 @@ export class XiaohongshuPlatform
     ensurePage(this.mainPage)
     const item = await virtualScroller(this.mainPage, elementFinder, id)
     const btn = await elementFinder.getPopUpButtonFromGoodsItem(item)
+    console.log(await btn.textContent())
     await btn.click()
   }
 

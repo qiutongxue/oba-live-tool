@@ -1,7 +1,7 @@
 {
   "name": "TLS-live-tool",
   "type": "module",
-  "version": "1.5.11",
+  "version": "1.5.12",
   "private": true,
   "description": "直播工具，用于直播带货，能自动弹窗，自动发言",
   "author": "qiutongxue",
@@ -52,6 +52,7 @@
     "lucide-react": "0.525.0",
     "marked": "16.0.0",
     "motion": "^12.6.2",
+    "neverthrow": "^8.2.0",
     "openai": "5.8.2",
     "playwright": "^1.50.0",
     "playwright-extra": "^4.3.6",
