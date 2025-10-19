@@ -1,0 +1,20 @@
+name: sync to gitee
+on:
+  push:
+    branches:
+      - main
+jobs:
+  repo-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: sync github -> gitee
+        uses: Yikun/hub-mirror-action@master
+        with:
+          src: 'github/${{ github.repository_owner }}'
+          dst: 'gitee/${{ secrets.GITEE_USERNAME }}'
+          dst_key: ${{ secrets.GITEE_PRIVATE_KEY }}
+          dst_token:  ${{ secrets.GITEE_TOKEN }}
+          static_list: 'oba-live-tool'
