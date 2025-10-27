@@ -12,6 +12,7 @@ export const providers = {
     models: [
       'deepseek/deepseek-v3.2-exp',
       'deepseek/deepseek-v3.1-terminus',
+      'deepseek/deepseek-v3.1-terminus:exacto',
       'deepcogito/cogito-v2-preview-deepseek-671b',
       'deepseek/deepseek-chat-v3.1:free',
       'deepseek/deepseek-chat-v3.1',
@@ -48,6 +49,7 @@ export const providers = {
       'Pro/deepseek-ai/DeepSeek-R1',
       'deepseek-ai/DeepSeek-V3',
       'Pro/deepseek-ai/DeepSeek-V3',
+      'deepseek-ai/DeepSeek-OCR',
       'deepseek-ai/DeepSeek-R1-0528-Qwen3-8B',
       'deepseek-ai/DeepSeek-R1-Distill-Qwen-32B',
       'deepseek-ai/DeepSeek-R1-Distill-Qwen-14B',
