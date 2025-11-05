@@ -35,9 +35,18 @@ export const douyinElementFinder: IElementFinder = {
     if (!goodsAction) {
       throw new Error(error.elementFinder.ACTION_PANEL_NOT_FOUND)
     }
-    // 默认获取第一个元素，就是讲解按钮所在的位置
-    const button = await goodsAction.$(SELECTORS.goodsItem.POPUP_BUTTON)
-    // const button = await presBtnWrap?.$('button')
+    // 2025.11.5 目前第一个按钮被替换成了【更多】，换成获取文本包含“讲解”的按钮
+    let button = null
+    for (const btn of await goodsAction.$$(SELECTORS.goodsItem.POPUP_BUTTON)) {
+      if (
+        (await btn.textContent())?.includes(
+          SELECTORS.goodsItem.POPUP_BUTTON_TEXT,
+        )
+      ) {
+        button = btn
+        break
+      }
+    }
     if (!button) {
       throw new Error(error.elementFinder.PROMOTING_BTN_NOT_FOUND)
     }

@@ -29,7 +29,8 @@ export const SELECTORS = {
 
   goodsItem: {
     ACTION: 'div[class^="goodsAction"]',
-    POPUP_BUTTON: 'div[class*="wrapper"]:has(button) button',
+    POPUP_BUTTON: 'button',
+    POPUP_BUTTON_TEXT: '讲解',
     ID: 'div[class^="indexWrapper"] input',
   },
   commentInput: {
