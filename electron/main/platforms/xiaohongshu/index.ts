@@ -61,7 +61,10 @@ export class XiaohongshuPlatform
   }
 
   async getAccountName(session: BrowserSession) {
-    await session.page.hover(SELECTORS.ACCOUNT_NAME_HOVER)
+    const element = await session.page.waitForSelector(
+      SELECTORS.ACCOUNT_NAME_HOVER,
+    )
+    await element.hover()
     const accountName = await getAccountName(
       session.page,
       SELECTORS.ACCOUNT_NAME,
