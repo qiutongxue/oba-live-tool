@@ -30,7 +30,6 @@ export const SELECTORS = {
   goodsItem: {
     ACTION: 'div[class^="goodsAction"]',
     POPUP_BUTTON: 'button',
-    POPUP_BUTTON_TEXT: '讲解',
     ID: 'div[class^="indexWrapper"] input',
   },
   commentInput: {
@@ -52,6 +51,11 @@ export const SELECTORS = {
   NEW_COMMENT_LABEL: '[class^="newCommentLabel"]',
   /** 电商罗盘已登录状态 */
   COMPASS_LOGGED_IN: `div[class^="userName"]`,
+} as const
+
+export const TEXT = {
+  POPUP_BUTTON_CANCLE: '取消讲解',
+  POPUP_BUTTON: '讲解',
 } as const
 
 /**

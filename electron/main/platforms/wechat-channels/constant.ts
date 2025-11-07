@@ -51,3 +51,8 @@ export const SELECTORS = {
     SUBMIT_BUTTON_DISABLED: 'disabled',
   },
 } as const
+
+export const TEXT = {
+  POPUP_BUTTON_CANCLE: '结束讲解',
+  POPUP_BUTTON: '讲解',
+} as const
