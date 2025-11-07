@@ -85,7 +85,7 @@ export class WechatChannelPlatform
     ensurePage(this.productsPage)
     const item = await virtualScroller(this.productsPage, elementFinder, id)
     const btn = await elementFinder.getPopUpButtonFromGoodsItem(item)
-    await toggleButton(btn, '取消讲解', '讲解')
+    await toggleButton(btn, '结束讲解', '讲解')
   }
 
   async performComment(message: string, pinTop?: boolean): Promise<boolean> {
