@@ -53,7 +53,7 @@ export const SELECTORS = {
   COMPASS_LOGGED_IN: `div[class^="userName"]`,
 } as const
 
-export const TEXT = {
+export const TEXTS = {
   POPUP_BUTTON_CANCLE: '取消讲解',
   POPUP_BUTTON: '讲解',
 } as const

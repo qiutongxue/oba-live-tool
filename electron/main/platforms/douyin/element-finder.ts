@@ -1,7 +1,7 @@
 import type { ElementHandle, Page } from 'playwright'
 import { error } from '#/constants'
 import type { IElementFinder } from '../IElementFinder'
-import { SELECTORS } from './constant'
+import { SELECTORS, TEXTS } from './constant'
 
 export const douyinElementFinder: IElementFinder = {
   async getPinTopLabel(
@@ -38,11 +38,7 @@ export const douyinElementFinder: IElementFinder = {
     // 2025.11.5 目前第一个按钮被替换成了【更多】，换成获取文本包含“讲解”的按钮
     let button = null
     for (const btn of await goodsAction.$$(SELECTORS.goodsItem.POPUP_BUTTON)) {
-      if (
-        (await btn.textContent())?.includes(
-          SELECTORS.goodsItem.POPUP_BUTTON_TEXT,
-        )
-      ) {
+      if ((await btn.textContent())?.includes(TEXTS.POPUP_BUTTON)) {
         button = btn
         break
       }
