@@ -5,10 +5,11 @@ import {
   connect,
   ensurePage,
   getAccountName,
+  toggleButton,
   virtualScroller,
 } from '../helper'
 import type { IPerformComment, IPerformPopup, IPlatform } from '../IPlatform'
-import { REGEXPS, SELECTORS, URLS } from './constant'
+import { REGEXPS, SELECTORS, TEXTS, URLS } from './constant'
 import { xiaohongshuElementFinder as elementFinder } from './elment-finder'
 
 const PLATFORM_NAME = '小红书' as const
@@ -80,7 +81,7 @@ export class XiaohongshuPlatform
     ensurePage(this.mainPage)
     const item = await virtualScroller(this.mainPage, elementFinder, id)
     const btn = await elementFinder.getPopUpButtonFromGoodsItem(item)
-    await btn.click()
+    await toggleButton(btn, TEXTS.POPUP_BUTTON_CANCLE, TEXTS.POPUP_BUTTON)
   }
 
   async performComment(message: string, pinTop?: boolean): Promise<boolean> {

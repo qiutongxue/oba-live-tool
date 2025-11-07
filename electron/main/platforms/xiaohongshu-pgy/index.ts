@@ -1,8 +1,8 @@
 import type { Page } from 'playwright'
 import type { BrowserSession } from '#/managers/BrowserSessionManager'
-import { comment, ensurePage, getAccountName, virtualScroller } from '../helper'
+import { ensurePage, getAccountName } from '../helper'
 import type { IPerformComment, IPerformPopup, IPlatform } from '../IPlatform'
-import { xiaohongshuElementFinder as elementFinder } from '../xiaohongshu/elment-finder'
+import { XiaohongshuPlatform } from '../xiaohongshu'
 import { REGEXPS, SELECTORS, URLS } from './constant'
 
 const PLATFORM_NAME = '蒲公英' as const
@@ -85,17 +85,15 @@ export class XiaohongshuPgyPlatform
   }
 
   async performPopup(id: number) {
-    ensurePage(this.mainPage)
-    const item = await virtualScroller(this.mainPage, elementFinder, id)
-    const btn = await elementFinder.getPopUpButtonFromGoodsItem(item)
-    console.log(await btn.textContent())
-    await btn.click()
+    return await XiaohongshuPlatform.prototype.performPopup.call(this, id)
   }
 
   async performComment(message: string, pinTop?: boolean): Promise<boolean> {
-    ensurePage(this.mainPage)
-    const result = await comment(this.mainPage, elementFinder, message, pinTop)
-    return result.pinTop
+    return await XiaohongshuPlatform.prototype.performComment.call(
+      this,
+      message,
+      pinTop,
+    )
   }
 
   getPopupPage(): Page {
