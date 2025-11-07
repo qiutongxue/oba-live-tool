@@ -55,9 +55,10 @@ export class BrowserSessionManager {
     storageState?: StorageState,
   ): Promise<BrowserSession> {
     const browser = await this.createBrowser(headless)
-    const context = await browser.newContext(
-      storageState ? { storageState } : undefined,
-    )
+    const context = await browser.newContext({
+      viewport: null, // 显式设置 null，关闭固定视口
+      storageState,
+    })
     const page = await context.newPage()
     return { browser, context, page }
   }
