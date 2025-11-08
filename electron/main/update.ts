@@ -128,16 +128,23 @@ export async function update(win: Electron.BrowserWindow) {
             releaseDate: new Date().toISOString(),
           }
           
+          // 保存更新信息，用于后续 DMG 下载
+          currentUpdateInfo = updateInfo
+          
           // 触发更新可用事件
           autoUpdater.emit('update-available', updateInfo)
           
-          return {
-            updateInfo,
-            cancellationToken: null,
-          }
+          // 返回符合 UpdateCheckResult 类型的对象
+          // 由于我们已经通过事件通知了更新可用，这里返回 null 即可
+          return null
         }
         
-        throw error
+        // 如果版本相同或获取失败，返回错误格式
+        const errorMessage = error instanceof Error ? error.message : String(error)
+        return {
+          message: `更新检查失败: ${errorMessage}`,
+          error: error instanceof Error ? error : new Error(String(error)),
+        }
       }
     } else {
       // 非 macOS 平台，使用标准的 GitHub provider
