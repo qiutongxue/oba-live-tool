@@ -8,7 +8,7 @@ import {
   virtualScroller,
 } from '../helper'
 import type { IPerformComment, IPerformPopup, IPlatform } from '../IPlatform'
-import { REGEXPS, SELECTORS, URLS } from './constant'
+import { REGEXPS, SELECTORS, TEXT, URLS } from './constant'
 import { wechatChannelElementFinder as elementFinder } from './element-finder'
 
 const PLATFORM_NAME = '微信视频号' as const
@@ -85,7 +85,7 @@ export class WechatChannelPlatform
     ensurePage(this.productsPage)
     const item = await virtualScroller(this.productsPage, elementFinder, id)
     const btn = await elementFinder.getPopUpButtonFromGoodsItem(item)
-    await toggleButton(btn, '取消讲解', '讲解')
+    await toggleButton(btn, TEXT.POPUP_BUTTON_CANCLE, TEXT.POPUP_BUTTON)
   }
 
   async performComment(message: string, pinTop?: boolean): Promise<boolean> {

@@ -16,7 +16,7 @@ import type {
   IPlatform,
 } from '../IPlatform'
 import { CompassListener, ControlListener } from './commentListener'
-import { REGEXPS, SELECTORS, URLS } from './constant'
+import { REGEXPS, SELECTORS, TEXTS, URLS } from './constant'
 import { douyinElementFinder as elementFinder } from './element-finder'
 
 const PLATFORM_NAME = '抖音小店' as const
@@ -86,7 +86,7 @@ export class DouyinPlatform
     const item = await virtualScroller(this.mainPage, elementFinder, id)
     const popupBtn = await elementFinder.getPopUpButtonFromGoodsItem(item)
 
-    await toggleButton(popupBtn, '取消讲解', '讲解')
+    await toggleButton(popupBtn, TEXTS.POPUP_BUTTON_CANCLE, TEXTS.POPUP_BUTTON)
   }
 
   async performComment(message: string, pinTop: boolean) {

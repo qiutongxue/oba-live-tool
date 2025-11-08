@@ -1,16 +1,10 @@
 import type { Page } from 'playwright'
 import { buyin as constants } from '#/constants'
 import type { BrowserSession } from '#/managers/BrowserSessionManager'
+import { DouyinPlatform } from '../douyin'
 import { CompassListener, ControlListener } from '../douyin/commentListener'
 // 百应和抖店共用
-import { douyinElementFinder as elementFinder } from '../douyin/element-finder'
-import {
-  comment,
-  connect,
-  ensurePage,
-  toggleButton,
-  virtualScroller,
-} from '../helper'
+import { connect, ensurePage } from '../helper'
 import type {
   ICommentListener,
   IPerformComment,
@@ -89,17 +83,15 @@ export class BuyinPlatform
   }
 
   async performPopup(id: number): Promise<void> {
-    ensurePage(this.mainPage)
-    const item = await virtualScroller(this.mainPage, elementFinder, id)
-    const popupBtn = await elementFinder.getPopUpButtonFromGoodsItem(item)
-
-    await toggleButton(popupBtn, '取消讲解', '讲解')
+    await DouyinPlatform.prototype.performPopup.call(this, id)
   }
 
   async performComment(message: string, pinTop: boolean) {
-    ensurePage(this.mainPage)
-    const result = await comment(this.mainPage, elementFinder, message, pinTop)
-    return result.pinTop
+    return await DouyinPlatform.prototype.performComment.call(
+      this,
+      message,
+      pinTop,
+    )
   }
 
   startCommentListener(

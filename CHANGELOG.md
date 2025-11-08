@@ -1,3 +1,27 @@
+# Changelog
+
+## v1.5.14
+
+[compare changes](https://github.com/qiutongxue/oba-live-tool/compare/v1.5.13...v1.5.14)
+
+### 🐞 Bug Fixes
+
+- **视频号:** 修复视频号重复弹窗失败的问题 #219 ([#219](https://github.com/qiutongxue/oba-live-tool/issues/219))
+- 修复浏览器视口固定的问题 #219 ([#219](https://github.com/qiutongxue/oba-live-tool/issues/219))
+- **小红书千帆&蒲公英:** 修复小红书千帆&蒲公英弹卡可能会失效的问题 #216 ([#216](https://github.com/qiutongxue/oba-live-tool/issues/216))
+
+## v1.5.13
+
+[compare changes](https://github.com/qiutongxue/oba-live-tool/compare/v1.5.12...v1.5.13)
+
+### 🚀 Features
+
+- 新增在窗口标题中显示应用版本号 ([5aefaab](https://github.com/qiutongxue/oba-live-tool/commit/5aefaab))
+
+### 🐞 Bug Fixes
+
+- **千帆**: 修复小红书千帆登录无法获取用户名的问题 ([d086418](https://github.com/qiutongxue/oba-live-tool/commit/d086418))
+- **抖音小店&巨量百应**: 修复找不到弹窗按钮的问题 ([48acc28](https://github.com/qiutongxue/oba-live-tool/commit/48acc28))
 
 ## v1.5.12
 

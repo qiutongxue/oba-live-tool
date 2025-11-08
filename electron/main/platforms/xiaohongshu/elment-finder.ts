@@ -15,7 +15,7 @@ export const xiaohongshuElementFinder: IElementFinder = {
       SELECTORS.GOODS_ITEM_INNER.OPERATION_ITEM,
     )
     for (const operation of operations) {
-      if ((await operation.textContent())?.includes(TEXTS.POPUP_BUTTON_TEXT)) {
+      if ((await operation.textContent())?.includes(TEXTS.POPUP_BUTTON)) {
         if (
           await operation.evaluate(
             (e, SELECTORS) =>

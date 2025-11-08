@@ -46,5 +46,6 @@ export const SELECTORS = {
 } as const
 
 export const TEXTS = {
-  POPUP_BUTTON_TEXT: '弹卡',
+  POPUP_BUTTON: '讲解',
+  POPUP_BUTTON_CANCLE: '结束讲解',
 } as const
