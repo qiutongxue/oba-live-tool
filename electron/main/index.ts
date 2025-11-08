@@ -56,7 +56,7 @@ const indexHtml = path.join(RENDERER_DIST, 'index.html')
 
 async function createWindow() {
   win = new BrowserWindow({
-    title: `OBA 直播工具 - v${app.getVersion()}`,
+    title: `驼铃直播中控工具 - v${app.getVersion()}`,
     width: 1280,
     height: 800,
     autoHideMenuBar: app.isPackaged,
