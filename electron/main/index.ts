@@ -1,6 +1,16 @@
 import { createRequire } from 'node:module'
 import os from 'node:os'
 import path from 'node:path'
+import process from 'node:process'
+import { fileURLToPath } from 'node:url'
+import { app, BrowserWindow, ipcMain, shell } from 'electron'
+import { updateManager } from './managers/UpdateManager'
+import windowManager from './windowManager'
+import './ipc'
+import { accountManager } from './managers/AccountManager'
+
+// const _require = createRequire(import.meta.url)
+
 // The built directory structure
 //
 // ├─┬ dist-electron
@@ -11,20 +21,7 @@ import path from 'node:path'
 // ├─┬ dist
 // │ └── index.html    > Electron-Renderer
 //
-import process from 'node:process'
-import { fileURLToPath } from 'node:url'
-import { app, BrowserWindow, ipcMain, shell } from 'electron'
 
-import { IPC_CHANNELS } from 'shared/ipcChannels'
-import { createLogger } from './logger'
-import { getLatestVersion, update } from './update'
-import windowManager from './windowManager'
-import './ipc'
-import semver from 'semver'
-import { accountManager } from './managers/AccountManager'
-import { fetchChangelog } from './utils'
-
-const _require = createRequire(import.meta.url)
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 process.env.APP_ROOT = path.join(__dirname, '../..')
@@ -85,27 +82,7 @@ async function createWindow() {
 
   // 加载完成后检查更新
   win.webContents.on('did-finish-load', async () => {
-    const logger = createLogger('检查更新')
-    try {
-      const latestVersion = await getLatestVersion()
-      const currentVersion = app.getVersion()
-      if (semver.lt(currentVersion, latestVersion)) {
-        logger.info(
-          `检查到可用更新：${currentVersion} -> ${latestVersion}，可前往应用设置-软件更新处手动更新`,
-        )
-
-        // 获取 CHANGELOG.md
-        const releaseNote = await fetchChangelog() // html
-
-        windowManager.send(IPC_CHANNELS.app.notifyUpdate, {
-          currentVersion,
-          latestVersion,
-          releaseNote,
-        })
-      }
-    } catch (err) {
-      logger.debug(`检查更新失败：${err}`)
-    }
+    await updateManager.silentCheckForUpdate()
   })
 
   // Make all links open with the browser, not with the application
@@ -113,9 +90,6 @@ async function createWindow() {
     if (url.startsWith('https:')) shell.openExternal(url)
     return { action: 'deny' }
   })
-
-  // Auto update
-  update(win)
 }
 
 app.whenReady().then(createWindow)

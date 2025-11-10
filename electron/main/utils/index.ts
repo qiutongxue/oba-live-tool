@@ -1,4 +1,3 @@
-export * from './changelog'
 export * from './common'
 export * from './ipc'
 export * from './mock'
