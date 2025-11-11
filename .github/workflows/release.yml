@@ -62,3 +62,21 @@ jobs:
           # prerelease: ${{ env.IS_DEV == 'true' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # 自动注入的 GitHub Token
+
+      - name: sync release to gitee
+        if: matrix.os == 'windows-latest'
+        uses: nicennnnnnnlee/action-gitee-release@master
+        with: 
+          gitee_action: create_release
+          gitee_owner: ${{ secrets.GITEE_USERNAME }}
+          gitee_repo: 'oba-live-tool'
+          gitee_token: ${{ secrets.GITEE_TOKEN }}
+          gitee_tag_name: ${{ github.ref_name }}
+          gitee_release_name: ${{ github.ref_name }}
+          gitee_release_body: ${{ steps.changelog.outputs.notes }}
+          gitee_target_commitish: main
+          gitee_upload_retry_times: 3
+          gitee_files: |
+            release/*/*.exe
+            release/*/latest.yml
+            release/*/*.exe.blockmap
