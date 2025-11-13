@@ -1,0 +1,62 @@
+name: Sync Release To Gitee
+
+on:
+  workflow_dispatch:
+
+jobs:
+  release:
+    permissions:
+      contents: write
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - name: install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: install dependencies
+        run: pnpm install
+
+      - name: build application
+        run: pnpm build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # 提取 changelog 里当前版本的内容，并保存到 output 中
+      # 多行内容需要使用 <<EOF 和 EOF 包裹
+      # https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/workflow-commands-for-github-actions#multiline-strings 
+      - name: Extract changelog
+        id: changelog
+        run: | 
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          node scripts/extract-changelog.js >> $GITHUB_OUTPUT  
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: sync release to gitee
+        if: matrix.os == 'windows-latest'
+        continue-on-error: true
+        uses: nicennnnnnnlee/action-gitee-release@master
+        with: 
+          gitee_action: create_release
+          gitee_owner: ${{ secrets.GITEE_USERNAME }}
+          gitee_repo: 'oba-live-tool'
+          gitee_token: ${{ secrets.GITEE_TOKEN }}
+          gitee_tag_name: v1.5.15
+          gitee_release_name: v1.5.15
+          gitee_release_body: '更新内容请查阅 https://github.com/qiutongxue/oba-live-tool/releases/tag/v1.5.15'
+          gitee_target_commitish: main
+          gitee_upload_retry_times: 3
+          gitee_files: |
+            release/*/*.exe
+            release/*/latest.yml
+            release/*/*.exe.blockmap
