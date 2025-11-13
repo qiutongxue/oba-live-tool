@@ -26,10 +26,12 @@ async function gitTag() {
 }
 
 async function gitPush() {
-  await x('git', ['push'], { throwOnError: true })
-  await x('git', ['push', '--tags'], { throwOnError: true })
+  await x('git', ['push', '--follow-tags'], { throwOnError: true })
 }
 
 gitCommit()
   .then(() => gitTag())
   .then(() => gitPush())
+  .catch(err => {
+    console.error(err)
+  })
