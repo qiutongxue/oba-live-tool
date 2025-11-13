@@ -12,6 +12,8 @@ export const URLS = {
   LIVE_CONTROL_PAGE: 'https://channels.weixin.qq.com/platform/live/liveBuild',
   /** 登录页面 */
   LOGIN_PAGE: 'https://channels.weixin.qq.com/login.html',
+  /** 商家首页（用于获取用户名） */
+  INDEX_PAGE: 'https://channels.weixin.qq.com/platform',
   /** 商品页面 */
   PRODUCTS_PAGE:
     'https://channels.weixin.qq.com/platform/live/commodity/onsale/index',
@@ -32,7 +34,8 @@ export const SELECTORS = {
     IN_LIVE_CONTROL: '.live-message-input-container', // 评论框
   },
   /** 获取用户名的元素 */
-  ACCOUNT_NAME: '.account-info .name',
+  ACCOUNT_NAME: '.finder-nickname',
+  // ACCOUNT_NAME: '.account-info .name',
   GOODS_ITEM:
     '.commodity-list-wrap .table-body-wrap > div > span div.table-row-wrap',
   /** 视频号中控台在 iframe 里，要先获取 iframe 才能定位其余元素 */

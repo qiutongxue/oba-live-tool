@@ -72,10 +72,12 @@ export class WechatChannelPlatform
   }
 
   async getAccountName(session: BrowserSession): Promise<string> {
-    const accountName = await getAccountName(
-      session.page,
-      SELECTORS.ACCOUNT_NAME,
-    )
+    // 视频号如果窗口过小的话无法正常获取账号名
+    // 直接访问视频号首页就能搞到用户名了
+    const tempPage = await session.context.newPage()
+    await tempPage.goto(URLS.INDEX_PAGE)
+    const accountName = await getAccountName(tempPage, SELECTORS.ACCOUNT_NAME)
+    await tempPage.close()
     return accountName ?? ''
   }
 
