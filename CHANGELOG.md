@@ -1,5 +1,20 @@
 # Changelog
 
+## v1.5.15
+
+[compare changes](https://github.com/qiutongxue/oba-live-tool/compare/v1.5.14...v1.5.15)
+
+### 🚀 Features
+
+- **ui:** 中控台平台选项持久化 ([80ae047](https://github.com/qiutongxue/oba-live-tool/commit/80ae047))
+- **中控台:** 优化中控台的连接逻辑，加快连接速度，减少连接错误 ([18f83f5](https://github.com/qiutongxue/oba-live-tool/commit/18f83f5))
+
+### 🐞 Bug Fixes
+
+- **视频号:** 修复浏览器窗口过窄时无法获取用户名的问题 #226 ([#226](https://github.com/qiutongxue/oba-live-tool/issues/226))
+- **ui:** 修复更新提示对话框无法通过右上角的 x 关闭的问题 ([d3ba6bb](https://github.com/qiutongxue/oba-live-tool/commit/d3ba6bb))
+- **小红书:** 修复因浏览器视口调整导致小红书获取用户名失败的问题 #225 ([#225](https://github.com/qiutongxue/oba-live-tool/issues/225))
+
 ## v1.5.14
 
 [compare changes](https://github.com/qiutongxue/oba-live-tool/compare/v1.5.13...v1.5.14)
