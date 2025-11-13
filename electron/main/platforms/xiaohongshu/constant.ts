@@ -26,7 +26,8 @@ export const SELECTORS = {
   IN_LIVE_CONTROL: '.app-root-topbar-wrapper',
 
   ACCOUNT_NAME_HOVER: '.user-info-wrapper',
-  ACCOUNT_NAME: '.sellerId-name',
+  // ACCOUNT_NAME: '.sellerId-name',
+  ACCOUNT_NAME: '.user-info-wrapper .store-name',
 
   GOODS_ITEM: '.goods-list .table-wrap > div > div > table tbody tr',
   GOODS_ITEMS_WRAPPER: '.goods-list .table-wrap > div > div',
