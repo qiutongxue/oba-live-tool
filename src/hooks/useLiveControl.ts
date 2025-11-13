@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
 import { EVENTS, eventEmitter } from '@/utils/events'
 import { useAccounts } from './useAccounts'
@@ -31,41 +32,72 @@ function defaultContext(): LiveControlContext {
 }
 
 export const useLiveControlStore = create<LiveControlStore>()(
-  immer(set => {
-    eventEmitter.on(EVENTS.ACCOUNT_REMOVED, (accountId: string) => {
-      set(state => {
-        delete state.contexts[accountId]
+  persist(
+    immer(set => {
+      eventEmitter.on(EVENTS.ACCOUNT_REMOVED, (accountId: string) => {
+        set(state => {
+          delete state.contexts[accountId]
+        })
       })
-    })
 
-    const ensureContext = (state: LiveControlStore, accountId: string) => {
-      if (!state.contexts[accountId]) {
-        state.contexts[accountId] = defaultContext()
+      const ensureContext = (state: LiveControlStore, accountId: string) => {
+        if (!state.contexts[accountId]) {
+          state.contexts[accountId] = defaultContext()
+        }
+        return state.contexts[accountId]
       }
-      return state.contexts[accountId]
-    }
 
-    return {
-      contexts: {
-        default: defaultContext(),
+      return {
+        contexts: {
+          default: defaultContext(),
+        },
+        setIsConnected: (accountId, connected) =>
+          set(state => {
+            const context = ensureContext(state, accountId)
+            context.isConnected = connected
+          }),
+        setAccountName: (accountId, name) =>
+          set(state => {
+            const context = ensureContext(state, accountId)
+            context.accountName = name
+          }),
+        setPlatform: (accountId, platform) =>
+          set(state => {
+            const context = ensureContext(state, accountId)
+            context.platform = platform
+          }),
+      }
+    }),
+    {
+      name: 'live-control-storage',
+      partialize: state => {
+        const contexts: Record<
+          string,
+          Pick<LiveControlContext, 'platform'>
+        > = {}
+        for (const key in state.contexts) {
+          contexts[key] = { platform: state.contexts[key].platform }
+        }
+        return { contexts }
       },
-      setIsConnected: (accountId, connected) =>
-        set(state => {
-          const context = ensureContext(state, accountId)
-          context.isConnected = connected
-        }),
-      setAccountName: (accountId, name) =>
-        set(state => {
-          const context = ensureContext(state, accountId)
-          context.accountName = name
-        }),
-      setPlatform: (accountId, platform) =>
-        set(state => {
-          const context = ensureContext(state, accountId)
-          context.platform = platform
-        }),
-    }
-  }),
+      merge: (_persistedState, currentState) => {
+        const persistedState = _persistedState as {
+          contexts: Record<string, Pick<LiveControlContext, 'platform'>>
+        }
+        const mergedContexts: Record<string, LiveControlContext> = {}
+        for (const key in persistedState.contexts ?? {}) {
+          mergedContexts[key] = {
+            ...defaultContext(),
+            ...persistedState.contexts[key],
+          }
+        }
+        return {
+          ...currentState,
+          contexts: mergedContexts,
+        }
+      },
+    },
+  ),
 )
 
 export const useCurrentLiveControlActions = () => {
