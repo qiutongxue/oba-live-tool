@@ -65,6 +65,7 @@ jobs:
 
       - name: sync release to gitee
         if: matrix.os == 'windows-latest'
+        continue-on-error: true
         uses: nicennnnnnnlee/action-gitee-release@master
         with: 
           gitee_action: create_release
@@ -73,10 +74,11 @@ jobs:
           gitee_token: ${{ secrets.GITEE_TOKEN }}
           gitee_tag_name: ${{ github.ref_name }}
           gitee_release_name: ${{ github.ref_name }}
-          gitee_release_body: ${{ steps.changelog.outputs.notes }}
           gitee_target_commitish: main
           gitee_upload_retry_times: 3
           gitee_files: |
             release/*/*.exe
             release/*/latest.yml
             release/*/*.exe.blockmap
+        env:
+          gitee_release_body: ${{ steps.changelog.outputs.notes }}
