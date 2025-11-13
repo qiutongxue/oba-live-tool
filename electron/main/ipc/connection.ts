@@ -21,19 +21,17 @@ function setupIpcHandlers() {
       )
 
       try {
-        const { accountName } = await accountSession.connect({
+        await accountSession.connect({
           headless,
           storageState,
         })
-        return {
-          accountName,
-        }
+        return true
       } catch (error) {
         const logger = createLogger(`@${account.name}`).scope(TASK_NAME)
         logger.error('连接直播控制台失败:', errorMessage(error))
 
         accountManager.closeSession(account.id)
-        return null
+        return false
       }
     },
   )

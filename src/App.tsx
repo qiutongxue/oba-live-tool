@@ -37,7 +37,7 @@ import { useUpdateStore } from './hooks/useUpdate'
 function useGlobalIpcListener() {
   const { handleComment } = useAutoReply()
   const { setIsListening } = useAutoReplyStore()
-  const { setIsConnected } = useLiveControlStore()
+  const { setIsConnected, setAccountName } = useLiveControlStore()
   const { setIsRunning: setIsRunningAutoMessage } = useAutoMessageStore()
   const { setIsRunning: setIsRunningAutoPopUp } = useAutoPopUpStore()
   const { setStorageState } = useChromeConfigStore()
@@ -71,6 +71,12 @@ function useGlobalIpcListener() {
 
   useIpcListener(IPC_CHANNELS.chrome.saveState, (id, state) => {
     setStorageState(id, state)
+  })
+
+  useIpcListener(IPC_CHANNELS.tasks.liveControl.notifyAccountName, params => {
+    if (params.ok) {
+      setAccountName(params.accountId, params.accountName || '')
+    }
   })
 }
 

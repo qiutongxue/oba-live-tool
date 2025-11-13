@@ -28,6 +28,7 @@ import { createAutoPopupTask } from '#/tasks/AutoPopupTask'
 import { createCommentListenerTask } from '#/tasks/CommentListenerTask'
 import type { ITask } from '#/tasks/ITask'
 import { createSendBatchMessageTask } from '#/tasks/SendBatchMessageTask'
+import { errorMessage } from '#/utils'
 import windowManager from '#/windowManager'
 
 const browserFactory = BrowserSessionManager.getInstance()
@@ -67,7 +68,22 @@ export class AccountSession {
     windowManager.send(IPC_CHANNELS.chrome.saveState, this.account.id, state)
 
     // 此时可以确保正在中控台页面，获取用户名
-    const accountName = await this.platform.getAccountName(this.browserSession)
+    // 获取用户名不应该和连接中控台的行为冲突
+    this.platform
+      .getAccountName(this.browserSession)
+      .then(accountName => {
+        windowManager.send(IPC_CHANNELS.tasks.liveControl.notifyAccountName, {
+          ok: true,
+          accountId: this.account.id,
+          accountName,
+        })
+      })
+      .catch(error => {
+        this.logger.error('获取用户名失败:', errorMessage(error))
+        windowManager.send(IPC_CHANNELS.tasks.liveControl.notifyAccountName, {
+          ok: false,
+        })
+      })
 
     // 浏览器被外部主动关闭时，程序自动断开所有操作
     // 不用 browserContext close 或 browser disconnected 的原因：
@@ -77,10 +93,6 @@ export class AccountSession {
       emitter.emit('page-closed', { accountId: this.account.id })
     })
     this.logger.success('成功与中控台建立连接')
-    return {
-      accountName,
-      storageState: state,
-    }
   }
 
   async disconnect() {

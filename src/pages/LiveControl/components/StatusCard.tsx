@@ -95,7 +95,7 @@ const StatusCard = React.memo(() => {
 })
 
 const ConnectToLiveControl = React.memo(() => {
-  const { setIsConnected, setAccountName } = useCurrentLiveControlActions()
+  const { setIsConnected } = useCurrentLiveControlActions()
   const platform = useCurrentLiveControl(context => context.platform)
   const isConnected = useCurrentLiveControl(context => context.isConnected)
   const chromePath = useCurrentChromeConfig(context => context.path)
@@ -123,7 +123,6 @@ const ConnectToLiveControl = React.memo(() => {
 
       if (result) {
         setIsConnected('connected')
-        setAccountName(result.accountName || '')
         toast.success('已连接到直播控制台')
       } else {
         throw new Error('连接直播控制台失败')
@@ -144,7 +143,6 @@ const ConnectToLiveControl = React.memo(() => {
         IPC_CHANNELS.tasks.liveControl.disconnect,
         account.id,
       )
-      setAccountName('')
       toast.success('已断开连接')
     } catch (error) {
       toast.error(error instanceof Error ? error.message : '断开连接失败')

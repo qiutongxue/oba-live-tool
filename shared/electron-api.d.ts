@@ -16,11 +16,18 @@ export interface IpcChannels {
     storageState?: string
     platform: LiveControlPlatform
     account: Account
-  }) => {
-    accountName: string | null
-  } | null
+  }) => boolean
   [IPC_CHANNELS.tasks.liveControl.disconnect]: (accountId: string) => boolean
   [IPC_CHANNELS.tasks.liveControl.disconnectedEvent]: (id: string) => void
+  [IPC_CHANNELS.tasks.liveControl.notifyAccountName]: (
+    params:
+      | {
+          ok: true
+          accountId: string
+          accountName: string | null
+        }
+      | { ok: false },
+  ) => void
 
   // AutoMessage
   [IPC_CHANNELS.tasks.autoMessage.start]: (
