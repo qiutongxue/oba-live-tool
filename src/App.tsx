@@ -98,7 +98,7 @@ function UpdateInfo() {
   }
 
   return (
-    <Dialog open={isUpdateAlertShow}>
+    <Dialog open={isUpdateAlertShow} onOpenChange={setIsUpdateAlertShow}>
       <DialogContent>
         <DialogTitle>有新版本可用</DialogTitle>
         <DialogDescription>现在更新以体验最新功能。</DialogDescription>
