@@ -1,8 +1,1 @@
-export * as buyin from './buyin'
-export * as douyin from './douyin'
-export * as eos from './eos'
 export * as error from './error'
-export * as kuaishou from './kuaishou'
-export * as redbook from './redbook'
-export * as taobao from './taobao'
-export * as wxchannel from './wxchannel'
