@@ -6,6 +6,7 @@ import {
   connect,
   ensurePage,
   getAccountName,
+  openUrlByElement,
   toggleButton,
   virtualScroller,
 } from '../helper'
@@ -52,15 +53,7 @@ export class DouyinPlatform
     // 进入登录页面
     // 抖店目前 (2025.6.29) 有一个小反爬，会打乱登录页面的样式
     // 解决方法：通过控件主动打开登录页面
-    const [newPage] = await Promise.all([
-      browserSession.context.waitForEvent('page'),
-      browserSession.page.evaluate(loginUrl => {
-        const el = document.createElement('a')
-        el.href = loginUrl
-        el.target = '_blank'
-        el.click()
-      }, URLS.LOGIN_PAGE),
-    ])
+    const newPage = await openUrlByElement(browserSession.page, URLS.LOGIN_PAGE)
     await browserSession.page.close()
     browserSession.page = newPage
 

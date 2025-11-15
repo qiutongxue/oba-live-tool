@@ -5,6 +5,7 @@ import {
   connect,
   ensurePage,
   getAccountName,
+  openUrlByElement,
   toggleButton,
   virtualScroller,
 } from '../helper'
@@ -35,15 +36,7 @@ export class XiaohongshuPlatform
     if (isConnected) {
       // 小红书反爬，直接用 goto 进入中控台加载不出元素
       // TODO: 之前的方法是前往首页后点击元素跳转，这次改为直接生成一个控件利用控件跳转，需要测试该功能是否能用
-      const [newPage] = await Promise.all([
-        browserSession.context.waitForEvent('page'),
-        browserSession.page.evaluate(url => {
-          const el = document.createElement('a')
-          el.href = url
-          el.target = '_blank'
-          el.click()
-        }, URLS.LIVE_CONTROL_PAGE),
-      ])
+      const newPage = await openUrlByElement(page, URLS.LIVE_CONTROL_PAGE)
       await page.close()
       browserSession.page = newPage
       this.mainPage = newPage

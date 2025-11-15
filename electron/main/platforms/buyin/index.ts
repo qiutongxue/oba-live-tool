@@ -1,10 +1,9 @@
 import type { Page } from 'playwright'
-import { buyin as constants } from '#/constants'
 import type { BrowserSession } from '#/managers/BrowserSessionManager'
 import { DouyinPlatform } from '../douyin'
 import { CompassListener, ControlListener } from '../douyin/commentListener'
 // 百应和抖店共用
-import { connect, ensurePage } from '../helper'
+import { connect, ensurePage, openUrlByElement } from '../helper'
 import type {
   ICommentListener,
   IPerformComment,
@@ -13,7 +12,6 @@ import type {
 } from '../IPlatform'
 import { REGEXPS, SELECTORS, URLS } from './constant'
 
-const { login: loginConstants } = constants
 const PLATFORM_NAME = '巨量百应' as const
 
 /**
@@ -42,18 +40,10 @@ export class BuyinPlatform
     })
     if (isConnected) {
       // 2025.11 巨量百应的中控台和登录时一样，样式会乱，同样的解决方法
-      const [newPage] = await Promise.all([
-        browserSession.context.waitForEvent('page'),
-        browserSession.page.evaluate(url => {
-          const el = document.createElement('a')
-          el.href = url
-          el.target = '_blank'
-          el.click()
-        }, URLS.LIVE_CONTROL_PAGE),
-      ])
-      await page.close()
+      const newPage = await openUrlByElement(page, URLS.LIVE_CONTROL_PAGE)
       browserSession.page = newPage
       this.mainPage = newPage
+      await page.close()
     }
     return isConnected
   }
@@ -62,30 +52,19 @@ export class BuyinPlatform
     // 进入登录页面
     // 巨量百应（2025.8）也有和抖店同样的问题
     // 解决方法：通过控件主动打开登录页面
-    const [newPage] = await Promise.all([
-      browserSession.context.waitForEvent('page'),
-      browserSession.page.evaluate(loginUrl => {
-        const el = document.createElement('a')
-        el.href = loginUrl
-        el.target = '_blank'
-        el.click()
-      }, loginConstants.loginUrl),
-    ])
+    const newPage = await openUrlByElement(browserSession.page, URLS.LOGIN_PAGE)
     await browserSession.page.close()
     browserSession.page = newPage
 
-    await browserSession.page.waitForSelector(
-      loginConstants.isLoggedInSelector,
-      {
-        timeout: 0,
-      },
-    )
+    await browserSession.page.waitForSelector(SELECTORS.LOGGED_IN, {
+      timeout: 0,
+    })
   }
 
   async getAccountName(session: BrowserSession) {
-    await session.page.waitForSelector(loginConstants.accountNameSelector)
+    await session.page.waitForSelector(SELECTORS.ACCOUNT_NAME)
     const accountName = await session.page
-      .$(loginConstants.accountNameSelector)
+      .$(SELECTORS.ACCOUNT_NAME)
       .then(el => el?.textContent())
     return accountName ?? ''
   }

@@ -215,3 +215,18 @@ export function ensurePage(page: Page | null): asserts page is Page {
     throw new Error('找不到页面，请先确认是否已连接到中控台')
   }
 }
+
+/** 通过 \<a\> 的点击打开新网页，主要是防止部分反爬的行为 */
+export async function openUrlByElement(page: Page, url: string) {
+  const context = page.context()
+  const [newPage] = await Promise.all([
+    context.waitForEvent('page'),
+    page.evaluate(url => {
+      const el = document.createElement('a')
+      el.href = url
+      el.target = '_blank'
+      el.click()
+    }, url),
+  ])
+  return newPage
+}
