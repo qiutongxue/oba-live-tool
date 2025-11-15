@@ -41,7 +41,19 @@ export class BuyinPlatform
       loginUrlRegex: REGEXPS.LOGIN_PAGE,
     })
     if (isConnected) {
-      this.mainPage = page
+      // 2025.11 巨量百应的中控台和登录时一样，样式会乱，同样的解决方法
+      const [newPage] = await Promise.all([
+        browserSession.context.waitForEvent('page'),
+        browserSession.page.evaluate(url => {
+          const el = document.createElement('a')
+          el.href = url
+          el.target = '_blank'
+          el.click()
+        }, URLS.LIVE_CONTROL_PAGE),
+      ])
+      await page.close()
+      browserSession.page = newPage
+      this.mainPage = newPage
     }
     return isConnected
   }
