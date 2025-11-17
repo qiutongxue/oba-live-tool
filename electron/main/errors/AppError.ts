@@ -7,3 +7,8 @@ export class UnexpectedError extends ErrorFactory({
   message: ({ description }) => description || '意外错误',
   fields: ErrorFactory.fields<{ description?: string }>(),
 }) {}
+
+export class AbortError extends ErrorFactory({
+  name: 'AbortedError',
+  message: '被中断',
+}) {}
