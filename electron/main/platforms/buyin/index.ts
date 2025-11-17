@@ -1,3 +1,4 @@
+import { Result } from '@praha/byethrow'
 import type { Page } from 'playwright'
 import type { BrowserSession } from '#/managers/BrowserSessionManager'
 import { DouyinPlatform } from '../douyin'
@@ -73,8 +74,8 @@ export class BuyinPlatform
     throw new Error('Method not implemented.')
   }
 
-  async performPopup(id: number): Promise<void> {
-    await DouyinPlatform.prototype.performPopup.call(this, id)
+  async performPopup(id: number) {
+    return await DouyinPlatform.prototype.performPopup.call(this, id)
   }
 
   async performComment(message: string, pinTop: boolean) {
@@ -89,11 +90,15 @@ export class BuyinPlatform
     onComment: (comment: DouyinLiveMessage) => void,
     source: 'control' | 'compass',
   ) {
-    ensurePage(this.mainPage)
+    const pageResult = ensurePage(this.mainPage)
+    if (Result.isFailure(pageResult)) {
+      throw pageResult.error
+    }
+    const page = pageResult.value
     if (source === 'control') {
-      this.commentListener = new ControlListener(this.mainPage)
+      this.commentListener = new ControlListener(page)
     } else {
-      this.commentListener = new CompassListener('buyin', this.mainPage)
+      this.commentListener = new CompassListener('buyin', page)
     }
     return this.commentListener.startCommentListener(onComment, source)
   }
@@ -109,13 +114,11 @@ export class BuyinPlatform
     return this.commentListener?.getCommentListenerPage() ?? this.mainPage
   }
 
-  getPopupPage(): Page {
-    ensurePage(this.mainPage)
-    return this.mainPage
+  getPopupPage() {
+    return ensurePage(this.mainPage)
   }
 
-  getCommentPage(): Page {
-    ensurePage(this.mainPage)
-    return this.mainPage
+  getCommentPage() {
+    return ensurePage(this.mainPage)
   }
 }

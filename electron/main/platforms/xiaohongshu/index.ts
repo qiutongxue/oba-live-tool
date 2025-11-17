@@ -1,3 +1,4 @@
+import { Result } from '@praha/byethrow'
 import type { Page } from 'playwright'
 import type { BrowserSession } from '#/managers/BrowserSessionManager'
 import {
@@ -5,9 +6,9 @@ import {
   connect,
   ensurePage,
   getAccountName,
+  getItemFromVirtualScroller,
   openUrlByElement,
   toggleButton,
-  virtualScroller,
 } from '../helper'
 import type { IPerformComment, IPerformPopup, IPlatform } from '../IPlatform'
 import { REGEXPS, SELECTORS, TEXTS, URLS } from './constant'
@@ -67,26 +68,31 @@ export class XiaohongshuPlatform
   }
 
   async performPopup(id: number) {
-    ensurePage(this.mainPage)
-    const item = await virtualScroller(this.mainPage, elementFinder, id)
-    const btn = await elementFinder.getPopUpButtonFromGoodsItem(item)
-    await toggleButton(btn, TEXTS.POPUP_BUTTON_CANCLE, TEXTS.POPUP_BUTTON)
+    return Result.pipe(
+      ensurePage(this.mainPage),
+      Result.andThen(page =>
+        getItemFromVirtualScroller(page, elementFinder, id),
+      ),
+      Result.andThen(item => elementFinder.getPopUpButtonFromGoodsItem(item)),
+      Result.andThen(btn =>
+        toggleButton(btn, TEXTS.POPUP_BUTTON, TEXTS.POPUP_BUTTON_CANCLE),
+      ),
+    )
   }
 
-  async performComment(message: string, pinTop?: boolean): Promise<boolean> {
-    ensurePage(this.mainPage)
-    const result = await comment(this.mainPage, elementFinder, message, pinTop)
-    return result.pinTop
+  async performComment(message: string) {
+    return Result.pipe(
+      ensurePage(this.mainPage),
+      Result.andThen(page => comment(page, elementFinder, message, false)),
+    )
   }
 
-  getPopupPage(): Page {
-    ensurePage(this.mainPage)
-    return this.mainPage
+  getPopupPage() {
+    return ensurePage(this.mainPage)
   }
 
-  getCommentPage(): Page {
-    ensurePage(this.mainPage)
-    return this.mainPage
+  getCommentPage() {
+    return ensurePage(this.mainPage)
   }
 
   get platformName() {

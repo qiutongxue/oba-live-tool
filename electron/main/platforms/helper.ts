@@ -1,4 +1,13 @@
+import { Result } from '@praha/byethrow'
 import type { ElementHandle, Page } from 'playwright'
+import {
+  ElementContentMismatchedError,
+  ElementNotFoundError,
+  MaxTryCountExceededError,
+  PageNotFoundError,
+  type PlatformError,
+  UnexpectedError,
+} from '#/errors/PlatformError'
 import { sleep } from '#/utils'
 import type { IElementFinder } from './IElementFinder'
 
@@ -36,48 +45,45 @@ export async function comment(
   elementFinder: IElementFinder,
   message: string,
   pinTop?: boolean,
-) {
-  async function clickPinTopButton(page: Page) {
-    const pinTopLabel = await elementFinder.getPinTopLabel(page)
-    if (!pinTopLabel) {
-      // this.logger.warn('找不到置顶选项，不进行置顶')
-      return false
-    }
-    await pinTopLabel.dispatchEvent('click')
-    return true
+): Result.ResultAsync<boolean, PlatformError> {
+  async function clickPinTopButton(
+    page: Page,
+  ): Result.ResultAsync<boolean, PlatformError> {
+    return Result.pipe(
+      elementFinder.getPinTopLabel(page),
+      Result.inspect(label => label.dispatchEvent('click')),
+      Result.map(_ => true),
+      // 即使没有 pinTop 也不会中断程序
+      Result.orElse(_ => Result.succeed(false)),
+    )
   }
 
-  const textarea = await elementFinder.getCommentTextarea(page)
-  if (!textarea) {
-    throw new Error('找不到评论框')
-  }
-
-  await textarea.fill(message)
-
-  let successPinTop = false
-
-  if (pinTop) {
-    successPinTop = await clickPinTopButton(page)
-  }
-
-  const submit_btn = await elementFinder.getClickableSubmitCommentButton(page)
-  if (!submit_btn) {
-    throw new Error('无法点击发布按钮')
-  }
-  await submit_btn.dispatchEvent('click')
-
-  return {
-    pinTop: successPinTop,
-  }
+  return Result.pipe(
+    // 评论框
+    elementFinder.getCommentTextarea(page),
+    // 填写评论内容
+    Result.inspect(textarea => textarea.fill(message)),
+    // 点击置顶选项
+    Result.andThen(_ =>
+      pinTop ? clickPinTopButton(page) : Result.succeed(false),
+    ),
+    // 发送评论
+    Result.andThrough(_ =>
+      Result.pipe(
+        elementFinder.getClickableSubmitCommentButton(page),
+        Result.inspect(btn => btn.dispatchEvent('click')),
+      ),
+    ),
+  )
 }
 
 /** 在虚拟列表中找到目标序号的位置 */
-export async function virtualScroller(
+export async function getItemFromVirtualScroller(
   page: Page,
   elementFinder: IElementFinder,
   targetId: number,
   maxRetries = 10,
-) {
+): Result.ResultAsync<ElementHandle<SVGElement | HTMLElement>, PlatformError> {
   const SCROLL_TOLERANCE = 10
   const LOAD_WAIT_MS = 1000
 
@@ -86,54 +92,65 @@ export async function virtualScroller(
    */
   async function findItemInCurrentView(id: number) {
     const currentGoodsItems = await elementFinder.getCurrentGoodsItemsList(page)
-    if (currentGoodsItems.length === 0) {
-      return null
+    if (Result.isFailure(currentGoodsItems)) {
+      return currentGoodsItems
     }
-
     try {
       // 并发执行，效率比顺序遍历快了10倍以上
       const foundItem = await Promise.any(
-        currentGoodsItems.map(async goodsItem => {
-          const itemId = await elementFinder.getIdFromGoodsItem(goodsItem)
-          if (itemId !== id) {
-            throw new Error('未匹配')
+        currentGoodsItems.value.map(async goodsItem => {
+          const itemIdResult = await elementFinder.getIdFromGoodsItem(goodsItem)
+          if (Result.isSuccess(itemIdResult) && itemIdResult.value === id) {
+            return goodsItem
           }
-          return goodsItem
+          throw new Error('未匹配')
         }),
       )
-      return foundItem
-    } catch {
-      return null
+      return Result.succeed(foundItem)
+    } catch (err) {
+      // Promise.any 全部出错抛出的错误为 AggregateError
+      // 表示全部都未找到
+      if (err instanceof AggregateError) {
+        return Result.succeed(null)
+      }
+      return Result.fail(new UnexpectedError('未知错误', { cause: err }))
     }
   }
 
   /**
    * 根据目标ID和当前列表的ID范围，决定下一个滚动的锚点元素（列表的第一个或最后一个）。
    */
-  async function determineScrollTarget(id: number) {
+  async function determineScrollTarget(
+    id: number,
+  ): Result.ResultAsync<
+    ElementHandle<SVGElement | HTMLElement>,
+    PlatformError
+  > {
     const currentGoodsItems = await elementFinder.getCurrentGoodsItemsList(page)
-    if (currentGoodsItems.length === 0) {
-      return null
+    if (Result.isFailure(currentGoodsItems)) {
+      return currentGoodsItems
     }
 
-    const firstItem = currentGoodsItems[0]
-    const lastItem = currentGoodsItems[currentGoodsItems.length - 1]
+    const firstItem = currentGoodsItems.value[0]
+    const lastItem = currentGoodsItems.value[currentGoodsItems.value.length - 1]
 
-    const firstId = await elementFinder.getIdFromGoodsItem(firstItem)
-    const lastId = await elementFinder.getIdFromGoodsItem(lastItem)
-
-    // 判断列表是正序还是倒序
-    const isReversed = firstId > lastId
-
-    // logger.warn(`商品 ${id} 不在当前范围 [${firstId} ~ ${lastId}]，继续滚动查找...`);
-
-    // 目标ID小于当前范围的起始ID (正序) 或 大于 (倒序)，需要向上滚
-    if ((!isReversed && id < firstId) || (isReversed && id > firstId)) {
-      return firstItem
-    }
-
-    // 否则，向下滚
-    return lastItem
+    return Result.pipe(
+      Result.sequence([
+        elementFinder.getIdFromGoodsItem(firstItem),
+        elementFinder.getIdFromGoodsItem(lastItem),
+      ]),
+      Result.andThen(([firstId, lastId]) => {
+        // 判断列表是正序还是倒序
+        const isReversed = firstId > lastId
+        // logger.warn(`商品 ${id} 不在当前范围 [${firstId} ~ ${lastId}]，继续滚动查找...`);
+        // 目标ID小于当前范围的起始ID (正序) 或 大于 (倒序)，需要向上滚
+        if ((!isReversed && id < firstId) || (isReversed && id > firstId)) {
+          return Result.succeed(firstItem)
+        }
+        // 否则，向下滚
+        return Result.succeed(lastItem)
+      }),
+    )
   }
 
   /**
@@ -150,70 +167,101 @@ export async function virtualScroller(
   while (retries < maxRetries) {
     // 1. 在当前视图中查找
     const foundItem = await findItemInCurrentView(targetId)
-    if (foundItem) {
+    if (Result.isFailure(foundItem)) {
       return foundItem
     }
-
-    // 2. 获取滚动容器和当前滚动位置
-    const scrollContainer =
-      await elementFinder.getGoodsItemsScrollContainer(page)
-    if (!scrollContainer) {
-      throw new Error('找不到滚动容器')
+    if (foundItem.value) {
+      return Result.succeed(foundItem.value)
     }
 
-    // 4. 判断滚动方向并执行滚动
+    // 1. 先找到目标点并滚动
     const scrollTarget = await determineScrollTarget(targetId)
-    if (!scrollTarget) {
-      throw new Error('当前列表为空，无法确定滚动方向')
+    if (Result.isFailure(scrollTarget)) {
+      return scrollTarget
     }
-    await scrollTarget.scrollIntoViewIfNeeded()
-
-    // 5. 等待新内容加载 (更优的等待方式)
+    await scrollTarget.value.scrollIntoViewIfNeeded()
     await waitForNewItemsToLoad()
 
+    // 2. 获取当前的滚动位置
+    const scrollContainer =
+      await elementFinder.getGoodsItemsScrollContainer(page)
+    if (Result.isFailure(scrollContainer)) {
+      return scrollContainer
+    }
+    const currentScrollTop = await scrollContainer.value.evaluate(
+      el => el.scrollTop,
+    )
+
     // 3. 检查是否滚动到底了 (终止条件)
-    const currentScrollTop = await scrollContainer.evaluate(el => el.scrollTop)
     if (
       !Number.isNaN(lastScrollTop) &&
       Math.abs(lastScrollTop - currentScrollTop) <= SCROLL_TOLERANCE
     ) {
       // logger.debug(`滚动位置未改变，无法找到更多内容。ScrollTop: ${currentScrollTop}`);
-      throw new Error(`在尝试滚动 ${retries} 次后，仍未找到商品 ${targetId}`)
+      return Result.fail(
+        new ElementNotFoundError({
+          elementName: `id为${targetId}的商品`,
+        }),
+      )
     }
     lastScrollTop = currentScrollTop
 
     retries++
   }
 
-  throw new Error(`超过最大重试次数 ${maxRetries}，仍未找到商品 ${targetId}`)
+  return Result.fail(
+    new MaxTryCountExceededError({
+      taskName: '查找商品',
+      maxTryCount: maxRetries,
+    }),
+  )
 }
 
+const TOGGLE_BUTTON_MAX_TRY_COUNT = 5
 export async function toggleButton(
   button: ElementHandle<SVGElement | HTMLElement>,
   sourceContent: string,
   targetContent: string,
-) {
-  const clickPopUpButton = async (
-    button: ElementHandle<SVGElement | HTMLElement>,
-  ) => {
-    const buttonText = (await button.textContent())?.trim()
-    if (buttonText !== sourceContent && buttonText !== targetContent) {
-      throw new Error(`不是${targetContent}按钮，是 ${buttonText} 按钮`)
-    }
-    await button.dispatchEvent('click')
-    return buttonText
+  tryCount = 0,
+): Result.ResultAsync<void, PlatformError> {
+  if (tryCount > TOGGLE_BUTTON_MAX_TRY_COUNT) {
+    return Result.fail(
+      new MaxTryCountExceededError({
+        taskName: 'toggleButton',
+        maxTryCount: TOGGLE_BUTTON_MAX_TRY_COUNT,
+      }),
+    )
+  }
+  const buttonText = (await button.textContent())?.trim() || ''
+  if (buttonText !== sourceContent && buttonText !== targetContent) {
+    return Result.fail(
+      new ElementContentMismatchedError({
+        current: buttonText,
+        target: `${targetContent} 或 ${sourceContent}`,
+      }),
+    )
   }
 
-  while ((await clickPopUpButton(button)) === sourceContent) {
-    await sleep(1000)
+  // 两种情况：
+  // 1. 商品未讲解：buttonText === sourceContent，点击变为 targetContent 即可
+  // 2. 商品正在讲解：需要先点击一次取消讲解，变为未讲解状态
+  if (buttonText === targetContent && tryCount > 0) {
+    return Result.succeed()
   }
+  // button.click() 在抖店&百应的表现很诡异，所以用 dispatchEvent('click')
+  await button.dispatchEvent('click')
+  await sleep(1000)
+  return toggleButton(button, sourceContent, targetContent, tryCount + 1)
 }
 
-/** 确保 page 非空，若 Page 为空，抛出错误消息 */
-export function ensurePage(page: Page | null): asserts page is Page {
+/** 确保 page 非空 */
+export function ensurePage(
+  page: Page | null,
+): Result.Result<Page, PlatformError> {
   if (!page) {
-    throw new Error('找不到页面，请先确认是否已连接到中控台')
+    return Result.fail(new PageNotFoundError())
   }
+  return Result.succeed(page)
 }
 
 /** 通过 \<a\> 的点击打开新网页，主要是防止部分反爬的行为 */

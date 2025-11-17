@@ -1,68 +1,95 @@
-import type { ElementHandle, Locator, Page } from 'playwright'
-import { error } from '#/constants'
-import type { IElementFinder } from '../IElementFinder'
+import { Result } from '@praha/byethrow'
+import type { ElementHandle, Page } from 'playwright'
+import {
+  ElementContentMismatchedError,
+  ElementDisabledError,
+  ElementNotFoundError,
+} from '#/errors/PlatformError'
+import { commonElementFinder, type IElementFinder } from '../IElementFinder'
 import { SELECTORS } from './constant'
 
 export const taobaoElementFinder: IElementFinder = {
   async getPopUpButtonFromGoodsItem(
     item: ElementHandle<SVGElement | HTMLElement>,
-  ): Promise<ElementHandle<HTMLElement | SVGElement>> {
+  ) {
     const button = await item.$(SELECTORS.goodsItem.POPUP_BUTTON)
     if (!button) {
-      throw new Error(error.elementFinder.PROMOTING_BTN_NOT_FOUND)
+      return Result.fail(
+        new ElementNotFoundError({
+          elementName: '弹品按钮',
+          selector: SELECTORS.goodsItem.POPUP_BUTTON,
+        }),
+      )
     }
-    return button
+    return Result.succeed(button)
   },
 
-  async getIdFromGoodsItem(
-    item: ElementHandle<SVGElement | HTMLElement>,
-  ): Promise<number> {
+  async getIdFromGoodsItem(item: ElementHandle<SVGElement | HTMLElement>) {
     const idWrapper = await item.$(SELECTORS.goodsItem.ID)
-    const idText = (await idWrapper?.textContent())?.match(/\d+/)?.[0]
-    const id = Number.parseInt(idText ?? '')
-    if (Number.isNaN(id)) {
-      throw new Error(error.elementFinder.GOODS_ID_IS_NOT_A_NUMBER)
+    if (!idWrapper) {
+      return Result.fail(
+        new ElementNotFoundError({
+          elementName: '商品ID',
+          selector: SELECTORS.goodsItem.ID,
+        }),
+      )
     }
-    return id
+    const idText = (await idWrapper.textContent())?.match(/\d+/)?.[0] ?? ''
+    const id = Number.parseInt(idText, 10)
+    if (Number.isNaN(id)) {
+      return Result.fail(
+        new ElementContentMismatchedError({
+          current: idText,
+          target: '数字',
+        }),
+      )
+    }
+    return Result.succeed(id)
   },
 
-  async getCurrentGoodsItemsList(
-    page: Page,
-  ): Promise<ElementHandle<SVGElement | HTMLElement>[]> {
-    const items = await page.$$(SELECTORS.GOODS_ITEM)
-    return items
+  async getCurrentGoodsItemsList(page: Page) {
+    return commonElementFinder.getCurrentGoodsItemsList(
+      page,
+      SELECTORS.GOODS_ITEM,
+    )
   },
 
-  async getGoodsItemsScrollContainer(
-    page: Page,
-  ): Promise<ElementHandle<SVGElement | HTMLElement> | null> {
-    const scrollWrapper = await page.$(SELECTORS.GOODS_ITEMS_WRAPPER)
-    return scrollWrapper
+  async getGoodsItemsScrollContainer(page: Page) {
+    return commonElementFinder.getGoodsItemsScrollContainer(
+      page,
+      SELECTORS.GOODS_ITEMS_WRAPPER,
+    )
   },
 
-  async getCommentTextarea(
-    page: Page,
-  ): Promise<ElementHandle<SVGElement | HTMLElement> | Locator | null> {
-    const textarea = await page.$(SELECTORS.commentInput.TEXTAREA)
-    return textarea
+  async getCommentTextarea(page: Page) {
+    return commonElementFinder.getCommentTextarea(
+      page,
+      SELECTORS.commentInput.TEXTAREA,
+    )
   },
 
-  async getClickableSubmitCommentButton(
-    page: Page,
-  ): Promise<ElementHandle<SVGElement | HTMLElement> | null> {
+  async getClickableSubmitCommentButton(page: Page) {
     const button = await page.$(SELECTORS.commentInput.SUBMIT_BUTTON)
     if (!button) {
-      throw new Error(error.elementFinder.SUBMIT_BTN_NOT_FOUND)
+      return Result.fail(
+        new ElementNotFoundError({
+          elementName: '发送评论按钮',
+          selector: SELECTORS.commentInput.SUBMIT_BUTTON,
+        }),
+      )
     }
     if (await button.isDisabled()) {
-      throw new Error(error.elementFinder.SUBMIT_BTN_DISABLED)
+      return Result.fail(
+        new ElementDisabledError({
+          elementName: '发送评论按钮',
+          element: await button.evaluate(el => el.outerHTML),
+        }),
+      )
     }
-    return button
+    return Result.succeed(button)
   },
 
-  async getPinTopLabel(): Promise<ElementHandle<
-    SVGElement | HTMLElement
-  > | null> {
-    return null
+  async getPinTopLabel() {
+    return commonElementFinder.getEmptyPinTopLabel()
   },
 }

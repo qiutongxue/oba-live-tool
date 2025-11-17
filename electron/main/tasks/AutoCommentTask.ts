@@ -1,3 +1,4 @@
+import { Result } from '@praha/byethrow'
 import { merge } from 'lodash-es'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import type { ScopedLogger } from '#/logger'
@@ -78,39 +79,44 @@ export function createAutoCommentTask(
   }
 
   const execute = async (signal: AbortSignal) => {
-    try {
-      await runWithRetry(
-        async () => {
-          if (signal.aborted) {
-            return
-          }
-          const message = getNextMessage()
-          // 替换变量
-          let content = replaceVariant(message.content)
-          // 添加随机空格
-          if (config.extraSpaces) {
-            content = insertRandomSpaces(content)
-          }
-          const isPinTop = await platform.performComment(
-            content,
-            message.pinTop,
+    const result = await runWithRetry(
+      async () => {
+        if (signal.aborted) {
+          return Result.fail(new Error('任务已被取消'))
+        }
+        const message = getNextMessage()
+        // 替换变量
+        let content = replaceVariant(message.content)
+        // 添加随机空格
+        if (config.extraSpaces) {
+          content = insertRandomSpaces(content)
+        }
+        return Result.pipe(
+          platform.performComment(content, message.pinTop),
+          Result.inspect(isPinTop => {
+            logger.success(`发送${isPinTop ? '「置顶」' : ''}消息: ${content}`)
+          }),
+          Result.map(_ => void 0),
+        )
+      },
+      {
+        ...retryOptions,
+        logger,
+        onRetryError: () => {
+          Result.pipe(
+            platform.getCommentPage(),
+            Result.map(page => takeScreenshot(page, TASK_NAME, account.name)),
           )
-          logger.success(`发送${isPinTop ? '「置顶」' : ''}消息: ${content}`)
         },
-        {
-          ...retryOptions,
-          logger,
-          onRetryError: () =>
-            takeScreenshot(platform.getCommentPage(), TASK_NAME, account.name),
-        },
-      )
-    } catch (err) {
+      },
+    )
+    if (Result.isFailure(result)) {
       windowManager.send(
         IPC_CHANNELS.tasks.autoMessage.stoppedEvent,
         account.id,
       )
-      throw err
     }
+    return result
   }
 
   const intervalTask = createIntervalTask(execute, {

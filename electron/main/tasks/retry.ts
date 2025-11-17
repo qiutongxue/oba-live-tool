@@ -1,4 +1,7 @@
 // retry.ts
+
+import { Result } from '@praha/byethrow'
+import { UnexpectedError } from '#/errors/PlatformError'
 import type { ScopedLogger } from '#/logger' // 假设你有这个类型
 import { sleep } from '#/utils'
 
@@ -11,9 +14,9 @@ export interface RetryOptions {
 }
 
 export async function runWithRetry<T>(
-  fn: () => Promise<T>,
+  fn: () => Promise<Result.Result<T, Error>>,
   options: RetryOptions,
-): Promise<T> {
+): Promise<Result.Result<T, Error>> {
   const {
     maxRetries,
     retryDelay,
@@ -23,21 +26,22 @@ export async function runWithRetry<T>(
   } = options
 
   for (let attempt = 0; attempt < maxRetries; attempt++) {
-    try {
-      return await fn()
-    } catch (err) {
-      logger?.warn(`第 ${attempt + 1}/${maxRetries} 次执行失败：${String(err)}`)
-      onRetryError?.(err, attempt)
-
-      const isLast = attempt >= maxRetries - 1
-      const canRetry = shouldRetry(err, attempt)
-
-      if (isLast || !canRetry) {
-        throw new Error('达到最大重试次数，任务失败')
-      }
-
-      await sleep(retryDelay)
+    const result = await fn()
+    if (Result.isSuccess(result)) {
+      return result
     }
+    const err = result.error
+    logger?.warn(`第 ${attempt + 1}/${maxRetries} 次执行失败：${String(err)}`)
+    onRetryError?.(err, attempt)
+
+    const isLast = attempt >= maxRetries - 1
+    const canRetry = shouldRetry(err, attempt)
+
+    if (isLast || !canRetry) {
+      return result
+    }
+
+    await sleep(retryDelay)
   }
-  throw new Error('未知错误')
+  return Result.fail(new UnexpectedError('未知错误'))
 }

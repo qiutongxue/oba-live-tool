@@ -1,3 +1,4 @@
+import { Result } from '@praha/byethrow'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import type { ScopedLogger } from '#/logger'
 import type { IPerformPopup } from '#/platforms/IPlatform'
@@ -29,27 +30,32 @@ export function createAutoPopupTask(
   let config = { ...taskConfig }
 
   async function execute(signal: AbortSignal) {
-    try {
-      await runWithRetry(
-        async () => {
-          if (signal.aborted) {
-            return
-          }
-          const goodsId = getNextGoodsId()
-          await platform.performPopup(goodsId)
+    const result = await runWithRetry(
+      async () => {
+        if (signal.aborted) {
+          return Result.fail(new Error('任务已被取消'))
+        }
+        const goodsId = getNextGoodsId()
+        const result = await platform.performPopup(goodsId)
+        if (Result.isSuccess(result)) {
           logger.success(`商品 ${goodsId} 讲解成功`)
-        },
-        {
-          ...retryOptions,
-          logger,
-          onRetryError: () =>
-            takeScreenshot(platform.getPopupPage(), TASK_NAME, account.name),
-        },
-      )
-    } catch (err) {
+        }
+        return result
+      },
+      {
+        ...retryOptions,
+        logger,
+        onRetryError: () =>
+          Result.pipe(
+            platform.getPopupPage(),
+            Result.map(page => takeScreenshot(page, TASK_NAME, account.name)),
+          ),
+      },
+    )
+    if (Result.isFailure(result)) {
       windowManager.send(IPC_CHANNELS.tasks.autoPopUp.stoppedEvent, account.id)
-      throw err
     }
+    return result
   }
 
   function getNextGoodsId(): number {

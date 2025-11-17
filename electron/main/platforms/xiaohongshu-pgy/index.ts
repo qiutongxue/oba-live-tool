@@ -77,25 +77,19 @@ export class XiaohongshuPgyPlatform
   }
 
   async performPopup(id: number) {
-    return await XiaohongshuPlatform.prototype.performPopup.call(this, id)
+    return XiaohongshuPlatform.prototype.performPopup.call(this, id)
   }
 
-  async performComment(message: string, pinTop?: boolean): Promise<boolean> {
-    return await XiaohongshuPlatform.prototype.performComment.call(
-      this,
-      message,
-      pinTop,
-    )
+  async performComment(message: string) {
+    return XiaohongshuPlatform.prototype.performComment.call(this, message)
   }
 
-  getPopupPage(): Page {
-    ensurePage(this.mainPage)
-    return this.mainPage
+  getPopupPage() {
+    return ensurePage(this.mainPage)
   }
 
-  getCommentPage(): Page {
-    ensurePage(this.mainPage)
-    return this.mainPage
+  getCommentPage() {
+    return ensurePage(this.mainPage)
   }
 
   get platformName() {

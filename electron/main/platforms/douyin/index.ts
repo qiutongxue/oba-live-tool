@@ -1,14 +1,15 @@
+import { Result } from '@praha/byethrow'
 import type { Page } from 'playwright'
-import { createLogger } from '#/logger'
+import type { PlatformError } from '#/errors/PlatformError'
 import type { BrowserSession } from '#/managers/BrowserSessionManager'
 import {
   comment,
   connect,
   ensurePage,
   getAccountName,
+  getItemFromVirtualScroller,
   openUrlByElement,
   toggleButton,
-  virtualScroller,
 } from '../helper'
 import type {
   ICommentListener,
@@ -33,7 +34,6 @@ export class DouyinPlatform
   readonly _isCommentListener = true
 
   public mainPage: Page | null = null
-  private logger = createLogger('抖音小店')
   private commentListener: ICommentListener | null = null
 
   async connect(browserSession: BrowserSession) {
@@ -74,41 +74,50 @@ export class DouyinPlatform
     throw new Error('Method not implemented.')
   }
 
-  async performPopup(id: number): Promise<void> {
-    ensurePage(this.mainPage)
-    const item = await virtualScroller(this.mainPage, elementFinder, id)
-    const popupBtn = await elementFinder.getPopUpButtonFromGoodsItem(item)
-
-    await toggleButton(popupBtn, TEXTS.POPUP_BUTTON_CANCLE, TEXTS.POPUP_BUTTON)
+  async performPopup(id: number): Result.ResultAsync<void, PlatformError> {
+    return Result.pipe(
+      ensurePage(this.mainPage),
+      Result.andThen(page =>
+        getItemFromVirtualScroller(page, elementFinder, id),
+      ),
+      Result.andThen(item => elementFinder.getPopUpButtonFromGoodsItem(item)),
+      Result.andThen(popupBtn =>
+        toggleButton(popupBtn, TEXTS.POPUP_BUTTON, TEXTS.POPUP_BUTTON_CANCLE),
+      ),
+    )
   }
 
   async performComment(message: string, pinTop: boolean) {
-    ensurePage(this.mainPage)
-    const result = await comment(this.mainPage, elementFinder, message, pinTop)
-    return result.pinTop
+    return Result.pipe(
+      ensurePage(this.mainPage),
+      Result.andThen(page => comment(page, elementFinder, message, pinTop)),
+    )
   }
 
-  getPopupPage(): Page {
-    ensurePage(this.mainPage)
-    return this.mainPage
+  getPopupPage() {
+    return ensurePage(this.mainPage)
   }
 
-  getCommentPage(): Page {
-    ensurePage(this.mainPage)
-    return this.mainPage
+  getCommentPage() {
+    return ensurePage(this.mainPage)
   }
 
   startCommentListener(
     onComment: (comment: DouyinLiveMessage) => void,
     source: 'control' | 'compass',
   ) {
-    ensurePage(this.mainPage)
-    if (source === 'control') {
-      this.commentListener = new ControlListener(this.mainPage)
-    } else {
-      this.commentListener = new CompassListener('douyin', this.mainPage)
-    }
-    return this.commentListener.startCommentListener(onComment, source)
+    Result.pipe(
+      ensurePage(this.mainPage),
+      Result.map(page => {
+        if (source === 'control') {
+          this.commentListener = new ControlListener(page)
+        } else {
+          this.commentListener = new CompassListener('douyin', page)
+        }
+        return this.commentListener.startCommentListener(onComment, source)
+      }),
+      Result.unwrap(),
+    )
   }
 
   stopCommentListener(): void {

@@ -1,4 +1,6 @@
+import type { Result } from '@praha/byethrow'
 import type { Page } from 'playwright'
+import type { PlatformError } from '#/errors/PlatformError'
 import type { BrowserSession } from '#/managers/BrowserSessionManager'
 
 export interface ICommentListener {
@@ -23,9 +25,9 @@ export function isCommentListener(
 export interface IPerformPopup {
   _isPerformPopup: true
   /** 弹窗指定商品序号 */
-  performPopup(id: number): Promise<void>
+  performPopup(id: number): Result.ResultAsync<void, PlatformError>
   /** 获取弹窗任务所需的页面 */
-  getPopupPage(): Page
+  getPopupPage(): Result.Result<Page, PlatformError>
 }
 
 export function isPerformPopup(
@@ -37,9 +39,12 @@ export function isPerformPopup(
 export interface IPerformComment {
   _isPerformComment: true
   /** 在互动评论区域发送评论，返回结果表示是否成功置顶 */
-  performComment(message: string, pinTop?: boolean): Promise<boolean>
+  performComment(
+    message: string,
+    pinTop?: boolean,
+  ): Result.ResultAsync<boolean, PlatformError>
   /** 获取评论任务所需的页面 */
-  getCommentPage(): Page
+  getCommentPage(): Result.Result<Page, PlatformError>
 }
 
 export function isPerformComment(
