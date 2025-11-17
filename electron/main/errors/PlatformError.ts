@@ -1,4 +1,5 @@
 import { ErrorFactory } from '@praha/error-factory'
+import type { UnexpectedError } from './AppError'
 
 export const platformErrorMessages = {
   POPUP_BUTTON_NOT_FOUND: '找不到弹窗按钮',
@@ -35,10 +36,6 @@ export class ElementContentMismatchedError extends ErrorFactory({
     selector?: string
   }>(),
 }) {}
-
-export class UnexpectedError extends Error {
-  public override readonly name = 'UnexpectedError'
-}
 
 export class PageNotFoundError extends ErrorFactory({
   name: 'PageNotFoundError',
