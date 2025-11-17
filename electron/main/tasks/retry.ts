@@ -1,7 +1,7 @@
 // retry.ts
 
 import { Result } from '@praha/byethrow'
-import { UnexpectedError } from '#/errors/PlatformError'
+import { UnexpectedError } from '#/errors/AppError'
 import type { ScopedLogger } from '#/logger' // 假设你有这个类型
 import { sleep } from '#/utils'
 
@@ -43,5 +43,5 @@ export async function runWithRetry<T>(
 
     await sleep(retryDelay)
   }
-  return Result.fail(new UnexpectedError('未知错误'))
+  return Result.fail(new UnexpectedError({ description: '不可能出现的错误' }))
 }

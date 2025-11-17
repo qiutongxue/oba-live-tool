@@ -1,11 +1,7 @@
 import { Result } from '@praha/byethrow'
 import type { Page } from 'playwright'
-import {
-  ConnectionError,
-  PageNotFoundError,
-  type PlatformError,
-  UnexpectedError,
-} from '#/errors/PlatformError'
+import { UnexpectedError } from '#/errors/AppError'
+import { PageNotFoundError, type PlatformError } from '#/errors/PlatformError'
 import { createLogger } from '#/logger'
 import type { BrowserSession } from '#/managers/BrowserSessionManager'
 import { getRandomDouyinLiveMessage } from '#/utils'
@@ -31,7 +27,10 @@ export class DevPlatform
   private readonly logger = createLogger('DevPlatform')
 
   startCommentListener(onComment: (comment: DouyinLiveMessage) => void) {
-    const result = randomResult(new UnexpectedError('测试未知错误'), 0.5)
+    const result = randomResult(
+      new UnexpectedError({ description: '打开监听评论时发生的错误' }),
+      0.5,
+    )
     if (Result.isFailure(result)) {
       throw result.error
     }
@@ -50,7 +49,9 @@ export class DevPlatform
   }
 
   async performPopup(_id: number) {
-    return randomResult(new UnexpectedError('自动弹窗时发生了一个错误'))
+    return randomResult(
+      new UnexpectedError({ description: '弹窗时发生的错误' }),
+    )
   }
 
   getPopupPage() {
@@ -59,7 +60,9 @@ export class DevPlatform
 
   async performComment(_message: string, pinTop?: boolean) {
     return Result.pipe(
-      randomResult(new UnexpectedError('自动评论时发生了一个错误')),
+      randomResult(
+        new UnexpectedError({ description: '自动评论时发生了一个错误' }),
+      ),
       Result.map(_ => !!pinTop),
     )
   }
@@ -82,7 +85,9 @@ export class DevPlatform
   async connect(_browserSession: BrowserSession) {
     // await _browserSession.page.close()
     // await _browserSession.page.waitForSelector('#id', { timeout: 100 })
-    const result = randomResult(new ConnectionError())
+    const result = randomResult(
+      new UnexpectedError({ description: '连接中控台触发的错误' }),
+    )
     if (Result.isFailure(result)) {
       throw result.error
     }
@@ -92,7 +97,9 @@ export class DevPlatform
   }
 
   async login(_browserSession: BrowserSession) {
-    return Result.unwrap(randomResult(new UnexpectedError('登录时发生意外')))
+    return Result.unwrap(
+      randomResult(new UnexpectedError({ description: '登录时发生意外' })),
+    )
   }
 
   async getAccountName(_session: BrowserSession) {

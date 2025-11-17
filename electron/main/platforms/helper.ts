@@ -1,12 +1,12 @@
 import { Result } from '@praha/byethrow'
 import type { ElementHandle, Page } from 'playwright'
+import { UnexpectedError } from '#/errors/AppError'
 import {
   ElementContentMismatchedError,
   ElementNotFoundError,
   MaxTryCountExceededError,
   PageNotFoundError,
   type PlatformError,
-  UnexpectedError,
 } from '#/errors/PlatformError'
 import { sleep } from '#/utils'
 import type { IElementFinder } from './IElementFinder'
@@ -113,7 +113,7 @@ export async function getItemFromVirtualScroller(
       if (err instanceof AggregateError) {
         return Result.succeed(null)
       }
-      return Result.fail(new UnexpectedError('未知错误', { cause: err }))
+      return Result.fail(new UnexpectedError({ cause: err }))
     }
   }
 
