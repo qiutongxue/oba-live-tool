@@ -1,31 +1,49 @@
+import { Result } from '@praha/byethrow'
 import type { ElementHandle, Page } from 'playwright'
-import { error } from '#/constants'
-import type { IElementFinder } from '../IElementFinder'
+import {
+  ElementDisabledError,
+  ElementNotFoundError,
+} from '#/errors/PlatformError'
+import { commonElementFinder, type IElementFinder } from '../IElementFinder'
 import { SELECTORS, TEXTS } from './constant'
 
 export const douyinElementFinder: IElementFinder = {
-  async getPinTopLabel(
-    page: Page,
-  ): Promise<ElementHandle<SVGElement | HTMLElement> | null> {
+  async getPinTopLabel(page: Page) {
     const pinTopLabel = await page.$(SELECTORS.commentInput.PIN_TOP_LABEL)
-    return pinTopLabel
+    if (!pinTopLabel) {
+      return Result.fail(
+        new ElementNotFoundError({
+          elementName: '置顶选项',
+          selector: SELECTORS.commentInput.PIN_TOP_LABEL,
+        }),
+      )
+    }
+    return Result.succeed(pinTopLabel)
   },
 
-  async getClickableSubmitCommentButton(
-    page: Page,
-  ): Promise<ElementHandle<SVGElement | HTMLElement> | null> {
+  async getClickableSubmitCommentButton(page: Page) {
     const submit_btn = await page.$(SELECTORS.commentInput.SUBMIT_BUTTON)
     if (!submit_btn) {
-      throw new Error(error.elementFinder.SUBMIT_BTN_NOT_FOUND)
+      return Result.fail(
+        new ElementNotFoundError({
+          elementName: '提交评论按钮',
+          selector: SELECTORS.commentInput.SUBMIT_BUTTON,
+        }),
+      )
     }
     if (
       (await submit_btn.getAttribute('class'))?.includes(
         SELECTORS.commentInput.SUBMIT_BUTTON_DISABLED,
       )
     ) {
-      throw new Error(error.elementFinder.SUBMIT_BTN_DISABLED)
+      return Result.fail(
+        new ElementDisabledError({
+          elementName: '提交评论按钮',
+          element: await submit_btn.evaluate(el => el.outerHTML),
+        }),
+      )
     }
-    return submit_btn
+    return Result.succeed(submit_btn)
   },
 
   async getPopUpButtonFromGoodsItem(
@@ -33,7 +51,12 @@ export const douyinElementFinder: IElementFinder = {
   ) {
     const goodsAction = await item.$(SELECTORS.goodsItem.ACTION)
     if (!goodsAction) {
-      throw new Error(error.elementFinder.ACTION_PANEL_NOT_FOUND)
+      return Result.fail(
+        new ElementNotFoundError({
+          elementName: '商品操作面板',
+          selector: SELECTORS.goodsItem.ACTION,
+        }),
+      )
     }
     // 2025.11.5 目前第一个按钮被替换成了【更多】，换成获取文本包含“讲解”的按钮
     let button = null
@@ -44,29 +67,38 @@ export const douyinElementFinder: IElementFinder = {
       }
     }
     if (!button) {
-      throw new Error(error.elementFinder.PROMOTING_BTN_NOT_FOUND)
+      return Result.fail(
+        new ElementNotFoundError({
+          elementName: '讲解按钮',
+          selector: SELECTORS.goodsItem.POPUP_BUTTON,
+        }),
+      )
     }
-    return button
+    return Result.succeed(button)
   },
 
   async getGoodsItemsScrollContainer(page: Page) {
-    return page.$(SELECTORS.GOODS_ITEMS_WRAPPER)
+    return commonElementFinder.getGoodsItemsScrollContainer(
+      page,
+      SELECTORS.GOODS_ITEMS_WRAPPER,
+    )
   },
 
   async getCurrentGoodsItemsList(page: Page) {
-    return page.$$(SELECTORS.GOODS_ITEM)
+    return commonElementFinder.getCurrentGoodsItemsList(
+      page,
+      SELECTORS.GOODS_ITEM,
+    )
   },
 
   async getIdFromGoodsItem(item: ElementHandle<SVGElement | HTMLElement>) {
-    const idInput = await item.$(SELECTORS.goodsItem.ID)
-    const id = Number.parseInt((await idInput?.inputValue()) ?? '')
-    if (Number.isNaN(id)) {
-      throw new Error(error.elementFinder.GOODS_ID_IS_NOT_A_NUMBER)
-    }
-    return id
+    return commonElementFinder.getIdFromGoodsItem(item, SELECTORS.goodsItem.ID)
   },
 
   async getCommentTextarea(page: Page) {
-    return page.$(SELECTORS.commentInput.TEXTAREA)
+    return commonElementFinder.getCommentTextarea(
+      page,
+      SELECTORS.commentInput.TEXTAREA,
+    )
   },
 }

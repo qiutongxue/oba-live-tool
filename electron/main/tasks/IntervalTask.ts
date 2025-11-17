@@ -1,3 +1,4 @@
+import { Result } from '@praha/byethrow'
 import { randomInt } from '#/utils'
 import { type BaseTaskProps, createTask } from './BaseTask'
 import { TaskStopReason } from './ITask'
@@ -8,7 +9,7 @@ export interface IntervalTaskProps extends BaseTaskProps {
 }
 
 export function createIntervalTask(
-  execute: (signal: AbortSignal) => Promise<void>,
+  execute: (signal: AbortSignal) => Promise<Result.Result<void, Error>>,
   props: IntervalTaskProps,
 ) {
   const { logger } = props
@@ -58,11 +59,10 @@ export function createIntervalTask(
     abortController = new AbortController()
     const { signal } = abortController
 
-    try {
-      // TODO: restart 时还要把之前的 execute 停止
-      await execute(signal)
-    } catch (error) {
-      task.stop(TaskStopReason.ERROR, error)
+    // TODO: restart 时还要把之前的 execute 停止
+    const result = await execute(signal)
+    if (Result.isFailure(result)) {
+      task.stop(TaskStopReason.ERROR, result.error)
     }
 
     if (task.isRunning() && !signal.aborted) {

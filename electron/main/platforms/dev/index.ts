@@ -1,4 +1,11 @@
+import { Result } from '@praha/byethrow'
 import type { Page } from 'playwright'
+import {
+  ConnectionError,
+  PageNotFoundError,
+  type PlatformError,
+  UnexpectedError,
+} from '#/errors/PlatformError'
 import { createLogger } from '#/logger'
 import type { BrowserSession } from '#/managers/BrowserSessionManager'
 import { getRandomDouyinLiveMessage } from '#/utils'
@@ -23,8 +30,12 @@ export class DevPlatform
   private mainPage: Page | null = null
   private readonly logger = createLogger('DevPlatform')
 
-  startCommentListener(onComment: (comment: DouyinLiveMessage) => void): void {
-    randomThrowError('startCommentListener Error', 0.5)
+  startCommentListener(onComment: (comment: DouyinLiveMessage) => void) {
+    const result = randomResult(new UnexpectedError('测试未知错误'), 0.5)
+    if (Result.isFailure(result)) {
+      throw result.error
+    }
+
     this.listenerTimer = setInterval(() => {
       const message = getRandomDouyinLiveMessage()
       onComment(message)
@@ -39,46 +50,53 @@ export class DevPlatform
   }
 
   async performPopup(_id: number) {
-    randomThrowError('自动弹窗时发生了一个错误')
+    return randomResult(new UnexpectedError('自动弹窗时发生了一个错误'))
   }
 
-  getPopupPage(): Page {
-    ensurePage(this.mainPage)
-    return this.mainPage
+  getPopupPage() {
+    return ensurePage(this.mainPage)
   }
 
-  async performComment(_message: string, pinTop?: boolean): Promise<boolean> {
-    randomThrowError('自动评论时发生了一个错误')
-    return !!pinTop
+  async performComment(_message: string, pinTop?: boolean) {
+    return Result.pipe(
+      randomResult(new UnexpectedError('自动评论时发生了一个错误')),
+      Result.map(_ => !!pinTop),
+    )
   }
 
-  getCommentPage(): Page {
-    ensurePage(this.mainPage)
-    return this.mainPage
+  getCommentPage() {
+    return ensurePage(this.mainPage)
   }
 
   get platformName() {
     return PLATFORM_NAME
   }
 
-  getCommentListenerPage(): Page {
-    ensurePage(this.mainPage)
+  getCommentListenerPage() {
+    if (!this.mainPage) {
+      throw new PageNotFoundError()
+    }
     return this.mainPage
   }
 
-  connect(_browserSession: BrowserSession): Promise<boolean> {
-    randomThrowError('连接中控台发生意外')
+  async connect(_browserSession: BrowserSession) {
+    // await _browserSession.page.close()
+    // await _browserSession.page.waitForSelector('#id', { timeout: 100 })
+    const result = randomResult(new ConnectionError())
+    if (Result.isFailure(result)) {
+      throw result.error
+    }
+
     this.mainPage = _browserSession.page
-    return Promise.resolve(true)
+    return true
   }
 
-  login(_browserSession: BrowserSession): Promise<void> {
-    randomThrowError('登录时发生意外')
-    return Promise.resolve()
+  async login(_browserSession: BrowserSession) {
+    return Result.unwrap(randomResult(new UnexpectedError('登录时发生意外')))
   }
 
-  getAccountName(_session: BrowserSession): Promise<string> {
-    return Promise.resolve('测试')
+  async getAccountName(_session: BrowserSession) {
+    return '测试'
   }
 
   async disconnect() {
@@ -86,9 +104,10 @@ export class DevPlatform
   }
 }
 
-function randomThrowError(msg: string, p = 0.5) {
+function randomResult(error: PlatformError, p = 0.5) {
   const randomNumber = Math.random()
   if (randomNumber <= p) {
-    throw new Error(msg)
+    return Result.fail(error)
   }
+  return Result.succeed()
 }

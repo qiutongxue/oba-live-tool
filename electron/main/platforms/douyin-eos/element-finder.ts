@@ -1,70 +1,85 @@
+import { Result } from '@praha/byethrow'
 import type { ElementHandle, Page } from 'playwright'
-import { error } from '#/constants'
-import type { IElementFinder } from './../IElementFinder'
+import {
+  ElementDisabledError,
+  ElementNotFoundError,
+} from '#/errors/PlatformError'
+import { commonElementFinder, type IElementFinder } from './../IElementFinder'
 import { SELECTORS } from './constant'
 
 export const douyinEosElementFinder: IElementFinder = {
-  async getPinTopLabel(): Promise<ElementHandle<
-    SVGElement | HTMLElement
-  > | null> {
-    return null
+  async getPinTopLabel() {
+    return commonElementFinder.getEmptyPinTopLabel()
   },
 
-  async getClickableSubmitCommentButton(
-    page: Page,
-  ): Promise<ElementHandle<SVGElement | HTMLElement> | null> {
+  async getClickableSubmitCommentButton(page: Page) {
     const sendMessageButton = await page.$(SELECTORS.commentInput.SUBMIT_BUTTON)
     if (!sendMessageButton) {
-      throw new Error(error.elementFinder.SUBMIT_BTN_NOT_FOUND)
+      return Result.fail(
+        new ElementNotFoundError({
+          elementName: '发送评论按钮',
+          selector: SELECTORS.commentInput.SUBMIT_BUTTON,
+        }),
+      )
     }
     if (
       await sendMessageButton.evaluate(el => el.className.includes('disable'))
     ) {
-      throw new Error(error.elementFinder.SUBMIT_BTN_DISABLED)
+      return Result.fail(
+        new ElementDisabledError({
+          elementName: '发送评论按钮',
+          element: await sendMessageButton.evaluate(el => el.outerHTML),
+        }),
+      )
     }
-    return sendMessageButton
+    return Result.succeed(sendMessageButton)
   },
 
   async getPopUpButtonFromGoodsItem(
     item: ElementHandle<SVGElement | HTMLElement>,
-  ): Promise<ElementHandle<HTMLButtonElement>> {
+  ) {
     const button = await item.$(SELECTORS.goodsItem.POPUP_BUTTON)
     if (!button) {
-      throw new Error(error.elementFinder.PROMOTING_BTN_NOT_FOUND)
+      return Result.fail(
+        new ElementNotFoundError({
+          elementName: '讲解按钮',
+          selector: SELECTORS.goodsItem.POPUP_BUTTON,
+        }),
+      )
     }
     if (await button.evaluate(el => el.className.includes('disabled'))) {
-      throw new Error(error.elementFinder.PROMOTING_BTN_DISABLED)
+      return Result.fail(
+        new ElementDisabledError({
+          elementName: '讲解按钮',
+          element: await button.evaluate(el => el.outerHTML),
+        }),
+      )
     }
-    return button as ElementHandle<HTMLButtonElement>
+    return Result.succeed(button as ElementHandle<HTMLButtonElement>)
   },
 
-  async getIdFromGoodsItem(
-    item: ElementHandle<SVGElement | HTMLElement>,
-  ): Promise<number> {
-    const idInput = await item.$(SELECTORS.goodsItem.ID)
-    const id = Number.parseInt((await idInput?.inputValue()) ?? '')
-    if (Number.isNaN(id)) {
-      throw new Error(error.elementFinder.GOODS_ID_IS_NOT_A_NUMBER)
-    }
-    return id
+  async getIdFromGoodsItem(item: ElementHandle<SVGElement | HTMLElement>) {
+    return commonElementFinder.getIdFromGoodsItem(item, SELECTORS.goodsItem.ID)
   },
 
-  async getCurrentGoodsItemsList(
-    page: Page,
-  ): Promise<ElementHandle<SVGElement | HTMLElement>[]> {
-    return page.$$(SELECTORS.GOODS_ITEM)
+  async getCurrentGoodsItemsList(page: Page) {
+    return commonElementFinder.getCurrentGoodsItemsList(
+      page,
+      SELECTORS.GOODS_ITEM,
+    )
   },
 
-  getGoodsItemsScrollContainer(
-    page: Page,
-  ): Promise<ElementHandle<SVGElement | HTMLElement> | null> {
-    return page.$(SELECTORS.GOODS_ITEMS_WRAPPER)
+  async getGoodsItemsScrollContainer(page: Page) {
+    return commonElementFinder.getGoodsItemsScrollContainer(
+      page,
+      SELECTORS.GOODS_ITEMS_WRAPPER,
+    )
   },
 
-  async getCommentTextarea(
-    page: Page,
-  ): Promise<ElementHandle<SVGElement | HTMLElement> | null> {
-    const textarea = await page.$(SELECTORS.commentInput.TEXTAREA)
-    return textarea
+  async getCommentTextarea(page: Page) {
+    return commonElementFinder.getCommentTextarea(
+      page,
+      SELECTORS.commentInput.TEXTAREA,
+    )
   },
 }

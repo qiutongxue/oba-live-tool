@@ -23,3 +23,8 @@ export const SELECTORS = {
     ID: 'input',
   },
 } as const
+
+export const TEXTS = {
+  POPUP_BUTTON: '讲解',
+  POPUP_BUTTON_CANCLE: '取消讲解',
+} as const

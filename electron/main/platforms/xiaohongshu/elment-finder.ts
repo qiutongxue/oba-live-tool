@@ -1,15 +1,24 @@
+import { Result } from '@praha/byethrow'
 import type { ElementHandle, Page } from 'playwright'
-import { error } from '#/constants'
-import type { IElementFinder } from '../IElementFinder'
+import {
+  ElementDisabledError,
+  ElementNotFoundError,
+} from '#/errors/PlatformError'
+import { commonElementFinder, type IElementFinder } from '../IElementFinder'
 import { SELECTORS, TEXTS } from './constant'
 
 export const xiaohongshuElementFinder: IElementFinder = {
   async getPopUpButtonFromGoodsItem(
     item: ElementHandle<SVGElement | HTMLElement>,
-  ): Promise<ElementHandle<HTMLElement | SVGElement>> {
+  ) {
     const pannel = await item.$(SELECTORS.GOODS_ITEM_INNER.OPERATION_PANNEL)
     if (!pannel) {
-      throw new Error(error.elementFinder.ACTION_PANEL_NOT_FOUND)
+      return Result.fail(
+        new ElementNotFoundError({
+          elementName: '操作面板',
+          selector: SELECTORS.GOODS_ITEM_INNER.OPERATION_PANNEL,
+        }),
+      )
     }
     const operations = await pannel.$$(
       SELECTORS.GOODS_ITEM_INNER.OPERATION_ITEM,
@@ -25,50 +34,60 @@ export const xiaohongshuElementFinder: IElementFinder = {
             SELECTORS,
           )
         ) {
-          throw new Error(error.elementFinder.PROMOTING_BTN_DISABLED)
+          return Result.fail(
+            new ElementDisabledError({
+              elementName: '讲解',
+              element: await operation.evaluate(el => el.outerHTML),
+            }),
+          )
         }
-        return operation
+        return Result.succeed(operation)
       }
     }
-    throw new Error(error.elementFinder.PROMOTING_BTN_NOT_FOUND)
+    return Result.fail(
+      new ElementNotFoundError({
+        elementName: '讲解按钮',
+      }),
+    )
   },
 
-  async getIdFromGoodsItem(
-    item: ElementHandle<SVGElement | HTMLElement>,
-  ): Promise<number> {
-    const input = await item.$(SELECTORS.GOODS_ITEM_INNER.ID)
-    const id = Number.parseInt((await input?.inputValue()) ?? '')
-    if (Number.isNaN(id)) {
-      throw new Error(error.elementFinder.GOODS_ID_IS_NOT_A_NUMBER)
-    }
-    return id
+  async getIdFromGoodsItem(item: ElementHandle<SVGElement | HTMLElement>) {
+    return commonElementFinder.getIdFromGoodsItem(
+      item,
+      SELECTORS.GOODS_ITEM_INNER.ID,
+    )
   },
 
-  async getCurrentGoodsItemsList(
-    page: Page,
-  ): Promise<ElementHandle<SVGElement | HTMLElement>[]> {
-    const goodsItemsList = await page.$$(SELECTORS.GOODS_ITEM)
-    return goodsItemsList
+  async getCurrentGoodsItemsList(page: Page) {
+    return commonElementFinder.getCurrentGoodsItemsList(
+      page,
+      SELECTORS.GOODS_ITEM,
+    )
   },
 
-  getGoodsItemsScrollContainer(
-    page: Page,
-  ): Promise<ElementHandle<SVGElement | HTMLElement> | null> {
-    return page.$(SELECTORS.GOODS_ITEMS_WRAPPER)
+  getGoodsItemsScrollContainer(page: Page) {
+    return commonElementFinder.getGoodsItemsScrollContainer(
+      page,
+      SELECTORS.GOODS_ITEMS_WRAPPER,
+    )
   },
 
-  getCommentTextarea(
-    page: Page,
-  ): Promise<ElementHandle<SVGElement | HTMLElement> | null> {
-    return page.$(SELECTORS.COMMENT_INPUT.TEXTAREA)
+  getCommentTextarea(page: Page) {
+    return commonElementFinder.getCommentTextarea(
+      page,
+      SELECTORS.COMMENT_INPUT.TEXTAREA,
+    )
   },
 
-  async getClickableSubmitCommentButton(
-    page: Page,
-  ): Promise<ElementHandle<SVGElement | HTMLElement> | null> {
+  async getClickableSubmitCommentButton(page: Page) {
     const submitButton = await page.$(SELECTORS.COMMENT_INPUT.SUBMIT_BUTTON)
     if (!submitButton) {
-      throw new Error(error.elementFinder.SUBMIT_BTN_NOT_FOUND)
+      return Result.fail(
+        new ElementNotFoundError({
+          elementName: '发送评论按钮',
+          selector: SELECTORS.COMMENT_INPUT.SUBMIT_BUTTON,
+        }),
+      )
     }
     if (
       await submitButton.evaluate(
@@ -77,14 +96,17 @@ export const xiaohongshuElementFinder: IElementFinder = {
         SELECTORS,
       )
     ) {
-      throw new Error(error.elementFinder.SUBMIT_BTN_DISABLED)
+      return Result.fail(
+        new ElementDisabledError({
+          elementName: '发送评论按钮',
+          element: await submitButton.evaluate(el => el.outerHTML),
+        }),
+      )
     }
-    return submitButton
+    return Result.succeed(submitButton)
   },
 
-  async getPinTopLabel(): Promise<ElementHandle<
-    SVGElement | HTMLElement
-  > | null> {
-    return null
+  async getPinTopLabel() {
+    return commonElementFinder.getEmptyPinTopLabel()
   },
 }
