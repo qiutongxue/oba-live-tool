@@ -95,14 +95,16 @@ export class AccountSession {
     this.logger.success('成功与中控台建立连接')
   }
 
-  async disconnect() {
+  disconnect() {
     this.logger.warn('与中控台断开连接')
     // 通过程序关闭浏览器（并非多余的操作，因为 MacOS 的 context 关闭时不会关闭浏览器进程）
     this.browserSession?.browser
       .close()
       .catch(e => this.logger.error(`无法关闭浏览器：${e}`))
     // 关闭所有正在进行的任务
-    this.activeTasks.values().forEach(task => task.stop())
+    this.activeTasks.values().forEach(task => {
+      task.stop()
+    })
     // 通知渲染层
     windowManager.send(
       IPC_CHANNELS.tasks.liveControl.disconnectedEvent,

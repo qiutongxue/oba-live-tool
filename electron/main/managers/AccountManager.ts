@@ -51,7 +51,9 @@ export class AccountManager {
   }
 
   cleanup() {
-    this.accountSessions.values().forEach(session => session.disconnect())
+    this.accountSessions.values().forEach(session => {
+      session.disconnect()
+    })
   }
 }
 
