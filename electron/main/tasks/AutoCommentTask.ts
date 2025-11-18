@@ -1,7 +1,7 @@
 import { Result } from '@praha/byethrow'
 import { merge } from 'lodash-es'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
-import { AbortError, UnexpectedError } from '#/errors/AppError'
+import { AbortError } from '#/errors/AppError'
 import type { ScopedLogger } from '#/logger'
 import type { IPerformComment } from '#/platforms/IPlatform'
 import {
@@ -80,50 +80,44 @@ export function createAutoCommentTask(
   }
 
   const execute = async (signal: AbortSignal) => {
-    try {
-      const result = await runWithRetry(
-        async () => {
-          if (signal.aborted) {
-            return Result.fail(new AbortError())
-          }
-          const message = getNextMessage()
-          // 替换变量
-          let content = replaceVariant(message.content)
-          // 添加随机空格
-          if (config.extraSpaces) {
-            content = insertRandomSpaces(content)
-          }
-          return Result.pipe(
-            platform.performComment(content, message.pinTop),
-            Result.inspect(isPinTop => {
-              logger.success(
-                `发送${isPinTop ? '「置顶」' : ''}消息: ${content}`,
-              )
-            }),
-            Result.map(_ => void 0),
+    const result = await runWithRetry(
+      async () => {
+        if (signal.aborted) {
+          return Result.fail(new AbortError())
+        }
+        const message = getNextMessage()
+        // 替换变量
+        let content = replaceVariant(message.content)
+        // 添加随机空格
+        if (config.extraSpaces) {
+          content = insertRandomSpaces(content)
+        }
+        return Result.pipe(
+          platform.performComment(content, message.pinTop),
+          Result.inspect(isPinTop => {
+            logger.success(`发送${isPinTop ? '「置顶」' : ''}消息: ${content}`)
+          }),
+          Result.map(_ => void 0),
+        )
+      },
+      {
+        ...retryOptions,
+        logger,
+        onRetryError: () => {
+          Result.pipe(
+            platform.getCommentPage(),
+            Result.map(page => takeScreenshot(page, TASK_NAME, account.name)),
           )
         },
-        {
-          ...retryOptions,
-          logger,
-          onRetryError: () => {
-            Result.pipe(
-              platform.getCommentPage(),
-              Result.map(page => takeScreenshot(page, TASK_NAME, account.name)),
-            )
-          },
-        },
+      },
+    )
+    if (Result.isFailure(result)) {
+      windowManager.send(
+        IPC_CHANNELS.tasks.autoMessage.stoppedEvent,
+        account.id,
       )
-      if (Result.isFailure(result)) {
-        windowManager.send(
-          IPC_CHANNELS.tasks.autoMessage.stoppedEvent,
-          account.id,
-        )
-      }
-      return result
-    } catch (error) {
-      return Result.fail(new UnexpectedError({ cause: error }))
     }
+    return result
   }
 
   const intervalTask = createIntervalTask(execute, {
