@@ -1,12 +1,12 @@
-import { createRequire } from 'node:module'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
-import { app, BrowserWindow, ipcMain, shell } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
 import { updateManager } from './managers/UpdateManager'
 import windowManager from './windowManager'
 import './ipc'
+import { createLogger } from './logger'
 import { accountManager } from './managers/AccountManager'
 
 // const _require = createRequire(import.meta.url)
@@ -115,6 +115,37 @@ app.on('activate', () => {
   } else {
     createWindow()
   }
+})
+
+process.on('uncaughtException', error => {
+  const logger = createLogger('uncaughtException')
+  logger.error('--------------主进程发生了意外的错误---------------')
+  logger.error(error)
+  logger.error('---------------------------------------------------')
+
+  dialog.showErrorBox(
+    '应用程序错误',
+    `发生了一个意外的错误，应用程序即将退出：\n${error.message}`,
+  )
+  app.quit()
+})
+
+process.on('unhandledRejection', reason => {
+  // playwright-extra 插件问题：在 browser.close() 时概率触发
+  // https://github.com/berstend/puppeteer-extra/issues/858
+  const logger = createLogger('unhandledRejection')
+  if (
+    reason instanceof Error &&
+    reason.message.includes(
+      'cdpSession.send: Target page, context or browser has been closed',
+    )
+  ) {
+    return logger.verbose(reason)
+  }
+
+  logger.error('--------------未被处理的错误---------------')
+  logger.error(reason)
+  logger.error('-------------------------------------------')
 })
 
 // New window example arg: new windows url
