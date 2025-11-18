@@ -32,7 +32,9 @@ export function createTask(
         logger.info('任务已停止')
       }
       hooks.onStop?.()
-      stopListeners.forEach(cb => cb(taskId, reason, err))
+      stopListeners.forEach(cb => {
+        cb(taskId, reason, err)
+      })
     },
     getTaskId: () => taskId,
     addStopListener: (cb: TaskStopCallback) => {
