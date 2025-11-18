@@ -1,4 +1,5 @@
 import { Result } from '@praha/byethrow'
+import { UnexpectedError } from '#/errors/AppError'
 import { randomInt } from '#/utils'
 import { type BaseTaskProps, createTask } from './BaseTask'
 import { TaskStopReason } from './ITask'
@@ -59,16 +60,20 @@ export function createIntervalTask(
     abortController = new AbortController()
     const { signal } = abortController
 
-    // TODO: restart 时还要把之前的 execute 停止
-    const result = await execute(signal)
-    if (Result.isFailure(result)) {
-      task.stop(TaskStopReason.ERROR, result.error)
-    }
+    try {
+      // TODO: restart 时还要把之前的 execute 停止
+      const result = await execute(signal)
+      if (Result.isFailure(result)) {
+        task.stop(TaskStopReason.ERROR, result.error)
+      }
 
-    if (task.isRunning() && !signal.aborted) {
-      const interval = calculateNextInterval()
-      timer = setTimeout(() => scheduleNextRun(), interval)
-      logger.info(`任务将在 ${interval / 1000} 秒后继续执行。`)
+      if (task.isRunning() && !signal.aborted) {
+        const interval = calculateNextInterval()
+        timer = setTimeout(() => scheduleNextRun(), interval)
+        logger.info(`任务将在 ${interval / 1000} 秒后继续执行。`)
+      }
+    } catch (error) {
+      task.stop(TaskStopReason.ERROR, new UnexpectedError({ cause: error }))
     }
   }
 
