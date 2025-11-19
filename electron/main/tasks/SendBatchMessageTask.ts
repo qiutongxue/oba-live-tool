@@ -53,7 +53,7 @@ export function createSendBatchMessageTask(
     },
   )
 
-  return {
+  return Result.succeed({
     ...task,
-  }
+  })
 }

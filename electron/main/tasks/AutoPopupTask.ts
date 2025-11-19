@@ -25,6 +25,18 @@ export function createAutoPopupTask(
   let arrayIndex = -1
   let config = { ...taskConfig }
 
+  const intervalTaskResult = createIntervalTask(execute, {
+    interval: config.scheduler.interval,
+    taskName: TASK_NAME,
+    logger,
+  })
+
+  if (Result.isFailure(intervalTaskResult)) {
+    return intervalTaskResult
+  }
+
+  const intervalTask = intervalTaskResult.value
+
   async function execute(signal: AbortSignal) {
     const result = await runWithRetry(
       async () => {
@@ -63,36 +75,39 @@ export function createAutoPopupTask(
     return config.goodsIds[arrayIndex]
   }
 
-  function updateConfig(newConfig: Partial<AutoPopupConfig>) {
-    try {
-      const mergedConfig = mergeWithoutArray(config, newConfig)
-      validateConfig(mergedConfig)
-      if (newConfig.scheduler?.interval) intervalTask.updateInterval(config.scheduler.interval)
-      config = mergedConfig
-      // 更新配置后重新启动任务
-      intervalTask.restart()
-    } catch (error) {
-      logger.error('配置更新失败：', error)
-      throw error
-    }
-  }
-
   function validateConfig(userConfig: AutoPopupConfig) {
-    intervalTask.validateInterval(userConfig.scheduler.interval)
-    if (userConfig.goodsIds.length === 0)
-      throw new Error('商品配置验证失败: 必须提供至少一个商品ID')
-
-    logger.info(`商品配置验证通过，共加载 ${userConfig.goodsIds.length} 个商品`)
+    return Result.pipe(
+      intervalTask.validateInterval(userConfig.scheduler.interval),
+      Result.andThen(() => {
+        if (userConfig.goodsIds.length === 0)
+          return Result.fail(new Error('商品配置验证失败: 必须提供至少一个商品ID'))
+        return Result.succeed()
+      }),
+      Result.inspect(() => {
+        logger.info(`商品配置验证通过，共加载 ${userConfig.goodsIds.length} 个商品`)
+      }),
+    )
   }
 
-  const intervalTask = createIntervalTask(execute, {
-    interval: config.scheduler.interval,
-    taskName: TASK_NAME,
-    logger,
-  })
-
-  return {
-    ...intervalTask,
-    updateConfig,
+  function updateConfig(newConfig: Partial<AutoPopupConfig>) {
+    const mergedConfig = mergeWithoutArray(config, newConfig)
+    return Result.pipe(
+      validateConfig(mergedConfig),
+      Result.andThen(_ => intervalTask.validateInterval(mergedConfig.scheduler.interval)),
+      Result.inspect(() => {
+        config = mergedConfig
+        // 更新配置后重新启动任务
+        intervalTask.restart()
+      }),
+      Result.inspectError(err => logger.error('配置更新失败：', err)),
+    )
   }
+
+  return Result.pipe(
+    validateConfig(config),
+    Result.map(_ => ({
+      ...intervalTask,
+      updateConfig,
+    })),
+  )
 }

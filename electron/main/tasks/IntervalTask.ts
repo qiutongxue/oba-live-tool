@@ -1,4 +1,5 @@
 import { Result } from '@praha/byethrow'
+import { ErrorFactory } from '@praha/error-factory'
 import { UnexpectedError } from '#/errors/AppError'
 import { randomInt } from '#/utils'
 import { type BaseTaskProps, createTask } from './BaseTask'
@@ -77,22 +78,40 @@ export function createIntervalTask(
     }
   }
 
-  return {
-    ...task,
-    validateInterval(interval: IntervalTaskProps['interval']) {
-      if (
-        (typeof interval === 'number' && interval <= 0) ||
-        (Array.isArray(interval) && interval.some(t => t <= 0))
-      ) {
-        throw new Error('配置验证失败：不能将计时器设置为 0 或负数')
-      }
-    },
-    updateInterval(newInterval: IntervalTaskProps['interval']) {
-      interval = newInterval
-    },
-    restart() {
-      if (!task.isRunning()) return
-      scheduleNextRun()
-    },
+  function validateInterval(interval: IntervalTaskProps['interval']): Result.Result<void, Error> {
+    if (
+      (typeof interval === 'number' && interval <= 0) ||
+      (Array.isArray(interval) && interval.some(t => t <= 0))
+    ) {
+      return Result.fail(new IntervalValidationError())
+    }
+    return Result.succeed()
   }
+
+  function updateInterval(newInterval: IntervalTaskProps['interval']): Result.Result<void, Error> {
+    return Result.pipe(
+      validateInterval(newInterval),
+      Result.inspect(() => {
+        interval = newInterval
+      }),
+    )
+  }
+
+  return Result.pipe(
+    validateInterval(interval),
+    Result.map(() => ({
+      ...task,
+      validateInterval,
+      updateInterval,
+      restart() {
+        if (!task.isRunning()) return
+        scheduleNextRun()
+      },
+    })),
+  )
 }
+
+class IntervalValidationError extends ErrorFactory({
+  name: 'IntervalValidationError',
+  message: '计时器配置验证失败：不能将计时器设置为 0 或负数',
+}) {}
