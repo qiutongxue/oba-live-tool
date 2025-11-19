@@ -1,3 +1,4 @@
+import { Result } from '@praha/byethrow'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { createLogger } from '#/logger'
 import { accountManager } from '#/managers/AccountManager'
@@ -10,45 +11,45 @@ function setupIpcHandlers() {
   typedIpcMainHandle(
     IPC_CHANNELS.tasks.autoReply.startCommentListener,
     async (_, accountId: string, config: CommentListenerConfig) => {
-      try {
-        const accountSession = accountManager.getSession(accountId)
-        accountSession.startTask({
-          type: TASK_TYPE,
-          config: config,
-        })
-        return true
-      } catch (error) {
-        const logger = createLogger(
-          `@${accountManager.getAccountName(accountId)}`,
-        ).scope(TASK_NAME)
-        logger.error('启动失败:', error)
-        return false
-      }
+      return Result.pipe(
+        accountManager.getSession(accountId),
+        Result.andThen(accountSession =>
+          accountSession.startTask({
+            type: TASK_TYPE,
+            config: config,
+          }),
+        ),
+        Result.inspectError(error => {
+          const logger = createLogger(`@${accountManager.getAccountName(accountId)}`).scope(
+            TASK_NAME,
+          )
+          logger.error('启动失败:', errorMessage(error))
+        }),
+        r => r.then(Result.isSuccess),
+      )
     },
   )
 
   typedIpcMainHandle(
     IPC_CHANNELS.tasks.autoReply.stopCommentListener,
     async (_, accountId: string) => {
-      try {
-        const accountSession = accountManager.getSession(accountId)
-        accountSession.stopTask('comment-listener')
-      } catch (error) {
-        const logger = createLogger(
-          `@${accountManager.getAccountName(accountId)}`,
-        ).scope(TASK_NAME)
-
-        logger.error('停止监听评论失败:', errorMessage(error))
-      }
+      Result.pipe(
+        accountManager.getSession(accountId),
+        Result.inspect(accountSession => accountSession.stopTask(TASK_TYPE)),
+        Result.inspectError(error => {
+          const logger = createLogger(`@${accountManager.getAccountName(accountId)}`).scope(
+            TASK_NAME,
+          )
+          logger.error('停止监听评论失败:', errorMessage(error))
+        }),
+      )
     },
   )
 
-  typedIpcMainHandle(
-    IPC_CHANNELS.tasks.autoReply.sendReply,
-    async (_, accountId, message) => {
-      try {
-        const accountSession = accountManager.getSession(accountId)
-        // TODO: 也许不应该用这个批量发送任务？还有发送消息成功的 logger 怎么解决（包括自动评论）？
+  typedIpcMainHandle(IPC_CHANNELS.tasks.autoReply.sendReply, async (_, accountId, message) => {
+    await Result.pipe(
+      accountManager.getSession(accountId),
+      Result.andThen(accountSession =>
         accountSession.startTask({
           type: 'send-batch-messages',
           config: {
@@ -56,16 +57,14 @@ function setupIpcHandlers() {
             count: 1,
             noSpace: true,
           },
-        })
-      } catch (error) {
-        const logger = createLogger(
-          `@${accountManager.getAccountName(accountId)}`,
-        ).scope(TASK_NAME)
+        }),
+      ),
+      Result.inspectError(error => {
+        const logger = createLogger(`@${accountManager.getAccountName(accountId)}`).scope(TASK_NAME)
         logger.error('发送回复失败:', errorMessage(error))
-        throw error
-      }
-    },
-  )
+      }),
+    )
+  })
 }
 
 export function setupAutoReplyIpcHandlers() {

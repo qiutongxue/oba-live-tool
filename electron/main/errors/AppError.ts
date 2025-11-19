@@ -12,3 +12,9 @@ export class AbortError extends ErrorFactory({
   name: 'AbortedError',
   message: '被中断',
 }) {}
+
+export class TaskNotSupportedError extends ErrorFactory({
+  name: 'TaskNotImplementedError',
+  message: ({ taskName, targetName }) => `${targetName ?? ''}暂不支持任务${taskName}`,
+  fields: ErrorFactory.fields<{ taskName: string; targetName?: string }>(),
+}) {}
