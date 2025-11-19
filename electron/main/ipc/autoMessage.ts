@@ -62,12 +62,13 @@ function setupIpcHandlers() {
   typedIpcMainHandle(
     IPC_CHANNELS.tasks.autoMessage.updateConfig,
     async (_, accountId, newConfig) => {
-      const sessionResult = accountManager.getSession(accountId)
-      if (!Result.isSuccess(sessionResult)) {
-        return
-      }
-      const accountSession = sessionResult.value
-      accountSession.updateTaskConfig(TASK_TYPE, newConfig)
+      const logger = createLogger(`@${accountManager.getAccountName(accountId)}`).scope(TASK_NAME)
+      Result.pipe(
+        accountManager.getSession(accountId),
+        Result.andThen(accountSession => accountSession.updateTaskConfig(TASK_TYPE, newConfig)),
+        Result.inspect(_ => logger.info('更新配置成功')),
+        Result.inspectError(error => logger.error('更新配置失败：', error)),
+      )
     },
   )
 }

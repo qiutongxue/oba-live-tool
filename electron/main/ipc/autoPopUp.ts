@@ -40,27 +40,34 @@ function setupIpcHandlers() {
   })
 
   typedIpcMainHandle(IPC_CHANNELS.tasks.autoPopUp.updateConfig, async (_, accountId, newConfig) => {
-    const accountSession = accountManager.getSession(accountId)
-    if (Result.isFailure(accountSession)) {
-      const logger = createLogger(`@${accountManager.getAccountName(accountId)}`).scope(TASK_NAME)
-      logger.error('更新配置失败：', accountSession.error)
-      return
-    }
-    accountSession.value.updateTaskConfig(TASK_TYPE, newConfig)
+    const logger = createLogger(`@${accountManager.getAccountName(accountId)}`).scope(TASK_NAME)
+    Result.pipe(
+      accountManager.getSession(accountId),
+      Result.andThen(accountSession => accountSession.updateTaskConfig(TASK_TYPE, newConfig)),
+      Result.inspect(_ => logger.info('更新配置成功')),
+      Result.inspectError(error => logger.error('更新配置失败：', error)),
+    )
   })
 
   typedIpcMainHandle(IPC_CHANNELS.tasks.autoPopUp.registerShortcuts, (_, accountId, shortcuts) => {
+    const logger = createLogger(`@${accountManager.getAccountName(accountId)}`).scope('快捷键弹窗')
     for (const sc of shortcuts) {
       globalShortcut.register(
         sc.accelerator,
         throttle(
           () => {
-            const accountSession = accountManager.getSession(accountId)
-            if (Result.isSuccess(accountSession)) {
-              accountSession.value.updateTaskConfig(TASK_TYPE, {
-                goodsIds: sc.goodsIds,
-              })
-            }
+            Result.pipe(
+              accountManager.getSession(accountId),
+              Result.andThen(accountSession =>
+                accountSession.updateTaskConfig(TASK_TYPE, {
+                  goodsIds: sc.goodsIds,
+                }),
+              ),
+              Result.inspect(_ => logger.info(`切换到商品组[${sc.goodsIds.join(',')}]`)),
+              Result.inspectError(error => {
+                logger.error('切换失败：', error)
+              }),
+            )
           },
           1000,
           { trailing: false },

@@ -1,3 +1,4 @@
+import { Result } from '@praha/byethrow'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import type { ScopedLogger } from '#/logger'
 import type { ICommentListener } from '#/platforms/IPlatform'
@@ -56,13 +57,17 @@ export function createCommentListenerTask(
         wsService = new WebSocketService()
       }
       wsService.stop()
-      wsService.start(config.ws.port)
+      wsService.start(config.ws.port).catch(_ => {
+        wsService?.stop()
+        wsService = null
+      })
     }
     if (cfg.source && config.source !== cfg.source) {
       config.source = cfg.source
       platform.stopCommentListener()
       platform.startCommentListener(broadcastMessage, cfg.source)
     }
+    return Result.succeed()
   }
 
   const task = createTask(
@@ -82,8 +87,8 @@ export function createCommentListenerTask(
     },
   )
 
-  return {
+  return Result.succeed({
     ...task,
     updateConfig,
-  }
+  })
 }

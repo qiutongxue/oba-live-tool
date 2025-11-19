@@ -145,11 +145,12 @@ export class AccountSession {
   public updateTaskConfig<T extends LiveControlTask>(
     type: T['type'],
     config: Partial<T['config']>,
-  ) {
+  ): Result.Result<void, Error> {
     const task = this.activeTasks.get(type)
     if (task?.updateConfig) {
-      task.updateConfig(config)
+      return task.updateConfig(config)
     }
+    return Result.fail(new TaskNotSupportedError({ taskName: `update-${type}` }))
   }
 }
 
@@ -158,18 +159,18 @@ function makeTask<T extends LiveControlTask>(
   platform: IPlatform,
   account: Account,
   logger: ReturnType<typeof createLogger>,
-): Result.Result<ITask, TaskNotSupportedError> {
+): Result.Result<ITask, Error> {
   if (task.type === 'auto-popup' && isPerformPopup(platform)) {
-    return Result.succeed(createAutoPopupTask(platform, task.config, account, logger))
+    return createAutoPopupTask(platform, task.config, account, logger)
   }
   if (task.type === 'auto-comment' && isPerformComment(platform)) {
-    return Result.succeed(createAutoCommentTask(platform, task.config, account, logger))
+    return createAutoCommentTask(platform, task.config, account, logger)
   }
   if (task.type === 'send-batch-messages' && isPerformComment(platform)) {
-    return Result.succeed(createSendBatchMessageTask(platform, task.config, logger))
+    return createSendBatchMessageTask(platform, task.config, logger)
   }
   if (task.type === 'comment-listener' && isCommentListener(platform)) {
-    return Result.succeed(createCommentListenerTask(platform, task.config, account, logger))
+    return createCommentListenerTask(platform, task.config, account, logger)
   }
   return Result.fail(
     new TaskNotSupportedError({
