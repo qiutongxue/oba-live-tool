@@ -2,7 +2,7 @@ import { Result } from '@praha/byethrow'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { createLogger } from '#/logger'
 import { accountManager } from '#/managers/AccountManager'
-import { errorMessage, typedIpcMainHandle } from '#/utils'
+import { typedIpcMainHandle } from '#/utils'
 
 const TASK_NAME = '自动发言'
 const TASK_TYPE = 'auto-comment'
@@ -20,7 +20,7 @@ function setupIpcHandlers() {
       ),
       Result.inspectError(error => {
         const logger = createLogger(`@${accountManager.getAccountName(accountId)}`).scope(TASK_NAME)
-        logger.error(`启动任务失败：${errorMessage(error)}`)
+        logger.error('启动任务失败：', error)
       }),
       r => r.then(Result.isSuccess),
     )
@@ -30,7 +30,7 @@ function setupIpcHandlers() {
     const accountSession = accountManager.getSession(accountId)
     if (Result.isFailure(accountSession)) {
       const logger = createLogger(`@${accountManager.getAccountName(accountId)}`).scope(TASK_NAME)
-      logger.error(`停止任务失败：${errorMessage(accountSession.error)}`)
+      logger.error('停止任务失败：', accountSession.error)
       return false
     }
     accountSession.value.stopTask(TASK_TYPE)
@@ -52,7 +52,7 @@ function setupIpcHandlers() {
           const logger = createLogger(`@${accountManager.getAccountName(accountId)}`).scope(
             '一键评论',
           )
-          logger.error(`启动任务失败：${errorMessage(error)}`)
+          logger.error('启动任务失败：', error)
         }),
         r => r.then(Result.isSuccess),
       )

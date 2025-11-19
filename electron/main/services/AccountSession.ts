@@ -20,7 +20,6 @@ import { createAutoPopupTask } from '#/tasks/AutoPopupTask'
 import { createCommentListenerTask } from '#/tasks/CommentListenerTask'
 import type { ITask } from '#/tasks/ITask'
 import { createSendBatchMessageTask } from '#/tasks/SendBatchMessageTask'
-import { errorMessage } from '#/utils'
 import windowManager from '#/windowManager'
 
 const browserFactory = BrowserSessionManager.getInstance()
@@ -66,7 +65,7 @@ export class AccountSession {
         })
       })
       .catch(error => {
-        this.logger.error('获取用户名失败:', errorMessage(error))
+        this.logger.error('获取用户名失败：', error)
         windowManager.send(IPC_CHANNELS.tasks.liveControl.notifyAccountName, {
           ok: false,
         })
@@ -85,7 +84,7 @@ export class AccountSession {
   disconnect() {
     this.logger.warn('与中控台断开连接')
     // 通过程序关闭浏览器（并非多余的操作，因为 MacOS 的 context 关闭时不会关闭浏览器进程）
-    this.browserSession?.browser.close().catch(e => this.logger.error(`无法关闭浏览器：${e}`))
+    this.browserSession?.browser.close().catch(e => this.logger.error('无法关闭浏览器：', e))
     // 关闭所有正在进行的任务
     Array.from(this.activeTasks.values()).forEach(task => {
       task.stop()

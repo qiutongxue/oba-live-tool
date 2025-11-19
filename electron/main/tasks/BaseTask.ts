@@ -27,7 +27,7 @@ export function createTask(
       if (!isRunning) return
       isRunning = false
       if (err) {
-        logger.error(`任务因错误中断：${err}`)
+        logger.error('任务因错误中断：', err)
       } else {
         logger.info('任务已停止')
       }
