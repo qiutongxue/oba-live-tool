@@ -1,16 +1,11 @@
 import { Result } from '@praha/byethrow'
 import type { ElementHandle, Page } from 'playwright'
-import {
-  ElementDisabledError,
-  ElementNotFoundError,
-} from '#/errors/PlatformError'
+import { ElementDisabledError, ElementNotFoundError } from '#/errors/PlatformError'
 import { commonElementFinder, type IElementFinder } from '../IElementFinder'
 import { SELECTORS } from './constant'
 
 export const wechatChannelElementFinder: IElementFinder = {
-  async getPopUpButtonFromGoodsItem(
-    item: ElementHandle<SVGElement | HTMLElement>,
-  ) {
+  async getPopUpButtonFromGoodsItem(item: ElementHandle<SVGElement | HTMLElement>) {
     const button = await item.$(SELECTORS.goodsItem.POPUP_BUTTON)
     if (!button) {
       return Result.fail(
@@ -24,14 +19,12 @@ export const wechatChannelElementFinder: IElementFinder = {
   },
 
   async getIdFromGoodsItem(item: ElementHandle<SVGElement | HTMLElement>) {
-    return commonElementFinder.getIdFromGoodsItem(item, SELECTORS.goodsItem.ID)
+    // 注：视频号的商品 ID 通过 textContent 获取，其余平台是 InputValue
+    return commonElementFinder.getIdFromGoodsItem(item, SELECTORS.goodsItem.ID, true)
   },
 
   async getCurrentGoodsItemsList(page: Page) {
-    const itemsList = await commonElementFinder.getCurrentGoodsItemsList(
-      page,
-      SELECTORS.GOODS_ITEM,
-    )
+    const itemsList = await commonElementFinder.getCurrentGoodsItemsList(page, SELECTORS.GOODS_ITEM)
     if (Result.isFailure(itemsList)) {
       return itemsList
     }
@@ -76,9 +69,7 @@ export const wechatChannelElementFinder: IElementFinder = {
       )
     }
     if (
-      (await button.getAttribute('class'))?.includes(
-        SELECTORS.commentInput.SUBMIT_BUTTON_DISABLED,
-      )
+      (await button.getAttribute('class'))?.includes(SELECTORS.commentInput.SUBMIT_BUTTON_DISABLED)
     ) {
       return Result.fail(
         new ElementDisabledError({
