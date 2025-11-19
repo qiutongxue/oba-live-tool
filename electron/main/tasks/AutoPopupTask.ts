@@ -60,9 +60,6 @@ export function createAutoPopupTask(
           ),
       },
     )
-    if (Result.isFailure(result)) {
-      windowManager.send(IPC_CHANNELS.tasks.autoPopUp.stoppedEvent, account.id)
-    }
     return result
   }
 
@@ -102,6 +99,10 @@ export function createAutoPopupTask(
       Result.inspectError(err => logger.error('配置更新失败：', err)),
     )
   }
+
+  intervalTask.addStopListener(() => {
+    windowManager.send(IPC_CHANNELS.tasks.autoPopUp.stoppedEvent, account.id)
+  })
 
   return Result.pipe(
     validateConfig(config),
