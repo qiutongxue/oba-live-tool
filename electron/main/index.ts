@@ -119,15 +119,14 @@ app.on('activate', () => {
 
 process.on('uncaughtException', error => {
   const logger = createLogger('uncaughtException')
-  logger.error('--------------主进程发生了意外的错误---------------')
+  logger.error('--------------意外的未捕获异常---------------')
   logger.error(error)
-  logger.error('---------------------------------------------------')
+  logger.error('---------------------------------------------')
 
   dialog.showErrorBox(
     '应用程序错误',
-    `发生了一个意外的错误，应用程序即将退出：\n${error.message}`,
+    `发生了一个意外的错误，请前往 Github Issue 页面反馈：\n${error.message}`,
   )
-  app.quit()
 })
 
 process.on('unhandledRejection', reason => {
@@ -136,9 +135,7 @@ process.on('unhandledRejection', reason => {
   const logger = createLogger('unhandledRejection')
   if (
     reason instanceof Error &&
-    reason.message.includes(
-      'cdpSession.send: Target page, context or browser has been closed',
-    )
+    reason.message.includes('cdpSession.send: Target page, context or browser has been closed')
   ) {
     return logger.verbose(reason)
   }
