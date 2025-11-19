@@ -2,7 +2,7 @@ import { Result } from '@praha/byethrow'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { createLogger } from '#/logger'
 import { accountManager } from '#/managers/AccountManager'
-import { errorMessage, typedIpcMainHandle } from '#/utils'
+import { typedIpcMainHandle } from '#/utils'
 
 const TASK_NAME = '监听评论'
 const TASK_TYPE = 'comment-listener'
@@ -23,7 +23,7 @@ function setupIpcHandlers() {
           const logger = createLogger(`@${accountManager.getAccountName(accountId)}`).scope(
             TASK_NAME,
           )
-          logger.error('启动失败:', errorMessage(error))
+          logger.error('启动评论监听失败：', error)
         }),
         r => r.then(Result.isSuccess),
       )
@@ -40,7 +40,7 @@ function setupIpcHandlers() {
           const logger = createLogger(`@${accountManager.getAccountName(accountId)}`).scope(
             TASK_NAME,
           )
-          logger.error('停止监听评论失败:', errorMessage(error))
+          logger.error('停止监听评论失败：', error)
         }),
       )
     },
@@ -61,7 +61,7 @@ function setupIpcHandlers() {
       ),
       Result.inspectError(error => {
         const logger = createLogger(`@${accountManager.getAccountName(accountId)}`).scope(TASK_NAME)
-        logger.error('发送回复失败:', errorMessage(error))
+        logger.error('发送回复失败：', error)
       }),
     )
   })

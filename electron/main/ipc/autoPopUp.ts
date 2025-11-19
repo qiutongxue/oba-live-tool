@@ -4,7 +4,7 @@ import { throttle } from 'lodash-es'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { createLogger } from '#/logger'
 import { accountManager } from '#/managers/AccountManager'
-import { errorMessage, typedIpcMainHandle } from '#/utils'
+import { typedIpcMainHandle } from '#/utils'
 
 const TASK_NAME = '自动弹窗'
 const TASK_TYPE = 'auto-popup'
@@ -22,7 +22,7 @@ function setupIpcHandlers() {
       ),
       Result.inspectError(error => {
         const logger = createLogger(`@${accountManager.getAccountName(accountId)}`).scope(TASK_NAME)
-        logger.error(`启动任务失败：${errorMessage(error)}`)
+        logger.error('启动任务失败：', error)
       }),
       r => r.then(Result.isSuccess),
     )
@@ -32,7 +32,7 @@ function setupIpcHandlers() {
     const accountSession = accountManager.getSession(accountId)
     if (Result.isFailure(accountSession)) {
       const logger = createLogger(`@${accountManager.getAccountName(accountId)}`).scope(TASK_NAME)
-      logger.error(`停止任务失败：${errorMessage(accountSession.error)}`)
+      logger.error('停止任务失败：', accountSession.error)
       return false
     }
     accountSession.value.stopTask(TASK_TYPE)
@@ -43,7 +43,7 @@ function setupIpcHandlers() {
     const accountSession = accountManager.getSession(accountId)
     if (Result.isFailure(accountSession)) {
       const logger = createLogger(`@${accountManager.getAccountName(accountId)}`).scope(TASK_NAME)
-      logger.error(`更新配置失败：${errorMessage(accountSession.error)}`)
+      logger.error('更新配置失败：', accountSession.error)
       return
     }
     accountSession.value.updateTaskConfig(TASK_TYPE, newConfig)

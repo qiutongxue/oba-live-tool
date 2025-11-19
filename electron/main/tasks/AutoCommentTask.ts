@@ -4,13 +4,7 @@ import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { AbortError } from '#/errors/AppError'
 import type { ScopedLogger } from '#/logger'
 import type { IPerformComment } from '#/platforms/IPlatform'
-import {
-  errorMessage,
-  insertRandomSpaces,
-  randomInt,
-  replaceVariant,
-  takeScreenshot,
-} from '#/utils'
+import { insertRandomSpaces, randomInt, replaceVariant, takeScreenshot } from '#/utils'
 import windowManager from '#/windowManager'
 import { createIntervalTask } from './IntervalTask'
 import { runWithRetry } from './retry'
@@ -131,7 +125,7 @@ export function createAutoCommentTask(
         }
         config = mergedConfig
       } catch (error) {
-        logger.error(`配置更新失败: ${errorMessage(error)}`)
+        logger.error('配置更新失败：', error)
         throw error
       }
     },

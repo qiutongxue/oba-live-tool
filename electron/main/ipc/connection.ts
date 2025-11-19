@@ -2,7 +2,7 @@ import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { createLogger } from '#/logger'
 import { accountManager } from '#/managers/AccountManager'
 import { BrowserSessionManager } from '#/managers/BrowserSessionManager'
-import { errorMessage, typedIpcMainHandle } from '#/utils'
+import { typedIpcMainHandle } from '#/utils'
 
 const TASK_NAME = '中控台'
 
@@ -15,10 +15,7 @@ function setupIpcHandlers() {
         browserManager.setChromePath(chromePath)
       }
 
-      const accountSession = await accountManager.createSession(
-        platform,
-        account,
-      )
+      const accountSession = await accountManager.createSession(platform, account)
 
       try {
         await accountSession.connect({
@@ -28,7 +25,7 @@ function setupIpcHandlers() {
         return true
       } catch (error) {
         const logger = createLogger(`@${account.name}`).scope(TASK_NAME)
-        logger.error('连接直播控制台失败:', errorMessage(error))
+        logger.error('连接直播控制台失败：', error)
 
         accountManager.closeSession(account.id)
         return false
@@ -36,21 +33,16 @@ function setupIpcHandlers() {
     },
   )
 
-  typedIpcMainHandle(
-    IPC_CHANNELS.tasks.liveControl.disconnect,
-    async (_, accountId) => {
-      try {
-        accountManager.closeSession(accountId)
-        return true
-      } catch (error) {
-        const logger = createLogger(
-          `@${accountManager.getAccountName(accountId)}`,
-        ).scope(TASK_NAME)
-        logger.error('断开连接失败:', errorMessage(error))
-        return false
-      }
-    },
-  )
+  typedIpcMainHandle(IPC_CHANNELS.tasks.liveControl.disconnect, async (_, accountId) => {
+    try {
+      accountManager.closeSession(accountId)
+      return true
+    } catch (error) {
+      const logger = createLogger(`@${accountManager.getAccountName(accountId)}`).scope(TASK_NAME)
+      logger.error('断开连接失败：', error)
+      return false
+    }
+  })
 }
 
 export function setupLiveControlIpcHandlers() {

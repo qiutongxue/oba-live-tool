@@ -4,7 +4,20 @@ import windowManager from './windowManager'
 
 // [2025-02-11 07:30:03.037] [中控台] » INFO         启动中……
 electronLog.transports.console.format = ({ data, level, message }) => {
-  const text = data.join(' ')
+  // TODO: error 有可能是：message + Error 的形式，如果带有 Error，要记录堆栈信息
+  let text = ''
+  if (level !== 'error') {
+    text = data.join(' ')
+  } else {
+    for (const item of data) {
+      if (item instanceof Error) {
+        text += `${item.message}\n${item.stack}`
+      } else {
+        text += `${String(item)} `
+      }
+    }
+  }
+
   return [
     `[${message.date.toLocaleString()}]`,
     message.scope ? `[${message.scope}]` : '',

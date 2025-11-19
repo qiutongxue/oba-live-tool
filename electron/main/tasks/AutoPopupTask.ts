@@ -3,12 +3,7 @@ import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { AbortError } from '#/errors/AppError'
 import type { ScopedLogger } from '#/logger'
 import type { IPerformPopup } from '#/platforms/IPlatform'
-import {
-  errorMessage,
-  mergeWithoutArray,
-  randomInt,
-  takeScreenshot,
-} from '#/utils'
+import { mergeWithoutArray, randomInt, takeScreenshot } from '#/utils'
 import windowManager from '#/windowManager'
 import { createIntervalTask } from './IntervalTask'
 import { runWithRetry } from './retry'
@@ -72,13 +67,12 @@ export function createAutoPopupTask(
     try {
       const mergedConfig = mergeWithoutArray(config, newConfig)
       validateConfig(mergedConfig)
-      if (newConfig.scheduler?.interval)
-        intervalTask.updateInterval(config.scheduler.interval)
+      if (newConfig.scheduler?.interval) intervalTask.updateInterval(config.scheduler.interval)
       config = mergedConfig
       // 更新配置后重新启动任务
       intervalTask.restart()
     } catch (error) {
-      logger.error(`配置更新失败: ${errorMessage(error)}`)
+      logger.error('配置更新失败：', error)
       throw error
     }
   }
