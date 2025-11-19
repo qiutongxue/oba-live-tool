@@ -19,10 +19,7 @@ export interface IElementFinder {
   /** 能保证商品列表不为空 */
   getCurrentGoodsItemsList(
     page: Page,
-  ): Result.ResultAsync<
-    ElementHandle<SVGElement | HTMLElement>[],
-    PlatformError
-  >
+  ): Result.ResultAsync<ElementHandle<SVGElement | HTMLElement>[], PlatformError>
 
   getGoodsItemsScrollContainer(
     page: Page,
@@ -30,10 +27,7 @@ export interface IElementFinder {
 
   getCommentTextarea(
     page: Page,
-  ): Result.ResultAsync<
-    ElementHandle<SVGElement | HTMLElement> | Locator,
-    PlatformError
-  >
+  ): Result.ResultAsync<ElementHandle<SVGElement | HTMLElement> | Locator, PlatformError>
 
   getClickableSubmitCommentButton(
     page: Page,
@@ -49,8 +43,11 @@ export const commonElementFinder = {
   async getIdFromGoodsItem(
     item: ElementHandle<SVGElement | HTMLElement>,
     idSelector: string,
+    textContent = false,
   ) {
-    const idInput = await (await item.$(idSelector))?.inputValue()
+    const idInput = textContent
+      ? await (await item.$(idSelector))?.textContent()
+      : await (await item.$(idSelector))?.inputValue()
     if (!idInput) {
       return Result.fail(
         new ElementNotFoundError({

@@ -14,7 +14,8 @@
       "!**/dist-electron",
       "!**/release",
       "!**/build",
-      "!**/.vscode"
+      "!**/.vscode",
+      "!**/*.html"
     ]
   },
   "formatter": { "enabled": true, "indentStyle": "space", "lineWidth": 100 },

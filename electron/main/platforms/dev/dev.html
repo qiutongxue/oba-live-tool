@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>直播中控台</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Vue 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <!-- 图标库 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        /* 基础样式 */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        [v-cloak] { display: none; }
+        
+        /* 虚拟列表核心样式 */
+        .product-card-fixed-height {
+            height: 110px;
+            box-sizing: border-box;
+        }
+        
+        /* 禁用状态下的灰度过渡 */
+        .disabled-area {
+            filter: grayscale(100%);
+            opacity: 0.6;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 h-screen overflow-hidden">
+    <div id="app" v-cloak class="h-full flex flex-col layout-container">
+        <!-- ==================== 1. 登录界面 ==================== -->
+        <div v-if="!isLoggedIn" class="login-page flex items-center justify-center h-full bg-slate-800">
+            <div class="login-panel bg-white p-8 rounded-lg shadow-2xl w-96 transform transition-all hover:scale-105">
+                <div class="text-center mb-8">
+                    <div class="text-4xl text-indigo-600 mb-2"><i class="fa-solid fa-rocket"></i></div>
+                    <h1 class="text-2xl font-bold text-gray-700">直播中控系统</h1>
+                </div>
+                
+                <div class="space-y-4">
+                    <div class="form-group">
+                        <label class="block text-sm font-medium text-gray-600 mb-1">用户名</label>
+                        <input v-model="loginForm.username" type="text" placeholder="请输入管理员昵称" 
+                               class="login-form__input-username w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-indigo-500 focus:outline-none transition">
+                    </div>
+                    <div class="form-group">
+                        <label class="block text-sm font-medium text-gray-600 mb-1">密码</label>
+                        <input type="password" placeholder="任意字符" 
+                               class="login-form__input-password w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-indigo-500 focus:outline-none transition">
+                    </div>
+                    <button @click="handleLogin" class="login-form__btn-submit w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-md transition duration-300 shadow-lg">
+                        登 录
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== 2. 中控台主界面 ==================== -->
+        <div v-else class="dashboard-page flex flex-col h-full">
+            
+            <!-- 顶部导航 -->
+            <header class="top-nav bg-white h-16 border-b flex items-center justify-between px-6 shadow-sm z-10 flex-shrink-0">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded flex items-center justify-center text-white transition-colors duration-500"
+                         :class="isLive ? 'bg-red-600 animate-pulse' : 'bg-gray-400'">
+                        <i class="fa-brands fa-youtube"></i>
+                    </div>
+                    <div>
+                        <h2 class="font-bold text-lg text-gray-700 leading-tight">双十一大促中控台</h2>
+                        <div class="text-[10px] font-bold uppercase tracking-wider" 
+                             :class="isLive ? 'text-red-500' : 'text-gray-400'">
+                            {{ isLive ? 'On Air' : 'Off Air' }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-6">
+                    
+                    <!-- 核心开关按钮 -->
+                    <button @click="toggleLiveStatus" 
+                            class="flex items-center gap-2 px-6 py-2 rounded-full font-bold text-sm shadow-md transition-all duration-300 transform active:scale-95"
+                            :class="isLive 
+                                ? 'bg-white text-red-600 border border-red-200 hover:bg-red-50 ring-2 ring-red-500 ring-offset-1' 
+                                : 'bg-green-600 text-white hover:bg-green-700 hover:shadow-lg'">
+                        <i class="fa-solid" :class="isLive ? 'fa-stop' : 'fa-play'"></i>
+                        {{ isLive ? '结束直播' : '开始直播' }}
+                    </button>
+
+                    <div class="h-6 w-px bg-gray-300"></div>
+
+                    <div class="user-profile flex items-center gap-2">
+                        <div class="w-8 h-8 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center font-bold text-xs border border-indigo-200">
+                            {{ loginForm.username.charAt(0).toUpperCase() }}
+                        </div>
+                        <span class="text-sm font-medium text-gray-600">{{ loginForm.username }}</span>
+                    </div>
+                    
+                    <button @click="isLoggedIn = false" class="text-gray-400 hover:text-gray-600 transition">
+                        <i class="fa-solid fa-power-off text-lg"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- 主要内容区 -->
+            <div class="flex flex-1 overflow-hidden">
+                
+                <!-- 左侧：直播与互动 -->
+                <div class="live-panel w-2/5 flex flex-col border-r bg-gray-50">
+                    <!-- 视频区域 -->
+                    <div class="video-monitor aspect-video bg-black flex items-center justify-center relative group flex-shrink-0 overflow-hidden">
+                        
+                        <!-- 视频占位 -->
+                        <div class="text-center transition-opacity duration-500" :class="isLive ? 'text-gray-600 opacity-100' : 'text-gray-700 opacity-50'">
+                            <i class="fa-solid fa-clapperboard text-4xl mb-2"></i>
+                            <p class="text-sm">{{ isLive ? '推流画面正常' : '直播已停止' }}</p>
+                        </div>
+
+                        <!-- 关播遮罩 -->
+                        <div v-if="!isLive" class="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-10">
+                            <div class="border border-white/20 bg-white/10 px-6 py-3 rounded text-white font-bold tracking-widest">
+                                <i class="fa-solid fa-coffee mr-2"></i> 休息中
+                            </div>
+                        </div>
+
+                        <!-- 讲解浮层 (仅开播显示) -->
+                        <div v-if="currentExplainingProduct && isLive" class="live-toast absolute bottom-4 left-4 right-4 bg-white/95 backdrop-blur p-2 rounded-lg shadow-lg flex items-center gap-3 animate-bounce-in border-l-4 border-red-500 z-20">
+                            <img :src="currentExplainingProduct.image" class="w-12 h-12 rounded object-cover border">
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2">
+                                    <span class="bg-red-500 text-white text-[10px] px-1.5 rounded font-bold">讲解中</span>
+                                    <span class="text-xs font-bold truncate">{{ currentExplainingProduct.name }}</span>
+                                </div>
+                                <div class="text-red-600 font-bold text-sm mt-0.5">￥{{ currentExplainingProduct.price }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 评论互动区 -->
+                    <div class="chat-section flex-1 flex flex-col bg-white overflow-hidden relative">
+                        <div class="p-2 border-b text-xs font-bold text-gray-500 bg-gray-50 flex justify-between items-center">
+                            <span>实时互动</span>
+                            <span class="flex items-center gap-1">
+                                <span class="w-2 h-2 rounded-full" :class="isLive ? 'bg-green-500' : 'bg-gray-400'"></span>
+                                {{ isLive ? onlineCount : '-' }} 人在线
+                            </span>
+                        </div>
+                        
+                        <div ref="chatContainer" class="chat-list flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50">
+                            <div v-for="msg in chatList" :key="msg.id" class="chat-item flex items-start gap-2 animate-fade-in">
+                                <span class="text-xs text-gray-400 pt-1 w-12 text-right truncate">{{ msg.username }}</span>
+                                <div class="text-sm px-3 py-1.5 rounded bg-white shadow-sm text-gray-700 max-w-[80%] break-words"
+                                     :class="{'!bg-indigo-100 !text-indigo-900 border border-indigo-200': msg.type === 'host', '!bg-orange-50 !text-orange-800 border border-orange-100': msg.type === 'system'}">
+                                    <span v-if="msg.type === 'host'" class="font-bold text-indigo-600 text-xs mr-1">[主播]</span>
+                                    {{ msg.content }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 底部输入框：关播时禁用 -->
+                        <div class="chat-input-area p-3 border-t bg-white flex gap-2 transition-colors duration-300"
+                             :class="{'bg-gray-100': !isLive}">
+                            <input 
+                                v-model="hostInput" 
+                                @keyup.enter="sendHostComment" 
+                                type="text" 
+                                :disabled="!isLive"
+                                :placeholder="isLive ? '发送弹幕互动...' : '直播未开始，无法发送消息'" 
+                                class="flex-1 px-3 py-2 border rounded focus:outline-none focus:border-indigo-500 text-sm transition disabled:bg-gray-200 disabled:text-gray-500 disabled:cursor-not-allowed"
+                            >
+                            <button 
+                                @click="sendHostComment"
+                                :disabled="!isLive || !hostInput.trim()"
+                                class="px-4 py-2 rounded text-sm font-medium transition-all duration-200"
+                                :class="(isLive && hostInput.trim())
+                                    ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-md transform active:scale-95' 
+                                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'"
+                            >
+                                发送
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 右侧：商品管理 -->
+                <div class="product-panel w-3/5 flex flex-col bg-white h-full relative">
+                    <!-- 关播时的遮罩层 (可选，这里只禁用按钮，不完全遮挡，方便查看数据) -->
+                    <!-- <div v-if="!isLive" class="absolute inset-0 z-30 bg-gray-50/50 backdrop-grayscale pointer-events-none"></div> -->
+
+                    <div class="panel-header p-4 border-b flex justify-between items-center bg-white z-20 shadow-sm">
+                        <div class="flex items-center gap-2">
+                            <h3 class="font-bold text-gray-800">商品管理</h3>
+                            <span class="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full border">共 {{ products.length }} 件</span>
+                        </div>
+                        <div class="text-xs" :class="isLive ? 'text-green-600 font-bold' : 'text-gray-400'">
+                            <i class="fa-solid fa-wifi"></i> {{ isLive ? '商品推送功能正常' : '商品推送已暂停' }}
+                        </div>
+                    </div>
+
+                    <div ref="listContainer" @scroll="handleScroll" class="virtual-list-container flex-1 overflow-y-auto relative bg-gray-100">
+                        <div class="virtual-list-phantom" :style="{ height: totalListHeight + 'px' }"></div>
+                        <div class="virtual-list-content absolute w-full left-0 top-0" :style="{ transform: `translateY(${scrollTopOffset}px)` }">
+                            <div v-for="(item, index) in visibleProductList" :key="item.id" 
+                                 class="product-list__item product-card-fixed-height w-full px-4 pt-2 pb-2">
+                                
+                                <div class="bg-white border rounded-lg p-2 flex items-center h-full hover:shadow-md transition-shadow group"
+                                     :class="{'ring-2 ring-red-500 bg-red-50': item.isExplaining}">
+                                    
+                                    <div class="w-12 text-center font-mono text-gray-300 text-lg italic">#{{ item.index + 1 }}</div>
+                                    
+                                    <div class="w-20 h-20 bg-gray-200 rounded overflow-hidden flex-shrink-0 border relative">
+                                        <img :src="item.image" loading="lazy" class="w-full h-full object-cover" :class="{'grayscale': !isLive}">
+                                    </div>
+
+                                    <div class="flex-1 ml-4">
+                                        <h4 class="font-bold text-gray-800 text-sm line-clamp-1">{{ item.name }}</h4>
+                                        <div class="text-xs text-gray-400 mt-1 mb-1">{{ item.desc }}</div>
+                                        <div class="flex items-center gap-3">
+                                            <span class="font-bold" :class="isLive ? 'text-red-600' : 'text-gray-500'">￥{{ item.price }}</span>
+                                            <span class="text-xs bg-gray-100 text-gray-500 px-1 rounded">库存: {{ item.stock }}</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="px-2">
+                                        <!-- 
+                                            讲解按钮：
+                                            1. 关播 (!isLive) 时 disable
+                                            2. 样式根据 isLive 和 isExplaining 变化
+                                        -->
+                                        <button 
+                                            @click="toggleExplain(item.id)"
+                                            :disabled="!isLive"
+                                            class="btn-explain w-24 py-1.5 rounded-full text-xs font-bold transition-all duration-200 flex items-center justify-center gap-1"
+                                            :class="getButtonClass(item)"
+                                        >
+                                            <i class="fa-solid" :class="item.isExplaining ? 'fa-stop' : 'fa-microphone'"></i>
+                                            {{ item.isExplaining ? '取消讲解' : '讲解' }}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const { createApp, ref, reactive, computed, nextTick, onMounted, onUnmounted } = Vue;
+
+        createApp({
+            setup() {
+                // --- 状态 ---
+                const isLoggedIn = ref(Math.random() < 0.5);
+                const isLive = ref(false); // 新增：直播状态
+                const loginForm = reactive({ username: '超级管理员' });
+                const hostInput = ref('');
+                const onlineCount = ref(0);
+                const chatContainer = ref(null);
+
+                // --- 虚拟列表配置 ---
+                const listContainer = ref(null);
+                const products = ref([]);
+                const ITEM_HEIGHT = 110;
+                const scrollTop = ref(0);
+                const containerHeight = ref(600);
+
+                // --- 数据生成 ---
+                const generateProducts = () => {
+                    const baseImages = [
+                        'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=150&q=80',
+                        'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=150&q=80',
+                        'https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=150&q=80',
+                        'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=150&q=80'
+                    ];
+                    const list = [];
+                    for (let i = 0; i < 1000; i++) {
+                        list.push({
+                            id: i,
+                            index: i,
+                            name: `双十一特惠爆款 - 系列 ${Math.floor(i / 10) + 1} - 编号 ${i + 1000}`,
+                            desc: `2024新款 | 极速发货 | 运费险 | 编号 ${i}`,
+                            price: (Math.random() * 500 + 50).toFixed(0),
+                            stock: Math.floor(Math.random() * 2000),
+                            image: baseImages[i % baseImages.length],
+                            isExplaining: false
+                        });
+                    }
+                    products.value = list;
+                };
+
+                // --- 虚拟列表 ---
+                const handleScroll = (e) => scrollTop.value = e.target.scrollTop;
+                const totalListHeight = computed(() => products.value.length * ITEM_HEIGHT);
+                const visibleProductList = computed(() => {
+                    const start = Math.floor(scrollTop.value / ITEM_HEIGHT);
+                    const visibleCount = Math.ceil(containerHeight.value / ITEM_HEIGHT);
+                    const end = start + visibleCount + 4;
+                    return products.value.slice(start, end);
+                });
+                const scrollTopOffset = computed(() => Math.floor(scrollTop.value / ITEM_HEIGHT) * ITEM_HEIGHT);
+
+                // --- 业务逻辑 ---
+                const currentExplainingProduct = computed(() => products.value.find(p => p.isExplaining));
+
+                // 开关直播控制
+                const toggleLiveStatus = () => {
+                    isLive.value = !isLive.value;
+                    
+                    if (isLive.value) {
+                        // 开播
+                        addMessage('系统', '直播已开始，快来和观众互动吧！', 'system');
+                        onlineCount.value = 3500;
+                        startFakeInteraction();
+                    } else {
+                        // 关播
+                        addMessage('系统', '直播已结束，辛苦了！', 'system');
+                        onlineCount.value = 0;
+                        stopFakeInteraction();
+                        
+                        // 取消正在讲解的商品
+                        const explaining = products.value.find(p => p.isExplaining);
+                        if (explaining) explaining.isExplaining = false;
+                    }
+                };
+
+                // 讲解按钮动态样式
+                const getButtonClass = (item) => {
+                    if (!isLive.value) {
+                        return 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200';
+                    }
+                    if (item.isExplaining) {
+                        return 'bg-white border border-red-500 text-red-500 hover:bg-red-50';
+                    }
+                    return 'bg-slate-800 text-white hover:bg-black';
+                };
+
+                const toggleExplain = (id) => {
+                    if (!isLive.value) return; // 关播不可点
+
+                    const product = products.value.find(p => p.id === id);
+                    if (!product) return;
+                    
+                    if (product.isExplaining) {
+                        product.isExplaining = false;
+                    } else {
+                        const prev = products.value.find(p => p.isExplaining);
+                        if (prev) prev.isExplaining = false;
+                        product.isExplaining = true;
+                        addMessage('系统', `正在讲解 #${product.index + 1}：${product.name}`, 'system');
+                    }
+                };
+
+                const chatList = ref([{ id: 1, username: '系统', content: '中控台已就绪，请点击上方按钮开始直播。', type: 'system' }]);
+                
+                const addMessage = (user, text, type = 'user') => {
+                    chatList.value.push({ id: Date.now(), username: user, content: text, type });
+                    nextTick(() => {
+                        if(chatContainer.value) chatContainer.value.scrollTop = chatContainer.value.scrollHeight;
+                    });
+                };
+
+                const sendHostComment = () => {
+                    if(!isLive.value || !hostInput.value.trim()) return;
+                    addMessage(loginForm.username, hostInput.value, 'host');
+                    hostInput.value = '';
+                };
+
+                const handleLogin = () => {
+                    if(!loginForm.username) loginForm.username = "管理员";
+                    isLoggedIn.value = true;
+                    generateProducts();
+                    // 登录后不自动开播，需手动点击
+                    nextTick(() => {
+                        if (listContainer.value) containerHeight.value = listContainer.value.clientHeight;
+                        window.addEventListener('resize', updateContainerHeight);
+                    });
+                };
+
+                const updateContainerHeight = () => {
+                    if (listContainer.value) containerHeight.value = listContainer.value.clientHeight;
+                };
+
+                // 模拟弹幕相关
+                let timer;
+                const startFakeInteraction = () => {
+                    if (timer) clearInterval(timer);
+                    timer = setInterval(() => {
+                        if(Math.random() > 0.7) {
+                            const users = ['User_A', '西瓜', '橙子', '138****1234', '想买', '小白', '铁粉'];
+                            const msgs = ['抢到了', '什么时候发货', '好便宜', '质量咋样', '主播好漂亮', '上连接', '666'];
+                            addMessage(users[Math.floor(Math.random()*users.length)], msgs[Math.floor(Math.random()*msgs.length)]);
+                            // 随机波动人数
+                            onlineCount.value += Math.floor(Math.random() * 10) - 3;
+                        }
+                    }, 1500);
+                };
+
+                const stopFakeInteraction = () => {
+                    if (timer) clearInterval(timer);
+                };
+
+                onUnmounted(() => {
+                    stopFakeInteraction();
+                    window.removeEventListener('resize', updateContainerHeight);
+                });
+
+                return {
+                    isLoggedIn, isLive, loginForm, products, hostInput, onlineCount, chatList, chatContainer,
+                    listContainer, visibleProductList, totalListHeight, scrollTopOffset, handleScroll,
+                    currentExplainingProduct, toggleExplain, sendHostComment, handleLogin, toggleLiveStatus, getButtonClass
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
