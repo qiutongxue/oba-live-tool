@@ -120,9 +120,6 @@ export function createAutoCommentTask(
         },
       },
     )
-    if (Result.isFailure(result)) {
-      windowManager.send(IPC_CHANNELS.tasks.autoMessage.stoppedEvent, account.id)
-    }
     return result
   }
 
@@ -139,6 +136,10 @@ export function createAutoCommentTask(
       Result.inspectError(err => logger.error('配置更新失败：', err)),
     )
   }
+
+  intervalTask.addStopListener(() => {
+    windowManager.send(IPC_CHANNELS.tasks.autoMessage.stoppedEvent, account.id)
+  })
 
   return Result.pipe(
     validateConfig(config),
