@@ -57,11 +57,11 @@ export class WebSocketService {
     }
   }
 
-  stop() {
+  stop(reason?: unknown) {
     if (this.wss) {
       this.wss.close()
       this.wss = null
-      this.logger.info('WebSocket服务已停止')
+      this.logger.info('WebSocket服务已停止', reason)
     }
   }
 }
