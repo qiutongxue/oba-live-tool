@@ -3,6 +3,7 @@ import type { ElementHandle, Page } from 'playwright'
 import { UnexpectedError } from '#/errors/AppError'
 import {
   ElementContentMismatchedError,
+  ElementDisabledError,
   ElementNotFoundError,
   MaxTryCountExceededError,
   PageNotFoundError,
@@ -46,9 +47,7 @@ export async function comment(
   message: string,
   pinTop?: boolean,
 ): Result.ResultAsync<boolean, PlatformError> {
-  async function clickPinTopButton(
-    page: Page,
-  ): Result.ResultAsync<boolean, PlatformError> {
+  async function clickPinTopButton(page: Page): Result.ResultAsync<boolean, PlatformError> {
     return Result.pipe(
       elementFinder.getPinTopLabel(page),
       Result.inspect(label => label.dispatchEvent('click')),
@@ -62,11 +61,9 @@ export async function comment(
     // 评论框
     elementFinder.getCommentTextarea(page),
     // 填写评论内容
-    Result.inspect(textarea => textarea.fill(message)),
+    Result.inspect(textarea => textarea.fill(message, { timeout: 5000 })),
     // 点击置顶选项
-    Result.andThen(_ =>
-      pinTop ? clickPinTopButton(page) : Result.succeed(false),
-    ),
+    Result.andThen(_ => (pinTop ? clickPinTopButton(page) : Result.succeed(false))),
     // 发送评论
     Result.andThrough(_ =>
       Result.pipe(
@@ -122,10 +119,7 @@ export async function getItemFromVirtualScroller(
    */
   async function determineScrollTarget(
     id: number,
-  ): Result.ResultAsync<
-    ElementHandle<SVGElement | HTMLElement>,
-    PlatformError
-  > {
+  ): Result.ResultAsync<ElementHandle<SVGElement | HTMLElement>, PlatformError> {
     const currentGoodsItems = await elementFinder.getCurrentGoodsItemsList(page)
     if (Result.isFailure(currentGoodsItems)) {
       return currentGoodsItems
@@ -179,18 +173,15 @@ export async function getItemFromVirtualScroller(
     if (Result.isFailure(scrollTarget)) {
       return scrollTarget
     }
-    await scrollTarget.value.scrollIntoViewIfNeeded()
+    await scrollTarget.value.scrollIntoViewIfNeeded({ timeout: 5000 })
     await waitForNewItemsToLoad()
 
     // 2. 获取当前的滚动位置
-    const scrollContainer =
-      await elementFinder.getGoodsItemsScrollContainer(page)
+    const scrollContainer = await elementFinder.getGoodsItemsScrollContainer(page)
     if (Result.isFailure(scrollContainer)) {
       return scrollContainer
     }
-    const currentScrollTop = await scrollContainer.value.evaluate(
-      el => el.scrollTop,
-    )
+    const currentScrollTop = await scrollContainer.value.evaluate(el => el.scrollTop)
 
     // 3. 检查是否滚动到底了 (终止条件)
     if (
@@ -248,6 +239,14 @@ export async function toggleButton(
   if (buttonText === targetContent && tryCount > 0) {
     return Result.succeed()
   }
+  if (await button.isDisabled()) {
+    return Result.fail(
+      new ElementDisabledError({
+        elementName: '讲解按钮',
+        element: await button.evaluate(el => el.outerHTML),
+      }),
+    )
+  }
   // button.click() 在抖店&百应的表现很诡异，所以用 dispatchEvent('click')
   await button.dispatchEvent('click')
   await sleep(1000)
@@ -255,9 +254,7 @@ export async function toggleButton(
 }
 
 /** 确保 page 非空 */
-export function ensurePage(
-  page: Page | null,
-): Result.Result<Page, PlatformError> {
+export function ensurePage(page: Page | null): Result.Result<Page, PlatformError> {
   if (!page) {
     return Result.fail(new PageNotFoundError())
   }
