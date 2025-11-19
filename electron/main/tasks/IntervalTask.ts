@@ -61,10 +61,9 @@ export function createIntervalTask(
     const { signal } = abortController
 
     try {
-      // TODO: restart 时还要把之前的 execute 停止
-      const result = await execute(signal)
-      if (Result.isFailure(result)) {
-        task.stop(TaskStopReason.ERROR, result.error)
+      const executeResult = await execute(signal)
+      if (Result.isFailure(executeResult)) {
+        return task.stop(TaskStopReason.ERROR, executeResult.error)
       }
 
       if (task.isRunning() && !signal.aborted) {
@@ -73,6 +72,7 @@ export function createIntervalTask(
         logger.info(`任务将在 ${interval / 1000} 秒后继续执行。`)
       }
     } catch (error) {
+      // 兜底用的，不能保证 execute 里涉及的第三方库代码不会抛出错误
       task.stop(TaskStopReason.ERROR, new UnexpectedError({ cause: error }))
     }
   }

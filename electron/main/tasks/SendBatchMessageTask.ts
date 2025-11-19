@@ -1,3 +1,4 @@
+import { Result } from '@praha/byethrow'
 import type { ScopedLogger } from '#/logger'
 import { insertRandomSpaces, randomInt, replaceVariant, sleep } from '#/utils'
 import type { IPerformComment } from './../platforms/IPlatform'
@@ -26,7 +27,10 @@ export function createSendBatchMessageTask(
           message = insertRandomSpaces(message)
         }
 
-        await platform.performComment(message)
+        const result = await platform.performComment(message)
+        if (Result.isFailure(result)) {
+          return task.stop(TaskStopReason.ERROR, result.error)
+        }
         logger.success(`成功发送第 ${i + 1}/${count} 条评论：${message}`)
         // 以防万一，加一个 1s 的小停顿
         await sleep(1000)

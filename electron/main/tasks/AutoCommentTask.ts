@@ -65,13 +65,9 @@ export function createAutoCommentTask(
       msg => msg.content.length > 50 && maxLength(msg.content) > 50,
     )
     if (badIndex >= 0) {
-      throw new Error(
-        `消息配置验证失败: 第 ${badIndex + 1} 条消息字数超出 50 字`,
-      )
+      throw new Error(`消息配置验证失败: 第 ${badIndex + 1} 条消息字数超出 50 字`)
     }
-    const emptyMessageIndex = userConfig.messages.findIndex(
-      msg => msg.content.trim().length === 0,
-    )
+    const emptyMessageIndex = userConfig.messages.findIndex(msg => msg.content.trim().length === 0)
     if (emptyMessageIndex >= 0) {
       throw new Error(`消息配置验证失败: 第 ${badIndex + 1} 条消息为空`)
     }
@@ -92,13 +88,12 @@ export function createAutoCommentTask(
         if (config.extraSpaces) {
           content = insertRandomSpaces(content)
         }
-        return Result.pipe(
-          platform.performComment(content, message.pinTop),
-          Result.inspect(isPinTop => {
-            logger.success(`发送${isPinTop ? '「置顶」' : ''}消息: ${content}`)
-          }),
-          Result.map(_ => void 0),
-        )
+        const pinTop = await platform.performComment(content, message.pinTop)
+        if (Result.isFailure(pinTop)) {
+          return pinTop
+        }
+        logger.success(`发送${pinTop.value ? '「置顶」' : ''}消息: ${content}`)
+        return Result.succeed()
       },
       {
         ...retryOptions,
@@ -112,10 +107,7 @@ export function createAutoCommentTask(
       },
     )
     if (Result.isFailure(result)) {
-      windowManager.send(
-        IPC_CHANNELS.tasks.autoMessage.stoppedEvent,
-        account.id,
-      )
+      windowManager.send(IPC_CHANNELS.tasks.autoMessage.stoppedEvent, account.id)
     }
     return result
   }
