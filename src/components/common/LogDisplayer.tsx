@@ -50,7 +50,8 @@ export default function LogDisplayer() {
       timestamp: log.date.toLocaleString(),
       module: log.scope ?? 'App',
       level: typeof log.level === 'string' ? log.level.toUpperCase() : 'INFO',
-      message: log.data.map(String).join(' '),
+      // 只保留换行符之前的内容
+      message: log.data.map(String).join(' ').split('\n')[0],
     }
   }
 
@@ -91,18 +92,12 @@ export default function LogDisplayer() {
       <div className="flex items-center justify-between px-4 py-2 border-b">
         <div className="flex items-center gap-2">
           <h3 className="font-medium">运行日志</h3>
-          <span className="text-xs text-muted-foreground">
-            {logMessages.length} 条记录
-          </span>
+          <span className="text-xs text-muted-foreground">{logMessages.length} 条记录</span>
         </div>
         <div className="flex items-center gap-4">
           {/* 自动滚动开关 */}
           <div className="flex items-center gap-2">
-            <Switch
-              id={autoScrollId}
-              checked={autoScroll}
-              onCheckedChange={setAutoScroll}
-            />
+            <Switch id={autoScrollId} checked={autoScroll} onCheckedChange={setAutoScroll} />
             <label
               htmlFor={autoScrollId}
               className="text-xs text-muted-foreground cursor-pointer select-none"
@@ -167,9 +162,7 @@ function LogItem({ log, index }: { log: ParsedLog; index: number }) {
     >
       <span className="text-muted-foreground shrink-0">[{log.timestamp}]</span>
       <span className="text-foreground/70 shrink-0">[{log.module}]</span>
-      <span className={cn('shrink-0', getLevelColor(log.level))}>
-        {log.level}
-      </span>
+      <span className={cn('shrink-0', getLevelColor(log.level))}>{log.level}</span>
       <span className="text-foreground truncate">{log.message}</span>
     </div>
   )
