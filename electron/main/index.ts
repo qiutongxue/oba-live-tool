@@ -22,6 +22,39 @@ import { accountManager } from './managers/AccountManager'
 // │ └── index.html    > Electron-Renderer
 //
 
+function createBoxedString(lines: string[]) {
+  // 1. 计算最长的一行文字长度
+  const maxLength = Math.max(...lines.map(line => line.length))
+
+  // 2. 定义边框样式
+  // 顶部和底部边框 (例如: +----------------+)
+  const horizontalLine = `+${'-'.repeat(maxLength + 2)}+`
+
+  // 3. 生成中间的内容行
+  const content = lines
+    .map(line => {
+      // 使用 padEnd 补齐空格，使得右边框对齐
+      return `| ${line.padEnd(maxLength)} |`
+    })
+    .join('\n')
+
+  // 4. 拼接结果
+  return `\n${horizontalLine}\n${content}\n${horizontalLine}`
+}
+
+function logStartupInfo() {
+  const appInfo = [
+    `App Name:     ${app.getName()}`,
+    `App Version:  ${app.getVersion()}`,
+    `Electron Ver: ${process.versions.electron}`,
+    `Node Ver:     ${process.versions.node}`,
+    `Platform:     ${process.platform} (${process.arch})`,
+    `Environment:  ${app.isPackaged ? 'Production' : 'Development'}`,
+  ]
+  const logger = createLogger('startup')
+  logger.debug(createBoxedString(appInfo))
+}
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 process.env.APP_ROOT = path.join(__dirname, '../..')
@@ -92,7 +125,7 @@ async function createWindow() {
   })
 }
 
-app.whenReady().then(createWindow)
+app.whenReady().then(logStartupInfo).then(createWindow)
 
 app.on('window-all-closed', async () => {
   win = null
