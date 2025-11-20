@@ -17,13 +17,7 @@ export async function runWithRetry<T>(
   fn: () => Promise<Result.Result<T, Error>>,
   options: RetryOptions,
 ): Promise<Result.Result<T, Error>> {
-  const {
-    maxRetries,
-    retryDelay,
-    logger,
-    onRetryError,
-    shouldRetry = () => true,
-  } = options
+  const { maxRetries, retryDelay, logger, onRetryError, shouldRetry = () => true } = options
 
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     const result = await fn()
@@ -31,7 +25,7 @@ export async function runWithRetry<T>(
       return result
     }
     const err = result.error
-    logger?.warn(`第 ${attempt + 1}/${maxRetries} 次执行失败：${String(err)}`)
+    logger?.warn(`第 ${attempt + 1}/${maxRetries} 次执行失败：`, err)
     onRetryError?.(err, attempt)
 
     const isLast = attempt >= maxRetries - 1
