@@ -44,7 +44,7 @@ export function createAutoPopupTask(
           return Result.fail(new AbortError())
         }
         const goodsId = getNextGoodsId()
-        const result = await platform.performPopup(goodsId)
+        const result = await platform.performPopup(goodsId, signal)
         if (Result.isSuccess(result)) {
           logger.success(`商品 ${goodsId} 讲解成功`)
         }
@@ -53,6 +53,7 @@ export function createAutoPopupTask(
       {
         ...retryOptions,
         logger,
+        signal,
         onRetryError: () =>
           Result.pipe(
             platform.getPopupPage(),

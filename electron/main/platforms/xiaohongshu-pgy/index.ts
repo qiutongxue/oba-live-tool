@@ -10,9 +10,7 @@ const PLATFORM_NAME = '蒲公英' as const
 /**
  * 蒲公英
  */
-export class XiaohongshuPgyPlatform
-  implements IPlatform, IPerformPopup, IPerformComment
-{
+export class XiaohongshuPgyPlatform implements IPlatform, IPerformPopup, IPerformComment {
   readonly _isPerformComment = true
   readonly _isPerformPopup = true
   private mainPage: Page | null = null
@@ -65,10 +63,7 @@ export class XiaohongshuPgyPlatform
   }
 
   async getAccountName(session: BrowserSession) {
-    const accountName = await getAccountName(
-      session.page,
-      SELECTORS.ACCOUNT_NAME,
-    )
+    const accountName = await getAccountName(session.page, SELECTORS.ACCOUNT_NAME)
     return accountName ?? ''
   }
 
@@ -76,8 +71,8 @@ export class XiaohongshuPgyPlatform
     throw new Error('Method not implemented.')
   }
 
-  async performPopup(id: number) {
-    return XiaohongshuPlatform.prototype.performPopup.call(this, id)
+  async performPopup(...args: Parameters<IPerformPopup['performPopup']>) {
+    return XiaohongshuPlatform.prototype.performPopup.apply(this, args)
   }
 
   async performComment(message: string) {

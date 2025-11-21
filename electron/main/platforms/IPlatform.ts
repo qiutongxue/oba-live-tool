@@ -14,42 +14,31 @@ export interface ICommentListener {
   getCommentListenerPage(): Page
 }
 
-export function isCommentListener(
-  platform: IPlatform,
-): platform is IPlatform & ICommentListener {
-  return (
-    '_isCommentListener' in platform && platform._isCommentListener === true
-  )
+export function isCommentListener(platform: IPlatform): platform is IPlatform & ICommentListener {
+  return '_isCommentListener' in platform && platform._isCommentListener === true
 }
 
 export interface IPerformPopup {
   _isPerformPopup: true
   /** 弹窗指定商品序号 */
-  performPopup(id: number): Result.ResultAsync<void, PlatformError>
+  performPopup(id: number, signal?: AbortSignal): Result.ResultAsync<void, Error>
   /** 获取弹窗任务所需的页面 */
   getPopupPage(): Result.Result<Page, PlatformError>
 }
 
-export function isPerformPopup(
-  platform: IPlatform,
-): platform is IPlatform & IPerformPopup {
+export function isPerformPopup(platform: IPlatform): platform is IPlatform & IPerformPopup {
   return '_isPerformPopup' in platform && platform._isPerformPopup === true
 }
 
 export interface IPerformComment {
   _isPerformComment: true
   /** 在互动评论区域发送评论，返回结果表示是否成功置顶 */
-  performComment(
-    message: string,
-    pinTop?: boolean,
-  ): Result.ResultAsync<boolean, PlatformError>
+  performComment(message: string, pinTop?: boolean): Result.ResultAsync<boolean, PlatformError>
   /** 获取评论任务所需的页面 */
   getCommentPage(): Result.Result<Page, PlatformError>
 }
 
-export function isPerformComment(
-  platform: IPlatform,
-): platform is IPlatform & IPerformComment {
+export function isPerformComment(platform: IPlatform): platform is IPlatform & IPerformComment {
   return '_isPerformComment' in platform && platform._isPerformComment === true
 }
 

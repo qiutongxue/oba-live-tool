@@ -1,6 +1,6 @@
 import { Result } from '@praha/byethrow'
 import { ErrorFactory } from '@praha/error-factory'
-import { UnexpectedError } from '#/errors/AppError'
+import { AbortError, UnexpectedError } from '#/errors/AppError'
 import { randomInt } from '#/utils'
 import { type BaseTaskProps, createTask } from './BaseTask'
 import { TaskStopReason } from './ITask'
@@ -64,7 +64,10 @@ export function createIntervalTask(
     try {
       const executeResult = await execute(signal)
       if (Result.isFailure(executeResult)) {
-        return task.stop(TaskStopReason.ERROR, executeResult.error)
+        // 任务被终止不影响后续（针对 restart）
+        if (!(executeResult.error instanceof AbortError)) {
+          return task.stop(TaskStopReason.ERROR, executeResult.error)
+        }
       }
 
       if (task.isRunning() && !signal.aborted) {

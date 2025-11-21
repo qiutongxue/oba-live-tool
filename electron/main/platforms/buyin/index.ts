@@ -5,12 +5,7 @@ import { DouyinPlatform } from '../douyin'
 import { CompassListener, ControlListener } from '../douyin/commentListener'
 // 百应和抖店共用
 import { connect, ensurePage, openUrlByElement } from '../helper'
-import type {
-  ICommentListener,
-  IPerformComment,
-  IPerformPopup,
-  IPlatform,
-} from '../IPlatform'
+import type { ICommentListener, IPerformComment, IPerformPopup, IPlatform } from '../IPlatform'
 import { REGEXPS, SELECTORS, URLS } from './constant'
 
 const PLATFORM_NAME = '巨量百应' as const
@@ -18,9 +13,7 @@ const PLATFORM_NAME = '巨量百应' as const
 /**
  * 巨量百应
  */
-export class BuyinPlatform
-  implements IPlatform, IPerformPopup, IPerformComment, ICommentListener
-{
+export class BuyinPlatform implements IPlatform, IPerformPopup, IPerformComment, ICommentListener {
   readonly _isPerformComment = true
   readonly _isPerformPopup = true
   readonly _isCommentListener = true
@@ -64,9 +57,7 @@ export class BuyinPlatform
 
   async getAccountName(session: BrowserSession) {
     await session.page.waitForSelector(SELECTORS.ACCOUNT_NAME)
-    const accountName = await session.page
-      .$(SELECTORS.ACCOUNT_NAME)
-      .then(el => el?.textContent())
+    const accountName = await session.page.$(SELECTORS.ACCOUNT_NAME).then(el => el?.textContent())
     return accountName ?? ''
   }
 
@@ -74,16 +65,12 @@ export class BuyinPlatform
     throw new Error('Method not implemented.')
   }
 
-  async performPopup(id: number) {
-    return await DouyinPlatform.prototype.performPopup.call(this, id)
+  async performPopup(...args: Parameters<IPerformPopup['performPopup']>) {
+    return await DouyinPlatform.prototype.performPopup.call(this, ...args)
   }
 
   async performComment(message: string, pinTop: boolean) {
-    return await DouyinPlatform.prototype.performComment.call(
-      this,
-      message,
-      pinTop,
-    )
+    return await DouyinPlatform.prototype.performComment.call(this, message, pinTop)
   }
 
   startCommentListener(

@@ -17,9 +17,7 @@ const PLATFORM_NAME = '微信视频号' as const
 /**
  * 微信视频号
  */
-export class WechatChannelPlatform
-  implements IPlatform, IPerformPopup, IPerformComment
-{
+export class WechatChannelPlatform implements IPlatform, IPerformPopup, IPerformComment {
   readonly _isPerformComment = true
   readonly _isPerformPopup = true
   private mainPage: Page | null = null
@@ -86,16 +84,12 @@ export class WechatChannelPlatform
     throw new Error('Method not implemented.')
   }
 
-  async performPopup(id: number) {
+  async performPopup(id: number, signal?: AbortSignal) {
     return Result.pipe(
       ensurePage(this.productsPage),
-      Result.andThen(page =>
-        getItemFromVirtualScroller(page, elementFinder, id),
-      ),
+      Result.andThen(page => getItemFromVirtualScroller(page, elementFinder, id)),
       Result.andThen(item => elementFinder.getPopUpButtonFromGoodsItem(item)),
-      Result.andThen(btn =>
-        toggleButton(btn, TEXT.POPUP_BUTTON, TEXT.POPUP_BUTTON_CANCLE),
-      ),
+      Result.andThen(btn => toggleButton(btn, TEXT.POPUP_BUTTON, TEXT.POPUP_BUTTON_CANCLE, signal)),
     )
   }
 

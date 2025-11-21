@@ -1,6 +1,5 @@
 import { Result } from '@praha/byethrow'
 import type { Page } from 'playwright'
-import type { PlatformError } from '#/errors/PlatformError'
 import type { BrowserSession } from '#/managers/BrowserSessionManager'
 import {
   comment,
@@ -11,12 +10,7 @@ import {
   openUrlByElement,
   toggleButton,
 } from '../helper'
-import type {
-  ICommentListener,
-  IPerformComment,
-  IPerformPopup,
-  IPlatform,
-} from '../IPlatform'
+import type { ICommentListener, IPerformComment, IPerformPopup, IPlatform } from '../IPlatform'
 import { CompassListener, ControlListener } from './commentListener'
 import { REGEXPS, SELECTORS, TEXTS, URLS } from './constant'
 import { douyinElementFinder as elementFinder } from './element-finder'
@@ -26,9 +20,7 @@ const PLATFORM_NAME = '抖音小店' as const
 /**
  * 抖音小店
  */
-export class DouyinPlatform
-  implements IPlatform, IPerformPopup, IPerformComment, ICommentListener
-{
+export class DouyinPlatform implements IPlatform, IPerformPopup, IPerformComment, ICommentListener {
   readonly _isPerformComment = true
   readonly _isPerformPopup = true
   readonly _isCommentListener = true
@@ -63,10 +55,7 @@ export class DouyinPlatform
   }
 
   async getAccountName(session: BrowserSession) {
-    const accountName = await getAccountName(
-      session.page,
-      SELECTORS.ACCOUNT_NAME,
-    )
+    const accountName = await getAccountName(session.page, SELECTORS.ACCOUNT_NAME)
     return accountName ?? ''
   }
 
@@ -74,15 +63,13 @@ export class DouyinPlatform
     throw new Error('Method not implemented.')
   }
 
-  async performPopup(id: number): Result.ResultAsync<void, PlatformError> {
+  async performPopup(id: number, signal?: AbortSignal) {
     return Result.pipe(
       ensurePage(this.mainPage),
-      Result.andThen(page =>
-        getItemFromVirtualScroller(page, elementFinder, id),
-      ),
+      Result.andThen(page => getItemFromVirtualScroller(page, elementFinder, id)),
       Result.andThen(item => elementFinder.getPopUpButtonFromGoodsItem(item)),
       Result.andThen(popupBtn =>
-        toggleButton(popupBtn, TEXTS.POPUP_BUTTON, TEXTS.POPUP_BUTTON_CANCLE),
+        toggleButton(popupBtn, TEXTS.POPUP_BUTTON, TEXTS.POPUP_BUTTON_CANCLE, signal),
       ),
     )
   }

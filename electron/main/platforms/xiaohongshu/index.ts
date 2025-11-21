@@ -19,9 +19,7 @@ const PLATFORM_NAME = '小红书' as const
 /**
  * 小红书（千帆）
  */
-export class XiaohongshuPlatform
-  implements IPlatform, IPerformPopup, IPerformComment
-{
+export class XiaohongshuPlatform implements IPlatform, IPerformPopup, IPerformComment {
   readonly _isPerformComment = true
   readonly _isPerformPopup = true
   private mainPage: Page | null = null
@@ -56,10 +54,7 @@ export class XiaohongshuPlatform
   }
 
   async getAccountName(session: BrowserSession) {
-    const accountName = await getAccountName(
-      session.page,
-      SELECTORS.ACCOUNT_NAME,
-    )
+    const accountName = await getAccountName(session.page, SELECTORS.ACCOUNT_NAME)
     return accountName ?? ''
   }
 
@@ -67,15 +62,13 @@ export class XiaohongshuPlatform
     throw new Error('Method not implemented.')
   }
 
-  async performPopup(id: number) {
+  async performPopup(id: number, signal?: AbortSignal) {
     return Result.pipe(
       ensurePage(this.mainPage),
-      Result.andThen(page =>
-        getItemFromVirtualScroller(page, elementFinder, id),
-      ),
+      Result.andThen(page => getItemFromVirtualScroller(page, elementFinder, id)),
       Result.andThen(item => elementFinder.getPopUpButtonFromGoodsItem(item)),
       Result.andThen(btn =>
-        toggleButton(btn, TEXTS.POPUP_BUTTON, TEXTS.POPUP_BUTTON_CANCLE),
+        toggleButton(btn, TEXTS.POPUP_BUTTON, TEXTS.POPUP_BUTTON_CANCLE, signal),
       ),
     )
   }

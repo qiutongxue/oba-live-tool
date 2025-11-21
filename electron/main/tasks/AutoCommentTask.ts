@@ -112,6 +112,7 @@ export function createAutoCommentTask(
       {
         ...retryOptions,
         logger,
+        signal,
         onRetryError: () => {
           Result.pipe(
             platform.getCommentPage(),
