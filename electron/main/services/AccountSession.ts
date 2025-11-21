@@ -5,7 +5,7 @@ import { emitter } from '#/event/eventBus'
 import { createLogger } from '#/logger'
 import {
   type BrowserSession,
-  BrowserSessionManager,
+  browserManager,
   type StorageState,
 } from '#/managers/BrowserSessionManager'
 import { platformFactory } from '#/platforms'
@@ -21,8 +21,6 @@ import { createCommentListenerTask } from '#/tasks/CommentListenerTask'
 import type { ITask } from '#/tasks/ITask'
 import { createSendBatchMessageTask } from '#/tasks/SendBatchMessageTask'
 import windowManager from '#/windowManager'
-
-const browserFactory = BrowserSessionManager.getInstance()
 
 export class AccountSession {
   private platform: IPlatform
@@ -44,7 +42,7 @@ export class AccountSession {
       storageState = JSON.parse(config.storageState)
     }
 
-    this.browserSession = await browserFactory.createSession(config.headless, storageState)
+    this.browserSession = await browserManager.createSession(config.headless, storageState)
 
     await this.ensureAuthenticated(this.browserSession, config.headless)
 
@@ -103,7 +101,7 @@ export class AccountSession {
       if (headless) {
         await this.browserSession.browser.close()
         this.logger.info('需要登录，请在打开的浏览器中登录')
-        this.browserSession = await browserFactory.createSession(false)
+        this.browserSession = await browserManager.createSession(false)
       }
       // 等待登录
       await this.platform.login(this.browserSession)
@@ -113,7 +111,7 @@ export class AccountSession {
       if (headless) {
         await this.browserSession.browser.close()
         this.logger.info('登录成功，浏览器将继续以无头模式运行')
-        this.browserSession = await browserFactory.createSession(headless, storageState)
+        this.browserSession = await browserManager.createSession(headless, storageState)
       }
       await this.ensureAuthenticated(this.browserSession, headless)
     }

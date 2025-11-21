@@ -1,7 +1,7 @@
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { createLogger } from '#/logger'
 import { accountManager } from '#/managers/AccountManager'
-import { BrowserSessionManager } from '#/managers/BrowserSessionManager'
+import { browserManager } from '#/managers/BrowserSessionManager'
 import { typedIpcMainHandle } from '#/utils'
 
 const TASK_NAME = '中控台'
@@ -10,7 +10,6 @@ function setupIpcHandlers() {
   typedIpcMainHandle(
     IPC_CHANNELS.tasks.liveControl.connect,
     async (_, { chromePath, headless, storageState, platform, account }) => {
-      const browserManager = BrowserSessionManager.getInstance()
       if (chromePath) {
         browserManager.setChromePath(chromePath)
       }
