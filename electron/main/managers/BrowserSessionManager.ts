@@ -18,35 +18,25 @@ export type StorageState = playwright.BrowserContextOptions['storageState']
 
 chromium.use(stealth())
 
-export class BrowserSessionManager {
+class BrowserSessionManager {
   private chromePath: string | null = null
-  private static instance: BrowserSessionManager
-
-  private constructor() {}
-
-  public static getInstance() {
-    if (!BrowserSessionManager.instance) {
-      BrowserSessionManager.instance = new BrowserSessionManager()
-    }
-    return BrowserSessionManager.instance
-  }
 
   public setChromePath(path: string) {
     this.chromePath = path
   }
 
-  private async initChromePath() {
+  private async getChromePathOrDefault() {
     if (!this.chromePath) {
       this.chromePath = await findChromium()
-      if (!this.chromePath) throw new Error('未找到浏览器')
     }
+    return this.chromePath
   }
 
   private async createBrowser(headless = true) {
-    await this.initChromePath()
+    const path = await this.getChromePathOrDefault()
     return chromium.launch({
       headless,
-      executablePath: this.chromePath as string,
+      executablePath: path,
     })
   }
 
@@ -63,3 +53,5 @@ export class BrowserSessionManager {
     return { browser, context, page }
   }
 }
+
+export const browserManager = new BrowserSessionManager()
