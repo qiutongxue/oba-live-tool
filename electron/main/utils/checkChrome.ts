@@ -1,199 +1,158 @@
+import assert from 'node:assert'
 import { exec } from 'node:child_process'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { promisify } from 'node:util'
+import { ErrorFactory } from '@praha/error-factory'
 import { createLogger } from '../logger'
 
 const execAsync = promisify(exec)
 const logger = createLogger('ChromiumChecker')
 
-async function findChromiumByCommonPath(commonPaths: string[]) {
-  for (const path of commonPaths) {
-    try {
-      const expandedPath = await execAsync(`echo ${path}`)
-      const { stdout: exists } = await execAsync(
-        `if exist "${expandedPath.stdout.trim()}" echo true`,
-      )
-      if (exists.trim() === 'true') {
-        return expandedPath.stdout.trim()
-      }
-    } catch {
-      // continue
-    }
-  }
-  return null
-}
+function findWindowsByCommonPath(relativePaths: string[]) {
+  const roots = [
+    process.env.ProgramFiles, // 'C:\Program Files'
+    process.env['ProgramFiles(x86)'], // 'C:\Program Files (x86)'
+    process.env.LocalAppData, // 'C:\Users\xxx\AppData\Local'
+  ].filter((r): r is string => !!r) // 过滤掉 undefined
 
-async function findChromiumByTasklist(executableName: string) {
-  try {
-    const { stdout: tasklistResult } = await execAsync(
-      `tasklist /FI "imagename eq ${executableName}" /NH`,
-    )
-    const lines = tasklistResult.trim().split('\n')
-    if (lines.length === 0 || lines[0].includes('No tasks')) {
-      throw new Error(`${executableName} is not running`)
-    }
-
-    // 提取第一个 Chrome 进程的 PID
-    const pid = lines[0].split(/\s+/)[1]
-    if (!pid) throw new Error('Failed to extract PID')
-
-    // 获取 Chrome 进程的可执行路径
-    const { stdout: result } = await execAsync(
-      // 使用 powershell 避免中文乱码
-      `powershell -Command "Get-Process -Id ${pid} | Select-Object -ExpandProperty Path"`,
-    )
-    const path = result.trim()
-    if (!path) {
-      throw new Error('Failed to extract Chrome path')
-    }
-    return path
-  } catch (err) {
-    logger.warn(`找不到 ${executableName}：${err}`)
-  }
-  return null
-}
-
-async function findAppPathWithOsaScript(appName: string) {
-  const command = `osascript -e 'POSIX path of (path to application "${appName}")'`
-  try {
-    const { stdout, stderr } = await execAsync(command)
-
-    if (stderr) {
-      if (!stdout.trim()) {
-        logger.error(`osascript stderr for "${appName}": ${stderr.trim()}`)
-        return null
-      }
-    }
-
-    const appPath = stdout.trim()
-    if (appPath) {
-      const fullPath = path.join(appPath, 'Contents', 'MacOS', appName)
+  // 2. 组合所有可能的完整路径
+  for (const root of roots) {
+    for (const relativePath of relativePaths) {
+      const fullPath = path.join(root, relativePath)
       if (fs.existsSync(fullPath)) {
-        logger.info(`找到 ${appName} 路径：${fullPath}`)
         return fullPath
       }
-      logger.error(`${appName} 路径不存在：${fullPath}`)
     }
-    logger.error(`未找到 ${appName} 路径`)
-    return null
-  } catch (error) {
-    logger.error(`${appName} 路径查找失败：${error}`)
-    return null
   }
+  return null
 }
 
-async function findChromiumOnWindows(
-  commonPaths: string[],
-  executableName: string,
-) {
-  const pathFromCommon = await findChromiumByCommonPath(commonPaths)
+async function findWindowsByPowerShell(processName: string) {
+  try {
+    // 移除扩展名 (chrome.exe -> chrome) 因为 Get-Process 使用的是进程名
+    const name = path.parse(processName).name
+
+    const command = `powershell -NoProfile -Command "Get-Process -Name '${name}' -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty Path"`
+
+    const { stdout } = await execAsync(command)
+    const result = stdout.trim()
+
+    if (result && fs.existsSync(result)) {
+      return result
+    }
+  } catch (err) {
+    logger.debug(`PowerShell 查找 ${processName} 失败 (可能未运行): ${err}`)
+  }
+  return null
+}
+
+async function findChromiumOnWindows(config: BrowserConfig) {
+  const pathFromCommon = findWindowsByCommonPath(config.commonPaths)
   if (pathFromCommon) {
-    logger.info(`通过通用路径找到 ${executableName}: ${pathFromCommon}`)
+    logger.debug(`通过通用路径找到 ${config.name}: ${pathFromCommon}`)
     return pathFromCommon
   }
 
-  // 其次尝试 tasklist
-  const pathFromTasklist = await findChromiumByTasklist(executableName)
-  if (pathFromTasklist) {
-    logger.info(`通过 tasklist 找到 ${executableName}: ${pathFromTasklist}`)
-    return pathFromTasklist
+  const pathFromProcess = await findWindowsByPowerShell(config.name)
+  if (pathFromProcess) {
+    logger.debug(`通过进程列表找到 ${config.name}: ${pathFromProcess}`)
+    return pathFromProcess
   }
 
-  logger.warn(`未能找到 ${executableName} (Windows)`)
-  return null // 明确返回 null 表示未找到
+  logger.warn(`未能找到 ${config.name} (Windows)`)
+  return null
 }
 
-async function findChromiumOnMac(commonPaths: string[], appName: string) {
-  for (const path of commonPaths) {
-    if (fs.existsSync(path)) {
-      logger.info(`通过预定义路径找到 ${appName}: ${path}`)
-      return path
+async function findChromiumOnMac(config: BrowserConfig) {
+  for (const p of config.commonPaths) {
+    if (fs.existsSync(p)) {
+      logger.debug(`通过预定义路径找到 ${config.name}: ${p}`)
+      return p
     }
   }
 
-  const pathFromOsa = await findAppPathWithOsaScript(appName)
-  if (pathFromOsa) {
-    logger.info(`通过 osascript 找到 ${appName}: ${pathFromOsa}`)
-    return pathFromOsa
+  // 使用 mdfind (Spotlight) 或 osascript
+  const appName = config.appNameForMac || config.name // 处理 .app 名字
+  const command = `osascript -e 'POSIX path of (path to application "${appName}")'`
+
+  try {
+    const { stdout } = await execAsync(command)
+    const appRoot = stdout.trim() // e.g. /Applications/Google Chrome.app/
+
+    if (appRoot) {
+      // 构造二进制路径: /Applications/Google Chrome.app/Contents/MacOS/Google Chrome
+      const binaryPath = path.join(appRoot, 'Contents', 'MacOS', appName)
+      if (fs.existsSync(binaryPath)) {
+        logger.debug(`通过 osascript 找到: ${binaryPath}`)
+        return binaryPath
+      }
+    }
+  } catch (error) {
+    logger.debug(`osascript 查找失败 ${appName}: ${error}`)
   }
 
-  logger.warn(`未能找到 ${appName} (macOS)`)
-  return null // 明确返回 null 表示未找到
+  logger.warn(`未能找到 ${config.name} (MacOS)`)
+  return null
 }
 
 interface BrowserConfig {
+  // Windows 下存的是相对路径，Mac 下是绝对路径
   commonPaths: string[]
-  name: string
+  name: string // Windows 下是 exe 名 (chrome.exe)
+  appNameForMac?: string // Mac 下是应用名 (Google Chrome)
 }
 
-interface PlatformConfig {
-  edge: BrowserConfig
-  chrome: BrowserConfig
-  findChromium: (commonPaths: string[], name: string) => Promise<string | null>
+const CONFIGS = {
+  win32: {
+    edge: {
+      commonPaths: ['Microsoft/Edge/Application/msedge.exe'],
+      name: 'msedge.exe',
+    },
+    chrome: {
+      commonPaths: ['Google/Chrome/Application/chrome.exe'],
+      name: 'chrome.exe',
+    },
+    finder: findChromiumOnWindows,
+  },
+  darwin: {
+    edge: {
+      commonPaths: ['/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge'],
+      name: 'Microsoft Edge',
+      appNameForMac: 'Microsoft Edge', // 用于 osascript
+    },
+    chrome: {
+      commonPaths: ['/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'],
+      name: 'Google Chrome',
+      appNameForMac: 'Google Chrome',
+    },
+    finder: findChromiumOnMac,
+  },
 }
 
-const windowsConfig: PlatformConfig = {
-  edge: {
-    commonPaths: [
-      '%ProgramFiles%\\Microsoft\\Edge\\Application\\msedge.exe',
-      '%ProgramFiles(x86)%\\Microsoft\\Edge\\Application\\msedge.exe',
-      '%LocalAppData%\\Microsoft\\Edge\\Application\\msedge.exe',
-    ],
-    name: 'msedge.exe',
-  },
-  chrome: {
-    commonPaths: [
-      '%ProgramFiles%\\Google\\Chrome\\Application\\chrome.exe',
-      '%ProgramFiles(x86)%\\Google\\Chrome\\Application\\chrome.exe',
-      '%LocalAppData%\\Google\\Chrome\\Application\\chrome.exe',
-    ],
-    name: 'chrome.exe',
-  },
-  findChromium: findChromiumOnWindows,
-}
-
-const macConfig: PlatformConfig = {
-  edge: {
-    commonPaths: [
-      '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
-    ],
-    // 注意：这里 'name' 应该用于 osascript，它需要应用名
-    name: 'Microsoft Edge',
-  },
-  chrome: {
-    commonPaths: [
-      '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-    ],
-    name: 'Google Chrome',
-  },
-  findChromium: findChromiumOnMac,
-}
-
-export async function findChromium(edge = false): Promise<string | null> {
+export async function findChromium(edge = false): Promise<string> {
   const platform = os.platform()
-  let config: PlatformConfig
+  assert(platform === 'win32' || platform === 'darwin')
+  const platformConfig = CONFIGS[platform]
 
-  if (platform === 'win32') {
-    config = windowsConfig
-  } else if (platform === 'darwin') {
-    config = macConfig
-  } else {
-    logger.error(`不支持的操作系统: ${platform}`)
-    return null
-  }
+  const targets = edge
+    ? [platformConfig.edge, platformConfig.chrome]
+    : [platformConfig.chrome, platformConfig.edge]
 
-  const browserConfig = edge
-    ? [config.edge, config.chrome]
-    : [config.chrome, config.edge]
-
-  for (const cfg of browserConfig) {
-    const path = await config.findChromium(cfg.commonPaths, cfg.name)
-    if (path) {
-      return path
+  for (const browser of targets) {
+    const result = await platformConfig.finder(browser)
+    if (result) {
+      logger.info(`找到浏览器路径：${result}`)
+      return result
     }
   }
 
-  return null
+  logger.error('未找到任何浏览器路径，请手动选择')
+  throw new ChromiumNotFoundError()
 }
+
+class ChromiumNotFoundError extends ErrorFactory({
+  name: 'ChromiumNotFoundError',
+  message: '未找到浏览器的可执行文件',
+}) {}
