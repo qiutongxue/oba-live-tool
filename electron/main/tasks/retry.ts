@@ -1,14 +1,15 @@
 // retry.ts
 
 import { Result } from '@praha/byethrow'
-import { UnexpectedError } from '#/errors/AppError'
+import { AbortError, UnexpectedError } from '#/errors/AppError'
 import type { ScopedLogger } from '#/logger' // 假设你有这个类型
-import { sleep } from '#/utils'
+import { abortableSleep } from '#/utils'
 
 export interface RetryOptions {
   maxRetries: number
   retryDelay: number
   logger?: ScopedLogger
+  signal?: AbortSignal
   onRetryError?: (err: unknown, attempt: number) => void
   shouldRetry?: (err: unknown, attempt: number) => boolean
 }
@@ -21,7 +22,8 @@ export async function runWithRetry<T>(
 
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     const result = await fn()
-    if (Result.isSuccess(result)) {
+    // 被中断后也要终止此次任务
+    if (Result.isSuccess(result) || result.error instanceof AbortError) {
       return result
     }
     const err = result.error
@@ -35,7 +37,11 @@ export async function runWithRetry<T>(
       return result
     }
 
-    await sleep(retryDelay)
+    const sleepResult = await abortableSleep(retryDelay, options.signal)
+    // 被中断
+    if (Result.isFailure(sleepResult)) {
+      return sleepResult
+    }
   }
   return Result.fail(new UnexpectedError({ description: '不可能出现的错误' }))
 }

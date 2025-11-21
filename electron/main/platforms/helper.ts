@@ -9,7 +9,7 @@ import {
   PageNotFoundError,
   type PlatformError,
 } from '#/errors/PlatformError'
-import { sleep } from '#/utils'
+import { abortableSleep, sleep } from '#/utils'
 import type { IElementFinder } from './IElementFinder'
 
 export async function connect(
@@ -213,8 +213,9 @@ export async function toggleButton(
   button: ElementHandle<SVGElement | HTMLElement>,
   sourceContent: string,
   targetContent: string,
+  signal?: AbortSignal,
   tryCount = 0,
-): Result.ResultAsync<void, PlatformError> {
+): Result.ResultAsync<void, Error> {
   if (tryCount > TOGGLE_BUTTON_MAX_TRY_COUNT) {
     return Result.fail(
       new MaxTryCountExceededError({
@@ -249,8 +250,10 @@ export async function toggleButton(
   }
   // button.click() 在抖店&百应的表现很诡异，所以用 dispatchEvent('click')
   await button.dispatchEvent('click')
-  await sleep(1000)
-  return toggleButton(button, sourceContent, targetContent, tryCount + 1)
+  return Result.pipe(
+    abortableSleep(1000, signal),
+    Result.andThen(() => toggleButton(button, sourceContent, targetContent, signal, tryCount + 1)),
+  )
 }
 
 /** 确保 page 非空 */

@@ -43,12 +43,13 @@ export class DevPlatform implements IPlatform, IPerformComment, IPerformPopup, I
     }
   }
 
-  async performPopup(id: number) {
+  async performPopup(id: number, signal?: AbortSignal) {
+    console.log(`-----------------讲解商品ID: ${id}`)
     return Result.pipe(
       ensurePage(this.mainPage),
       Result.andThen(page => getItemFromVirtualScroller(page, elementFinder, id)),
       Result.andThen(item => elementFinder.getPopUpButtonFromGoodsItem(item)),
-      Result.andThen(popupBtn => toggleButton(popupBtn, '讲解', '取消讲解')),
+      Result.andThen(popupBtn => toggleButton(popupBtn, '讲解', '取消讲解', signal)),
     )
   }
 

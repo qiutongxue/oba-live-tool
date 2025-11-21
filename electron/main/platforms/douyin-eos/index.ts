@@ -18,9 +18,7 @@ const PLATFORM_NAME = '抖音团购' as const
 /**
  * 抖音团购
  */
-export class DouyinEosPlatform
-  implements IPlatform, IPerformPopup, IPerformComment
-{
+export class DouyinEosPlatform implements IPlatform, IPerformPopup, IPerformComment {
   readonly _isPerformComment = true
   readonly _isPerformPopup = true
   public mainPage: Page | null = null
@@ -48,10 +46,7 @@ export class DouyinEosPlatform
   }
 
   async getAccountName(session: BrowserSession) {
-    const accountName = await getAccountName(
-      session.page,
-      SELECTORS.ACCOUNT_NAME,
-    )
+    const accountName = await getAccountName(session.page, SELECTORS.ACCOUNT_NAME)
     return accountName ?? ''
   }
 
@@ -59,15 +54,13 @@ export class DouyinEosPlatform
     throw new Error('Method not implemented.')
   }
 
-  async performPopup(id: number) {
+  async performPopup(id: number, signal?: AbortSignal) {
     return Result.pipe(
       ensurePage(this.mainPage),
-      Result.andThen(page =>
-        getItemFromVirtualScroller(page, elementFinder, id),
-      ),
+      Result.andThen(page => getItemFromVirtualScroller(page, elementFinder, id)),
       Result.andThen(item => elementFinder.getPopUpButtonFromGoodsItem(item)),
       Result.andThen(popupBtn =>
-        toggleButton(popupBtn, TEXTS.POPUP_BUTTON, TEXTS.POPUP_BUTTON_CANCLE),
+        toggleButton(popupBtn, TEXTS.POPUP_BUTTON, TEXTS.POPUP_BUTTON_CANCLE, signal),
       ),
     )
   }
