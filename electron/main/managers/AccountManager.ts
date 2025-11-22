@@ -25,7 +25,7 @@ export class AccountManager {
     const existSession = this.accountSessions.get(account.id)
     if (existSession) {
       this.logger.warn('检测到已存在建立的连接，将关闭已建立的连接')
-      await existSession.disconnect()
+      existSession.disconnect()
     }
 
     const accountSession = new AccountSession(platformName, account)
