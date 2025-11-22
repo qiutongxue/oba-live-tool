@@ -1,15 +1,11 @@
+import { Result } from '@praha/byethrow'
 import type { Page } from 'playwright'
 import type { BrowserSession } from '#/managers/BrowserSessionManager'
 import { DouyinPlatform } from '../douyin'
 import { CompassListener, ControlListener } from '../douyin/commentListener'
 // 百应和抖店共用
 import { connect, ensurePage, openUrlByElement } from '../helper'
-import type {
-  ICommentListener,
-  IPerformComment,
-  IPerformPopup,
-  IPlatform,
-} from '../IPlatform'
+import type { ICommentListener, IPerformComment, IPerformPopup, IPlatform } from '../IPlatform'
 import { REGEXPS, SELECTORS, URLS } from './constant'
 
 const PLATFORM_NAME = '巨量百应' as const
@@ -17,9 +13,7 @@ const PLATFORM_NAME = '巨量百应' as const
 /**
  * 巨量百应
  */
-export class BuyinPlatform
-  implements IPlatform, IPerformPopup, IPerformComment, ICommentListener
-{
+export class BuyinPlatform implements IPlatform, IPerformPopup, IPerformComment, ICommentListener {
   readonly _isPerformComment = true
   readonly _isPerformPopup = true
   readonly _isCommentListener = true
@@ -63,9 +57,7 @@ export class BuyinPlatform
 
   async getAccountName(session: BrowserSession) {
     await session.page.waitForSelector(SELECTORS.ACCOUNT_NAME)
-    const accountName = await session.page
-      .$(SELECTORS.ACCOUNT_NAME)
-      .then(el => el?.textContent())
+    const accountName = await session.page.$(SELECTORS.ACCOUNT_NAME).then(el => el?.textContent())
     return accountName ?? ''
   }
 
@@ -73,27 +65,27 @@ export class BuyinPlatform
     throw new Error('Method not implemented.')
   }
 
-  async performPopup(id: number): Promise<void> {
-    await DouyinPlatform.prototype.performPopup.call(this, id)
+  async performPopup(...args: Parameters<IPerformPopup['performPopup']>) {
+    return await DouyinPlatform.prototype.performPopup.call(this, ...args)
   }
 
   async performComment(message: string, pinTop: boolean) {
-    return await DouyinPlatform.prototype.performComment.call(
-      this,
-      message,
-      pinTop,
-    )
+    return await DouyinPlatform.prototype.performComment.call(this, message, pinTop)
   }
 
   startCommentListener(
     onComment: (comment: DouyinLiveMessage) => void,
     source: 'control' | 'compass',
   ) {
-    ensurePage(this.mainPage)
+    const pageResult = ensurePage(this.mainPage)
+    if (Result.isFailure(pageResult)) {
+      throw pageResult.error
+    }
+    const page = pageResult.value
     if (source === 'control') {
-      this.commentListener = new ControlListener(this.mainPage)
+      this.commentListener = new ControlListener(page)
     } else {
-      this.commentListener = new CompassListener('buyin', this.mainPage)
+      this.commentListener = new CompassListener('buyin', page)
     }
     return this.commentListener.startCommentListener(onComment, source)
   }
@@ -109,13 +101,11 @@ export class BuyinPlatform
     return this.commentListener?.getCommentListenerPage() ?? this.mainPage
   }
 
-  getPopupPage(): Page {
-    ensurePage(this.mainPage)
-    return this.mainPage
+  getPopupPage() {
+    return ensurePage(this.mainPage)
   }
 
-  getCommentPage(): Page {
-    ensurePage(this.mainPage)
-    return this.mainPage
+  getCommentPage() {
+    return ensurePage(this.mainPage)
   }
 }

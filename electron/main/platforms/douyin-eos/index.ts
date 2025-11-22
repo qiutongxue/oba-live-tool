@@ -1,3 +1,4 @@
+import { Result } from '@praha/byethrow'
 import type { Page } from 'playwright'
 import type { BrowserSession } from '#/managers/BrowserSessionManager'
 import {
@@ -5,11 +6,11 @@ import {
   connect,
   ensurePage,
   getAccountName,
+  getItemFromVirtualScroller,
   toggleButton,
-  virtualScroller,
 } from '../helper'
 import type { IPerformComment, IPerformPopup, IPlatform } from '../IPlatform'
-import { REGEXPS, SELECTORS, URLS } from './constant'
+import { REGEXPS, SELECTORS, TEXTS, URLS } from './constant'
 import { douyinEosElementFinder as elementFinder } from './element-finder'
 
 const PLATFORM_NAME = '抖音团购' as const
@@ -17,9 +18,7 @@ const PLATFORM_NAME = '抖音团购' as const
 /**
  * 抖音团购
  */
-export class DouyinEosPlatform
-  implements IPlatform, IPerformPopup, IPerformComment
-{
+export class DouyinEosPlatform implements IPlatform, IPerformPopup, IPerformComment {
   readonly _isPerformComment = true
   readonly _isPerformPopup = true
   public mainPage: Page | null = null
@@ -47,10 +46,7 @@ export class DouyinEosPlatform
   }
 
   async getAccountName(session: BrowserSession) {
-    const accountName = await getAccountName(
-      session.page,
-      SELECTORS.ACCOUNT_NAME,
-    )
+    const accountName = await getAccountName(session.page, SELECTORS.ACCOUNT_NAME)
     return accountName ?? ''
   }
 
@@ -58,29 +54,30 @@ export class DouyinEosPlatform
     throw new Error('Method not implemented.')
   }
 
-  async performPopup(id: number): Promise<void> {
-    ensurePage(this.mainPage)
-    const item = await virtualScroller(this.mainPage, elementFinder, id)
-    const popupBtn = await elementFinder.getPopUpButtonFromGoodsItem(item)
-
-    await toggleButton(popupBtn, '取消讲解', '讲解')
+  async performPopup(id: number, signal?: AbortSignal) {
+    return Result.pipe(
+      ensurePage(this.mainPage),
+      Result.andThen(page => getItemFromVirtualScroller(page, elementFinder, id)),
+      Result.andThen(item => elementFinder.getPopUpButtonFromGoodsItem(item)),
+      Result.andThen(popupBtn =>
+        toggleButton(popupBtn, TEXTS.POPUP_BUTTON, TEXTS.POPUP_BUTTON_CANCLE, signal),
+      ),
+    )
   }
 
   async performComment(message: string) {
-    ensurePage(this.mainPage)
-    await comment(this.mainPage, elementFinder, message, false)
-    // 抖音团购没有置顶评论功能
-    return false
+    return Result.pipe(
+      ensurePage(this.mainPage),
+      Result.andThen(page => comment(page, elementFinder, message, false)),
+    )
   }
 
-  getPopupPage(): Page {
-    ensurePage(this.mainPage)
-    return this.mainPage
+  getPopupPage() {
+    return ensurePage(this.mainPage)
   }
 
-  getCommentPage(): Page {
-    ensurePage(this.mainPage)
-    return this.mainPage
+  getCommentPage() {
+    return ensurePage(this.mainPage)
   }
 
   get platformName() {

@@ -1,14 +1,11 @@
+import { Result } from '@praha/byethrow'
+import { ErrorFactory } from '@praha/error-factory'
 import { merge } from 'lodash-es'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
+import { AbortError } from '#/errors/AppError'
 import type { ScopedLogger } from '#/logger'
 import type { IPerformComment } from '#/platforms/IPlatform'
-import {
-  errorMessage,
-  insertRandomSpaces,
-  randomInt,
-  replaceVariant,
-  takeScreenshot,
-} from '#/utils'
+import { insertRandomSpaces, randomInt, replaceVariant, takeScreenshot } from '#/utils'
 import windowManager from '#/windowManager'
 import { createIntervalTask } from './IntervalTask'
 import { runWithRetry } from './retry'
@@ -29,6 +26,18 @@ export function createAutoCommentTask(
   const logger = lgr.scope(TASK_NAME)
   let arrayIndex = -1
   let config = { ...taskConfig }
+
+  const intervalTaskResult = createIntervalTask(execute, {
+    interval: config.scheduler.interval,
+    logger,
+    taskName: TASK_NAME,
+  })
+
+  if (Result.isFailure(intervalTaskResult)) {
+    return intervalTaskResult
+  }
+
+  const intervalTask = intervalTaskResult.value
 
   function getNextMessage() {
     const messages = config.messages
@@ -53,90 +62,93 @@ export function createAutoCommentTask(
     return messages[arrayIndex]
   }
 
-  function validateConfig(userConfig: AutoCommentConfig) {
-    intervalTask.validateInterval(userConfig.scheduler.interval)
-    if (userConfig.messages.length === 0) {
-      throw new Error('消息配置验证失败: 必须提供至少一条消息')
-    }
-
-    const badIndex = userConfig.messages.findIndex(
-      msg => msg.content.length > 50 && maxLength(msg.content) > 50,
-    )
-    if (badIndex >= 0) {
-      throw new Error(
-        `消息配置验证失败: 第 ${badIndex + 1} 条消息字数超出 50 字`,
+  function validateConfig(userConfig: AutoCommentConfig): Result.Result<void, Error> {
+    const validateMessage = (messages: AutoCommentConfig['messages']) => {
+      const isEmptyArray = messages.length === 0
+      const overLengthIndex = messages.findIndex(
+        msg => msg.content.length > 50 && maxLength(msg.content) > 50,
       )
-    }
-    const emptyMessageIndex = userConfig.messages.findIndex(
-      msg => msg.content.trim().length === 0,
-    )
-    if (emptyMessageIndex >= 0) {
-      throw new Error(`消息配置验证失败: 第 ${badIndex + 1} 条消息为空`)
+      const emptyContentIndex = messages.findIndex(msg => msg.content.trim().length === 0)
+      if (isEmptyArray) return '必须提供至少一条消息'
+      if (overLengthIndex >= 0) return `第 ${overLengthIndex + 1} 条消息字数超出 50 字`
+      if (emptyContentIndex >= 0) return `第 ${emptyContentIndex + 1} 条消息为空`
     }
 
-    logger.info(`消息配置验证通过，共加载 ${userConfig.messages.length} 条消息`)
+    return Result.pipe(
+      // 验证 interval
+      intervalTask.validateInterval(userConfig.scheduler.interval),
+      // 验证 messages
+      Result.andThen(() => {
+        const errMsg = validateMessage(userConfig.messages)
+        if (errMsg) return Result.fail(new MessageValidationError({ description: errMsg }))
+        return Result.succeed()
+      }),
+      Result.inspect(_ =>
+        logger.info(`消息配置验证通过，共加载 ${userConfig.messages.length} 条消息`),
+      ),
+    )
   }
 
-  const execute = async (signal: AbortSignal) => {
-    try {
-      await runWithRetry(
-        async () => {
-          if (signal.aborted) {
-            return
-          }
-          const message = getNextMessage()
-          // 替换变量
-          let content = replaceVariant(message.content)
-          // 添加随机空格
-          if (config.extraSpaces) {
-            content = insertRandomSpaces(content)
-          }
-          const isPinTop = await platform.performComment(
-            content,
-            message.pinTop,
+  async function execute(signal: AbortSignal) {
+    const result = await runWithRetry(
+      async () => {
+        if (signal.aborted) {
+          return Result.fail(new AbortError())
+        }
+        const message = getNextMessage()
+        // 替换变量
+        let content = replaceVariant(message.content)
+        // 添加随机空格
+        if (config.extraSpaces) {
+          content = insertRandomSpaces(content)
+        }
+        const pinTop = await platform.performComment(content, message.pinTop)
+        if (Result.isFailure(pinTop)) {
+          return pinTop
+        }
+        logger.success(`发送${pinTop.value ? '「置顶」' : ''}消息: ${content}`)
+        return Result.succeed()
+      },
+      {
+        ...retryOptions,
+        logger,
+        signal,
+        onRetryError: () => {
+          Result.pipe(
+            platform.getCommentPage(),
+            Result.map(page => takeScreenshot(page, TASK_NAME, account.name)),
           )
-          logger.success(`发送${isPinTop ? '「置顶」' : ''}消息: ${content}`)
         },
-        {
-          ...retryOptions,
-          logger,
-          onRetryError: () =>
-            takeScreenshot(platform.getCommentPage(), TASK_NAME, account.name),
-        },
-      )
-    } catch (err) {
-      windowManager.send(
-        IPC_CHANNELS.tasks.autoMessage.stoppedEvent,
-        account.id,
-      )
-      throw err
-    }
+      },
+    )
+    return result
   }
 
-  const intervalTask = createIntervalTask(execute, {
-    interval: config.scheduler.interval,
-    logger,
-    taskName: TASK_NAME,
+  function updateConfig(newConfig: Partial<AutoCommentConfig>) {
+    const mergedConfig = merge({}, config, newConfig)
+    return Result.pipe(
+      validateConfig(mergedConfig),
+      Result.andThen(_ => intervalTask.validateInterval(mergedConfig.scheduler.interval)),
+      Result.inspect(() => {
+        config = mergedConfig
+        // 更新配置后重新启动任务
+        intervalTask.restart()
+      }),
+      Result.inspectError(err => logger.error('配置更新失败：', err)),
+    )
+  }
+
+  intervalTask.addStopListener(() => {
+    windowManager.send(IPC_CHANNELS.tasks.autoMessage.stoppedEvent, account.id)
   })
 
-  validateConfig(config)
-
-  return {
-    ...intervalTask,
-    updateConfig(newConfig: Partial<AutoCommentConfig>) {
-      try {
-        const mergedConfig = merge({}, config, newConfig)
-        validateConfig(mergedConfig)
-        if (newConfig.scheduler?.interval) {
-          intervalTask.updateInterval(config.scheduler.interval)
-        }
-        config = mergedConfig
-      } catch (error) {
-        logger.error(`配置更新失败: ${errorMessage(error)}`)
-        throw error
-      }
-    },
-  }
+  return Result.pipe(
+    validateConfig(config),
+    Result.map(() => ({
+      ...intervalTask,
+      updateConfig,
+    })),
+  )
 }
 
 function maxLength(msg: string) {
@@ -161,3 +173,11 @@ function maxLength(msg: string) {
   }
   return length
 }
+
+class MessageValidationError extends ErrorFactory({
+  name: 'MessageValidationError',
+  message: ({ description }) => `消息配置验证失败: ${description}`,
+  fields: ErrorFactory.fields<{
+    description: string
+  }>(),
+}) {}

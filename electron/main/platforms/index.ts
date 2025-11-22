@@ -1,9 +1,22 @@
-export { BuyinPlatform } from './buyin'
-export { DevPlatform } from './dev'
-export { DouyinPlatform } from './douyin'
-export { DouyinEosPlatform } from './douyin-eos'
-export { KuaishouPlatform } from './kuaishou'
-export { TaobaoPlatform } from './taobao'
-export { WechatChannelPlatform } from './wechat-channels'
-export { XiaohongshuPlatform } from './xiaohongshu'
-export { XiaohongshuPgyPlatform } from './xiaohongshu-pgy'
+import { BuyinPlatform } from './buyin'
+import { DevPlatform } from './dev'
+import { DouyinPlatform } from './douyin'
+import { DouyinEosPlatform } from './douyin-eos'
+import type { IPlatform } from './IPlatform'
+import { KuaishouPlatform } from './kuaishou'
+import { TaobaoPlatform } from './taobao'
+import { WechatChannelPlatform } from './wechat-channels'
+import { XiaohongshuPlatform } from './xiaohongshu'
+import { XiaohongshuPgyPlatform } from './xiaohongshu-pgy'
+
+export const platformFactory: Record<LiveControlPlatform, { new (): IPlatform }> = {
+  buyin: BuyinPlatform,
+  douyin: DouyinPlatform,
+  redbook: XiaohongshuPlatform,
+  wxchannel: WechatChannelPlatform,
+  taobao: TaobaoPlatform,
+  kuaishou: KuaishouPlatform,
+  eos: DouyinEosPlatform,
+  dev: DevPlatform,
+  pgy: XiaohongshuPgyPlatform,
+}

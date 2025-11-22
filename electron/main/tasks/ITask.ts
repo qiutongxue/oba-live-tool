@@ -1,3 +1,5 @@
+import type { Result } from '@praha/byethrow'
+
 export enum TaskStopReason {
   /** 任务正常完成 */
   COMPLETED = 'completed',
@@ -7,18 +9,14 @@ export enum TaskStopReason {
   MANUAL = 'manual',
 }
 
-export type TaskStopCallback = (
-  id: string,
-  reason: TaskStopReason,
-  error?: unknown,
-) => void
+export type TaskStopCallback = (id: string, reason: TaskStopReason, error?: unknown) => void
 
 export interface ITask<Cfg = unknown> {
   getTaskId(): string
-  start(): void | Promise<void>
+  start(): void
   stop(reason?: TaskStopReason, err?: unknown): void
   /** 任务停止时的回调（不管是手动中止、任务完成或是抛出异常都会触发） */
   addStopListener(callback: TaskStopCallback): void
-  updateConfig?: (cfg: Partial<Cfg>) => void
+  updateConfig?: (cfg: Partial<Cfg>) => Result.Result<void, Error>
   isRunning(): boolean
 }

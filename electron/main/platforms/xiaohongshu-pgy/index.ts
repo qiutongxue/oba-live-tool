@@ -10,9 +10,7 @@ const PLATFORM_NAME = '蒲公英' as const
 /**
  * 蒲公英
  */
-export class XiaohongshuPgyPlatform
-  implements IPlatform, IPerformPopup, IPerformComment
-{
+export class XiaohongshuPgyPlatform implements IPlatform, IPerformPopup, IPerformComment {
   readonly _isPerformComment = true
   readonly _isPerformPopup = true
   private mainPage: Page | null = null
@@ -65,10 +63,7 @@ export class XiaohongshuPgyPlatform
   }
 
   async getAccountName(session: BrowserSession) {
-    const accountName = await getAccountName(
-      session.page,
-      SELECTORS.ACCOUNT_NAME,
-    )
+    const accountName = await getAccountName(session.page, SELECTORS.ACCOUNT_NAME)
     return accountName ?? ''
   }
 
@@ -76,26 +71,20 @@ export class XiaohongshuPgyPlatform
     throw new Error('Method not implemented.')
   }
 
-  async performPopup(id: number) {
-    return await XiaohongshuPlatform.prototype.performPopup.call(this, id)
+  async performPopup(...args: Parameters<IPerformPopup['performPopup']>) {
+    return XiaohongshuPlatform.prototype.performPopup.apply(this, args)
   }
 
-  async performComment(message: string, pinTop?: boolean): Promise<boolean> {
-    return await XiaohongshuPlatform.prototype.performComment.call(
-      this,
-      message,
-      pinTop,
-    )
+  async performComment(message: string) {
+    return XiaohongshuPlatform.prototype.performComment.call(this, message)
   }
 
-  getPopupPage(): Page {
-    ensurePage(this.mainPage)
-    return this.mainPage
+  getPopupPage() {
+    return ensurePage(this.mainPage)
   }
 
-  getCommentPage(): Page {
-    ensurePage(this.mainPage)
-    return this.mainPage
+  getCommentPage() {
+    return ensurePage(this.mainPage)
   }
 
   get platformName() {

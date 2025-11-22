@@ -1,6 +1,13 @@
+import { Result } from '@praha/byethrow'
+import { ErrorFactory } from '@praha/error-factory'
 import { emitter } from '#/event/eventBus'
 import { createLogger } from '#/logger'
 import { AccountSession } from '#/services/AccountSession'
+
+class AccountNotFoundError extends ErrorFactory({
+  name: 'AccountNotFoundError',
+  message: '账号不存在，请先连接中控台',
+}) {}
 
 export class AccountManager {
   accountSessions: Map<string, AccountSession> = new Map()
@@ -18,7 +25,7 @@ export class AccountManager {
     const existSession = this.accountSessions.get(account.id)
     if (existSession) {
       this.logger.warn('检测到已存在建立的连接，将关闭已建立的连接')
-      await existSession.disconnect()
+      existSession.disconnect()
     }
 
     const accountSession = new AccountSession(platformName, account)
@@ -26,12 +33,12 @@ export class AccountManager {
     return accountSession
   }
 
-  getSession(accountId: string) {
+  getSession(accountId: string): Result.Result<AccountSession, Error> {
     const accountSession = this.accountSessions.get(accountId)
     if (!accountSession) {
-      throw new Error('找不到对应的账户')
+      return Result.fail(new AccountNotFoundError())
     }
-    return accountSession
+    return Result.succeed(accountSession)
   }
 
   setAccountName(accountId: string, accountName: string) {
@@ -51,7 +58,9 @@ export class AccountManager {
   }
 
   cleanup() {
-    this.accountSessions.values().forEach(session => session.disconnect())
+    this.accountSessions.values().forEach(session => {
+      session.disconnect()
+    })
   }
 }
 

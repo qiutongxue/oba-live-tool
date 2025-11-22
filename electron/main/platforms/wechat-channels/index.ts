@@ -1,11 +1,12 @@
+import { Result } from '@praha/byethrow'
 import type { Page } from 'playwright'
 import type { BrowserSession } from '#/managers/BrowserSessionManager'
 import {
   comment,
   ensurePage,
   getAccountName,
+  getItemFromVirtualScroller,
   toggleButton,
-  virtualScroller,
 } from '../helper'
 import type { IPerformComment, IPerformPopup, IPlatform } from '../IPlatform'
 import { REGEXPS, SELECTORS, TEXT, URLS } from './constant'
@@ -16,9 +17,7 @@ const PLATFORM_NAME = '微信视频号' as const
 /**
  * 微信视频号
  */
-export class WechatChannelPlatform
-  implements IPlatform, IPerformPopup, IPerformComment
-{
+export class WechatChannelPlatform implements IPlatform, IPerformPopup, IPerformComment {
   readonly _isPerformComment = true
   readonly _isPerformPopup = true
   private mainPage: Page | null = null
@@ -81,29 +80,32 @@ export class WechatChannelPlatform
     return accountName ?? ''
   }
 
-  async disconnect(): Promise<void> {}
-
-  async performPopup(id: number): Promise<void> {
-    ensurePage(this.productsPage)
-    const item = await virtualScroller(this.productsPage, elementFinder, id)
-    const btn = await elementFinder.getPopUpButtonFromGoodsItem(item)
-    await toggleButton(btn, TEXT.POPUP_BUTTON_CANCLE, TEXT.POPUP_BUTTON)
+  async disconnect(): Promise<void> {
+    throw new Error('Method not implemented.')
   }
 
-  async performComment(message: string, pinTop?: boolean): Promise<boolean> {
-    ensurePage(this.mainPage)
-    const result = await comment(this.mainPage, elementFinder, message, pinTop)
-    return result.pinTop
+  async performPopup(id: number, signal?: AbortSignal) {
+    return Result.pipe(
+      ensurePage(this.productsPage),
+      Result.andThen(page => getItemFromVirtualScroller(page, elementFinder, id)),
+      Result.andThen(item => elementFinder.getPopUpButtonFromGoodsItem(item)),
+      Result.andThen(btn => toggleButton(btn, TEXT.POPUP_BUTTON, TEXT.POPUP_BUTTON_CANCLE, signal)),
+    )
   }
 
-  getPopupPage(): Page {
-    ensurePage(this.productsPage)
-    return this.productsPage
+  async performComment(message: string) {
+    return Result.pipe(
+      ensurePage(this.mainPage),
+      Result.andThen(page => comment(page, elementFinder, message, false)),
+    )
   }
 
-  getCommentPage(): Page {
-    ensurePage(this.mainPage)
-    return this.mainPage
+  getPopupPage() {
+    return ensurePage(this.productsPage)
+  }
+
+  getCommentPage() {
+    return ensurePage(this.mainPage)
   }
 
   get platformName() {

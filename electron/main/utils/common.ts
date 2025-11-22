@@ -1,3 +1,5 @@
+import { Result } from '@praha/byethrow'
+import { AbortError } from '#/errors/AppError'
 import 'dotenv/config'
 import { mergeWith } from 'lodash-es'
 
@@ -7,6 +9,35 @@ export function randomInt(min: number, max: number): number {
 
 export async function sleep(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+export async function abortableSleep(
+  ms: number,
+  signal?: AbortSignal,
+): Result.ResultAsync<void, Error> {
+  function sleepPromise() {
+    return new Promise<void>((resolve, reject) => {
+      if (signal?.aborted) {
+        reject(new AbortError())
+        return
+      }
+      const timer = setTimeout(resolve, ms)
+      const onAbort = () => {
+        cleanup()
+        reject(new AbortError())
+      }
+      const cleanup = () => {
+        clearTimeout(timer)
+        signal?.removeEventListener('abort', onAbort)
+      }
+      signal?.addEventListener('abort', onAbort)
+    })
+  }
+  return Result.try({
+    immediate: true,
+    try: async () => await sleepPromise(),
+    catch: () => new AbortError(),
+  })
 }
 
 export function isDev() {
@@ -24,10 +55,7 @@ export function errorMessage(error: unknown) {
   return String(error)
 }
 
-export function insertRandomSpaces(
-  text: string,
-  insertionProbability = 0.2,
-): string {
+export function insertRandomSpaces(text: string, insertionProbability = 0.2): string {
   // 不处理空字符串或概率为0的情况
   if (!text || insertionProbability <= 0) return text
   // 不能超过 50 个字符，且不要添加太多的空格
@@ -86,10 +114,7 @@ export function replaceVariant(msg: string) {
   })
 }
 
-function arrayReplaceCustomizer<Value1, Value2>(
-  _objValue: Value1,
-  srcValue: Value2,
-) {
+function arrayReplaceCustomizer<Value1, Value2>(_objValue: Value1, srcValue: Value2) {
   if (Array.isArray(srcValue)) {
     // 如果源对象的属性值是一个数组 (即 configUpdates 里的值是数组)，
     // 则直接返回这个源数组，它将替换掉目标对象中的对应数组。

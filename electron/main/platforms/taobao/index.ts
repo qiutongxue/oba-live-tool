@@ -1,3 +1,4 @@
+import { Result } from '@praha/byethrow'
 import type { Page } from 'playwright'
 import type { BrowserSession } from '#/managers/BrowserSessionManager'
 import { sleep } from '#/utils'
@@ -6,7 +7,7 @@ import {
   connect,
   ensurePage,
   getAccountName,
-  virtualScroller,
+  getItemFromVirtualScroller,
 } from '../helper'
 import type { IPerformComment, IPerformPopup, IPlatform } from '../IPlatform'
 import { REGEXPS, SELECTORS, URLS } from './constant'
@@ -88,29 +89,31 @@ export class TaobaoPlatform
     throw new Error('Method not implemented.')
   }
 
-  async performPopup(id: number): Promise<void> {
-    ensurePage(this.mainPage)
-    const item = await virtualScroller(this.mainPage, elementFinder, id)
-    const btn = await elementFinder.getPopUpButtonFromGoodsItem(item)
-    // 淘宝弹窗直接点击即可
-    await btn.dispatchEvent('click')
+  async performPopup(id: number) {
+    return Result.pipe(
+      ensurePage(this.mainPage),
+      Result.andThen(page =>
+        getItemFromVirtualScroller(page, elementFinder, id),
+      ),
+      Result.andThen(item => elementFinder.getPopUpButtonFromGoodsItem(item)),
+      Result.inspect(btn => btn.dispatchEvent('click')),
+      Result.andThen(_ => Result.succeed()),
+    )
   }
 
-  async performComment(message: string): Promise<boolean> {
-    ensurePage(this.mainPage)
-    await comment(this.mainPage, elementFinder, message, false)
-    // 淘宝没有评论置顶
-    return false
+  async performComment(message: string) {
+    return Result.pipe(
+      ensurePage(this.mainPage),
+      Result.andThen(page => comment(page, elementFinder, message, false)),
+    )
   }
 
-  getPopupPage(): Page {
-    ensurePage(this.mainPage)
-    return this.mainPage
+  getPopupPage() {
+    return ensurePage(this.mainPage)
   }
 
-  getCommentPage(): Page {
-    ensurePage(this.mainPage)
-    return this.mainPage
+  getCommentPage() {
+    return ensurePage(this.mainPage)
   }
 
   get platformName() {

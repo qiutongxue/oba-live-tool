@@ -1,4 +1,9 @@
+import { Result } from '@praha/byethrow'
 import type { Page } from 'playwright'
+import {
+  ElementContentMismatchedError,
+  PageNotFoundError,
+} from '#/errors/PlatformError'
 import type { BrowserSession } from '#/managers/BrowserSessionManager'
 import { sleep } from '#/utils'
 import {
@@ -6,7 +11,7 @@ import {
   connect,
   ensurePage,
   getAccountName,
-  virtualScroller,
+  getItemFromVirtualScroller,
 } from '../helper'
 import type { IPerformComment, IPerformPopup, IPlatform } from '../IPlatform'
 import { REGEXPS, SELECTORS, URLS } from './constant'
@@ -66,26 +71,43 @@ export class KuaishouPlatform
     throw new Error('Method not implemented.')
   }
 
-  async performComment(message: string, pinTop?: boolean): Promise<boolean> {
-    ensurePage(this.mainPage)
-    await comment(this.mainPage, elementFinder, message, pinTop)
-    return !!pinTop
+  async performComment(message: string, pinTop?: boolean) {
+    return Result.pipe(
+      ensurePage(this.mainPage),
+      Result.andThen(page => comment(page, elementFinder, message, pinTop)),
+    )
   }
 
-  getCommentPage(): Page {
-    ensurePage(this.mainPage)
-    return this.mainPage
+  getCommentPage() {
+    return ensurePage(this.mainPage)
   }
 
-  async performPopup(id: number): Promise<void> {
-    ensurePage(this.mainPage)
-    const item = await virtualScroller(this.mainPage, elementFinder, id)
-    const button = await elementFinder.getPopUpButtonFromGoodsItem(item)
-    const buttonText = (await button.textContent())?.trim()
-    if (buttonText !== '结束讲解' && buttonText !== '开始讲解') {
-      throw new Error(`不是讲解按钮，是 ${buttonText} 按钮`)
+  async performPopup(id: number) {
+    if (!this.mainPage) {
+      return Result.fail(new PageNotFoundError())
     }
-    await button.dispatchEvent('click')
+    const item = await getItemFromVirtualScroller(
+      this.mainPage,
+      elementFinder,
+      id,
+    )
+    if (Result.isFailure(item)) {
+      return item
+    }
+    const button = await elementFinder.getPopUpButtonFromGoodsItem(item.value)
+    if (Result.isFailure(button)) {
+      return button
+    }
+    const buttonText = (await button.value.textContent())?.trim() ?? ''
+    if (buttonText !== '结束讲解' && buttonText !== '开始讲解') {
+      return Result.fail(
+        new ElementContentMismatchedError({
+          current: buttonText,
+          target: '结束讲解或开始讲解',
+        }),
+      )
+    }
+    await button.value.dispatchEvent('click')
     // 判断是否会出现 modal
     const modalNextButton = await this.mainPage
       .waitForSelector(SELECTORS.goodsItem.POPUP_CONFIRM_BUTTON, {
@@ -102,18 +124,28 @@ export class KuaishouPlatform
       // 为了以防万一等待一段时间
       await sleep(100)
       // 注意：此时无法使用原先的按钮，需要重新查找
-      const newButton = await elementFinder.getPopUpButtonFromGoodsItem(item)
-      const newButtonText = await newButton.textContent()
-      if (newButtonText !== '开始讲解') {
-        throw new Error(`无法开始新的讲解，讲解按钮为：${newButtonText}`)
+      const newButton = await elementFinder.getPopUpButtonFromGoodsItem(
+        item.value,
+      )
+      if (Result.isFailure(newButton)) {
+        return newButton
       }
-      newButton.dispatchEvent('click')
+      const newButtonText = (await newButton.value.textContent())?.trim() ?? ''
+      if (newButtonText !== '开始讲解') {
+        return Result.fail(
+          new ElementContentMismatchedError({
+            current: newButtonText,
+            target: '开始讲解',
+          }),
+        )
+      }
+      newButton.value.dispatchEvent('click')
     }
+    return Result.succeed()
   }
 
-  getPopupPage(): Page {
-    ensurePage(this.mainPage)
-    return this.mainPage
+  getPopupPage() {
+    return ensurePage(this.mainPage)
   }
 
   get platformName() {

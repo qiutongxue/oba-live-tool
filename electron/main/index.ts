@@ -1,12 +1,12 @@
-import { createRequire } from 'node:module'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
-import { app, BrowserWindow, ipcMain, shell } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
 import { updateManager } from './managers/UpdateManager'
 import windowManager from './windowManager'
 import './ipc'
+import { createLogger } from './logger'
 import { accountManager } from './managers/AccountManager'
 
 // const _require = createRequire(import.meta.url)
@@ -21,6 +21,39 @@ import { accountManager } from './managers/AccountManager'
 // ├─┬ dist
 // │ └── index.html    > Electron-Renderer
 //
+
+function createBoxedString(lines: string[]) {
+  // 1. 计算最长的一行文字长度
+  const maxLength = Math.max(...lines.map(line => line.length))
+
+  // 2. 定义边框样式
+  // 顶部和底部边框 (例如: +----------------+)
+  const horizontalLine = `+${'-'.repeat(maxLength + 2)}+`
+
+  // 3. 生成中间的内容行
+  const content = lines
+    .map(line => {
+      // 使用 padEnd 补齐空格，使得右边框对齐
+      return `| ${line.padEnd(maxLength)} |`
+    })
+    .join('\n')
+
+  // 4. 拼接结果
+  return `\n${horizontalLine}\n${content}\n${horizontalLine}`
+}
+
+function logStartupInfo() {
+  const appInfo = [
+    `App Name:     ${app.getName()}`,
+    `App Version:  ${app.getVersion()}`,
+    `Electron Ver: ${process.versions.electron}`,
+    `Node Ver:     ${process.versions.node}`,
+    `Platform:     ${process.platform} (${process.arch})`,
+    `Environment:  ${app.isPackaged ? 'Production' : 'Development'}`,
+  ]
+  const logger = createLogger('startup')
+  logger.debug(createBoxedString(appInfo))
+}
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -92,7 +125,7 @@ async function createWindow() {
   })
 }
 
-app.whenReady().then(createWindow)
+app.whenReady().then(logStartupInfo).then(createWindow)
 
 app.on('window-all-closed', async () => {
   win = null
@@ -115,6 +148,34 @@ app.on('activate', () => {
   } else {
     createWindow()
   }
+})
+
+process.on('uncaughtException', error => {
+  const logger = createLogger('uncaughtException')
+  logger.error('--------------意外的未捕获异常---------------')
+  logger.error(error)
+  logger.error('---------------------------------------------')
+
+  dialog.showErrorBox(
+    '应用程序错误',
+    `发生了一个意外的错误，请前往 Github Issue 页面反馈：\n${error.message}`,
+  )
+})
+
+process.on('unhandledRejection', reason => {
+  // playwright-extra 插件问题：在 browser.close() 时概率触发
+  // https://github.com/berstend/puppeteer-extra/issues/858
+  const logger = createLogger('unhandledRejection')
+  if (
+    reason instanceof Error &&
+    reason.message.includes('cdpSession.send: Target page, context or browser has been closed')
+  ) {
+    return logger.verbose(reason)
+  }
+
+  logger.error('--------------未被处理的错误---------------')
+  logger.error(reason)
+  logger.error('-------------------------------------------')
 })
 
 // New window example arg: new windows url
