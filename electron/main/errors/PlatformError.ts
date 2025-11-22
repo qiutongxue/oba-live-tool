@@ -11,12 +11,6 @@ export const platformErrorMessages = {
   ACTION_PANEL_NOT_FOUND: '找不到操作面板',
 } as const
 
-export class ConnectionError extends ErrorFactory({
-  name: 'LiveControlConnectError',
-  message: () => '无法连接到直播中控台',
-  // fields: ErrorFactory.fields<{}>(),
-}) {}
-
 export class ElementNotFoundError extends ErrorFactory({
   name: 'ElementNotFoundError',
   message: ({ elementName }) => `找不到元素 ${elementName}`,
@@ -28,8 +22,7 @@ export class ElementNotFoundError extends ErrorFactory({
 
 export class ElementContentMismatchedError extends ErrorFactory({
   name: 'ElementContentMismatchedError',
-  message: ({ current, target }) =>
-    `元素内容不匹配：当前内容为 ${current}，目标内容为 ${target}`,
+  message: ({ current, target }) => `元素内容不匹配：当前内容为 ${current}，目标内容为 ${target}`,
   fields: ErrorFactory.fields<{
     current: string
     target: string
@@ -62,7 +55,6 @@ export class ElementDisabledError extends ErrorFactory({
 }) {}
 
 export type PlatformError =
-  | ConnectionError
   | ElementNotFoundError
   | ElementDisabledError
   | MaxTryCountExceededError
