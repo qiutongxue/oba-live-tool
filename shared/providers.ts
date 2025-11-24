@@ -14,7 +14,6 @@ export const providers = {
       'deepseek/deepseek-v3.1-terminus',
       'deepseek/deepseek-v3.1-terminus:exacto',
       'deepcogito/cogito-v2-preview-deepseek-671b',
-      'deepseek/deepseek-chat-v3.1:free',
       'deepseek/deepseek-chat-v3.1',
       'tngtech/deepseek-r1t2-chimera:free',
       'tngtech/deepseek-r1t2-chimera',
