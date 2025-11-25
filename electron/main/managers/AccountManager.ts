@@ -20,7 +20,7 @@ export class AccountManager {
     })
   }
 
-  async createSession(platformName: LiveControlPlatform, account: Account) {
+  createSession(platformName: LiveControlPlatform, account: Account) {
     this.setAccountName(account.id, account.name)
     const existSession = this.accountSessions.get(account.id)
     if (existSession) {
