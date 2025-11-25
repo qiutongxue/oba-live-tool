@@ -10,13 +10,11 @@ function setupIpcHandlers() {
   typedIpcMainHandle(
     IPC_CHANNELS.tasks.liveControl.connect,
     async (_, { chromePath, headless, storageState, platform, account }) => {
-      if (chromePath) {
-        browserManager.setChromePath(chromePath)
-      }
-
-      const accountSession = await accountManager.createSession(platform, account)
-
       try {
+        if (chromePath) {
+          browserManager.setChromePath(chromePath)
+        }
+        const accountSession = accountManager.createSession(platform, account)
         await accountSession.connect({
           headless,
           storageState,
@@ -25,7 +23,6 @@ function setupIpcHandlers() {
       } catch (error) {
         const logger = createLogger(`@${account.name}`).scope(TASK_NAME)
         logger.error('连接直播控制台失败：', error)
-
         accountManager.closeSession(account.id)
         return false
       }
