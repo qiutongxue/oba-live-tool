@@ -12,12 +12,7 @@ function setupIpcHandlers() {
   typedIpcMainHandle(IPC_CHANNELS.tasks.autoMessage.start, async (_, accountId, config) => {
     return Result.pipe(
       accountManager.getSession(accountId),
-      Result.andThen(accountSession =>
-        accountSession.startTask({
-          type: TASK_TYPE,
-          config,
-        }),
-      ),
+      Result.andThen(accountSession => accountSession.startTask({ type: TASK_TYPE, config })),
       Result.inspectError(error => {
         const logger = createLogger(`@${accountManager.getAccountName(accountId)}`).scope(TASK_NAME)
         logger.error('启动任务失败：', error)
@@ -27,14 +22,15 @@ function setupIpcHandlers() {
   })
 
   typedIpcMainHandle(IPC_CHANNELS.tasks.autoMessage.stop, async (_, accountId) => {
-    const accountSession = accountManager.getSession(accountId)
-    if (Result.isFailure(accountSession)) {
-      const logger = createLogger(`@${accountManager.getAccountName(accountId)}`).scope(TASK_NAME)
-      logger.error('停止任务失败：', accountSession.error)
-      return false
-    }
-    accountSession.value.stopTask(TASK_TYPE)
-    return true
+    return Result.pipe(
+      accountManager.getSession(accountId),
+      Result.inspect(accountSession => accountSession.stopTask(TASK_TYPE)),
+      Result.inspectError(error => {
+        const logger = createLogger(`@${accountManager.getAccountName(accountId)}`).scope(TASK_NAME)
+        logger.error('停止任务失败：', error)
+      }),
+      r => Result.isSuccess(r),
+    )
   })
 
   typedIpcMainHandle(
@@ -43,10 +39,7 @@ function setupIpcHandlers() {
       return Result.pipe(
         accountManager.getSession(accountId),
         Result.andThen(accountSession =>
-          accountSession.startTask({
-            type: 'send-batch-messages',
-            config: { messages, count },
-          }),
+          accountSession.startTask({ type: 'send-batch-messages', config: { messages, count } }),
         ),
         Result.inspectError(error => {
           const logger = createLogger(`@${accountManager.getAccountName(accountId)}`).scope(

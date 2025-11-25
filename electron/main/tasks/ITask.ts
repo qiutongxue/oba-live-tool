@@ -13,7 +13,7 @@ export type TaskStopCallback = (id: string, reason: TaskStopReason, error?: unkn
 
 export interface ITask<Cfg = unknown> {
   getTaskId(): string
-  start(): void
+  start(): Promise<void>
   stop(reason?: TaskStopReason, err?: unknown): void
   /** 任务停止时的回调（不管是手动中止、任务完成或是抛出异常都会触发） */
   addStopListener(callback: TaskStopCallback): void
