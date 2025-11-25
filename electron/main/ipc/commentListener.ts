@@ -14,10 +14,7 @@ function setupIpcHandlers() {
       return Result.pipe(
         accountManager.getSession(accountId),
         Result.andThen(accountSession =>
-          accountSession.startTask({
-            type: TASK_TYPE,
-            config: config,
-          }),
+          accountSession.startTask({ type: TASK_TYPE, config: config }),
         ),
         Result.inspectError(error => {
           const logger = createLogger(`@${accountManager.getAccountName(accountId)}`).scope(
