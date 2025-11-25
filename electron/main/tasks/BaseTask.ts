@@ -9,33 +9,41 @@ export interface BaseTaskProps {
 
 export function createTask(
   props: BaseTaskProps,
-  hooks: { onStart?: () => void; onStop?: () => void },
+  hooks: { onStart?: () => Promise<void> | void; onStop?: () => void },
 ): ITask {
   const { taskName, logger } = props
   const taskId = uniqueId(taskName)
   const stopListeners: TaskStopCallback[] = []
   let isRunning = false
 
+  async function start() {
+    if (!isRunning) {
+      isRunning = true
+      try {
+        await hooks.onStart?.()
+      } catch (err) {
+        stop(TaskStopReason.ERROR, err)
+      }
+    }
+  }
+
+  async function stop(reason: TaskStopReason = TaskStopReason.MANUAL, err?: unknown) {
+    if (!isRunning) return
+    isRunning = false
+    if (err) {
+      logger.error('任务因错误中断：', err)
+    } else {
+      logger.info('任务已停止')
+    }
+    hooks.onStop?.()
+    stopListeners.forEach(cb => {
+      cb(taskId, reason, err)
+    })
+  }
+
   return {
-    start: () => {
-      if (!isRunning) {
-        isRunning = true
-        hooks.onStart?.()
-      }
-    },
-    stop: (reason: TaskStopReason = TaskStopReason.MANUAL, err?: unknown) => {
-      if (!isRunning) return
-      isRunning = false
-      if (err) {
-        logger.error('任务因错误中断：', err)
-      } else {
-        logger.info('任务已停止')
-      }
-      hooks.onStop?.()
-      stopListeners.forEach(cb => {
-        cb(taskId, reason, err)
-      })
-    },
+    start,
+    stop,
     getTaskId: () => taskId,
     addStopListener: (cb: TaskStopCallback) => {
       stopListeners.push(cb)

@@ -76,8 +76,8 @@ export function createCommentListenerTask(
       logger,
     },
     {
-      onStart: () => {
-        execute()
+      onStart: async () => {
+        await execute()
       },
       onStop: () => {
         platform.stopCommentListener()

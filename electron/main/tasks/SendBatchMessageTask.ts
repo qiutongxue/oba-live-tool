@@ -47,8 +47,8 @@ export function createSendBatchMessageTask(
       logger,
     },
     {
-      onStart: () => {
-        execute()
+      onStart: async () => {
+        await execute()
       },
     },
   )

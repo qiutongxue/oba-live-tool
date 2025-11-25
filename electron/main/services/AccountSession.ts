@@ -126,7 +126,7 @@ export class AccountSession {
     newTask.value.addStopListener(() => {
       this.activeTasks.delete(task.type)
     })
-    newTask.value.start()
+    await newTask.value.start()
     this.activeTasks.set(task.type, newTask.value)
     return Result.succeed()
   }
