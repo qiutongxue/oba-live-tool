@@ -1,5 +1,25 @@
 # Changelog
 
+## v1.5.16
+
+[compare changes](https://github.com/qiutongxue/oba-live-tool/compare/v1.5.15...v1.5.16)
+
+### 🚀 Features
+
+- 使用日志记录 WebSocket 的错误 ([42ce04d](https://github.com/qiutongxue/oba-live-tool/commit/42ce04d))
+- 在应用启动时使用日志记录相关应用信息 ([e18b83d](https://github.com/qiutongxue/oba-live-tool/commit/e18b83d))
+- 优化软件更新逻辑及软件更新 UI 界面 ([02660a6](https://github.com/qiutongxue/oba-live-tool/commit/02660a6))
+- 添加主进程未捕获异常和未处理拒绝的处理逻辑 ([0ef990a](https://github.com/qiutongxue/oba-live-tool/commit/0ef990a))
+
+### 🐞 Bug Fixes
+
+- **巨量百应:** 修复巨量百应中控台页面样式错误的问题 ([053cd53](https://github.com/qiutongxue/oba-live-tool/commit/053cd53))
+- 修复评论监听和WebSocket无法正常关闭的问题 #231 ([#231](https://github.com/qiutongxue/oba-live-tool/issues/231))
+- 改进错误日志记录以包含堆栈信息 ([c1ba0d3](https://github.com/qiutongxue/oba-live-tool/commit/c1ba0d3))
+- 优化未捕获异常的错误处理和提示信息 ([c7d5472](https://github.com/qiutongxue/oba-live-tool/commit/c7d5472))
+- 修复因意外错误导致无法正常停止任务的问题 ([d7aa0d9](https://github.com/qiutongxue/oba-live-tool/commit/d7aa0d9))
+- 修复自动弹窗任务在手动停止或更新配置时无法及时中止的问题 ([dd32837](https://github.com/qiutongxue/oba-live-tool/commit/dd32837))
+
 ## v1.5.15
 
 [compare changes](https://github.com/qiutongxue/oba-live-tool/compare/v1.5.14...v1.5.15)
