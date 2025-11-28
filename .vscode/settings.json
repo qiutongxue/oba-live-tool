@@ -13,7 +13,7 @@
   // Auto fix
   "editor.codeActionsOnSave": {
     "source.organizeImports.biome": "explicit",
-    "quickfix.biome": "explicit"
+    "source.fixAll.biome": "explicit"
   },
   "editor.defaultFormatter": "biomejs.biome",
   "biome_lsp.trace.server": "messages",
