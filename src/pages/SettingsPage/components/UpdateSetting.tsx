@@ -1,50 +1,27 @@
+import { RefreshCw } from 'lucide-react'
 import { useState } from 'react'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
-import Update from '@/components/update'
-import { useUpdateStore } from '@/hooks/useUpdate'
+import { useUpdateConfigStore, useUpdateStore } from '@/hooks/useUpdate'
 import { version } from '../../../../package.json'
 
-interface UpdateSource {
-  value: string
-  label: string
-}
-
-const updateSources: UpdateSource[] = [
-  { value: 'github', label: 'GitHub' },
-  { value: 'https://gh-proxy.com', label: 'gh-proxy.com' },
-  { value: 'https://ghproxy.net', label: 'ghproxy.net' },
-  { value: 'custom', label: '自定义' },
-]
-
 export function UpdateSetting() {
-  const [updateSource, setUpdateSource] = useState<string>('github')
-  const [customUpdateSource, setCustomUpdateSource] = useState<string>('')
-  const { enableAutoCheckUpdate, setEnableAutoCheckUpdate } = useUpdateStore()
+  const { enableAutoCheckUpdate, setEnableAutoCheckUpdate } = useUpdateConfigStore()
+  const updateStatus = useUpdateStore.use.status()
+  const checkUpdateManually = useUpdateStore.use.checkUpdateManually()
+  const [isUpToDate, setIsUpToDate] = useState(false)
 
-  // 获取实际的更新源
-  const getActualUpdateSource = () => {
-    return updateSource === 'custom' ? customUpdateSource : updateSource
+  const checkUpdate = async () => {
+    const result = await checkUpdateManually()
+    if (result) {
+      setIsUpToDate(result.upToDate)
+    }
   }
 
   return (
-    // biome-ignore lint/nursery/useUniqueElementIds: 检查更新跳转的锚点，需要知道 id 的具体名称
     <Card id="update-section">
       <CardHeader>
         <CardTitle>软件更新</CardTitle>
@@ -56,44 +33,29 @@ export function UpdateSetting() {
           <div className="flex items-center justify-between">
             <div className="space-y-1">
               <Label>更新源</Label>
-              <p className="text-sm text-muted-foreground">
-                选择合适的更新源以获取最新版本
-              </p>
+              <p className="text-sm text-muted-foreground">选择合适的更新源以获取最新版本</p>
             </div>
             <div className="flex items-center gap-3">
-              <Select
-                value={updateSource}
-                onValueChange={value => setUpdateSource(value)}
+              <Button
+                variant="outline"
+                disabled={updateStatus === 'checking'}
+                onClick={checkUpdate}
+                size="sm"
               >
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="选择更新源" />
-                </SelectTrigger>
-                <SelectContent>
-                  {updateSources.map(source => (
-                    <SelectItem key={source.value} value={source.value}>
-                      {source.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Update source={getActualUpdateSource()} />
+                {updateStatus === 'checking' ? (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                    检查更新中
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    {isUpToDate ? '已是最新版本' : '检查更新'}
+                  </>
+                )}
+              </Button>
             </div>
           </div>
-
-          {updateSource === 'custom' && (
-            <div className="space-y-2">
-              <Label>自定义更新源地址</Label>
-              <Input
-                value={customUpdateSource}
-                onChange={e => setCustomUpdateSource(e.target.value)}
-                placeholder="请输入自定义更新源地址"
-                className="max-w-[400px]"
-              />
-              <p className="text-sm text-muted-foreground">
-                请输入完整的URL地址，如：https://gh-proxy.com/
-              </p>
-            </div>
-          )}
         </div>
 
         <Separator className="my-6" />
@@ -101,14 +63,9 @@ export function UpdateSetting() {
         <div className="flex justify-between items-center ">
           <div className="space-y-1">
             <Label>有新版本时弹窗提示</Label>
-            <p className="text-sm text-muted-foreground">
-              弹窗显示新版本更新了什么内容
-            </p>
+            <p className="text-sm text-muted-foreground">弹窗显示新版本更新了什么内容</p>
           </div>
-          <Switch
-            checked={enableAutoCheckUpdate}
-            onCheckedChange={setEnableAutoCheckUpdate}
-          />
+          <Switch checked={enableAutoCheckUpdate} onCheckedChange={setEnableAutoCheckUpdate} />
         </div>
 
         <Separator />

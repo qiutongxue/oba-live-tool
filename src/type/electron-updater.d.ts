@@ -7,5 +7,6 @@ interface VersionInfo {
 
 interface ErrorType {
   message: string
-  error: Error
+  error?: Error
+  downloadURL?: string
 }

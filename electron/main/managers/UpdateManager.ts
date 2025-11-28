@@ -1,12 +1,7 @@
 import { createRequire } from 'node:module'
 import { platform } from 'node:os'
 import { app } from 'electron'
-import type {
-  AppUpdater,
-  ProgressInfo,
-  UpdateDownloadedEvent,
-  UpdateInfo,
-} from 'electron-updater'
+import type { AppUpdater, ProgressInfo, UpdateDownloadedEvent, UpdateInfo } from 'electron-updater'
 import { marked } from 'marked'
 import semver from 'semver'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
@@ -29,27 +24,6 @@ const logger = createLogger('update')
     return `<a href="${href}" target="_blank" rel="noopener noreferrer"${title ? ` title="${title}"` : ''}>${text}</a>`
   }
   marked.setOptions({ renderer })
-}
-
-async function fetchChangelog() {
-  try {
-    // 去 CDN 找
-    const changelogURL = new URL(
-      `${GITHUB_OWNER}/${GITHUB_REPO}@main/CHANGELOG.md`,
-      CDN_URL,
-    )
-    const changelogContent = await fetchWithRetry(changelogURL).then(res =>
-      res?.text(),
-    )
-    if (changelogContent) {
-      // 找到新版本到当前版本的所有更新日志
-      const updateLog = extractChanges(changelogContent, app.getVersion())
-      // markdown 转成 html
-      return await marked.parse(updateLog)
-    }
-  } catch {
-    return undefined
-  }
 }
 
 function extractChanges(changelogContent: string, userVersion: string): string {
@@ -125,32 +99,21 @@ async function getLatestVersion() {
   }
 }
 
-function ensureURL(source: string) {
-  // 确保链接的正确性
-  try {
-    const url = new URL(source)
-    url.pathname = '/'
-    return url.toString()
-  } catch {
-    return null
-  }
-}
-
 class UpdateManager {
   private autoUpdater: AppUpdater
+  private latestVersion: string | null = null
+  private releaseNotes: Record<string, string> = {}
   constructor() {
-    const { autoUpdater }: { autoUpdater: AppUpdater } = createRequire(
-      import.meta.url,
-    )('electron-updater')
+    const { autoUpdater }: { autoUpdater: AppUpdater } = createRequire(import.meta.url)(
+      'electron-updater',
+    )
     this.autoUpdater = autoUpdater
     this.configureUpdater()
     this.registerEventListener()
   }
 
   private configureUpdater() {
-    // TODO: 设一个本地服务器模拟一下
     this.autoUpdater.forceDevUpdateConfig = true
-    this.autoUpdater.autoDownload = false
     this.autoUpdater.disableWebInstaller = false
     this.autoUpdater.allowDowngrade = false
   }
@@ -161,15 +124,9 @@ class UpdateManager {
     })
 
     this.autoUpdater.on('update-available', async (info: UpdateInfo) => {
-      logger.info(
-        `有可用更新！当前版本：${app.getVersion()}，新版本：${info.version}`,
-      )
-      let releaseNote = info.releaseNotes as string | undefined
-      // 这一段和 checkUpdate 不同步，可能已经发送了但是还没获得版本更新
-      if (!releaseNote) {
-        // 从 CHANGELOG.md 中获取
-        releaseNote = await fetchChangelog()
-      }
+      logger.info(`有可用更新！当前版本：${app.getVersion()}，新版本：${info.version}`)
+
+      const releaseNote = await this.fetchChangelog()
       windowManager.send(IPC_CHANNELS.updater.updateAvailable, {
         update: true,
         version: app.getVersion(),
@@ -179,9 +136,7 @@ class UpdateManager {
     })
 
     this.autoUpdater.on('update-not-available', (info: UpdateInfo) => {
-      logger.info(
-        `无可用更新。当前版本：${app.getVersion()}，新版本：${info.version}`,
-      )
+      logger.info(`无可用更新。当前版本：${app.getVersion()}，新版本：${info.version}`)
       windowManager.send(IPC_CHANNELS.updater.updateAvailable, {
         update: false,
         version: app.getVersion(),
@@ -194,7 +149,7 @@ class UpdateManager {
     })
 
     this.autoUpdater.on('update-downloaded', (event: UpdateDownloadedEvent) => {
-      logger.info('更新下载完成!', event)
+      logger.info(`${event.version} 更新下载完成!`)
       windowManager.send(IPC_CHANNELS.updater.updateDownloaded, event)
     })
 
@@ -208,82 +163,130 @@ class UpdateManager {
   }
 
   private async checkUpdateForGithub() {
+    // github 不需要关闭 noCache，requestHeaders 默认就是 null
+    this.autoUpdater.requestHeaders = null
     this.autoUpdater.setFeedURL({
       provider: 'github',
       owner: GITHUB_OWNER,
       repo: GITHUB_REPO,
     })
-    return this.autoUpdater.checkForUpdatesAndNotify()
+    return this.autoUpdater.checkForUpdates()
   }
 
   private async checkUpdateForGhProxy(source: string) {
-    const version = await getLatestVersion()
-    if (!version) {
-      const msg = '无法获取版本号，请检查网络连接。'
-      throw new Error(msg)
-    }
-    const assetsUrl = `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases/download/v${version}/`
-    const src = ensureURL(source)
-    if (!src) {
+    let sourceURL: URL
+    try {
+      sourceURL = new URL(source)
+    } catch {
       const msg = `更新源设置错误，你的更新源为 ${source}`
       throw new Error(msg)
     }
+    const { assetsURL, downloadURL } = await this.getAssetsURL(sourceURL)
     // 自定义更新源
     this.autoUpdater.setFeedURL({
       provider: 'generic',
-      url: `${src}${assetsUrl}`,
+      url: `${sourceURL}${assetsURL}`,
     })
     try {
-      return await this.autoUpdater.checkForUpdatesAndNotify()
+      return await this.autoUpdater.checkForUpdates()
     } catch (error) {
       const message = `网络错误: ${errorMessage(error).split('\n')[0]}`
-      const downloadURL = `${src}${assetsUrl}${PRODUCT_NAME}_${version}.${platform() === 'darwin' ? 'dmg' : 'exe'}`
-      return { message, error: error as Error, downloadURL }
+      windowManager.send(IPC_CHANNELS.updater.updateError, { message, downloadURL })
+      throw new Error(message)
+    }
+  }
+
+  private async fetchChangelog() {
+    if (this.latestVersion && this.releaseNotes[this.latestVersion]) {
+      return this.releaseNotes[this.latestVersion]
+    }
+    try {
+      // 去 CDN 找
+      const changelogURL = new URL(`${GITHUB_OWNER}/${GITHUB_REPO}@main/CHANGELOG.md`, CDN_URL)
+      const changelogContent = await fetchWithRetry(changelogURL).then(res => res?.text())
+      if (changelogContent) {
+        // 找到新版本到当前版本的所有更新日志
+        const updateLog = extractChanges(changelogContent, app.getVersion())
+        // markdown 转成 html
+        const releaseNote = await marked.parse(updateLog)
+        if (this.latestVersion) {
+          this.releaseNotes[this.latestVersion] = releaseNote
+        }
+        return releaseNote
+      }
+    } catch {
+      return undefined
     }
   }
 
   public async checkForUpdates(source = 'github') {
-    if (!this.autoUpdater.forceDevUpdateConfig && !app.isPackaged) {
-      const message = '更新功能仅在应用打包后可用。'
-      return { message, error: new Error(message) }
-    }
-    logger.info(`检查更新中…… (更新源: ${source})`)
-
+    // 默认情况会在请求的资源 URL 后面添加查询参数 noCache
+    // 但是很多 proxy 站点并没有针对 query 优化，就会导致 404
+    // 本身通过 proxy 访问的 URL 就带有版本号，所以 noCache 完全没作用
+    // 通过下面的 hack 可以不附带 noCache 查询
+    // https://github.com/electron-userland/electron-builder/issues/3415#issuecomment-433082387
+    this.autoUpdater.requestHeaders = { authorization: '' }
     try {
-      if (source === 'github') {
-        return await this.checkUpdateForGithub()
+      if (!app.isPackaged) {
+        if (!this.autoUpdater.forceDevUpdateConfig) {
+          const message = '更新功能仅在应用打包后可用。'
+          windowManager.send(IPC_CHANNELS.updater.updateError, { message })
+          return
+        }
+        // 开发环境下的更新，要先启动 slow-server (pnpm slow-server)
+        // await this.autoUpdater.checkForUpdates()
+        // return
       }
-      return await this.checkUpdateForGhProxy(source)
+      logger.debug(`检查更新中…… (更新源: ${source})`)
+
+      if (source === 'github') {
+        await this.checkUpdateForGithub()
+      } else {
+        await this.checkUpdateForGhProxy(source)
+      }
     } catch (error) {
       const message = `检查更新时发生错误: ${errorMessage(error)}`
       logger.error(message)
-      return { message, error: error as Error }
+      windowManager.send(IPC_CHANNELS.updater.updateError, { message })
+    }
+  }
+
+  public async getAssetsURL(proxy: URL) {
+    const assetsURL = `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases/download/v${this.latestVersion}/`
+    const downloadURL = `${proxy}${assetsURL}${PRODUCT_NAME}_${this.latestVersion}.${platform() === 'darwin' ? 'dmg' : 'exe'}`
+    return { assetsURL, downloadURL }
+  }
+
+  public async checkUpdateVersion() {
+    const latestVersion = await getLatestVersion()
+    if (!latestVersion) {
+      return
+    }
+    this.latestVersion = latestVersion
+    const currentVersion = app.getVersion()
+    if (semver.lt(currentVersion, latestVersion)) {
+      // 先用 log 提示更新
+      logger.info(
+        `检查到可用更新：${currentVersion} -> ${latestVersion}，可前往应用设置-软件更新处手动更新`,
+      )
+      const releaseNote = await this.fetchChangelog()
+
+      return {
+        currentVersion,
+        latestVersion,
+        releaseNote,
+      }
     }
   }
 
   public async silentCheckForUpdate() {
     try {
-      const latestVersion = await getLatestVersion()
-      if (!latestVersion) {
-        return
-      }
-      const currentVersion = app.getVersion()
-      if (semver.lt(currentVersion, latestVersion)) {
-        logger.info(
-          `检查到可用更新：${currentVersion} -> ${latestVersion}，可前往应用设置-软件更新处手动更新`,
-        )
-
-        // 获取 CHANGELOG.md
-        const releaseNote = await fetchChangelog() // html
-
-        windowManager.send(IPC_CHANNELS.app.notifyUpdate, {
-          currentVersion,
-          latestVersion,
-          releaseNote,
-        })
+      const result = await this.checkUpdateVersion()
+      if (result) {
+        windowManager.send(IPC_CHANNELS.app.notifyUpdate, { ...result })
       }
     } catch (err) {
-      logger.debug(`检查更新失败：${err}`)
+      logger.debug(`静默检查更新失败：${err}`)
     }
   }
 

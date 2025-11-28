@@ -1,9 +1,5 @@
 import type { LogMessage } from 'electron-log'
-import type {
-  ProgressInfo,
-  UpdateCheckResult,
-  UpdateDownloadedEvent,
-} from 'electron-updater'
+import type { ProgressInfo, UpdateDownloadedEvent } from 'electron-updater'
 import type { providers } from 'shared/providers'
 
 import { IPC_CHANNELS } from './ipcChannels'
@@ -30,10 +26,7 @@ export interface IpcChannels {
   ) => void
 
   // AutoMessage
-  [IPC_CHANNELS.tasks.autoMessage.start]: (
-    accountId: string,
-    config: AutoCommentConfig,
-  ) => boolean
+  [IPC_CHANNELS.tasks.autoMessage.start]: (accountId: string, config: AutoCommentConfig) => boolean
   [IPC_CHANNELS.tasks.autoMessage.stop]: (accountId: string) => boolean
   [IPC_CHANNELS.tasks.autoMessage.stoppedEvent]: (id: string) => void
   [IPC_CHANNELS.tasks.autoMessage.sendBatchMessages]: (
@@ -47,10 +40,7 @@ export interface IpcChannels {
   ) => void
 
   // AutoPopup
-  [IPC_CHANNELS.tasks.autoPopUp.start]: (
-    accountId: string,
-    config: AutoPopupConfig,
-  ) => boolean
+  [IPC_CHANNELS.tasks.autoPopUp.start]: (accountId: string, config: AutoPopupConfig) => boolean
   [IPC_CHANNELS.tasks.autoPopUp.stop]: (accountId: string) => boolean
   [IPC_CHANNELS.tasks.autoPopUp.stoppedEvent]: (id: string) => void
   [IPC_CHANNELS.tasks.autoPopUp.updateConfig]: (
@@ -68,13 +58,8 @@ export interface IpcChannels {
     accountId: string,
     config: CommentListenerConfig,
   ) => boolean
-  [IPC_CHANNELS.tasks.autoReply.stopCommentListener]: (
-    accountId: string,
-  ) => void
-  [IPC_CHANNELS.tasks.autoReply.sendReply]: (
-    accountId: string,
-    replyContent: string,
-  ) => void
+  [IPC_CHANNELS.tasks.autoReply.stopCommentListener]: (accountId: string) => void
+  [IPC_CHANNELS.tasks.autoReply.sendReply]: (accountId: string, replyContent: string) => void
   [IPC_CHANNELS.tasks.autoReply.listenerStopped]: (accountId: string) => void
   [IPC_CHANNELS.tasks.autoReply.showComment]: (data: {
     comment: DouyinLiveMessage
@@ -112,21 +97,15 @@ export interface IpcChannels {
   [IPC_CHANNELS.tasks.aiChat.error]: (data: { error: string }) => void
 
   // Updater
-  [IPC_CHANNELS.updater.checkUpdate]: (params: {
-    source: string
-  }) =>
-    | UpdateCheckResult
-    | { message: string; error: Error; downloadURL?: string }
-    | null
-
-  [IPC_CHANNELS.updater.startDownload]: () => void
+  [IPC_CHANNELS.updater.checkUpdate]: () => Promise<
+    { latestVersion: string; currentVersion: string; releaseNote?: string } | undefined
+  >
+  [IPC_CHANNELS.updater.startDownload]: (source: string) => void
   [IPC_CHANNELS.updater.quitAndInstall]: () => void
   [IPC_CHANNELS.updater.updateAvailable]: (info: VersionInfo) => void
   [IPC_CHANNELS.updater.updateError]: (error: ErrorType) => void
   [IPC_CHANNELS.updater.downloadProgress]: (progress: ProgressInfo) => void
-  [IPC_CHANNELS.updater.updateDownloaded]: (
-    event: UpdateDownloadedEvent,
-  ) => void
+  [IPC_CHANNELS.updater.updateDownloaded]: (event: UpdateDownloadedEvent) => void
 
   // Chrome
   [IPC_CHANNELS.chrome.selectPath]: () => string | null

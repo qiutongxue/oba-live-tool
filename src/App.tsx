@@ -1,5 +1,5 @@
 import { RefreshCwIcon, TerminalIcon } from 'lucide-react'
-import { Outlet, useNavigate } from 'react-router'
+import { Outlet } from 'react-router'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import LogDisplayer from '@/components/common/LogDisplayer'
 import Sidebar from '@/components/common/Sidebar'
@@ -15,16 +15,8 @@ import { useDevMode } from '@/hooks/useDevMode'
 import { Header } from './components/common/Header'
 import { useIpcListener } from './hooks/useIpc'
 import './App.css'
-import { useEffect, useState } from 'react'
-import { HtmlRenderer } from './components/common/HtmlRenderer'
-import { Button } from './components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-} from './components/ui/dialog'
-import { ScrollArea } from './components/ui/scroll-area'
+import { useEffect } from 'react'
+import { UpdateDialog } from './components/update/UpdateDialog'
 import { useAccounts } from './hooks/useAccounts'
 import { useAutoMessageStore } from './hooks/useAutoMessage'
 import { useAutoPopUpStore } from './hooks/useAutoPopUp'
@@ -32,23 +24,22 @@ import { useAutoReply, useAutoReplyStore } from './hooks/useAutoReply'
 import { useChromeConfigStore } from './hooks/useChromeConfig'
 import { useLiveControlStore } from './hooks/useLiveControl'
 import { useToast } from './hooks/useToast'
-import { useUpdateStore } from './hooks/useUpdate'
+import { useUpdateConfigStore, useUpdateStore } from './hooks/useUpdate'
 
 function useGlobalIpcListener() {
   const { handleComment } = useAutoReply()
   const { setIsListening } = useAutoReplyStore()
   const { setIsConnected, setAccountName } = useLiveControlStore()
-  const { setIsRunning: setIsRunningAutoMessage } = useAutoMessageStore()
-  const { setIsRunning: setIsRunningAutoPopUp } = useAutoPopUpStore()
-  const { setStorageState } = useChromeConfigStore()
+  const setIsRunningAutoMessage = useAutoMessageStore(s => s.setIsRunning)
+  const setIsRunningAutoPopUp = useAutoPopUpStore(s => s.setIsRunning)
+  const setStorageState = useChromeConfigStore(s => s.setStorageState)
+  const enableAutoCheckUpdate = useUpdateConfigStore(s => s.enableAutoCheckUpdate)
+  const handleUpdate = useUpdateStore.use.handleUpdate()
   const { toast } = useToast()
 
-  useIpcListener(
-    IPC_CHANNELS.tasks.autoReply.showComment,
-    ({ comment, accountId }) => {
-      handleComment(comment, accountId)
-    },
-  )
+  useIpcListener(IPC_CHANNELS.tasks.autoReply.showComment, ({ comment, accountId }) => {
+    handleComment(comment, accountId)
+  })
 
   useIpcListener(IPC_CHANNELS.tasks.liveControl.disconnectedEvent, id => {
     setIsConnected(id, 'disconnected')
@@ -78,63 +69,12 @@ function useGlobalIpcListener() {
       setAccountName(params.accountId, params.accountName || '')
     }
   })
-}
-
-function UpdateInfo() {
-  const [isUpdateAlertShow, setIsUpdateAlertShow] = useState(false)
-  const [updateInfo, setUpdateInfo] = useState<{
-    currentVersion: string
-    latestVersion: string
-    releaseNote?: string
-  } | null>(null)
-  const updateStore = useUpdateStore()
-
-  const navigate = useNavigate()
 
   useIpcListener(IPC_CHANNELS.app.notifyUpdate, info => {
-    if (updateStore.enableAutoCheckUpdate) {
-      setIsUpdateAlertShow(true)
-      setUpdateInfo(info)
+    if (enableAutoCheckUpdate) {
+      handleUpdate(info)
     }
   })
-
-  const handleUpdateNow = () => {
-    setIsUpdateAlertShow(false)
-    navigate('/settings#update-section')
-  }
-
-  return (
-    <Dialog open={isUpdateAlertShow} onOpenChange={setIsUpdateAlertShow}>
-      <DialogContent>
-        <DialogTitle>有新版本可用</DialogTitle>
-        <DialogDescription>现在更新以体验最新功能。</DialogDescription>
-
-        <div className="flex justify-end space-x-1 items-center text-sm text-muted-foreground">
-          <span className="text-gray-400">v{updateInfo?.currentVersion}</span>
-          <span>{'→'}</span>
-          <span className="text-gray-700 font-bold">
-            v{updateInfo?.latestVersion}
-          </span>
-        </div>
-        {updateInfo?.releaseNote && (
-          <ScrollArea className="h-64">
-            <HtmlRenderer
-              className="markdown-body"
-              html={updateInfo?.releaseNote}
-            />{' '}
-          </ScrollArea>
-        )}
-        <div className="flex justify-end gap-2 mt-4">
-          <Button variant="outline" onClick={() => setIsUpdateAlertShow(false)}>
-            关闭
-          </Button>
-          <Button variant="default" onClick={handleUpdateNow}>
-            前往更新
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  )
 }
 
 function App() {
@@ -182,7 +122,7 @@ function App() {
               <LogDisplayer />
             </div>
           </div>
-          <UpdateInfo />
+          <UpdateDialog />
         </ContextMenuTrigger>
         {devMode && (
           <ContextMenuContent>
