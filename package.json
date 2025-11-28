@@ -20,7 +20,8 @@
     "test": "vitest run",
     "prepare": "husky",
     "bump": "bumpp --no-commit --no-tag --no-push && changelogen --output",
-    "release": "node ./scripts/release"
+    "release": "node ./scripts/release",
+    "slow-server": "node ./scripts/slow-server.js"
   },
   "dependencies": {
     "@praha/byethrow": "^0.8.1",
