@@ -1,10 +1,10 @@
 {
-  "name": "oba-live-tool",
+  "name": "TLS-live-tool",
   "type": "module",
   "version": "1.5.16",
   "private": true,
   "description": "直播工具，用于直播带货，能自动弹窗，自动发言",
-  "author": "qiutongxue",
+  "author": "TLS-802",
   "license": "MIT",
   "main": "dist-electron/main/index.js",
   "debug": {

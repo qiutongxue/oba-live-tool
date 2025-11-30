@@ -10,8 +10,8 @@ import packageJson from '../../../package.json'
 import { createLogger } from '../logger'
 import { errorMessage, sleep } from '../utils'
 
-const GITHUB_OWNER = 'qiutongxue'
-const GITHUB_REPO = 'oba-live-tool'
+const GITHUB_OWNER = 'TLS-802'
+const GITHUB_REPO = 'TLS-live-tool'
 const CDN_URL = 'https://fastly.jsdelivr.net/gh/'
 const PRODUCT_NAME = packageJson.name
 

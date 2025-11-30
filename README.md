@@ -1,11 +1,11 @@
 <div align="center">
 
   <img src="./public/favicon.png" alt="logo" width="256px" height="auto">
-  <h1> oba live tool </h1>
+  <h1> TLS live tool </h1>
   <p> 抖音小店/巨量百应/抖音团购/小红书/视频号/快手小店/淘宝直播小工具 </p>
   <br>
 
-[![GitHub Release][github release badge]](https://github.com/qiutongxue/oba-live-tool/releases/latest)
+[![GitHub Release][github release badge]](https://github.com/TLS-802/TLS-live-tool/releases/latest)
 ![GitHub][github license badge]
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/qiutongxue/oba-live-tool)
  
@@ -19,7 +19,7 @@
 
 ![ai](./screenshot/ai_assistant.png)
 
-![自动回复](./screenshot/auto_reply_new.png)
+![自动回复](./screenshot/auto_reply.png)
 
 ## ✨ 功能
 
@@ -43,13 +43,13 @@
 
 ### 下载安装
 
-访问 [Releases](https://github.com/qiutongxue/oba-live-tool/releases/latest) 页面下载最新版本安装包
+访问 [Releases](https://github.com/TLS-802/TLS-live-tool/releases/latest) 页面下载最新版本安装包
 
 ### 源码构建
 
 ```bash
-git clone https://github.com/qiutongxue/oba-live-tool.git
-cd oba-live-tool
+git clone https://github.com/TLS-802/TLS-live-tool.git
+cd TLS-live-tool
 pnpm install
 pnpm build
 # 构建在项目根目录的 /release 文件夹下
@@ -221,11 +221,11 @@ AI 助手只支持文本对话，在使用 AI 助手功能前，请先设置好�
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=qiutongxue/oba-live-tool&type=Date)](https://www.star-history.com/#qiutongxue/oba-live-tool&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=TLS-802/TLS-live-tool&type=Date)](https://www.star-history.com/#TLS-802/TLS-live-tool&Date)
 
 <!-- badage -->
 
-[github release badge]: https://img.shields.io/github/v/release/qiutongxue/oba-live-tool?style=flat&logo=github&labelColor=%2324292e&color=%231a7f37
+[github release badge]: https://img.shields.io/github/v/release/TLS-802/TLS-live-tool?style=flat&logo=github&labelColor=%2324292e&color=%231a7f37
 
 
 [github license badge]: https://img.shields.io/badge/license-MIT-5c6bc0?style=flat&labelColor=24292e
