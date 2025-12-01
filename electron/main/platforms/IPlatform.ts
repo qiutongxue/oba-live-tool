@@ -6,9 +6,9 @@ import type { BrowserSession } from '#/managers/BrowserSessionManager'
 export interface ICommentListener {
   _isCommentListener: true
   startCommentListener(
-    onComment: (comment: DouyinLiveMessage) => void,
+    onComment: (comment: LiveMessage) => void,
     /** 暂定，control 为中控台互动评论监听， compass 为直播大屏监听 */
-    source: 'control' | 'compass',
+    source: CommentListenerConfig['source'],
   ): void | Promise<void>
   stopCommentListener(): void
   getCommentListenerPage(): Page

@@ -22,9 +22,7 @@ interface SidebarTab {
 }
 
 export default function Sidebar() {
-  const isAutoMessageRunning = useCurrentAutoMessage(
-    context => context.isRunning,
-  )
+  const isAutoMessageRunning = useCurrentAutoMessage(context => context.isRunning)
   const isAutoPopupRunning = useCurrentAutoPopUp(context => context.isRunning)
   const { isRunning: isAutoReplyRunning } = useAutoReply()
   const platform = useCurrentLiveControl(context => context.platform)
@@ -52,7 +50,7 @@ export default function Sidebar() {
       name: '自动回复',
       isRunning: isAutoReplyRunning,
       icon: <CarbonIbmEventAutomation className="w-5 h-5" />,
-      platform: ['douyin', 'buyin', 'dev'],
+      platform: ['douyin', 'buyin', 'wxchannel', 'dev'],
     },
     {
       id: '/ai-chat',

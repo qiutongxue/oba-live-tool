@@ -28,11 +28,7 @@ import {
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import {
   Select,
   SelectContent,
@@ -44,12 +40,7 @@ import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import {
   type AutoReplyConfig,
   type EventMessageType,
@@ -57,12 +48,23 @@ import {
   type SimpleEventReplyMessage,
   useAutoReply,
 } from '@/hooks/useAutoReply'
+import { useCurrentLiveControl } from '@/hooks/useLiveControl'
 import { useToast } from '@/hooks/useToast'
 import type { StringFilter, StringFilterConfig } from '@/utils/filter'
 import KeywordReplyEditor from './components/KeywordReplyEditor'
 
 // 监听源类型
 type ListeningSource = AutoReplyConfig['entry']
+const platformListeningSources: Partial<Record<LiveControlPlatform, ListeningSource[]>> = {
+  douyin: ['control', 'compass'],
+  buyin: ['control', 'compass'],
+  wxchannel: ['wechat-channel'],
+}
+const listeningSourceNameMap = {
+  control: '中控台',
+  compass: '电商罗盘大屏',
+  'wechat-channel': '视频号',
+}
 
 // 自动回复类型
 const autoReplyTypes = [
@@ -182,28 +184,19 @@ function MessageFilter<T extends EventMessageType>({
   return (
     <Popover open={open}>
       <PopoverTrigger asChild>
-        <Button
-          variant="ghost"
-          className="w-4"
-          onClick={() => setOpen(prev => !prev)}
-        >
+        <Button variant="ghost" className="w-4" onClick={() => setOpen(prev => !prev)}>
           <FunnelPlusIcon className="w-4 h-4" />
         </Button>
       </PopoverTrigger>
       <PopoverContent>
         <div className="">
           <div className="text-sm">过滤器</div>
-          <p className="text-sm text-muted-foreground">
-            仅回复过滤器命中的条件
-          </p>
+          <p className="text-sm text-muted-foreground">仅回复过滤器命中的条件</p>
         </div>
         <div className="grid grid-cols-4 gap-x-1 pt-2">
           <div className="col-span-4 flex flex-col space-y-2">
             <div className="flex space-x-1">
-              <Select
-                value={filterForm.field as string}
-                onValueChange={handleFilterFieldChange}
-              >
+              <Select value={filterForm.field as string} onValueChange={handleFilterFieldChange}>
                 <SelectTrigger>
                   <SelectValue placeholder="选择字段" />
                 </SelectTrigger>
@@ -217,10 +210,7 @@ function MessageFilter<T extends EventMessageType>({
                   })}
                 </SelectContent>
               </Select>
-              <Select
-                value={filterForm.type as string}
-                onValueChange={handleFilterTypeChange}
-              >
+              <Select value={filterForm.type as string} onValueChange={handleFilterTypeChange}>
                 <SelectTrigger>
                   <SelectValue placeholder="选择条件" />
                 </SelectTrigger>
@@ -246,10 +236,7 @@ function MessageFilter<T extends EventMessageType>({
                   value={v}
                   onChange={e => handleFilterContentChange(e.target.value, i)}
                 />
-                <Button
-                  variant="ghost"
-                  onClick={() => handleFilterContentRemove(i)}
-                >
+                <Button variant="ghost" onClick={() => handleFilterContentRemove(i)}>
                   <Trash2Icon className="w-4 h-4" />
                 </Button>
               </div>
@@ -271,10 +258,7 @@ function MessageFilter<T extends EventMessageType>({
 const FilterText: React.FC<{
   filterConfig: StringFilterConfig
 }> = ({ filterConfig }) => {
-  const renderCondition = (
-    field: keyof typeof fieldNameMap,
-    condition: StringFilter,
-  ) => {
+  const renderCondition = (field: keyof typeof fieldNameMap, condition: StringFilter) => {
     const label = fieldNameMap[field] || field
     const lines: {
       prefix: string
@@ -332,24 +316,16 @@ const ReplyMessageManager: FC<{
   onRemove: (index: number) => void
   placeholder?: string
   msgType: EventMessageType
-}> = ({
-  title,
-  description,
-  messages,
-  onAdd,
-  onRemove,
-  placeholder,
-  msgType,
-}) => {
+}> = ({ title, description, messages, onAdd, onRemove, placeholder, msgType }) => {
   const defaultFilterForm = () => ({
     type: 'eq' as const,
     field: 'nick_name' as const,
     content: [],
   })
   const [newMessage, setNewMessage] = useState('')
-  const [filterForm, setFilterForm] = useState<
-    MessageFilterForm<typeof msgType>
-  >(defaultFilterForm())
+  const [filterForm, setFilterForm] = useState<MessageFilterForm<typeof msgType>>(
+    defaultFilterForm(),
+  )
   const { toast } = useToast()
 
   const handleAdd = () => {
@@ -377,9 +353,7 @@ const ReplyMessageManager: FC<{
     toast.success('添加成功')
   }
 
-  const handleFilterFormChange = (
-    newForm: MessageFilterForm<typeof msgType>,
-  ) => {
+  const handleFilterFormChange = (newForm: MessageFilterForm<typeof msgType>) => {
     setFilterForm(newForm)
   }
 
@@ -387,24 +361,18 @@ const ReplyMessageManager: FC<{
     <div className="space-y-4">
       <div>
         <h3 className="text-sm font-medium">{title}</h3>
-        {description && (
-          <p className="text-sm text-muted-foreground">{description}</p>
-        )}
+        {description && <p className="text-sm text-muted-foreground">{description}</p>}
       </div>
 
       <div className="space-y-2 max-h-[200px] overflow-y-auto border rounded-md p-2">
         {messages.length === 0 ? (
-          <div className="text-sm text-center py-4 text-muted-foreground">
-            暂无消息
-          </div>
+          <div className="text-sm text-center py-4 text-muted-foreground">暂无消息</div>
         ) : (
           messages.map((message, index) => (
             // biome-ignore lint/suspicious/noArrayIndexKey: 下标无妨
             <div key={index} className="flex items-center gap-2 group">
               <div className="flex-1 text-sm p-2 rounded bg-muted/50 flex justify-between">
-                <span>
-                  {typeof message === 'string' ? message : message.content}
-                </span>
+                <span>{typeof message === 'string' ? message : message.content}</span>
                 {typeof message !== 'string' && (
                   <TooltipProvider>
                     <Tooltip>
@@ -473,23 +441,17 @@ const BlocklistManager: FC = () => {
     <div className="space-y-4">
       <div>
         <h3 className="text-sm font-medium">用户屏蔽列表</h3>
-        <p className="text-sm text-muted-foreground">
-          屏蔽列表中的用户将不会被自动回复
-        </p>
+        <p className="text-sm text-muted-foreground">屏蔽列表中的用户将不会被自动回复</p>
       </div>
 
       <div className="space-y-2 max-h-[200px] overflow-y-auto border rounded-md p-2">
         {blockedUsers.length === 0 ? (
-          <div className="text-sm text-center py-4 text-muted-foreground">
-            暂无屏蔽用户
-          </div>
+          <div className="text-sm text-center py-4 text-muted-foreground">暂无屏蔽用户</div>
         ) : (
           blockedUsers.map((user, index) => (
             // biome-ignore lint/suspicious/noArrayIndexKey: 下标无妨
             <div key={index} className="flex items-center gap-2 group">
-              <div className="flex-1 text-sm p-2 rounded bg-muted/50">
-                {user}
-              </div>
+              <div className="flex-1 text-sm p-2 rounded bg-muted/50">{user}</div>
               <Button
                 variant="ghost"
                 size="icon"
@@ -545,11 +507,10 @@ const Settings = () => {
   const handleKeywordEnabledChange = (checked: boolean) => {
     updateKeywordReplyEnabled(checked)
   }
-
   // 处理监听源变更
   const handleSourceChange = (value: ListeningSource) => {
     updateGeneralSettings({ entry: value })
-    toast.success(`已切换至${value === 'control' ? '中控台' : '大屏'}监听`)
+    toast.success(`已切换至${listeningSourceNameMap[value]}监听`)
   }
 
   // 自动回复消息的开关
@@ -558,17 +519,11 @@ const Settings = () => {
   }
 
   // 处理其余消息的回复内容
-  const handleMessageAdd = (
-    type: EventMessageType,
-    message: SimpleEventReplyMessage,
-  ) => {
+  const handleMessageAdd = (type: EventMessageType, message: SimpleEventReplyMessage) => {
     updateEventReplyContents(type, [...typeReplies[type].messages, message])
   }
 
-  const hanldeOptionsChange = (
-    type: EventMessageType,
-    options: Record<string, boolean>,
-  ) => {
+  const hanldeOptionsChange = (type: EventMessageType, options: Record<string, boolean>) => {
     updateEventReplyOptions(type, options)
   }
 
@@ -581,16 +536,30 @@ const Settings = () => {
   const websocketId = useId()
   const keywordReplyId = useId()
 
+  const platform = useCurrentLiveControl(context => context.platform)
+
+  const listeningSourceTips = useMemo(() => {
+    switch (listeningSource) {
+      case 'control':
+        return '中控台监听只能获取评论消息'
+      case 'compass':
+        return '电商罗盘大屏监听可以获取评论、点赞、进入直播间等全部消息类型'
+      case 'wechat-channel':
+        return '视频号监听目前暂时只支持用户评论消息'
+      default:
+        return ''
+    }
+  }, [listeningSource])
+
+  if (!(platform in platformListeningSources)) {
+    return null
+  }
+
   return (
     <div className="container py-8 space-y-4">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate(-1)}
-            title="返回"
-          >
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)} title="返回">
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <h1 className="text-2xl font-bold">自动回复设置</h1>
@@ -607,25 +576,21 @@ const Settings = () => {
             <h3 className="text-sm font-medium">监听来源</h3>
             <Select
               value={listeningSource}
-              onValueChange={value =>
-                handleSourceChange(value as ListeningSource)
-              }
+              onValueChange={value => handleSourceChange(value as ListeningSource)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="选择监听来源" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="control">中控台监听</SelectItem>
-                <SelectItem value="compass">电商罗盘大屏</SelectItem>
+                {(platformListeningSources[platform] ?? []).map(source => (
+                  <SelectItem key={source} value={source}>
+                    {listeningSourceNameMap[source]}监听
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
-            <p className="text-xs text-muted-foreground">
-              {listeningSource === 'control'
-                ? '中控台监听只能获取评论消息'
-                : '大屏监听可以获取评论、点赞、进入直播间等全部消息类型'}
-            </p>
+            <p className="text-xs text-muted-foreground">{listeningSourceTips}</p>
           </div>
-
           <Separator />
 
           <div className="space-y-2">
@@ -633,36 +598,22 @@ const Settings = () => {
               <Switch
                 id={hideUserNameId}
                 checked={config.hideUsername}
-                onCheckedChange={checked =>
-                  updateGeneralSettings({ hideUsername: checked })
-                }
+                onCheckedChange={checked => updateGeneralSettings({ hideUsername: checked })}
               />
               <Label htmlFor={hideUserNameId}>隐藏用户名</Label>
             </div>
             <p className="text-xs text-muted-foreground">
               系统会自动将
-              <span className="font-bold mx-1 bg-muted px-1 rounded-md">
-                {'{用户名}'}
-              </span>
+              <span className="font-bold mx-1 bg-muted px-1 rounded-md">{'{用户名}'}</span>
               替换为实际的用户名称，如果设置隐藏用户名，只会保留用户名的第一个字符。
               <br />
               未设置隐藏用户名时：{' '}
-              <span className="font-bold mx-1 bg-muted px-1 rounded-md">
-                {'{用户名}'}
-              </span>{' '}
-              {'->'}{' '}
-              <span className="font-bold mx-1 bg-muted px-1 rounded-md">
-                张三
-              </span>
+              <span className="font-bold mx-1 bg-muted px-1 rounded-md">{'{用户名}'}</span> {'->'}{' '}
+              <span className="font-bold mx-1 bg-muted px-1 rounded-md">张三</span>
               <br />
               设置隐藏用户名时：{' '}
-              <span className="font-bold mx-1 bg-muted px-1 rounded-md">
-                {'{用户名}'}
-              </span>{' '}
-              {'->'}{' '}
-              <span className="font-bold mx-1 bg-muted px-1 rounded-md">
-                张***
-              </span>
+              <span className="font-bold mx-1 bg-muted px-1 rounded-md">{'{用户名}'}</span> {'->'}{' '}
+              <span className="font-bold mx-1 bg-muted px-1 rounded-md">张***</span>
             </p>
           </div>
 
@@ -715,9 +666,7 @@ const Settings = () => {
                     <div key={type.id} className="space-y-2">
                       <div className="flex items-center justify-between">
                         <div className="space-y-0.5">
-                          <h4 className="text-sm font-medium">
-                            {type.name}自动回复
-                          </h4>
+                          <h4 className="text-sm font-medium">{type.name}自动回复</h4>
                           <p className="text-xs text-muted-foreground">
                             当用户
                             {type.name}
@@ -726,9 +675,7 @@ const Settings = () => {
                         </div>
                         <Switch
                           checked={typeReplies[type.id]?.enable || false}
-                          onCheckedChange={checked =>
-                            handleReplyChange(type.id, checked)
-                          }
+                          onCheckedChange={checked => handleReplyChange(type.id, checked)}
                           disabled={listeningSource !== 'compass'}
                         />
                       </div>
@@ -739,15 +686,9 @@ const Settings = () => {
                             <ReplyMessageManager
                               title={`${type.name}回复消息`}
                               description="系统将从以下消息中随机选择一条发送，可使用{用户名}变量"
-                              messages={
-                                typeReplies[type.id]?.messages || [type.default]
-                              }
-                              onAdd={message =>
-                                handleMessageAdd(type.id, message)
-                              }
-                              onRemove={index =>
-                                handleMessageRemove(type.id, index)
-                              }
+                              messages={typeReplies[type.id]?.messages || [type.default]}
+                              onAdd={message => handleMessageAdd(type.id, message)}
+                              onRemove={index => handleMessageRemove(type.id, index)}
                               placeholder={`例如：${type.default}`}
                               msgType={type.id}
                             />
@@ -760,14 +701,12 @@ const Settings = () => {
                                     <div className="flex flex-col">
                                       <span>仅在已支付时回复</span>
                                       <span className="text-muted-foreground">
-                                        用户订单具有<strong>已下单</strong>和
-                                        <strong>已支付</strong>两种状态
+                                        用户订单具有<strong>已下单</strong>和<strong>已支付</strong>
+                                        两种状态
                                       </span>
                                     </div>
                                     <Switch
-                                      checked={
-                                        config[type.id]?.options?.onlyReplyPaid
-                                      }
+                                      checked={config[type.id]?.options?.onlyReplyPaid}
                                       onCheckedChange={e =>
                                         hanldeOptionsChange(type.id, {
                                           onlyReplyPaid: e,
@@ -800,9 +739,7 @@ const Settings = () => {
                 <Switch
                   id={websocketId}
                   checked={!!config.ws?.enable}
-                  onCheckedChange={checked =>
-                    updateWSConfig({ enable: checked })
-                  }
+                  onCheckedChange={checked => updateWSConfig({ enable: checked })}
                 />
                 <Label htmlFor={websocketId}>启用 WebSocket 服务</Label>
               </div>
@@ -952,11 +889,7 @@ const KeywordReplyManager = () => {
           <Card key={ruleIndex} className="border-dashed">
             <CardHeader className="pb-2 flex flex-row items-center justify-between">
               <CardTitle className="text-base">规则 {ruleIndex + 1}</CardTitle>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => removeRule(ruleIndex)}
-              >
+              <Button variant="ghost" size="icon" onClick={() => removeRule(ruleIndex)}>
                 <Trash className="h-4 w-4 text-destructive" />
               </Button>
             </CardHeader>
@@ -999,8 +932,7 @@ const KeywordReplyManager = () => {
                   <Button
                     variant="outline"
                     onClick={e => {
-                      const input = e.currentTarget
-                        .previousSibling as HTMLInputElement
+                      const input = e.currentTarget.previousSibling as HTMLInputElement
                       addKeyword(ruleIndex, input.value)
                       input.value = ''
                     }}
@@ -1047,8 +979,7 @@ const KeywordReplyManager = () => {
                   <Button
                     variant="outline"
                     onClick={e => {
-                      const input = e.currentTarget
-                        .previousSibling as HTMLInputElement
+                      const input = e.currentTarget.previousSibling as HTMLInputElement
                       addContent(ruleIndex, input.value)
                       input.value = ''
                     }}
@@ -1062,33 +993,17 @@ const KeywordReplyManager = () => {
         ))}
       </div>
     )
-  }, [
-    addContent,
-    addKeyword,
-    removeContent,
-    rules.map,
-    removeKeyword,
-    removeRule,
-    rules.length,
-  ])
+  }, [addContent, addKeyword, removeContent, rules.map, removeKeyword, removeRule, rules.length])
 
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-sm font-medium">关键词回复规则</h3>
         <div className="flex items-center gap-x-2">
-          <Button
-            variant={'outline'}
-            size="sm"
-            onClick={() => setShowEditor(prev => !prev)}
-          >
+          <Button variant={'outline'} size="sm" onClick={() => setShowEditor(prev => !prev)}>
             {showEditor ? '普通模式' : '批量编辑'}
           </Button>
-          <Button
-            size="sm"
-            onClick={addRule}
-            className="flex items-center gap-1"
-          >
+          <Button size="sm" onClick={addRule} className="flex items-center gap-1">
             <Plus className="h-4 w-4" /> 添加规则
           </Button>
         </div>
@@ -1139,20 +1054,12 @@ const AIAutoReplyConfig = () => {
     <>
       <div className="flex flex-col space-y-4">
         <div className="flex items-center space-x-2">
-          <Switch
-            id={aiReplyId}
-            checked={aiReplyEnabled}
-            onCheckedChange={handleAiReplyChange}
-          />
+          <Switch id={aiReplyId} checked={aiReplyEnabled} onCheckedChange={handleAiReplyChange} />
           <Label htmlFor={aiReplyId}>启用AI自动回复</Label>
         </div>
         <div>
           <div className="flex items-center space-x-2">
-            <Switch
-              id={autoSendId}
-              checked={autoSend}
-              onCheckedChange={handleAutoSendChange}
-            />
+            <Switch id={autoSendId} checked={autoSend} onCheckedChange={handleAutoSendChange} />
             <Label htmlFor={autoSendId}>自动发送</Label>
           </div>
           <div className="text-xs text-muted-foreground mt-2 pl-2">
@@ -1170,8 +1077,7 @@ const AIAutoReplyConfig = () => {
               <li>可能会影响与观众的真实互动体验</li>
             </ul>
             <p className="font-medium mt-1">
-              ※
-              建议在开启自动发送前，先观察一段时间AI的回复质量。您也可以通过点击每条回复预览旁边的
+              ※ 建议在开启自动发送前，先观察一段时间AI的回复质量。您也可以通过点击每条回复预览旁边的
               <strong>小飞机按钮</strong>来手动发送。
             </p>
           </div>
@@ -1186,9 +1092,7 @@ const AIAutoReplyConfig = () => {
             onChange={e => updateAIReplySettings({ prompt: e.target.value })}
             className="min-h-[120px]"
           />
-          <p className="text-xs text-muted-foreground">
-            提示词将指导AI如何回复用户评论
-          </p>
+          <p className="text-xs text-muted-foreground">提示词将指导AI如何回复用户评论</p>
           <div className="flex justify-between items-center space-x-2">
             <APIKeyDialog />
             <AIModelInfo />

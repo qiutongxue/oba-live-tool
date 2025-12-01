@@ -8,7 +8,8 @@ import {
   getItemFromVirtualScroller,
   toggleButton,
 } from '../helper'
-import type { IPerformComment, IPerformPopup, IPlatform } from '../IPlatform'
+import type { ICommentListener, IPerformComment, IPerformPopup, IPlatform } from '../IPlatform'
+import { WeChatChannelCommentListener } from './commentLIstener'
 import { REGEXPS, SELECTORS, TEXT, URLS } from './constant'
 import { wechatChannelElementFinder as elementFinder } from './element-finder'
 
@@ -17,12 +18,16 @@ const PLATFORM_NAME = '微信视频号' as const
 /**
  * 微信视频号
  */
-export class WechatChannelPlatform implements IPlatform, IPerformPopup, IPerformComment {
+export class WechatChannelPlatform
+  implements IPlatform, IPerformPopup, IPerformComment, ICommentListener
+{
+  readonly _isCommentListener = true
   readonly _isPerformComment = true
   readonly _isPerformPopup = true
   private mainPage: Page | null = null
   /** 商品列表页面 */
   private productsPage: Page | null = null
+  private commentListener: WeChatChannelCommentListener | null = null
   async connect(session: BrowserSession) {
     const { page } = session
     await page.goto(URLS.LIVE_CONTROL_PAGE, {
@@ -98,6 +103,24 @@ export class WechatChannelPlatform implements IPlatform, IPerformPopup, IPerform
       ensurePage(this.mainPage),
       Result.andThen(page => comment(page, elementFinder, message, false)),
     )
+  }
+
+  startCommentListener(onComment: (comment: LiveMessage) => void) {
+    Result.pipe(
+      ensurePage(this.mainPage),
+      Result.inspect(page => {
+        this.commentListener = new WeChatChannelCommentListener(page)
+        this.commentListener.startCommentListener(onComment)
+      }),
+    )
+  }
+
+  stopCommentListener(): void {
+    this.commentListener?.stopCommentListener()
+  }
+
+  getCommentListenerPage(): Page {
+    return Result.unwrap(ensurePage(this.commentListener?.getCommentListenerPage()))
   }
 
   getPopupPage() {

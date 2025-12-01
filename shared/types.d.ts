@@ -56,7 +56,7 @@ declare type SendBatchMessagesTask = {
 }
 
 declare interface CommentListenerConfig {
-  source: 'compass' | 'control'
+  source: 'compass' | 'control' | 'wechat-channel'
   ws?: {
     port: number
   }
@@ -138,3 +138,14 @@ interface LiveOrderMessage {
   product_id: string
   product_title: string
 }
+
+declare type WechatChannelLiveMessage = {
+  msg_type: 'wechat_channel_live_msg'
+  msg_id: string
+  nick_name: string
+  user_id: string
+  content: string
+  time: string
+}
+
+declare type LiveMessage = WechatChannelLiveMessage | DouyinLiveMessage

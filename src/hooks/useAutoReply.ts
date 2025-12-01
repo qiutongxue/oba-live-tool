@@ -29,19 +29,11 @@ interface ReplyPreview {
   time: string
 }
 
-export type MessageType =
-  | 'comment'
-  | 'room_enter'
-  | 'room_like'
-  | 'room_follow'
-  | 'subscribe_merchant_brand_vip'
-  | 'live_order'
-  | 'ecom_fansclub_participate'
-
-export type EventMessageType = Exclude<MessageType, 'comment'>
-
-export type Message = DouyinLiveMessage
+export type Message = LiveMessage
+export type MessageType = Message['msg_type']
+export type EventMessageType = Exclude<MessageType, 'comment' | 'wechat_channel_live_msg'>
 export type MessageOf<T extends MessageType> = Extract<Message, { msg_type: T }>
+type CommentMessage = MessageOf<'comment'> | MessageOf<'wechat_channel_live_msg'>
 
 type ListeningStatus = 'waiting' | 'listening' | 'stopped' | 'error'
 
@@ -54,7 +46,7 @@ interface AutoReplyContext {
 }
 
 interface AutoReplyBaseConfig {
-  entry: 'control' | 'compass' // 中控台 | 电商罗盘
+  entry: CommentListenerConfig['source']
   hideUsername: boolean
   comment: {
     keywordReply: {
@@ -77,9 +69,7 @@ interface AutoReplyBaseConfig {
   }
 }
 
-export type SimpleEventReplyMessage =
-  | string
-  | { content: string; filter: StringFilterConfig }
+export type SimpleEventReplyMessage = string | { content: string; filter: StringFilterConfig }
 
 export interface SimpleEventReply {
   enable: boolean
@@ -100,18 +90,10 @@ interface AutoReplyAction {
   setIsRunning: (accountId: string, isRunning: boolean) => void
   setIsListening: (accountId: string, isListening: ListeningStatus) => void
   addComment: (accountId: string, comment: Message) => void
-  addReply: (
-    accountId: string,
-    commentId: string,
-    nickname: string,
-    content: string,
-  ) => void
+  addReply: (accountId: string, commentId: string, nickname: string, content: string) => void
   removeReply: (accountId: string, commentId: string) => void
 
-  updateConfig: (
-    accountId: string,
-    configUpdates: DeepPartial<AutoReplyConfig>,
-  ) => void
+  updateConfig: (accountId: string, configUpdates: DeepPartial<AutoReplyConfig>) => void
 }
 
 const defaultPrompt =
@@ -217,10 +199,7 @@ export const useAutoReplyStore = create<AutoReplyState & AutoReplyAction>()(
             const context = ensureContext(state, accountId)
             // 限制评论数量，防止内存无限增长
             const MAX_COMMENTS = 500
-            context.comments = [{ ...comment }, ...context.comments].slice(
-              0,
-              MAX_COMMENTS,
-            )
+            context.comments = [{ ...comment }, ...context.comments].slice(0, MAX_COMMENTS)
           }),
         addReply: (accountId, commentId, nickname, content) =>
           set(state => {
@@ -241,9 +220,7 @@ export const useAutoReplyStore = create<AutoReplyState & AutoReplyAction>()(
         removeReply: (accountId, commentId) =>
           set(state => {
             const context = ensureContext(state, accountId)
-            context.replies = context.replies.filter(
-              reply => reply.commentId !== commentId,
-            )
+            context.replies = context.replies.filter(reply => reply.commentId !== commentId)
           }),
 
         updateConfig: (accountId, configUpdates) =>
@@ -276,8 +253,7 @@ export const useAutoReplyStore = create<AutoReplyState & AutoReplyAction>()(
       merge: (persistedState, currentState) => {
         // 合并时，用默认值填充缺失的字段
         const mergedContexts: Record<string, AutoReplyContext> = {}
-        const persistedContexts =
-          (persistedState as Partial<AutoReplyState>)?.contexts || {}
+        const persistedContexts = (persistedState as Partial<AutoReplyState>)?.contexts || {}
 
         // 获取当前所有账户 ID (包括可能只在内存中的)
         const allAccountIds = new Set([
@@ -314,8 +290,7 @@ export const useAutoReplyStore = create<AutoReplyState & AutoReplyAction>()(
             const contexts: Record<string, AutoReplyContext> = {}
             for (const key in persisted.contexts) {
               contexts[key] = createDefaultContext()
-              contexts[key].config.comment.aiReply.prompt =
-                persisted.contexts[key].prompt
+              contexts[key].config.comment.aiReply.prompt = persisted.contexts[key].prompt
             }
 
             return { contexts }
@@ -332,7 +307,7 @@ export const useAutoReplyStore = create<AutoReplyState & AutoReplyAction>()(
   ),
 )
 function generateAIMessages(
-  comments: MessageOf<'comment'>[],
+  comments: CommentMessage[],
   replies: ReplyPreview[],
 ): Omit<ChatMessage, 'id' | 'timestamp'>[] {
   // 1. 按时间排序混合评论和回复
@@ -342,25 +317,23 @@ function generateAIMessages(
   ].sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime())
 
   // 2. 转换为 AI 消息格式
-  const rawMessages: Omit<ChatMessage, 'id' | 'timestamp'>[] = sortedItems.map(
-    item => {
-      if (item.type === 'comment') {
-        return {
-          role: 'user',
-          // 发送给 AI 的格式，包含昵称和内容
-          content: JSON.stringify({
-            nickname: item.data.nick_name,
-            content: item.data.content ?? '', // 确保 content 是字符串
-          }),
-        }
-      }
-      // item.type === 'reply'
+  const rawMessages: Omit<ChatMessage, 'id' | 'timestamp'>[] = sortedItems.map(item => {
+    if (item.type === 'comment') {
       return {
-        role: 'assistant',
-        content: item.data.replyContent,
+        role: 'user',
+        // 发送给 AI 的格式，包含昵称和内容
+        content: JSON.stringify({
+          nickname: item.data.nick_name,
+          content: item.data.content ?? '', // 确保 content 是字符串
+        }),
       }
-    },
-  )
+    }
+    // item.type === 'reply'
+    return {
+      role: 'assistant',
+      content: item.data.replyContent,
+    }
+  })
 
   // 3. 合并连续的同角色消息
   if (rawMessages.length === 0) {
@@ -411,11 +384,7 @@ function sendConfiguredReply(
     const replyMessages = filterMessages.length ? filterMessages : pureMessages
     const content = getRandomElement(replyMessages)
     if (content) {
-      const message = replaceUsername(
-        content,
-        sourceMessage.nick_name,
-        config.hideUsername,
-      )
+      const message = replaceUsername(content, sourceMessage.nick_name, config.hideUsername)
       sendMessage(accountId, message) // 注意：这里是异步的，但我们不等待它完成
     }
   }
@@ -430,11 +399,7 @@ function getRandomElement<T>(arr: T[]): T | undefined {
 async function sendMessage(accountId: string, content: string) {
   if (!content) return
   try {
-    await window.ipcRenderer.invoke(
-      IPC_CHANNELS.tasks.autoReply.sendReply,
-      accountId,
-      content,
-    )
+    await window.ipcRenderer.invoke(IPC_CHANNELS.tasks.autoReply.sendReply, accountId, content)
   } catch (err) {
     console.error('自动发送回复失败:', err)
   }
@@ -446,10 +411,7 @@ function replaceUsername(content: string, username: string, mask: boolean) {
   const displayedUsername = mask
     ? `${String.fromCodePoint(username.codePointAt(0) ?? 42 /* 42 是星号 */)}***`
     : username
-  return content.replace(
-    new RegExp(USERNAME_PLACEHOLDER, 'g'),
-    displayedUsername,
-  )
+  return content.replace(new RegExp(USERNAME_PLACEHOLDER, 'g'), displayedUsername)
 }
 
 export function useAutoReply() {
@@ -469,7 +431,7 @@ export function useAutoReply() {
    * @returns boolean - 是否成功匹配并发送了关键字回复
    */
   const handleKeywordReply = useMemoizedFn(
-    (comment: MessageOf<'comment'>, config: AutoReplyConfig): boolean => {
+    (comment: CommentMessage, config: AutoReplyConfig): boolean => {
       if (!config.comment.keywordReply.enable || !comment.content) {
         return false
       }
@@ -481,11 +443,7 @@ export function useAutoReply() {
       if (rule && rule.contents.length > 0) {
         const content = getRandomElement(rule.contents)
         if (content) {
-          const message = replaceUsername(
-            content,
-            comment.nick_name,
-            config.hideUsername,
-          )
+          const message = replaceUsername(content, comment.nick_name, config.hideUsername)
           sendMessage(currentAccountId, message)
           // 注意：关键字回复不通过 addReply 添加到界面，直接发送
           return true // 匹配成功
@@ -501,7 +459,7 @@ export function useAutoReply() {
   const handleAIReply = useMemoizedFn(
     async (
       accountId: string,
-      comment: MessageOf<'comment'>,
+      comment: CommentMessage,
       allComments: Message[],
       allReplies: ReplyPreview[],
       config: AutoReplyConfig,
@@ -516,11 +474,10 @@ export function useAutoReply() {
       // 筛选与该用户相关的评论和回复
       const userComments = [comment, ...allComments].filter(
         cmt =>
-          cmt.msg_type === 'comment' && cmt.nick_name === comment.nick_name,
-      ) as MessageOf<'comment'>[]
-      const userReplies = allReplies.filter(
-        reply => reply.replyFor === comment.nick_name,
-      )
+          (cmt.msg_type === 'comment' || cmt.msg_type === 'wechat_channel_live_msg') &&
+          cmt.nick_name === comment.nick_name,
+      ) as CommentMessage[]
+      const userReplies = allReplies.filter(reply => reply.replyFor === comment.nick_name)
 
       // 生成 AI 请求的消息体
       const plainMessages = generateAIMessages(userComments, userReplies)
@@ -534,24 +491,16 @@ export function useAutoReply() {
       ]
 
       try {
-        const replyContent = await window.ipcRenderer.invoke(
-          IPC_CHANNELS.tasks.aiChat.normalChat,
-          {
-            messages,
-            provider,
-            model,
-            apiKey,
-            customBaseURL,
-          },
-        )
+        const replyContent = await window.ipcRenderer.invoke(IPC_CHANNELS.tasks.aiChat.normalChat, {
+          messages,
+          provider,
+          model,
+          apiKey,
+          customBaseURL,
+        })
 
         if (replyContent && typeof replyContent === 'string') {
-          store.addReply(
-            accountId,
-            comment.msg_id,
-            comment.nick_name,
-            replyContent,
-          )
+          store.addReply(accountId, comment.msg_id, comment.nick_name, replyContent)
 
           // 自动发送
           if (autoSend) {
@@ -569,12 +518,7 @@ export function useAutoReply() {
     // const context = contexts[accountId] || createDefaultContext()
     const currentContext =
       useAutoReplyStore.getState().contexts[accountId] || createDefaultContext()
-    const {
-      isRunning,
-      comments: allComments,
-      replies: allReplies,
-      config,
-    } = currentContext
+    const { isRunning, comments: allComments, replies: allReplies, config } = currentContext
 
     store.addComment(accountId, comment)
     if (
@@ -588,6 +532,7 @@ export function useAutoReply() {
     }
 
     switch (comment.msg_type) {
+      case 'wechat_channel_live_msg':
       case 'comment': {
         // 优先尝试关键字回复
         const keywordReplied = handleKeywordReply(comment, config)
@@ -599,10 +544,7 @@ export function useAutoReply() {
       }
       case 'live_order': {
         /* 如果设置了仅已支付回复且当前非已支付时不回复 */
-        if (
-          !config.live_order.options?.onlyReplyPaid ||
-          comment.order_status === '已付款'
-        ) {
+        if (!config.live_order.options?.onlyReplyPaid || comment.order_status === '已付款') {
           sendConfiguredReply(accountId, config, comment)
         }
         break
@@ -622,24 +564,18 @@ export function useAutoReply() {
 
     // Actions (绑定到当前账户)
     handleComment,
-    setIsRunning: (running: boolean) =>
-      store.setIsRunning(currentAccountId, running),
+    setIsRunning: (running: boolean) => store.setIsRunning(currentAccountId, running),
     setIsListening: (listening: ListeningStatus) =>
       store.setIsListening(currentAccountId, listening),
-    removeReply: (commentId: string) =>
-      store.removeReply(currentAccountId, commentId),
+    removeReply: (commentId: string) => store.removeReply(currentAccountId, commentId),
 
     // 快捷方式更新 prompt (示例)
-    updateKeywordRules: (
-      rules: AutoReplyConfig['comment']['keywordReply']['rules'],
-    ) => {
+    updateKeywordRules: (rules: AutoReplyConfig['comment']['keywordReply']['rules']) => {
       store.updateConfig(currentAccountId, {
         comment: { keywordReply: { rules } },
       })
     },
-    updateAIReplySettings: (
-      settings: DeepPartial<AutoReplyConfig['comment']['aiReply']>,
-    ) => {
+    updateAIReplySettings: (settings: DeepPartial<AutoReplyConfig['comment']['aiReply']>) => {
       store.updateConfig(currentAccountId, { comment: { aiReply: settings } })
     },
     updateGeneralSettings: (
