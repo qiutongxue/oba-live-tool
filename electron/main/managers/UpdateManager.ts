@@ -192,7 +192,6 @@ class UpdateManager {
     } catch (error) {
       const message = `网络错误: ${errorMessage(error).split('\n')[0]}`
       windowManager.send(IPC_CHANNELS.updater.updateError, { message, downloadURL })
-      throw new Error(message)
     }
   }
 
