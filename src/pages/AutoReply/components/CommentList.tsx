@@ -11,6 +11,7 @@ import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
 import { useAccounts } from '@/hooks/useAccounts'
 import { type Message, useAutoReply } from '@/hooks/useAutoReply'
+import { useAutoReplyConfig } from '@/hooks/useAutoReplyConfig'
 import { useCurrentLiveControl } from '@/hooks/useLiveControl'
 import { useToast } from '@/hooks/useToast'
 import { cn } from '@/lib/utils'
@@ -131,9 +132,9 @@ export default function CommentList({
 }: {
   highlight: string | null
 }) {
-  const { comments, isListening, setIsListening, config } = useAutoReply()
+  const { comments, isListening, setIsListening } = useAutoReply()
+  const { config } = useAutoReplyConfig()
   const isConnected = useCurrentLiveControl(context => context.isConnected)
-  const platform = useCurrentLiveControl(context => context.platform)
   const { toast } = useToast()
   const [hideHost, setHideHost] = useState(false)
   const { currentAccountId } = useAccounts()

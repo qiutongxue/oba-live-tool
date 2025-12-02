@@ -41,13 +41,12 @@ import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import type { EventMessageType, MessageOf } from '@/hooks/useAutoReply'
 import {
   type AutoReplyConfig,
-  type EventMessageType,
-  type MessageOf,
   type SimpleEventReplyMessage,
-  useAutoReply,
-} from '@/hooks/useAutoReply'
+  useAutoReplyConfig,
+} from '@/hooks/useAutoReplyConfig'
 import { useCurrentLiveControl } from '@/hooks/useLiveControl'
 import { useToast } from '@/hooks/useToast'
 import type { StringFilter, StringFilterConfig } from '@/utils/filter'
@@ -419,7 +418,7 @@ const ReplyMessageManager: FC<{
 
 // 用户屏蔽列表组件
 const BlocklistManager: FC = () => {
-  const { updateBlockList, config } = useAutoReply()
+  const { updateBlockList, config } = useAutoReplyConfig()
   const blockedUsers = config.blockList
   const [newUser, setNewUser] = useState('')
 
@@ -490,7 +489,7 @@ const Settings = () => {
     updateEventReplyEnabled,
     updateEventReplyOptions,
     updateWSConfig,
-  } = useAutoReply()
+  } = useAutoReplyConfig()
 
   const { entry: listeningSource } = config
   const typeReplies = pick(config, [
@@ -782,7 +781,7 @@ const Settings = () => {
 }
 
 const KeywordReplyManager = () => {
-  const { config, updateKeywordRules } = useAutoReply()
+  const { config, updateKeywordRules } = useAutoReplyConfig()
 
   // 复制规则以便在本地编辑
   // const [rules, setRules] = useState(config.comment.keywordReply.rules)
@@ -1035,7 +1034,7 @@ const KeywordReplyManager = () => {
 }
 
 const AIAutoReplyConfig = () => {
-  const { config, updateAIReplySettings } = useAutoReply()
+  const { config, updateAIReplySettings } = useAutoReplyConfig()
   const aiReplyEnabled = config.comment.aiReply.enable
   const autoSend = config.comment.aiReply.autoSend
   // 处理AI自动回复开关

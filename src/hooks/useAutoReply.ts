@@ -2,24 +2,13 @@ import { useMemoizedFn } from 'ahooks'
 import { useMemo } from 'react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { create } from 'zustand'
-import { createJSONStorage, persist } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
 import { EVENTS, eventEmitter } from '@/utils/events'
-import { matchObject, type StringFilterConfig } from '@/utils/filter'
-import { mergeWithoutArray } from '@/utils/misc'
+import { matchObject } from '@/utils/filter'
 import { useAccounts } from './useAccounts'
 import { type ChatMessage, useAIChatStore } from './useAIChat'
+import { type AutoReplyConfig, useAutoReplyConfig } from './useAutoReplyConfig'
 import { useCurrentLiveControl } from './useLiveControl'
-
-type DeepPartial<T> = T extends (...args: unknown[]) => unknown
-  ? T
-  : T extends Array<infer U>
-    ? Array<DeepPartial<U>>
-    : T extends object
-      ? {
-          [P in keyof T]?: DeepPartial<T[P]>
-        }
-      : T
 
 interface ReplyPreview {
   id: string
@@ -42,46 +31,7 @@ interface AutoReplyContext {
   isListening: ListeningStatus
   replies: ReplyPreview[]
   comments: Message[]
-  config: AutoReplyConfig
 }
-
-interface AutoReplyBaseConfig {
-  entry: CommentListenerConfig['source']
-  hideUsername: boolean
-  comment: {
-    keywordReply: {
-      enable: boolean
-      rules: {
-        keywords: string[]
-        contents: string[]
-      }[]
-    }
-    aiReply: {
-      enable: boolean
-      prompt: string
-      autoSend: boolean
-    }
-  }
-  blockList: string[]
-  ws?: {
-    enable: boolean
-    port: number
-  }
-}
-
-export type SimpleEventReplyMessage = string | { content: string; filter: StringFilterConfig }
-
-export interface SimpleEventReply {
-  enable: boolean
-  messages: SimpleEventReplyMessage[]
-  options?: Record<string, boolean>
-}
-
-type EventBasedReplies = {
-  [K in EventMessageType]: SimpleEventReply
-}
-
-export type AutoReplyConfig = AutoReplyBaseConfig & EventBasedReplies
 
 interface AutoReplyState {
   contexts: Record<string, AutoReplyContext>
@@ -92,61 +42,6 @@ interface AutoReplyAction {
   addComment: (accountId: string, comment: Message) => void
   addReply: (accountId: string, commentId: string, nickname: string, content: string) => void
   removeReply: (accountId: string, commentId: string) => void
-
-  updateConfig: (accountId: string, configUpdates: DeepPartial<AutoReplyConfig>) => void
-}
-
-const defaultPrompt =
-  '你是一个直播间的助手，负责回复观众的评论。请用简短友好的语气回复，不要超过50个字。'
-
-const createDefaultConfig = (): AutoReplyConfig => {
-  return {
-    entry: 'control',
-    hideUsername: false,
-    comment: {
-      keywordReply: {
-        enable: false,
-        rules: [],
-      },
-      aiReply: {
-        enable: false,
-        prompt: defaultPrompt,
-        autoSend: false,
-      },
-    },
-    room_enter: {
-      enable: false,
-      messages: [],
-    },
-    room_like: {
-      enable: false,
-      messages: [],
-    },
-    subscribe_merchant_brand_vip: {
-      enable: false,
-      messages: [],
-    },
-    live_order: {
-      enable: false,
-      messages: [],
-      options: {
-        onlyReplyPaid: false,
-      },
-    },
-    room_follow: {
-      enable: false,
-      messages: [],
-    },
-    ecom_fansclub_participate: {
-      enable: false,
-      messages: [],
-    },
-    blockList: [],
-    ws: {
-      enable: false,
-      port: 12354,
-    },
-  }
 }
 
 const createDefaultContext = (): AutoReplyContext => ({
@@ -154,158 +49,70 @@ const createDefaultContext = (): AutoReplyContext => ({
   isListening: 'stopped',
   replies: [],
   comments: [],
-  config: createDefaultConfig(),
 })
 
 const USERNAME_PLACEHOLDER = '{用户名}'
 
 export const useAutoReplyStore = create<AutoReplyState & AutoReplyAction>()(
-  persist(
-    immer(set => {
-      eventEmitter.on(EVENTS.ACCOUNT_REMOVED, (accountId: string) => {
-        set(state => {
-          delete state.contexts[accountId]
-        })
+  immer(set => {
+    eventEmitter.on(EVENTS.ACCOUNT_REMOVED, (accountId: string) => {
+      set(state => {
+        delete state.contexts[accountId]
       })
+    })
 
-      // 迁移之前版本设置的 prompt
-      const previousPrompt = localStorage.getItem('autoReplyPrompt')
-      if (previousPrompt) {
-        localStorage.removeItem('autoReplyPrompt')
+    const ensureContext = (state: AutoReplyState, accountId: string) => {
+      if (!state.contexts[accountId]) {
+        state.contexts[accountId] = createDefaultContext()
       }
+      return state.contexts[accountId]
+    }
 
-      const ensureContext = (state: AutoReplyState, accountId: string) => {
-        if (!state.contexts[accountId]) {
-          state.contexts[accountId] = createDefaultContext()
-        }
-        return state.contexts[accountId]
-      }
+    return {
+      contexts: {},
+      setIsRunning: (accountId, isRunning) =>
+        set(state => {
+          const context = ensureContext(state, accountId)
+          context.isRunning = isRunning
+        }),
+      setIsListening: (accountId, isListening) =>
+        set(state => {
+          const context = ensureContext(state, accountId)
+          context.isListening = isListening
+        }),
 
-      return {
-        contexts: {},
-        setIsRunning: (accountId, isRunning) =>
-          set(state => {
-            const context = ensureContext(state, accountId)
-            context.isRunning = isRunning
-          }),
-        setIsListening: (accountId, isListening) =>
-          set(state => {
-            const context = ensureContext(state, accountId)
-            context.isListening = isListening
-          }),
-
-        addComment: (accountId, comment) =>
-          set(state => {
-            const context = ensureContext(state, accountId)
-            // 限制评论数量，防止内存无限增长
-            const MAX_COMMENTS = 500
-            context.comments = [{ ...comment }, ...context.comments].slice(0, MAX_COMMENTS)
-          }),
-        addReply: (accountId, commentId, nickname, content) =>
-          set(state => {
-            const context = ensureContext(state, accountId)
-            // 限制回复数量 (可选)
-            const MAX_REPLIES = 500
-            context.replies = [
-              {
-                id: crypto.randomUUID(),
-                commentId,
-                replyContent: content,
-                replyFor: nickname,
-                time: new Date().toISOString(),
-              },
-              ...context.replies,
-            ].slice(0, MAX_REPLIES)
-          }),
-        removeReply: (accountId, commentId) =>
-          set(state => {
-            const context = ensureContext(state, accountId)
-            context.replies = context.replies.filter(reply => reply.commentId !== commentId)
-          }),
-
-        updateConfig: (accountId, configUpdates) =>
-          set(state => {
-            const context = ensureContext(state, accountId)
-            const newConfig = mergeWithoutArray(context.config, configUpdates)
-            context.config = newConfig
-          }),
-      }
-    }),
-    {
-      name: 'auto-reply',
-      version: 2,
-      storage: createJSONStorage(() => localStorage),
-      partialize: state => {
-        return {
-          contexts: Object.fromEntries(
-            Object.entries(state.contexts).map(([accountId, context]) => [
-              accountId,
-              {
-                config: context.config,
-                // prompt: context.prompt,
-                // autoSend: context.autoSend,
-                // userBlocklist: context.userBlocklist,
-              },
-            ]),
-          ),
-        }
-      },
-      merge: (persistedState, currentState) => {
-        // 合并时，用默认值填充缺失的字段
-        const mergedContexts: Record<string, AutoReplyContext> = {}
-        const persistedContexts = (persistedState as Partial<AutoReplyState>)?.contexts || {}
-
-        // 获取当前所有账户 ID (包括可能只在内存中的)
-        const allAccountIds = new Set([
-          ...Object.keys(currentState.contexts),
-          ...Object.keys(persistedContexts),
-        ])
-
-        for (const accountId of allAccountIds) {
-          const currentContextPartial = currentState.contexts[accountId] || {}
-          const persistedContextPartial = persistedContexts[accountId] as
-            | Partial<AutoReplyContext>
-            | undefined
-
-          mergedContexts[accountId] = {
-            ...createDefaultContext(),
-            ...currentContextPartial,
-            ...(persistedContextPartial && {
-              config: persistedContextPartial.config,
-            }),
-          }
-        }
-
-        return {
-          ...currentState,
-          contexts: mergedContexts,
-        }
-      },
-      migrate: (persistedState, version) => {
-        if (version === 1) {
-          try {
-            const persisted = persistedState as {
-              contexts: Record<string, { prompt: string }>
-            }
-            const contexts: Record<string, AutoReplyContext> = {}
-            for (const key in persisted.contexts) {
-              contexts[key] = createDefaultContext()
-              contexts[key].config.comment.aiReply.prompt = persisted.contexts[key].prompt
-            }
-
-            return { contexts }
-          } catch {
-            return {
-              contexts: {
-                default: createDefaultContext(),
-              },
-            }
-          }
-        }
-      },
-    },
-  ),
+      addComment: (accountId, comment) =>
+        set(state => {
+          const context = ensureContext(state, accountId)
+          // 限制评论数量，防止内存无限增长
+          const MAX_COMMENTS = 500
+          context.comments = [{ ...comment }, ...context.comments].slice(0, MAX_COMMENTS)
+        }),
+      addReply: (accountId, commentId, nickname, content) =>
+        set(state => {
+          const context = ensureContext(state, accountId)
+          // 限制回复数量 (可选)
+          const MAX_REPLIES = 500
+          context.replies = [
+            {
+              id: crypto.randomUUID(),
+              commentId,
+              replyContent: content,
+              replyFor: nickname,
+              time: new Date().toISOString(),
+            },
+            ...context.replies,
+          ].slice(0, MAX_REPLIES)
+        }),
+      removeReply: (accountId, commentId) =>
+        set(state => {
+          const context = ensureContext(state, accountId)
+          context.replies = context.replies.filter(reply => reply.commentId !== commentId)
+        }),
+    }
+  }),
 )
+
 function generateAIMessages(
   comments: CommentMessage[],
   replies: ReplyPreview[],
@@ -419,12 +226,13 @@ export function useAutoReply() {
   const { currentAccountId } = useAccounts()
   const accountName = useCurrentLiveControl(ctx => ctx.accountName)
   const aiStore = useAIChatStore()
+  const { config } = useAutoReplyConfig()
 
   const context = useMemo(() => {
     return store.contexts[currentAccountId] || createDefaultContext()
   }, [store.contexts, currentAccountId])
 
-  const { isRunning, isListening, comments, replies, config } = context
+  const { isRunning, isListening, comments, replies } = context
 
   /**
    * 处理关键字回复逻辑
@@ -518,7 +326,7 @@ export function useAutoReply() {
     // const context = contexts[accountId] || createDefaultContext()
     const currentContext =
       useAutoReplyStore.getState().contexts[accountId] || createDefaultContext()
-    const { isRunning, comments: allComments, replies: allReplies, config } = currentContext
+    const { isRunning, comments: allComments, replies: allReplies } = currentContext
 
     store.addComment(accountId, comment)
     if (
@@ -560,7 +368,6 @@ export function useAutoReply() {
     isListening,
     comments, // 当前账户的评论
     replies, // 当前账户的回复
-    config, // 当前账户的配置
 
     // Actions (绑定到当前账户)
     handleComment,
@@ -568,52 +375,5 @@ export function useAutoReply() {
     setIsListening: (listening: ListeningStatus) =>
       store.setIsListening(currentAccountId, listening),
     removeReply: (commentId: string) => store.removeReply(currentAccountId, commentId),
-
-    // 快捷方式更新 prompt (示例)
-    updateKeywordRules: (rules: AutoReplyConfig['comment']['keywordReply']['rules']) => {
-      store.updateConfig(currentAccountId, {
-        comment: { keywordReply: { rules } },
-      })
-    },
-    updateAIReplySettings: (settings: DeepPartial<AutoReplyConfig['comment']['aiReply']>) => {
-      store.updateConfig(currentAccountId, { comment: { aiReply: settings } })
-    },
-    updateGeneralSettings: (
-      settings: DeepPartial<Pick<AutoReplyConfig, 'entry' | 'hideUsername'>>,
-    ) => {
-      store.updateConfig(currentAccountId, settings)
-    },
-    updateEventReplyContents: (
-      replyType: EventMessageType,
-      contents: SimpleEventReplyMessage[],
-    ) => {
-      store.updateConfig(currentAccountId, {
-        [replyType]: { messages: contents },
-      })
-    },
-    updateBlockList: (blockList: string[]) => {
-      store.updateConfig(currentAccountId, { blockList })
-    },
-    updateKeywordReplyEnabled: (enable: boolean) => {
-      store.updateConfig(currentAccountId, {
-        comment: { keywordReply: { enable } },
-      })
-    },
-    updateEventReplyEnabled: (replyType: EventMessageType, enable: boolean) => {
-      store.updateConfig(currentAccountId, {
-        [replyType]: { enable },
-      })
-    },
-    updateEventReplyOptions: <T extends EventMessageType>(
-      replyType: T,
-      options: AutoReplyConfig[T]['options'],
-    ) => {
-      store.updateConfig(currentAccountId, {
-        [replyType]: { options },
-      })
-    },
-    updateWSConfig: (wsConfig: DeepPartial<AutoReplyConfig['ws']>) => {
-      store.updateConfig(currentAccountId, { ws: wsConfig })
-    },
   }
 }
