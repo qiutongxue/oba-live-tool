@@ -9,7 +9,7 @@ import {
   toggleButton,
 } from '../helper'
 import type { ICommentListener, IPerformComment, IPerformPopup, IPlatform } from '../IPlatform'
-import { WeChatChannelCommentListener } from './commentLIstener'
+import { WeChatChannelCommentListener } from './commentListener'
 import { REGEXPS, SELECTORS, TEXT, URLS } from './constant'
 import { wechatChannelElementFinder as elementFinder } from './element-finder'
 
