@@ -87,72 +87,68 @@ export function CompassSetting() {
     updateEventReplyContents(type, newMessages)
   }
   return (
-    <>
-      <div className="space-y-6">
-        {autoReplyTypes.map(type => (
-          <div key={type.id} className="space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <h4 className="text-sm font-medium">{type.name}自动回复</h4>
-                <p className="text-xs text-muted-foreground">
-                  当用户
-                  {type.name}
-                  时自动回复
-                </p>
-              </div>
-              <Switch
-                checked={typeReplies[type.id]?.enable || false}
-                onCheckedChange={checked => handleReplyChange(type.id, checked)}
-                disabled={listeningSource !== 'compass'}
-              />
+    <div className="space-y-6">
+      {autoReplyTypes.map(type => (
+        <div key={type.id} className="space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <h4 className="text-sm font-medium">{type.name}自动回复</h4>
+              <p className="text-xs text-muted-foreground">
+                当用户
+                {type.name}
+                时自动回复
+              </p>
             </div>
-
-            {typeReplies[type.id]?.enable && (
-              <Card className="border-dashed">
-                <CardContent className="pt-4">
-                  <ReplyMessageManager
-                    title={`${type.name}回复消息`}
-                    description="系统将从以下消息中随机选择一条发送，可使用{用户名}变量"
-                    messages={typeReplies[type.id]?.messages || [type.default]}
-                    onAdd={message => handleMessageAdd(type.id, message)}
-                    onRemove={index => handleMessageRemove(type.id, index)}
-                    placeholder={`例如：${type.default}`}
-                    msgType={type.id}
-                  />
-                  {
-                    // 单独处理已下单、已支付的回复
-                    type.id === 'live_order' && (
-                      <>
-                        <Separator className="mt-4" />
-                        <div className="flex justify-between items-center pt-4 text-sm">
-                          <div className="flex flex-col">
-                            <span>仅在已支付时回复</span>
-                            <span className="text-muted-foreground">
-                              用户订单具有<strong>已下单</strong>和<strong>已支付</strong>
-                              两种状态
-                            </span>
-                          </div>
-                          <Switch
-                            checked={config[type.id]?.options?.onlyReplyPaid}
-                            onCheckedChange={e =>
-                              hanldeOptionsChange(type.id, {
-                                onlyReplyPaid: e,
-                              })
-                            }
-                          />
-                        </div>
-                      </>
-                    )
-                  }
-                </CardContent>
-              </Card>
-            )}
+            <Switch
+              checked={typeReplies[type.id]?.enable || false}
+              onCheckedChange={checked => handleReplyChange(type.id, checked)}
+              disabled={listeningSource !== 'compass'}
+            />
           </div>
-        ))}
-      </div>
 
-      <Separator />
-    </>
+          {typeReplies[type.id]?.enable && (
+            <Card className="border-dashed">
+              <CardContent className="pt-4">
+                <ReplyMessageManager
+                  title={`${type.name}回复消息`}
+                  description="系统将从以下消息中随机选择一条发送，可使用{用户名}变量"
+                  messages={typeReplies[type.id]?.messages || [type.default]}
+                  onAdd={message => handleMessageAdd(type.id, message)}
+                  onRemove={index => handleMessageRemove(type.id, index)}
+                  placeholder={`例如：${type.default}`}
+                  msgType={type.id}
+                />
+                {
+                  // 单独处理已下单、已支付的回复
+                  type.id === 'live_order' && (
+                    <>
+                      <Separator className="mt-4" />
+                      <div className="flex justify-between items-center pt-4 text-sm">
+                        <div className="flex flex-col">
+                          <span>仅在已支付时回复</span>
+                          <span className="text-muted-foreground">
+                            用户订单具有<strong>已下单</strong>和<strong>已支付</strong>
+                            两种状态
+                          </span>
+                        </div>
+                        <Switch
+                          checked={config[type.id]?.options?.onlyReplyPaid}
+                          onCheckedChange={e =>
+                            hanldeOptionsChange(type.id, {
+                              onlyReplyPaid: e,
+                            })
+                          }
+                        />
+                      </div>
+                    </>
+                  )
+                }
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      ))}
+    </div>
   )
 }
 

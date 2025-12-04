@@ -76,6 +76,7 @@ export default function AutoReplySettings() {
 
           <Separator />
           {ExtraSetting}
+          {ExtraSetting && <Separator />}
           <BlocklistManager />
           <Separator />
           <WebSocketSetting />
