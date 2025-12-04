@@ -30,7 +30,7 @@ export const REGEXPS = {
 export const SELECTORS = {
   LOGIN: {
     /** 已登录状态 */
-    LOGGED_IN: '.account-info .name',
+    LOGGED_IN: '.account-info',
     /** 进入中控台成功 */
     IN_LIVE_CONTROL: '.live-message-input-container', // 评论框
   },
