@@ -10,6 +10,10 @@ interface MsgResponse {
       nickname: string
       headUrl: string
       content: string
+      /**
+       * 1：普通消息，
+       * 10017：上墙消息
+       *  */
       type: number
       username: string
       seq: string
@@ -41,7 +45,34 @@ interface MsgResponse {
       floatType: number
       isStickMsg: boolean
     }>
+    appMsgList: Array<{
+      /** 已知有：20002 */
+      msgType: number
+      /** 回复的内容，base64编码 */
+      payload: string
+      clientMsgId: string
+      toUserContact: {
+        contact: {
+          usename: string
+          nickname: string
+        }
+        displayNickname: string
+      }
+      fromUserContact: {
+        contact: {
+          usename: string
+          nickname: string
+        }
+        displayNickname: string
+      }
+    }>
   }
+}
+
+interface AppMsgPayload {
+  content: string
+  refer_product_question_card_id: string
+  reply_original_msg_type: number
 }
 
 export class WeChatChannelCommentListener implements ICommentListener {
@@ -70,7 +101,23 @@ export class WeChatChannelCommentListener implements ICommentListener {
         content: msg.content,
         time: new Date().toLocaleString(),
       }
-      console.log(message)
+      this.handleComment(message)
+    })
+    // 处理回复消息，这里的回复是通过点击评论的回复按钮触发的
+    body.data.appMsgList.forEach(msg => {
+      if (msg.msgType !== 20002) return
+      const payload = JSON.parse(
+        Buffer.from(msg.payload, 'base64').toString('utf-8'),
+      ) as AppMsgPayload
+      const content = payload.content
+      const message: WechatChannelLiveMessage = {
+        msg_type: 'wechat_channel_live_msg',
+        msg_id: msg.clientMsgId,
+        nick_name: msg.fromUserContact.contact.nickname,
+        user_id: msg.fromUserContact.contact.usename,
+        content,
+        time: new Date().toLocaleString(),
+      }
       this.handleComment(message)
     })
   }
