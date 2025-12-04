@@ -38,6 +38,8 @@ export const IPC_CHANNELS = {
       replyGenerated: 'tasks:autoReply:replyGenerated',
       sendReply: 'tasks:autoReply:sendReply',
     },
+    // 视频号上墙
+    pinComment: 'tasks:pinComment',
   },
   config: {
     save: 'config:save',

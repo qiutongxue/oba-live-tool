@@ -20,6 +20,7 @@ import { HideUsernameSetting } from './components/HideUsernameSetting'
 import { KeywordReplySetting } from './components/KeywordReplySetting'
 import { ListeningSourceSetting } from './components/ListeningSourceSetting'
 import { WebSocketSetting } from './components/WebSocketSetting'
+import { WechatChannelSetting } from './components/WechatChannelSetting'
 
 export default function AutoReplySettings() {
   const { config } = useAutoReplyConfig()
@@ -29,6 +30,8 @@ export default function AutoReplySettings() {
     switch (config.entry) {
       case 'compass':
         return <CompassSetting />
+      case 'wechat-channel':
+        return <WechatChannelSetting />
       default:
         return null
     }

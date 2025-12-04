@@ -6,7 +6,7 @@ import { immer } from 'zustand/middleware/immer'
 import { EVENTS, eventEmitter } from '@/utils/events'
 import { matchObject } from '@/utils/filter'
 import { useAccounts } from './useAccounts'
-import { type ChatMessage, useAIChatStore } from './useAIChat'
+import { type AIProvider, type ChatMessage, useAIChatStore } from './useAIChat'
 import { type AutoReplyConfig, useAutoReplyConfig } from './useAutoReplyConfig'
 import { useCurrentLiveControl } from './useLiveControl'
 
@@ -221,6 +221,102 @@ function replaceUsername(content: string, username: string, mask: boolean) {
   return content.replace(new RegExp(USERNAME_PLACEHOLDER, 'g'), displayedUsername)
 }
 
+/**
+ * 处理关键字回复逻辑
+ * @returns boolean - 是否成功匹配并发送了关键字回复
+ */
+const handleKeywordReply = (
+  comment: CommentMessage,
+  config: AutoReplyConfig,
+  accountId: string,
+): boolean => {
+  if (!config.comment.keywordReply.enable || !comment.content) {
+    return false
+  }
+
+  const rule = config.comment.keywordReply.rules.find(({ keywords }) =>
+    keywords.some(kw => comment.content?.includes(kw)),
+  )
+
+  if (rule && rule.contents.length > 0) {
+    const content = getRandomElement(rule.contents)
+    if (content) {
+      const message = replaceUsername(content, comment.nick_name, config.hideUsername)
+      sendMessage(accountId, message)
+      // 注意：关键字回复不通过 addReply 添加到界面，直接发送
+      return true // 匹配成功
+    }
+  }
+  return false // 未匹配
+}
+
+/**
+ * 处理 AI 回复逻辑
+ */
+const handleAIReply = async (
+  accountId: string,
+  comment: CommentMessage,
+  allComments: Message[],
+  allReplies: ReplyPreview[],
+  config: AutoReplyConfig,
+  {
+    provider,
+    model,
+    apiKey,
+    customBaseURL,
+  }: {
+    provider: AIProvider
+    model: string
+    apiKey: string
+    customBaseURL: string
+  },
+  onReply: (content: string) => void,
+) => {
+  if (!config.comment.aiReply.enable) return
+
+  const { prompt, autoSend } = config.comment.aiReply
+
+  // 筛选与该用户相关的评论和回复
+  const userComments = [comment, ...allComments].filter(
+    cmt =>
+      (cmt.msg_type === 'comment' || cmt.msg_type === 'wechat_channel_live_msg') &&
+      cmt.nick_name === comment.nick_name,
+  ) as CommentMessage[]
+  const userReplies = allReplies.filter(reply => reply.replyFor === comment.nick_name)
+
+  // 生成 AI 请求的消息体
+  const plainMessages = generateAIMessages(userComments, userReplies)
+
+  // 构造系统提示
+  const systemPrompt = `你将接收到一个或多个 JSON 字符串，每个字符串代表用户的评论，格式为 {"nickname": "用户昵称", "content": "评论内容"}。请分析所有评论，并根据以下要求生成一个回复：\n${prompt}`
+
+  const messages = [
+    { role: 'system', content: systemPrompt }, // id 和 timestamp 对请求不重要
+    ...plainMessages,
+  ]
+
+  try {
+    const replyContent = await window.ipcRenderer.invoke(IPC_CHANNELS.tasks.aiChat.normalChat, {
+      messages,
+      provider,
+      model,
+      apiKey,
+      customBaseURL,
+    })
+
+    if (replyContent && typeof replyContent === 'string') {
+      onReply(replyContent)
+      // 自动发送
+      if (autoSend) {
+        sendMessage(accountId, replyContent)
+      }
+    }
+  } catch (err) {
+    console.error('AI 生成回复失败:', err)
+    // 可以在这里添加错误处理，比如更新状态或提示用户
+  }
+}
+
 export function useAutoReply() {
   const store = useAutoReplyStore()
   const { currentAccountId } = useAccounts()
@@ -234,94 +330,6 @@ export function useAutoReply() {
 
   const { isRunning, isListening, comments, replies } = context
 
-  /**
-   * 处理关键字回复逻辑
-   * @returns boolean - 是否成功匹配并发送了关键字回复
-   */
-  const handleKeywordReply = useMemoizedFn(
-    (comment: CommentMessage, config: AutoReplyConfig): boolean => {
-      if (!config.comment.keywordReply.enable || !comment.content) {
-        return false
-      }
-
-      const rule = config.comment.keywordReply.rules.find(({ keywords }) =>
-        keywords.some(kw => comment.content?.includes(kw)),
-      )
-
-      if (rule && rule.contents.length > 0) {
-        const content = getRandomElement(rule.contents)
-        if (content) {
-          const message = replaceUsername(content, comment.nick_name, config.hideUsername)
-          sendMessage(currentAccountId, message)
-          // 注意：关键字回复不通过 addReply 添加到界面，直接发送
-          return true // 匹配成功
-        }
-      }
-      return false // 未匹配
-    },
-  )
-
-  /**
-   * 处理 AI 回复逻辑
-   */
-  const handleAIReply = useMemoizedFn(
-    async (
-      accountId: string,
-      comment: CommentMessage,
-      allComments: Message[],
-      allReplies: ReplyPreview[],
-      config: AutoReplyConfig,
-    ) => {
-      if (!config.comment.aiReply.enable) return
-
-      const { prompt, autoSend } = config.comment.aiReply
-      const { provider, model } = aiStore.config
-      const apiKey = aiStore.apiKeys[provider]
-      const customBaseURL = aiStore.customBaseURL
-
-      // 筛选与该用户相关的评论和回复
-      const userComments = [comment, ...allComments].filter(
-        cmt =>
-          (cmt.msg_type === 'comment' || cmt.msg_type === 'wechat_channel_live_msg') &&
-          cmt.nick_name === comment.nick_name,
-      ) as CommentMessage[]
-      const userReplies = allReplies.filter(reply => reply.replyFor === comment.nick_name)
-
-      // 生成 AI 请求的消息体
-      const plainMessages = generateAIMessages(userComments, userReplies)
-
-      // 构造系统提示
-      const systemPrompt = `你将接收到一个或多个 JSON 字符串，每个字符串代表用户的评论，格式为 {"nickname": "用户昵称", "content": "评论内容"}。请分析所有评论，并根据以下要求生成一个回复：\n${prompt}`
-
-      const messages = [
-        { role: 'system', content: systemPrompt }, // id 和 timestamp 对请求不重要
-        ...plainMessages,
-      ]
-
-      try {
-        const replyContent = await window.ipcRenderer.invoke(IPC_CHANNELS.tasks.aiChat.normalChat, {
-          messages,
-          provider,
-          model,
-          apiKey,
-          customBaseURL,
-        })
-
-        if (replyContent && typeof replyContent === 'string') {
-          store.addReply(accountId, comment.msg_id, comment.nick_name, replyContent)
-
-          // 自动发送
-          if (autoSend) {
-            sendMessage(accountId, replyContent)
-          }
-        }
-      } catch (err) {
-        console.error('AI 生成回复失败:', err)
-        // 可以在这里添加错误处理，比如更新状态或提示用户
-      }
-    },
-  )
-
   const handleComment = useMemoizedFn((comment: Message, accountId: string) => {
     // const context = contexts[accountId] || createDefaultContext()
     const currentContext =
@@ -329,37 +337,77 @@ export function useAutoReply() {
     const { isRunning, comments: allComments, replies: allReplies } = currentContext
 
     store.addComment(accountId, comment)
-    if (
-      !isRunning ||
-      // 如果是主播评论就跳过
-      comment.nick_name === accountName ||
-      // 在黑名单也跳过
-      config.blockList?.includes(comment.nick_name)
-    ) {
+    if (!isRunning) {
       return
     }
 
-    switch (comment.msg_type) {
-      case 'wechat_channel_live_msg':
-      case 'comment': {
-        // 优先尝试关键字回复
-        const keywordReplied = handleKeywordReply(comment, config)
-        // 如果关键字未回复，且 AI 回复已启用，则尝试 AI 回复
-        if (!keywordReplied && config.comment.aiReply.enable) {
-          handleAIReply(accountId, comment, allComments, allReplies, config)
-        }
-        break
+    ;(function handleReply() {
+      if (
+        // 如果是主播评论就跳过
+        comment.nick_name === accountName ||
+        // 在黑名单也跳过
+        config.blockList?.includes(comment.nick_name)
+      ) {
+        return
       }
-      case 'live_order': {
-        /* 如果设置了仅已支付回复且当前非已支付时不回复 */
-        if (!config.live_order.options?.onlyReplyPaid || comment.order_status === '已付款') {
+      switch (comment.msg_type) {
+        case 'wechat_channel_live_msg':
+        case 'comment': {
+          // 优先尝试关键字回复
+          const keywordReplied = handleKeywordReply(comment, config, currentAccountId)
+          // 如果关键字未回复，且 AI 回复已启用，则尝试 AI 回复
+          if (!keywordReplied && config.comment.aiReply.enable) {
+            const { provider, model } = aiStore.config
+            const apiKey = aiStore.apiKeys[provider]
+            const customBaseURL = aiStore.customBaseURL
+            handleAIReply(
+              accountId,
+              comment,
+              allComments,
+              allReplies,
+              config,
+              {
+                provider,
+                model,
+                apiKey,
+                customBaseURL,
+              },
+              (replyContent: string) => {
+                store.addReply(accountId, comment.msg_id, comment.nick_name, replyContent)
+              },
+            )
+          }
+          break
+        }
+        case 'live_order': {
+          /* 如果设置了仅已支付回复且当前非已支付时不回复 */
+          if (!config.live_order.options?.onlyReplyPaid || comment.order_status === '已付款') {
+            sendConfiguredReply(accountId, config, comment)
+          }
+          break
+        }
+        default:
           sendConfiguredReply(accountId, config, comment)
-        }
-        break
       }
-      default:
-        sendConfiguredReply(accountId, config, comment)
-    }
+    })()
+
+    ;(function handlePinComment() {
+      // 视频号上墙
+      if (comment.msg_type === 'wechat_channel_live_msg' && config.pinComment.enable) {
+        if (!config.pinComment.includeHost && comment.nick_name === accountName) {
+          return
+        }
+        const { matchStr } = config.pinComment
+        // 把平台表情去掉，表情为 [xx]
+        const pureTextContent = comment.content.replace(/\[[^\]]{1,3}\]/g, '')
+        if (matchStr.some(str => pureTextContent.includes(str))) {
+          window.ipcRenderer.invoke(IPC_CHANNELS.tasks.pinComment, {
+            accountId,
+            content: pureTextContent,
+          })
+        }
+      }
+    })()
   })
 
   return {

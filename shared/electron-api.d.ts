@@ -96,6 +96,9 @@ export interface IpcChannels {
   ) => void
   [IPC_CHANNELS.tasks.aiChat.error]: (data: { error: string }) => void
 
+  // 视频号上墙
+  [IPC_CHANNELS.tasks.pinComment]: (params: { accountId: string; content: string }) => void
+
   // Updater
   [IPC_CHANNELS.updater.checkUpdate]: () => Promise<
     { latestVersion: string; currentVersion: string; releaseNote?: string } | undefined

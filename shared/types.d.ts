@@ -67,11 +67,19 @@ declare type CommentListenerTask = {
   config: CommentListenerConfig
 }
 
+declare type PinCommentTask = {
+  type: 'pin-comment'
+  config: {
+    comment: string
+  }
+}
+
 declare type LiveControlTask =
   | AutoPopupTask
   | AutoCommentTask
   | SendBatchMessagesTask
   | CommentListenerTask
+  | PinCommentTask
 
 declare type DouyinLiveMessage = {
   time: string

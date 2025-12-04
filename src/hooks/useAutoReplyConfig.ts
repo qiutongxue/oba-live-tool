@@ -39,11 +39,19 @@ export interface SimpleEventReply {
   options?: Record<string, boolean>
 }
 
-type EventBasedReplies = {
+type CompassExtraConfig = {
   [K in EventMessageType]: SimpleEventReply
 }
 
-export type AutoReplyConfig = AutoReplyBaseConfig & EventBasedReplies
+type WechatChannelExtraConfig = {
+  pinComment: {
+    enable: boolean
+    includeHost: boolean
+    matchStr: string[]
+  }
+}
+
+export type AutoReplyConfig = AutoReplyBaseConfig & CompassExtraConfig & WechatChannelExtraConfig
 
 const defaultPrompt =
   '你是一个直播间的助手，负责回复观众的评论。请用简短友好的语气回复，不要超过50个字。'
@@ -89,6 +97,11 @@ const createDefaultConfig = (): AutoReplyConfig => {
     ecom_fansclub_participate: {
       enable: false,
       messages: [],
+    },
+    pinComment: {
+      enable: false,
+      includeHost: false,
+      matchStr: [],
     },
     blockList: [],
     ws: {
@@ -150,7 +163,10 @@ export const useAutoReplyConfigStore = create<AutoReplyConfigStore>()(
 export const useAutoReplyConfig = () => {
   const store = useAutoReplyConfigStore()
   const currentAccountId = useAccounts(ctx => ctx.currentAccountId)
-  const config = store.contexts[currentAccountId]?.config || createDefaultConfig()
+  const config = mergeWithoutArray(
+    createDefaultConfig(),
+    store.contexts[currentAccountId]?.config ?? {},
+  )
 
   return {
     config,
@@ -198,6 +214,11 @@ export const useAutoReplyConfig = () => {
     },
     updateWSConfig: (wsConfig: DeepPartial<AutoReplyConfig['ws']>) => {
       store.updateConfig(currentAccountId, { ws: wsConfig })
+    },
+    updatePinCommentConfig: (pinCommentConfig: DeepPartial<AutoReplyConfig['pinComment']>) => {
+      store.updateConfig(currentAccountId, {
+        pinComment: pinCommentConfig,
+      })
     },
   }
 }

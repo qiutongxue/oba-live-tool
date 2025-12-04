@@ -42,6 +42,18 @@ export function isPerformComment(platform: IPlatform): platform is IPlatform & I
   return '_isPerformComment' in platform && platform._isPerformComment === true
 }
 
+export interface IPinComment {
+  _isPinComment: true
+  /** 置顶评论 */
+  pinComment(comment: string, signal?: AbortSignal): Result.ResultAsync<void, PlatformError>
+  /** 获取置顶评论任务所需的页面 */
+  getPinCommentPage(): Result.Result<Page, PlatformError>
+}
+
+export function isPinComment(platform: IPlatform): platform is IPlatform & IPinComment {
+  return '_isPinComment' in platform && platform._isPinComment === true
+}
+
 export interface IPlatform {
   get platformName(): string
   /** 连接到中控台，最终停留在中控台页面 */

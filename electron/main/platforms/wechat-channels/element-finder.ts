@@ -1,10 +1,20 @@
 import { Result } from '@praha/byethrow'
-import type { ElementHandle, Page } from 'playwright'
-import { ElementDisabledError, ElementNotFoundError } from '#/errors/PlatformError'
+import type { ElementHandle, Locator, Page } from 'playwright'
+import {
+  ElementDisabledError,
+  ElementNotFoundError,
+  type PlatformError,
+} from '#/errors/PlatformError'
 import { commonElementFinder, type IElementFinder } from '../IElementFinder'
 import { SELECTORS } from './constant'
 
-export const wechatChannelElementFinder: IElementFinder = {
+type WechatChannelElementFinder = IElementFinder & {
+  getNewCommentButton(page: Page): Result.ResultAsync<Locator, PlatformError>
+  getComments(page: Page): Result.ResultAsync<Locator[], PlatformError>
+  getPinCommentActionItem(page: Page): Locator
+}
+
+export const wechatChannelElementFinder: WechatChannelElementFinder = {
   async getPopUpButtonFromGoodsItem(item: ElementHandle<SVGElement | HTMLElement>) {
     const button = await item.$(SELECTORS.goodsItem.POPUP_BUTTON)
     if (!button) {
@@ -83,5 +93,33 @@ export const wechatChannelElementFinder: IElementFinder = {
 
   async getPinTopLabel() {
     return commonElementFinder.getEmptyPinTopLabel()
+  },
+
+  async getComments(page: Page) {
+    const iframe = page.locator(SELECTORS.LIVE_CONTROL_IFRAME)
+    const comments = await iframe.locator('.live-message-item-container .message-content').all()
+    if (comments.length === 0) {
+      return Result.fail(new ElementNotFoundError({ elementName: '评论' }))
+    }
+    return Result.succeed(comments)
+  },
+
+  async getNewCommentButton(page: Page): Result.ResultAsync<Locator, PlatformError> {
+    const newCommentButton = page.locator('.comment__load')
+    if (await newCommentButton.isVisible()) {
+      return Result.succeed(newCommentButton)
+    }
+    return Result.fail(
+      new ElementNotFoundError({
+        elementName: '新消息按钮',
+        selector: SELECTORS.commentInput.SUBMIT_BUTTON,
+      }),
+    )
+  },
+
+  getPinCommentActionItem(page: Page) {
+    return page.locator(
+      '.live-message-container .action-popover .action-popover__action-item:text("上墙")',
+    )
   },
 }

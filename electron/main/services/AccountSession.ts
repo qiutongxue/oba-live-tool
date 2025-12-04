@@ -14,11 +14,13 @@ import {
   isCommentListener,
   isPerformComment,
   isPerformPopup,
+  isPinComment,
 } from '#/platforms/IPlatform'
 import { createAutoCommentTask } from '#/tasks/AutoCommentTask'
 import { createAutoPopupTask } from '#/tasks/AutoPopupTask'
 import { createCommentListenerTask } from '#/tasks/CommentListenerTask'
 import type { ITask } from '#/tasks/ITask'
+import { createPinCommentTask } from '#/tasks/PinCommentTask'
 import { createSendBatchMessageTask } from '#/tasks/SendBatchMessageTask'
 import windowManager from '#/windowManager'
 
@@ -169,6 +171,9 @@ function makeTask<T extends LiveControlTask>(
   }
   if (task.type === 'comment-listener' && isCommentListener(platform)) {
     return createCommentListenerTask(platform, task.config, account, logger)
+  }
+  if (task.type === 'pin-comment' && isPinComment(platform)) {
+    return createPinCommentTask(platform, task.config.comment, account.id, logger)
   }
   return Result.fail(
     new TaskNotSupportedError({

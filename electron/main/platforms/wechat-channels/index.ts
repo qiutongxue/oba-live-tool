@@ -1,5 +1,6 @@
 import { Result } from '@praha/byethrow'
 import type { Page } from 'playwright'
+import { ElementContentMismatchedError, type PlatformError } from '#/errors/PlatformError'
 import type { BrowserSession } from '#/managers/BrowserSessionManager'
 import {
   comment,
@@ -8,7 +9,13 @@ import {
   getItemFromVirtualScroller,
   toggleButton,
 } from '../helper'
-import type { ICommentListener, IPerformComment, IPerformPopup, IPlatform } from '../IPlatform'
+import type {
+  ICommentListener,
+  IPerformComment,
+  IPerformPopup,
+  IPinComment,
+  IPlatform,
+} from '../IPlatform'
 import { WeChatChannelCommentListener } from './commentListener'
 import { REGEXPS, SELECTORS, TEXT, URLS } from './constant'
 import { wechatChannelElementFinder as elementFinder } from './element-finder'
@@ -19,8 +26,9 @@ const PLATFORM_NAME = '微信视频号' as const
  * 微信视频号
  */
 export class WechatChannelPlatform
-  implements IPlatform, IPerformPopup, IPerformComment, ICommentListener
+  implements IPlatform, IPerformPopup, IPerformComment, ICommentListener, IPinComment
 {
+  readonly _isPinComment = true
   readonly _isCommentListener = true
   readonly _isPerformComment = true
   readonly _isPerformPopup = true
@@ -117,6 +125,42 @@ export class WechatChannelPlatform
 
   stopCommentListener(): void {
     this.commentListener?.stopCommentListener()
+  }
+
+  async pinComment(comment: string): Result.ResultAsync<void, PlatformError> {
+    const page = ensurePage(this.mainPage)
+    if (Result.isFailure(page)) {
+      return page
+    }
+    // 要先点击“新消息”按钮加载评论！
+    const newCommentButton = await elementFinder.getNewCommentButton(page.value)
+    if (Result.isSuccess(newCommentButton)) {
+      await newCommentButton.value.click()
+    }
+    const els = await elementFinder.getComments(page.value)
+    if (Result.isFailure(els)) {
+      return els
+    }
+    for (const el of els.value.reverse()) {
+      const text = ((await el.textContent()) ?? '').trim()
+      if (comment === text) {
+        // 找到匹配的评论，点击上墙按钮
+        await el.click()
+        const pinCommentActionItem = elementFinder.getPinCommentActionItem(page.value)
+        await pinCommentActionItem.click()
+        return Result.succeed()
+      }
+    }
+    return Result.fail(
+      new ElementContentMismatchedError({
+        current: '未匹配任何评论',
+        target: comment,
+      }),
+    )
+  }
+
+  getPinCommentPage(): Result.Result<Page, PlatformError> {
+    return ensurePage(this.mainPage)
   }
 
   getCommentListenerPage(): Page {
