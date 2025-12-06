@@ -8,6 +8,7 @@
   "files": ["dist-electron", "dist"],
   "mac": {
     "artifactName": "${productName}_${version}.${ext}",
+    "identity": "-",
     "target": [
       {
         "target": "dmg",
