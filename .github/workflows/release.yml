@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Version tag to release (e.g., v1.5.17)'
+        required: true
+        type: string
 
 jobs:
   release:
