@@ -36,6 +36,8 @@ jobs:
         run: pnpm build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+          CSC_FOR_PULL_REQUEST: 'false'
 
       # 提取 changelog 里当前版本的内容，并保存到 output 中
       # 多行内容需要使用 <<EOF 和 EOF 包裹
