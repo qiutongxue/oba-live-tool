@@ -8,16 +8,9 @@
   "files": ["dist-electron", "dist"],
   "mac": {
     "artifactName": "${productName}_${version}.${ext}",
-    "identity": "-",
-    "hardenedRuntime": false,
-    "gatekeeperAssess": false,
     "target": [
       {
         "target": "dmg",
-        "arch": ["universal"]
-      },
-      {
-        "target": "zip",
         "arch": ["universal"]
       }
     ],

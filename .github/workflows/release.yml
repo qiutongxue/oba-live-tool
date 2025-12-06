@@ -32,31 +32,10 @@ jobs:
       - name: install dependencies
         run: pnpm install
 
-      - name: build application (macOS)
-        if: matrix.os == 'macos-latest'
+      - name: build application
         run: pnpm build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
-          CSC_FOR_PULL_REQUEST: 'false'
-          CSC_LINK: ''
-          CSC_KEY_PASSWORD: ''
-      
-      - name: build application (Windows)
-        if: matrix.os == 'windows-latest'
-        run: pnpm build
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
-      - name: Verify macOS app signature (macOS only)
-        if: matrix.os == 'macos-latest'
-        run: |
-          APP_PATH=$(find release -name "*.app" -type d | head -1)
-          if [ -n "$APP_PATH" ]; then
-            echo "Verifying signature for: $APP_PATH"
-            codesign -dv --verbose=4 "$APP_PATH" || echo "Warning: App may not be signed"
-            codesign --verify --deep --strict --verbose=2 "$APP_PATH" || echo "Warning: Signature verification failed"
-          fi
 
       # 提取 changelog 里当前版本的内容，并保存到 output 中
       # 多行内容需要使用 <<EOF 和 EOF 包裹
@@ -76,7 +55,6 @@ jobs:
           files: |
             release/*/*.exe
             release/*/*.dmg
-            release/*/*.zip
             release/*/*.blockmap
             release/*/latest*.yml
 
