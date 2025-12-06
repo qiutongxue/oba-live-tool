@@ -19,5 +19,6 @@ jobs:
           dst: 'gitee/${{ secrets.GITEE_USERNAME }}'
           dst_key: ${{ secrets.GITEE_PRIVATE_KEY }}
           dst_token:  ${{ secrets.GITEE_TOKEN }}
-          static_list: 'TLS-live-tool'
+          static_list: 'tls-live-tool'
+          force_update: true
           

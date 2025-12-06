@@ -4,25 +4,21 @@ import { useId, useMemo, useState } from 'react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
 import { useAccounts } from '@/hooks/useAccounts'
 import { type Message, useAutoReply } from '@/hooks/useAutoReply'
+import { useAutoReplyConfig } from '@/hooks/useAutoReplyConfig'
 import { useCurrentLiveControl } from '@/hooks/useLiveControl'
 import { useToast } from '@/hooks/useToast'
 import { cn } from '@/lib/utils'
 
 const getMessageColor = (type: Message['msg_type']) => {
   switch (type) {
+    case 'wechat_channel_live_msg':
     case 'comment':
       return 'text-foreground'
     case 'room_enter':
@@ -44,6 +40,7 @@ const getMessageColor = (type: Message['msg_type']) => {
 
 const getMessageText = (message: Message) => {
   switch (message.msg_type) {
+    case 'wechat_channel_live_msg':
     case 'comment':
       return message.content
     case 'room_enter':
@@ -74,13 +71,7 @@ const getOrderStatusColor = (status: LiveOrderMessage['order_status']) => {
   }
 }
 
-const MessageItem = ({
-  message,
-  isHighlighted,
-}: {
-  message: Message
-  isHighlighted: boolean
-}) => {
+const MessageItem = ({ message, isHighlighted }: { message: Message; isHighlighted: boolean }) => {
   const displayName = message.nick_name
 
   return (
@@ -92,23 +83,16 @@ const MessageItem = ({
     >
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="truncate text-sm text-muted-foreground">
-            {displayName}
-          </span>
+          <span className="truncate text-sm text-muted-foreground">{displayName}</span>
           {message.msg_type === 'live_order' && (
             <Badge
               variant="outline"
-              className={cn(
-                'text-xs px-1.5 py-0',
-                getOrderStatusColor(message.order_status),
-              )}
+              className={cn('text-xs px-1.5 py-0', getOrderStatusColor(message.order_status))}
             >
               {message.order_status}
             </Badge>
           )}
-          <span className="text-xs text-muted-foreground ml-auto">
-            {message.time}
-          </span>
+          <span className="text-xs text-muted-foreground ml-auto">{message.time}</span>
         </div>
 
         <div className="mt-0.5 text-sm">
@@ -148,9 +132,9 @@ export default function CommentList({
 }: {
   highlight: string | null
 }) {
-  const { comments, isListening, setIsListening, config } = useAutoReply()
+  const { comments, isListening, setIsListening } = useAutoReply()
+  const { config } = useAutoReplyConfig()
   const isConnected = useCurrentLiveControl(context => context.isConnected)
-  const platform = useCurrentLiveControl(context => context.platform)
   const { toast } = useToast()
   const [hideHost, setHideHost] = useState(false)
   const { currentAccountId } = useAccounts()
@@ -198,15 +182,11 @@ export default function CommentList({
   const accountName = useCurrentLiveControl(ctx => ctx.accountName)
 
   const filteredComments = useMemo(
-    () =>
-      hideHost
-        ? comments.filter(comment => comment.nick_name !== accountName)
-        : comments,
+    () => (hideHost ? comments.filter(comment => comment.nick_name !== accountName) : comments),
     [comments, hideHost, accountName],
   )
 
-  const isButtonDisabled =
-    isListening === 'waiting' || isConnected !== 'connected'
+  const isButtonDisabled = isListening === 'waiting' || isConnected !== 'connected'
 
   const userCommentOnlyId = useId()
 
@@ -253,23 +233,14 @@ export default function CommentList({
           {isConnected === 'connected' && (
             <>
               {isListening === 'error' && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={startListening}
-                  title="重试"
-                >
+                <Button variant="ghost" size="icon" onClick={startListening} title="重试">
                   <RefreshCcw className="h-4 w-4" />
                 </Button>
               )}
 
               {isListening === 'listening' && (
                 <div className="flex items-center gap-2 ml-2">
-                  <Switch
-                    id={userCommentOnlyId}
-                    checked={hideHost}
-                    onCheckedChange={setHideHost}
-                  />
+                  <Switch id={userCommentOnlyId} checked={hideHost} onCheckedChange={setHideHost} />
                   <Label htmlFor={userCommentOnlyId}>仅用户评论</Label>
                 </div>
               )}
@@ -283,9 +254,7 @@ export default function CommentList({
           <div className="py-2 space-y-0.5">
             {filteredComments.length === 0 ? (
               <div className="flex items-center justify-center h-20 text-muted-foreground">
-                {isListening === 'listening'
-                  ? '暂无评论数据'
-                  : '请点击"开始监听"按钮开始接收评论'}
+                {isListening === 'listening' ? '暂无评论数据' : '请点击"开始监听"按钮开始接收评论'}
               </div>
             ) : (
               filteredComments.map(comment => (

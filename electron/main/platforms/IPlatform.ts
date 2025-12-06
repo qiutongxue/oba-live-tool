@@ -6,9 +6,9 @@ import type { BrowserSession } from '#/managers/BrowserSessionManager'
 export interface ICommentListener {
   _isCommentListener: true
   startCommentListener(
-    onComment: (comment: DouyinLiveMessage) => void,
+    onComment: (comment: LiveMessage) => void,
     /** 暂定，control 为中控台互动评论监听， compass 为直播大屏监听 */
-    source: 'control' | 'compass',
+    source: CommentListenerConfig['source'],
   ): void | Promise<void>
   stopCommentListener(): void
   getCommentListenerPage(): Page
@@ -40,6 +40,18 @@ export interface IPerformComment {
 
 export function isPerformComment(platform: IPlatform): platform is IPlatform & IPerformComment {
   return '_isPerformComment' in platform && platform._isPerformComment === true
+}
+
+export interface IPinComment {
+  _isPinComment: true
+  /** 置顶评论 */
+  pinComment(comment: string, signal?: AbortSignal): Result.ResultAsync<void, PlatformError>
+  /** 获取置顶评论任务所需的页面 */
+  getPinCommentPage(): Result.Result<Page, PlatformError>
+}
+
+export function isPinComment(platform: IPlatform): platform is IPlatform & IPinComment {
+  return '_isPinComment' in platform && platform._isPinComment === true
 }
 
 export interface IPlatform {

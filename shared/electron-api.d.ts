@@ -62,7 +62,7 @@ export interface IpcChannels {
   [IPC_CHANNELS.tasks.autoReply.sendReply]: (accountId: string, replyContent: string) => void
   [IPC_CHANNELS.tasks.autoReply.listenerStopped]: (accountId: string) => void
   [IPC_CHANNELS.tasks.autoReply.showComment]: (data: {
-    comment: DouyinLiveMessage
+    comment: LiveMessage
     accountId: string
   }) => void
 
@@ -95,6 +95,9 @@ export interface IpcChannels {
       | { done: boolean },
   ) => void
   [IPC_CHANNELS.tasks.aiChat.error]: (data: { error: string }) => void
+
+  // 视频号上墙
+  [IPC_CHANNELS.tasks.pinComment]: (params: { accountId: string; content: string }) => void
 
   // Updater
   [IPC_CHANNELS.updater.checkUpdate]: () => Promise<

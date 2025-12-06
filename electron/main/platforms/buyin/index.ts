@@ -73,10 +73,7 @@ export class BuyinPlatform implements IPlatform, IPerformPopup, IPerformComment,
     return await DouyinPlatform.prototype.performComment.call(this, message, pinTop)
   }
 
-  startCommentListener(
-    onComment: (comment: DouyinLiveMessage) => void,
-    source: 'control' | 'compass',
-  ) {
+  startCommentListener(onComment: (comment: LiveMessage) => void, source: 'control' | 'compass') {
     const pageResult = ensurePage(this.mainPage)
     if (Result.isFailure(pageResult)) {
       throw pageResult.error

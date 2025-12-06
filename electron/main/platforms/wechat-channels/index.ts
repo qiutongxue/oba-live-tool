@@ -1,5 +1,6 @@
 import { Result } from '@praha/byethrow'
 import type { Page } from 'playwright'
+import { ElementContentMismatchedError, type PlatformError } from '#/errors/PlatformError'
 import type { BrowserSession } from '#/managers/BrowserSessionManager'
 import {
   comment,
@@ -8,7 +9,14 @@ import {
   getItemFromVirtualScroller,
   toggleButton,
 } from '../helper'
-import type { IPerformComment, IPerformPopup, IPlatform } from '../IPlatform'
+import type {
+  ICommentListener,
+  IPerformComment,
+  IPerformPopup,
+  IPinComment,
+  IPlatform,
+} from '../IPlatform'
+import { WeChatChannelCommentListener } from './commentListener'
 import { REGEXPS, SELECTORS, TEXT, URLS } from './constant'
 import { wechatChannelElementFinder as elementFinder } from './element-finder'
 
@@ -17,12 +25,17 @@ const PLATFORM_NAME = '微信视频号' as const
 /**
  * 微信视频号
  */
-export class WechatChannelPlatform implements IPlatform, IPerformPopup, IPerformComment {
+export class WechatChannelPlatform
+  implements IPlatform, IPerformPopup, IPerformComment, ICommentListener, IPinComment
+{
+  readonly _isPinComment = true
+  readonly _isCommentListener = true
   readonly _isPerformComment = true
   readonly _isPerformPopup = true
   private mainPage: Page | null = null
   /** 商品列表页面 */
   private productsPage: Page | null = null
+  private commentListener: WeChatChannelCommentListener | null = null
   async connect(session: BrowserSession) {
     const { page } = session
     await page.goto(URLS.LIVE_CONTROL_PAGE, {
@@ -98,6 +111,60 @@ export class WechatChannelPlatform implements IPlatform, IPerformPopup, IPerform
       ensurePage(this.mainPage),
       Result.andThen(page => comment(page, elementFinder, message, false)),
     )
+  }
+
+  startCommentListener(onComment: (comment: LiveMessage) => void) {
+    Result.pipe(
+      ensurePage(this.mainPage),
+      Result.inspect(page => {
+        this.commentListener = new WeChatChannelCommentListener(page)
+        this.commentListener.startCommentListener(onComment)
+      }),
+    )
+  }
+
+  stopCommentListener(): void {
+    this.commentListener?.stopCommentListener()
+  }
+
+  async pinComment(comment: string): Result.ResultAsync<void, PlatformError> {
+    const page = ensurePage(this.mainPage)
+    if (Result.isFailure(page)) {
+      return page
+    }
+    // 要先点击“新消息”按钮加载评论！
+    const newCommentButton = await elementFinder.getNewCommentButton(page.value)
+    if (Result.isSuccess(newCommentButton)) {
+      await newCommentButton.value.click()
+    }
+    const els = await elementFinder.getComments(page.value)
+    if (Result.isFailure(els)) {
+      return els
+    }
+    for (const el of els.value.reverse()) {
+      const text = ((await el.textContent()) ?? '').trim()
+      if (comment === text) {
+        // 找到匹配的评论，点击上墙按钮
+        await el.click()
+        const pinCommentActionItem = elementFinder.getPinCommentActionItem(page.value)
+        await pinCommentActionItem.click()
+        return Result.succeed()
+      }
+    }
+    return Result.fail(
+      new ElementContentMismatchedError({
+        current: '未匹配任何评论',
+        target: comment,
+      }),
+    )
+  }
+
+  getPinCommentPage(): Result.Result<Page, PlatformError> {
+    return ensurePage(this.mainPage)
+  }
+
+  getCommentListenerPage(): Page {
+    return Result.unwrap(ensurePage(this.commentListener?.getCommentListenerPage()))
   }
 
   getPopupPage() {

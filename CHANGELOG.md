@@ -1,5 +1,21 @@
 # Changelog
 
+## v1.5.17
+
+[compare changes](https://github.com/qiutongxue/oba-live-tool/compare/v1.5.16...v1.5.17)
+
+### 🚀 Features
+
+- **视频号:** 新增自动回复功能 ([954c4ec](https://github.com/qiutongxue/oba-live-tool/commit/954c4ec))
+- **视频号:** 新增评论上墙功能 ([44b3a4a](https://github.com/qiutongxue/oba-live-tool/commit/44b3a4a))
+
+### 🐞 Bug Fixes
+
+- 修复因网络原因无法提示手动下载更新的问题 ([fa7f603](https://github.com/qiutongxue/oba-live-tool/commit/fa7f603))
+- 修复部分类型错误 ([0cc922d](https://github.com/qiutongxue/oba-live-tool/commit/0cc922d))
+- 修复在特定情况下某些不支持的平台能访问到自动回复页面的问题 ([f56213a](https://github.com/qiutongxue/oba-live-tool/commit/f56213a))
+- **视频号:** 修复浏览器窗口过窄时视频号仍无法连接中控台的问题 ([977d194](https://github.com/qiutongxue/oba-live-tool/commit/977d194))
+
 ## v1.5.16
 
 [compare changes](https://github.com/qiutongxue/oba-live-tool/compare/v1.5.15...v1.5.16)

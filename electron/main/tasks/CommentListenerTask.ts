@@ -37,8 +37,8 @@ export function createCommentListenerTask(
     }
   }
 
-  function broadcastMessage(message: DouyinLiveMessage) {
-    const comment: DouyinLiveMessage = {
+  function broadcastMessage(message: LiveMessage) {
+    const comment: LiveMessage = {
       ...message,
       time: new Date().toLocaleTimeString(),
     }

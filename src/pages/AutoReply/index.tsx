@@ -9,11 +9,11 @@ import { useCurrentLiveControl } from '@/hooks/useLiveControl'
 import CommentList from '@/pages/AutoReply/components/CommentList'
 import PreviewList from '@/pages/AutoReply/components/PreviewList'
 
+const availablePlatforms: LiveControlPlatform[] = ['douyin', 'buyin', 'wxchannel']
+
 export default function AutoReply() {
   const { isRunning, setIsRunning } = useAutoReply()
-  const [highlightedCommentId, setHighlightedCommentId] = useState<
-    string | null
-  >(null)
+  const [highlightedCommentId, setHighlightedCommentId] = useState<string | null>(null)
 
   const handleAutoReplyToggle = async () => {
     try {
@@ -23,36 +23,27 @@ export default function AutoReply() {
     }
   }
 
-  const platform = useCurrentLiveControl(context => context.platform)
-  const isTaskForbidden = platform !== 'douyin' && platform !== 'buyin'
-
   const navigate = useNavigate()
+
+  const platform = useCurrentLiveControl(context => context.platform)
+  if (!availablePlatforms.includes(platform)) {
+    return null
+  }
 
   return (
     <div className="container py-8 space-y-4">
       <div className="mb-6">
         <div className="flex items-center justify-between">
           <div>
-            <Title
-              title="自动回复"
-              description="查看直播间的实时评论并自动回复"
-            />
+            <Title title="自动回复" description="查看直播间的实时评论并自动回复" />
           </div>
           <div className="flex items-center gap-2">
             {/* 用户屏蔽列表 */}
-            <Button
-              variant="outline"
-              onClick={() => navigate('settings')}
-              title="设置"
-            >
+            <Button variant="outline" onClick={() => navigate('settings')} title="设置">
               <Settings2 className="h-4 w-4" />
               <span>设置</span>
             </Button>
-            <TaskButton
-              isTaskRunning={isRunning}
-              onStartStop={handleAutoReplyToggle}
-              forbidden={isTaskForbidden}
-            />
+            <TaskButton isTaskRunning={isRunning} onStartStop={handleAutoReplyToggle} />
           </div>
         </div>
       </div>

@@ -108,7 +108,7 @@ export function UpdateDialog() {
       return (
         <Button onClick={() => openDownloadURL(url)} variant="default">
           <Download className="mr-2 h-4 w-4" />
-          立即更新
+          手动下载
         </Button>
       )
     }
@@ -146,6 +146,9 @@ export function UpdateDialog() {
         {status === 'error' && error?.message && (
           <ScrollArea className="text-sm text-destructive whitespace-pre-line max-h-64">
             <h3 className="text-lg font-bold">错误</h3>
+            {error?.downloadURL && (
+              <h4 className="text-md font-bold">可点击下方按钮尝试通过浏览器下载</h4>
+            )}
             {error.message}
           </ScrollArea>
         )}

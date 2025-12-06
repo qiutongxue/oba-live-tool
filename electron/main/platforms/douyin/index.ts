@@ -89,10 +89,7 @@ export class DouyinPlatform implements IPlatform, IPerformPopup, IPerformComment
     return ensurePage(this.mainPage)
   }
 
-  startCommentListener(
-    onComment: (comment: DouyinLiveMessage) => void,
-    source: 'control' | 'compass',
-  ) {
+  startCommentListener(onComment: (comment: LiveMessage) => void, source: 'control' | 'compass') {
     Result.pipe(
       ensurePage(this.mainPage),
       Result.map(page => {

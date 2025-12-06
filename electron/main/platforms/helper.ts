@@ -257,7 +257,7 @@ export async function toggleButton(
 }
 
 /** 确保 page 非空 */
-export function ensurePage(page: Page | null): Result.Result<Page, PlatformError> {
+export function ensurePage(page: Page | null | undefined): Result.Result<Page, PlatformError> {
   if (!page) {
     return Result.fail(new PageNotFoundError())
   }

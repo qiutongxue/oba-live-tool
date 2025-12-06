@@ -15,8 +15,9 @@ export const URLS = {
   /** 商家首页（用于获取用户名） */
   INDEX_PAGE: 'https://channels.weixin.qq.com/platform',
   /** 商品页面 */
-  PRODUCTS_PAGE:
-    'https://channels.weixin.qq.com/platform/live/commodity/onsale/index',
+  PRODUCTS_PAGE: 'https://channels.weixin.qq.com/platform/live/commodity/onsale/index',
+  /** 评论监听API前缀 */
+  MSG_API_PREFIX: 'micro/live/cgi-bin/mmfinderassistant-bin/live/msg?',
 } as const
 
 export const REGEXPS = {
@@ -29,15 +30,14 @@ export const REGEXPS = {
 export const SELECTORS = {
   LOGIN: {
     /** 已登录状态 */
-    LOGGED_IN: '.account-info .name',
+    LOGGED_IN: '.account-info',
     /** 进入中控台成功 */
     IN_LIVE_CONTROL: '.live-message-input-container', // 评论框
   },
   /** 获取用户名的元素 */
   ACCOUNT_NAME: '.finder-nickname',
   // ACCOUNT_NAME: '.account-info .name',
-  GOODS_ITEM:
-    '.commodity-list-wrap .table-body-wrap > div > span div.table-row-wrap',
+  GOODS_ITEM: '.commodity-list-wrap .table-body-wrap > div > span div.table-row-wrap',
   /** 视频号中控台在 iframe 里，要先获取 iframe 才能定位其余元素 */
   LIVE_CONTROL_IFRAME: '.wujie_iframe',
   overlays: {
