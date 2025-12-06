@@ -55,6 +55,7 @@ jobs:
           files: |
             release/*/*.exe
             release/*/*.dmg
+            release/*/*.zip
             release/*/*.blockmap
             release/*/latest*.yml
 

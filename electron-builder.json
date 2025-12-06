@@ -12,6 +12,10 @@
       {
         "target": "dmg",
         "arch": ["universal"]
+      },
+      {
+        "target": "zip",
+        "arch": ["universal"]
       }
     ],
     "icon": "public/favicon.png"
