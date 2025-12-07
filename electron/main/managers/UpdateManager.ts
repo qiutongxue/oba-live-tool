@@ -17,14 +17,14 @@ const PRODUCT_NAME = packageJson.name
 
 const logger = createLogger('update')
 
-{
-  // marked 生成的 html 要在新页面打开链接
-  const renderer = new marked.Renderer()
-  renderer.link = ({ href, title, text }) => {
-    return `<a href="${href}" target="_blank" rel="noopener noreferrer"${title ? ` title="${title}"` : ''}>${text}</a>`
-  }
-  marked.setOptions({ renderer })
-}
+// marked 生成的 html 要在新页面打开链接
+marked.use({
+  renderer: {
+    link: ({ href, title, text }) => {
+      return `<a href="${href}" target="_blank" rel="noopener noreferrer"${title ? ` title="${title}"` : ''}>${text}</a>`
+    },
+  },
+})
 
 function extractChanges(changelogContent: string, userVersion: string): string {
   const lines = changelogContent.split('\n')
