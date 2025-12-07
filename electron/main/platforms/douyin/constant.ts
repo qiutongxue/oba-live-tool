@@ -1,6 +1,5 @@
 export const URLS = {
-  LIVE_CONTROL_PAGE:
-    'https://fxg.jinritemai.com/ffa/buyin/dashboard/live/control',
+  LIVE_CONTROL_PAGE: 'https://fxg.jinritemai.com/ffa/buyin/dashboard/live/control',
   LOGIN_PAGE:
     'https://fxg.jinritemai.com/login/common?extra=%7B%22target_url%22%3A%22https%3A%2F%2Ffxg.jinritemai.com%2Fffa%2Fbuyin%2Fdashboard%2Flive%2Fcontrol%22%7D',
   /** 抖店的电商罗盘主页 */
@@ -20,7 +19,7 @@ export const REGEXPS = {
 }
 
 export const SELECTORS = {
-  LOGGED_IN: `[class^="username"]`,
+  LOGGED_IN: `[class^="index_userName"]`,
   IN_LIVE_CONTROL: `[class^="goodsPanel"]`,
   ACCOUNT_NAME: `[class^="index_userName"]`,
 
@@ -44,8 +43,7 @@ export const SELECTORS = {
     AFK_CLOSE_BUTTON:
       'div.auxo-modal-content > div > div > div.auxo-modal-confirm-btns > button.auxo-btn.auxo-btn-primary',
     /** 直播结束后弹出的【直播总结】的关闭按钮 */
-    LIVE_OVER_CLOSE_BUTTON:
-      'div.auxo-modal-content svg[class^="liveOverCloseIcon"]',
+    LIVE_OVER_CLOSE_BUTTON: 'div.auxo-modal-content svg[class^="liveOverCloseIcon"]',
   },
   /** 有新的评论时会弹出的按钮，点击后刷新新评论 */
   NEW_COMMENT_LABEL: '[class^="newCommentLabel"]',
