@@ -108,7 +108,7 @@ export interface IpcChannels {
   [IPC_CHANNELS.updater.updateAvailable]: (info: VersionInfo) => void
   [IPC_CHANNELS.updater.updateError]: (error: ErrorType) => void
   [IPC_CHANNELS.updater.downloadProgress]: (progress: ProgressInfo) => void
-  [IPC_CHANNELS.updater.updateDownloaded]: (event: UpdateDownloadedEvent) => void
+  [IPC_CHANNELS.updater.updateDownloaded]: (event?: UpdateDownloadedEvent) => void
 
   // Chrome
   [IPC_CHANNELS.chrome.selectPath]: () => string | null
