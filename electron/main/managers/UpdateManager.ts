@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto'
 import { createReadStream, createWriteStream, existsSync, unlinkSync } from 'node:fs'
 import { createRequire } from 'node:module'
-import { platform } from 'node:os'
+import { arch, platform } from 'node:os'
 import path from 'node:path'
 import { app, net, shell } from 'electron'
 import type { AppUpdater, ProgressInfo, UpdateDownloadedEvent, UpdateInfo } from 'electron-updater'
@@ -379,7 +379,7 @@ class MacOSUpdater implements Updater {
   public async downloadUpdate() {
     let fileUrl: string | undefined
     try {
-      const setupFile = this.versionInfo?.files.find(file => file.url.endsWith('.dmg'))
+      const setupFile = this.versionInfo?.files.find(file => file.url.endsWith(`${arch()}.dmg`))
       if (!setupFile) {
         const message = '找不到 dmg 文件'
         throw new Error(message)

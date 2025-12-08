@@ -1,7 +1,7 @@
 {
   "name": "TLS-live-tool",
   "type": "module",
-  "version": "1.5.17",
+  "version": "1.5.18",
   "private": true,
   "description": "直播工具，用于直播带货，能自动弹窗，自动发言",
   "author": "TLS-802",

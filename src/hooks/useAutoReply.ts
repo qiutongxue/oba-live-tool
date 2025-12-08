@@ -20,9 +20,17 @@ interface ReplyPreview {
 
 export type Message = LiveMessage
 export type MessageType = Message['msg_type']
-export type EventMessageType = Exclude<MessageType, 'comment' | 'wechat_channel_live_msg'>
+export type EventMessageType = Extract<
+  MessageType,
+  | 'room_enter'
+  | 'room_like'
+  | 'live_order'
+  | 'subscribe_merchant_brand_vip'
+  | 'room_follow'
+  | 'ecom_fansclub_participate'
+>
 export type MessageOf<T extends MessageType> = Extract<Message, { msg_type: T }>
-type CommentMessage = MessageOf<'comment'> | MessageOf<'wechat_channel_live_msg'>
+type CommentMessage = MessageOf<Exclude<MessageType, EventMessageType>>
 
 type ListeningStatus = 'waiting' | 'listening' | 'stopped' | 'error'
 
@@ -351,6 +359,7 @@ export function useAutoReply() {
         return
       }
       switch (comment.msg_type) {
+        case 'xiaohongshu_comment':
         case 'wechat_channel_live_msg':
         case 'comment': {
           // 优先尝试关键字回复
