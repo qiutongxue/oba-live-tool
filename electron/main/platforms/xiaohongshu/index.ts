@@ -10,7 +10,8 @@ import {
   openUrlByElement,
   toggleButton,
 } from '../helper'
-import type { IPerformComment, IPerformPopup, IPlatform } from '../IPlatform'
+import type { ICommentListener, IPerformComment, IPerformPopup, IPlatform } from '../IPlatform'
+import { XiaohongshuCommentListener } from './commentListener'
 import { REGEXPS, SELECTORS, TEXTS, URLS } from './constant'
 import { xiaohongshuElementFinder as elementFinder } from './elment-finder'
 
@@ -19,10 +20,15 @@ const PLATFORM_NAME = '小红书' as const
 /**
  * 小红书（千帆）
  */
-export class XiaohongshuPlatform implements IPlatform, IPerformPopup, IPerformComment {
+export class XiaohongshuPlatform
+  implements IPlatform, IPerformPopup, IPerformComment, ICommentListener
+{
+  readonly _isCommentListener = true
   readonly _isPerformComment = true
   readonly _isPerformPopup = true
   private mainPage: Page | null = null
+  private commentListener: XiaohongshuCommentListener | null = null
+  private accountName = ''
 
   async connect(browserSession: BrowserSession) {
     const { page } = browserSession
@@ -34,7 +40,6 @@ export class XiaohongshuPlatform implements IPlatform, IPerformPopup, IPerformCo
 
     if (isConnected) {
       // 小红书反爬，直接用 goto 进入中控台加载不出元素
-      // TODO: 之前的方法是前往首页后点击元素跳转，这次改为直接生成一个控件利用控件跳转，需要测试该功能是否能用
       const newPage = await openUrlByElement(page, URLS.LIVE_CONTROL_PAGE)
       await page.close()
       browserSession.page = newPage
@@ -55,7 +60,10 @@ export class XiaohongshuPlatform implements IPlatform, IPerformPopup, IPerformCo
 
   async getAccountName(session: BrowserSession) {
     const accountName = await getAccountName(session.page, SELECTORS.ACCOUNT_NAME)
-    return accountName ?? ''
+    if (accountName?.endsWith('的店')) {
+      this.accountName = accountName.slice(0, -2)
+    }
+    return this.accountName
   }
 
   disconnect(): Promise<void> {
@@ -78,6 +86,27 @@ export class XiaohongshuPlatform implements IPlatform, IPerformPopup, IPerformCo
       ensurePage(this.mainPage),
       Result.andThen(page => comment(page, elementFinder, message, false)),
     )
+  }
+
+  async startCommentListener(onComment: (comment: LiveMessage) => void): Promise<void> {
+    const page = ensurePage(this.mainPage)
+    if (Result.isFailure(page)) {
+      throw page.error
+    }
+    this.commentListener = new XiaohongshuCommentListener(page.value)
+    this.commentListener.setAccountName(this.accountName)
+    await this.commentListener.startCommentListener(onComment)
+  }
+
+  stopCommentListener(): void {
+    this.commentListener?.stopCommentListener()
+  }
+
+  getCommentListenerPage(): Page {
+    if (!this.commentListener) {
+      throw new Error('Comment listener not started')
+    }
+    return this.commentListener.getCommentListenerPage()
   }
 
   getPopupPage() {

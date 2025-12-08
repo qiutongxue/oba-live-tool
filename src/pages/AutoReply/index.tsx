@@ -9,7 +9,14 @@ import { useCurrentLiveControl } from '@/hooks/useLiveControl'
 import CommentList from '@/pages/AutoReply/components/CommentList'
 import PreviewList from '@/pages/AutoReply/components/PreviewList'
 
-const availablePlatforms: LiveControlPlatform[] = ['douyin', 'buyin', 'wxchannel']
+const availablePlatforms: LiveControlPlatform[] = [
+  'douyin',
+  'buyin',
+  'wxchannel',
+  'redbook',
+  'pgy',
+  'dev',
+]
 
 export default function AutoReply() {
   const { isRunning, setIsRunning } = useAutoReply()

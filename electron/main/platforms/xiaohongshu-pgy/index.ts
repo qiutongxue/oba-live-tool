@@ -1,7 +1,7 @@
 import type { Page } from 'playwright'
 import type { BrowserSession } from '#/managers/BrowserSessionManager'
 import { ensurePage, getAccountName, openUrlByElement } from '../helper'
-import type { IPerformComment, IPerformPopup, IPlatform } from '../IPlatform'
+import type { ICommentListener, IPerformComment, IPerformPopup, IPlatform } from '../IPlatform'
 import { XiaohongshuPlatform } from '../xiaohongshu'
 import { REGEXPS, SELECTORS, URLS } from './constant'
 
@@ -10,10 +10,14 @@ const PLATFORM_NAME = '蒲公英' as const
 /**
  * 蒲公英
  */
-export class XiaohongshuPgyPlatform implements IPlatform, IPerformPopup, IPerformComment {
+export class XiaohongshuPgyPlatform
+  implements IPlatform, IPerformPopup, IPerformComment, ICommentListener
+{
   readonly _isPerformComment = true
   readonly _isPerformPopup = true
   private mainPage: Page | null = null
+  readonly _isCommentListener = true
+  private accountName = ''
 
   async connect(browserSession: BrowserSession) {
     const { page } = browserSession
@@ -35,7 +39,6 @@ export class XiaohongshuPgyPlatform implements IPlatform, IPerformPopup, IPerfor
 
     if (isConnected) {
       // 小红书反爬，直接用 goto 进入中控台加载不出元素
-      // TODO: 之前的方法是前往首页后点击元素跳转，这次改为直接生成一个控件利用控件跳转，需要测试该功能是否能用
       const newPage = await openUrlByElement(page, URLS.LIVE_CONTROL_PAGE)
       await page.close()
       browserSession.page = newPage
@@ -64,7 +67,10 @@ export class XiaohongshuPgyPlatform implements IPlatform, IPerformPopup, IPerfor
 
   async getAccountName(session: BrowserSession) {
     const accountName = await getAccountName(session.page, SELECTORS.ACCOUNT_NAME)
-    return accountName ?? ''
+    if (accountName) {
+      this.accountName = accountName
+    }
+    return this.accountName
   }
 
   disconnect(): Promise<void> {
@@ -77,6 +83,18 @@ export class XiaohongshuPgyPlatform implements IPlatform, IPerformPopup, IPerfor
 
   async performComment(message: string) {
     return XiaohongshuPlatform.prototype.performComment.call(this, message)
+  }
+
+  async startCommentListener(onComment: (comment: LiveMessage) => void) {
+    return XiaohongshuPlatform.prototype.startCommentListener.call(this, onComment)
+  }
+
+  async stopCommentListener(): Promise<void> {
+    return XiaohongshuPlatform.prototype.stopCommentListener.call(this)
+  }
+
+  getCommentListenerPage(): Page {
+    return XiaohongshuPlatform.prototype.getCommentListenerPage.call(this)
   }
 
   getPopupPage() {

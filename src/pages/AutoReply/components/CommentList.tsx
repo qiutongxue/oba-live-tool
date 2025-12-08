@@ -18,6 +18,7 @@ import { cn } from '@/lib/utils'
 
 const getMessageColor = (type: Message['msg_type']) => {
   switch (type) {
+    case 'xiaohongshu_comment':
     case 'wechat_channel_live_msg':
     case 'comment':
       return 'text-foreground'
@@ -40,6 +41,7 @@ const getMessageColor = (type: Message['msg_type']) => {
 
 const getMessageText = (message: Message) => {
   switch (message.msg_type) {
+    case 'xiaohongshu_comment':
     case 'wechat_channel_live_msg':
     case 'comment':
       return message.content

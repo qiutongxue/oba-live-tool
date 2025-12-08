@@ -15,11 +15,14 @@ const platformListeningSources: Partial<Record<LiveControlPlatform, ListeningSou
   douyin: ['control', 'compass'],
   buyin: ['control', 'compass'],
   wxchannel: ['wechat-channel'],
+  redbook: ['xiaohongshu'],
+  pgy: ['xiaohongshu'],
 }
 const listeningSourceNameMap = {
   control: '中控台',
   compass: '电商罗盘大屏',
   'wechat-channel': '视频号',
+  xiaohongshu: '小红书',
 }
 
 export function ListeningSourceSetting() {
@@ -36,6 +39,8 @@ export function ListeningSourceSetting() {
         return '电商罗盘大屏监听可以获取评论、点赞、进入直播间等全部消息类型'
       case 'wechat-channel':
         return '视频号监听目前暂时只支持用户评论消息'
+      case 'xiaohongshu':
+        return '小红书监听目前暂时只支持用户评论消息'
       default:
         return ''
     }
