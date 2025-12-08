@@ -7,11 +7,11 @@
   },
   "files": ["dist-electron", "dist"],
   "mac": {
-    "artifactName": "${productName}_${version}.${ext}",
+    "artifactName": "${productName}_${version}_${arch}.${ext}",
     "target": [
       {
         "target": "dmg",
-        "arch": ["universal"]
+        "arch": ["x64", "arm64"]
       }
     ],
     "icon": "public/favicon.png"
