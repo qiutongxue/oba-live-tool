@@ -142,10 +142,9 @@ async function fetchChangelog() {
   }
 }
 
-function getAssetsURL(proxy: URL | string) {
+function getAssetsURL() {
   const assetsURL = `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases/download/v${latestVersion}/`
-  const downloadURL = `${proxy}${assetsURL}${PRODUCT_NAME}_${latestVersion}.${platform() === 'darwin' ? 'dmg' : 'exe'}`
-  return { assetsURL, downloadURL }
+  return assetsURL
 }
 
 interface Updater {
@@ -284,7 +283,7 @@ class WindowsUpdater implements Updater {
       const msg = `更新源设置错误，你的更新源为 ${source}`
       throw new Error(msg)
     }
-    const { assetsURL, downloadURL } = getAssetsURL(sourceURL)
+    const assetsURL = getAssetsURL()
     // 自定义更新源
     this.autoUpdater.setFeedURL({
       provider: 'generic',
@@ -294,6 +293,7 @@ class WindowsUpdater implements Updater {
       return await this.autoUpdater.checkForUpdates()
     } catch (error) {
       const message = `网络错误: ${errorMessage(error).split('\n')[0]}`
+      const downloadURL = `${sourceURL}${assetsURL}${PRODUCT_NAME}_${latestVersion}.exe`
       windowManager.send(IPC_CHANNELS.updater.updateError, { message, downloadURL })
     }
   }
@@ -343,17 +343,18 @@ class MacOSUpdater implements Updater {
   private versionInfo: LatestYml | null = null
   private assetsURL: string | null = null
   private savePath: string | null = null
-
+  private safeSource = ''
   /**
    * MacOS 如果使用 autoUpdater 需要提供 zip 文件，但是下载了 zip 之后又不能安装，因为没有签名
    * 所以干脆就手动下载 dmg 文件，下载完毕后退出应用，手动安装
    */
   public async checkForUpdates(source: string) {
     // 先从 latest-mac.yml 中获取目标文件
-    const { assetsURL } = getAssetsURL(source === 'github' ? '' : new URL(source))
+    const assetsURL = getAssetsURL()
+    this.safeSource = source === 'github' ? '' : new URL(source).href
     this.assetsURL = assetsURL
-    const latestYmlURL = new URL('latest-mac.yml', assetsURL)
-    const ymlContent = (await net.fetch(latestYmlURL.href).then(res => res.text())) as string
+    const latestYmlURL = `${this.safeSource}${new URL('latest-mac.yml', this.assetsURL)}`
+    const ymlContent = (await net.fetch(latestYmlURL).then(res => res.text())) as string
     const latestYml = yaml.parse(ymlContent) as LatestYml
 
     if (!latestYml) {
@@ -388,7 +389,7 @@ class MacOSUpdater implements Updater {
         return
       }
       // biome-ignore lint/style/noNonNullAssertion: 确保 assetsURL 不为 null
-      fileUrl = new URL(setupFile.url, this.assetsURL!).href
+      fileUrl = `${this.safeSource}${new URL(setupFile.url, this.assetsURL!)}`
       const resp = await net.fetch(fileUrl)
       if (!resp.ok) {
         const message = `网络错误: ${resp.statusText}`
