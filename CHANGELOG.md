@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.5.18
+
+[compare changes](https://github.com/qiutongxue/oba-live-tool/compare/v1.5.17...v1.5.18)
+
+### 🚀 Features
+
+- **小红书:** 小红书千帆/蒲公英新增自动回复功能 ([3c0bcbc](https://github.com/qiutongxue/oba-live-tool/commit/3c0bcbc))
+
+### 🐞 Bug Fixes
+
+- **抖音小店:** 修改判断登录成功的方式 ([8a904c4](https://github.com/qiutongxue/oba-live-tool/commit/8a904c4))
+- **ui**: 修复点击新版本弹窗通知里的外部链接无法在应用外打开的问题 ([a0fa1f8](https://github.com/qiutongxue/oba-live-tool/commit/a0fa1f8))
+- 修复 MacOS 的更新问题，减小 MacOS 应用体积 ([#246](https://github.com/qiutongxue/oba-live-tool/pull/246))
+
 ## v1.5.17
 
 [compare changes](https://github.com/qiutongxue/oba-live-tool/compare/v1.5.16...v1.5.17)
