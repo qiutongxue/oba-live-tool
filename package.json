@@ -50,7 +50,7 @@
     "dompurify": "^3.2.6",
     "electron-updater": "6.6.2",
     "highlight.js": "^11.11.1",
-    "immer": "^10.1.1",
+    "immer": "^11.0.1",
     "lodash-es": "^4.17.21",
     "lucide-react": "0.525.0",
     "marked": "16.4.0",
