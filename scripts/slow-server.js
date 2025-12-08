@@ -7,10 +7,15 @@ const __dirname = path.join(fileURLToPath(import.meta.url), '..', '..')
 
 const PORT = 8080
 const DIR = path.join(__dirname, 'release', '2.0.0') // 指向打包目录
-const SPEED = 1024 * 1024 // 限制速度：1MB/s
+const SPEED = 10 * 1024 * 1024 // 限制速度：1MB/s
 
 const server = http.createServer(async (req, res) => {
-  const filePath = path.join(DIR, req.url)
+  let targetFile = req.url
+  console.log(req.url)
+  if (req.url.includes('https://github.com')) {
+    targetFile = req.url.split('/').pop()
+  }
+  const filePath = path.join(DIR, targetFile)
   console.log(filePath)
   if (!fs.existsSync(filePath)) {
     res.writeHead(404)

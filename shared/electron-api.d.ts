@@ -18,10 +18,10 @@ export interface IpcChannels {
   [IPC_CHANNELS.tasks.liveControl.notifyAccountName]: (
     params:
       | {
-          ok: true
-          accountId: string
-          accountName: string | null
-        }
+        ok: true
+        accountId: string
+        accountName: string | null
+      }
       | { ok: false },
   ) => void
 
@@ -89,9 +89,9 @@ export interface IpcChannels {
   [IPC_CHANNELS.tasks.aiChat.stream]: (
     data:
       | {
-          chunk: string
-          type: 'content' | 'reasoning'
-        }
+        chunk: string
+        type: 'content' | 'reasoning'
+      }
       | { done: boolean },
   ) => void
   [IPC_CHANNELS.tasks.aiChat.error]: (data: { error: string }) => void
@@ -108,7 +108,7 @@ export interface IpcChannels {
   [IPC_CHANNELS.updater.updateAvailable]: (info: VersionInfo) => void
   [IPC_CHANNELS.updater.updateError]: (error: ErrorType) => void
   [IPC_CHANNELS.updater.downloadProgress]: (progress: ProgressInfo) => void
-  [IPC_CHANNELS.updater.updateDownloaded]: (event: UpdateDownloadedEvent) => void
+  [IPC_CHANNELS.updater.updateDownloaded]: (event?: UpdateDownloadedEvent) => void
 
   // Chrome
   [IPC_CHANNELS.chrome.selectPath]: () => string | null
