@@ -350,20 +350,27 @@ class MacOSUpdater implements Updater {
    */
   public async checkForUpdates(source: string) {
     // 先从 latest-mac.yml 中获取目标文件
-    const assetsURL = getAssetsURL()
-    this.safeSource = source === 'github' ? '' : new URL(source).href
-    this.assetsURL = assetsURL
-    const latestYmlURL = `${this.safeSource}${new URL('latest-mac.yml', this.assetsURL)}`
-    const ymlContent = (await net.fetch(latestYmlURL).then(res => res.text())) as string
-    const latestYml = yaml.parse(ymlContent) as LatestYml
+    try {
+      const assetsURL = getAssetsURL()
+      this.safeSource = source === 'github' ? '' : new URL(source).href
+      this.assetsURL = assetsURL
+      const latestYmlURL = `${this.safeSource}${new URL('latest-mac.yml', this.assetsURL)}`
+      const ymlContent = (await net.fetch(latestYmlURL).then(res => res.text())) as string
+      const latestYml = yaml.parse(ymlContent) as LatestYml
 
-    if (!latestYml) {
-      const message = '获取文件更新信息失败'
-      throw new Error(message)
-    }
-    this.versionInfo = latestYml
-    if (semver.lt(latestYml.version, app.getVersion())) {
-      logger.info(`${app.getVersion()} 已经是最新版本，无需更新`)
+      if (!latestYml) {
+        const message = '获取文件更新信息失败'
+        throw new Error(message)
+      }
+      this.versionInfo = latestYml
+      if (semver.lt(latestYml.version, app.getVersion())) {
+        logger.info(`${app.getVersion()} 已经是最新版本，无需更新`)
+        return
+      }
+    } catch (err) {
+      const message = errorMessage(err)
+      logger.error(message)
+      windowManager.send(IPC_CHANNELS.updater.updateError, { message: message })
       return
     }
     this.downloadUpdate()
@@ -385,8 +392,8 @@ class MacOSUpdater implements Updater {
         if (localFileSha512 === setupFile.sha512) {
           logger.debug('本地已存在安装包，无需重复下载')
           windowManager.send(IPC_CHANNELS.updater.updateDownloaded)
+          return
         }
-        return
       }
       // biome-ignore lint/style/noNonNullAssertion: 确保 assetsURL 不为 null
       fileUrl = `${this.safeSource}${new URL(setupFile.url, this.assetsURL!)}`
