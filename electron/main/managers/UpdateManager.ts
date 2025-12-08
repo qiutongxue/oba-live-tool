@@ -154,7 +154,7 @@ interface Updater {
 }
 
 class UpdateManager {
-  constructor(private updater: Updater) { }
+  constructor(private updater: Updater) {}
 
   public async checkForUpdates(source = 'github') {
     await this.updater.checkForUpdates(source)
