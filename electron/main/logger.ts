@@ -1,10 +1,20 @@
+import * as path from 'node:path'
+import { app } from 'electron'
 import electronLog, { type FormatParams, type LogFunctions } from 'electron-log'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import windowManager from './windowManager'
 
+const appRoot = path.join(app.getAppPath(), path.sep)
+const cleanPathRegex = new RegExp(appRoot.replace(/\\/g, '\\\\').replace(/\//g, '[\\\\/]'), 'gi')
+
+function cleanStack(stack?: string) {
+  if (!stack) return stack
+  return stack.replace(cleanPathRegex, `APP:${path.sep}`)
+}
+
 function formatLogData(data: FormatParams['data'], _level: FormatParams['level']) {
   function errorMessage(item: Error) {
-    return `${item.message}\n${item.stack}${item.cause ? `\nCaused by: ${item.cause}` : ''}`
+    return `${item.message}\n${cleanStack(item.stack)}${item.cause ? `\nCaused by: ${item.cause}` : ''}`
   }
   return data.map(item => (item instanceof Error ? errorMessage(item) : item)).join(' ')
 }
@@ -22,6 +32,15 @@ electronLog.transports.console.format = ({ data, level, message }) => {
     message.scope ? `[${message.scope}]` : '',
     '»',
     `${level.toUpperCase()}`,
+    `\t${text}`,
+  ]
+}
+electronLog.transports.file.format = ({ data, level, message }) => {
+  const text = formatLogData(data, level)
+  return [
+    `[${message.date.toISOString().replace('T', ' ').slice(0, -1)}]`,
+    `[${level.toUpperCase()}]`,
+    message.scope ? `[${message.scope}]` : '',
     `\t${text}`,
   ]
 }
