@@ -38,8 +38,8 @@ export default defineConfig(({ command }) => {
           },
           vite: {
             build: {
-              sourcemap,
-              minify: isBuild,
+              sourcemap: true,
+              minify: false, // 开启前后差距大概 100kb
               outDir: 'dist-electron/main',
               rollupOptions: {
                 external: [...Object.keys('dependencies' in pkg ? pkg.dependencies : {})],
