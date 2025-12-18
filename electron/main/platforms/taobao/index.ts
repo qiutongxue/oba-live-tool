@@ -8,6 +8,7 @@ import {
   ensurePage,
   getAccountName,
   getItemFromVirtualScroller,
+  openUrlByElement,
 } from '../helper'
 import type { IPerformComment, IPerformPopup, IPlatform } from '../IPlatform'
 import { REGEXPS, SELECTORS, URLS } from './constant'
@@ -18,9 +19,7 @@ const PLATFORM_NAME = '淘宝' as const
 /**
  * 淘宝
  */
-export class TaobaoPlatform
-  implements IPlatform, IPerformPopup, IPerformComment
-{
+export class TaobaoPlatform implements IPlatform, IPerformPopup, IPerformComment {
   readonly _isPerformComment = true
   readonly _isPerformPopup = true
   private mainPage: Page | null = null
@@ -39,12 +38,9 @@ export class TaobaoPlatform
 
     // 淘宝需要在直播计划中获取到直播间 id，再通过 id 进入中控台
     try {
-      const liveIdWrapper = await session.page.waitForSelector(
-        SELECTORS.LIVE_ID,
-        {
-          timeout: 5000,
-        },
-      )
+      const liveIdWrapper = await session.page.waitForSelector(SELECTORS.LIVE_ID, {
+        timeout: 5000,
+      })
       const liveId = await liveIdWrapper.textContent()
       const liveControlUrl = `${URLS.LIVE_CONTROL_WITH_ID}${liveId}`
       await session.page.goto(liveControlUrl)
@@ -54,9 +50,7 @@ export class TaobaoPlatform
 
     // 淘宝会弹出莫名其妙的引导界面，按 ESC 关闭
     const driverOverlay = SELECTORS.overlays.DRIVER
-    await page
-      .waitForSelector(driverOverlay, { timeout: 3000 })
-      .catch(() => null)
+    await page.waitForSelector(driverOverlay, { timeout: 3000 }).catch(() => null)
     while (await page.$(driverOverlay)) {
       await page.press('body', 'Escape')
       await sleep(500)
@@ -78,11 +72,12 @@ export class TaobaoPlatform
   }
 
   async getAccountName(session: BrowserSession): Promise<string> {
-    const accountName = await getAccountName(
-      session.page,
-      SELECTORS.ACCOUNT_NAME,
-    )
-    return accountName ?? ''
+    // 需要前往首页获取
+    const homePage = await openUrlByElement(session.page, URLS.HOME_PAGE)
+    session.page.bringToFront()
+    const accountName = (await getAccountName(homePage, SELECTORS.ACCOUNT_NAME)) ?? ''
+    homePage.close()
+    return accountName
   }
 
   disconnect(): Promise<void> {
@@ -92,9 +87,7 @@ export class TaobaoPlatform
   async performPopup(id: number) {
     return Result.pipe(
       ensurePage(this.mainPage),
-      Result.andThen(page =>
-        getItemFromVirtualScroller(page, elementFinder, id),
-      ),
+      Result.andThen(page => getItemFromVirtualScroller(page, elementFinder, id)),
       Result.andThen(item => elementFinder.getPopUpButtonFromGoodsItem(item)),
       Result.inspect(btn => btn.dispatchEvent('click')),
       Result.andThen(_ => Result.succeed()),

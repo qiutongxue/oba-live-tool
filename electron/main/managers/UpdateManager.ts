@@ -293,7 +293,7 @@ class WindowsUpdater implements Updater {
       return await this.autoUpdater.checkForUpdates()
     } catch (error) {
       const message = `网络错误: ${errorMessage(error).split('\n')[0]}`
-      const downloadURL = `${sourceURL}${assetsURL}${PRODUCT_NAME}_${latestVersion}.exe`
+      const downloadURL = `${sourceURL}${assetsURL}${PRODUCT_NAME}_${latestVersion}_windows_x64.exe`
       windowManager.send(IPC_CHANNELS.updater.updateError, { message, downloadURL })
     }
   }

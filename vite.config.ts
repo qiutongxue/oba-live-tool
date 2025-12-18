@@ -42,7 +42,13 @@ export default defineConfig(({ command }) => {
               minify: false, // 开启前后差距大概 100kb
               outDir: 'dist-electron/main',
               rollupOptions: {
-                external: [...Object.keys('dependencies' in pkg ? pkg.dependencies : {})],
+                external: [
+                  // 将 ws 移入 devDependencies 后启动报错，需要排除下面两个包
+                  // (ws 移回 dependencies 虽然正常不报错，但是安装后启动也会报错)
+                  'bufferutil',
+                  'utf-8-validate',
+                  ...Object.keys('dependencies' in pkg ? pkg.dependencies : {}),
+                ],
               },
             },
             resolve: {
