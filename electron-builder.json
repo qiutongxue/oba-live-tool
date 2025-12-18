@@ -5,6 +5,7 @@
   "directories": {
     "output": "release/${version}"
   },
+  "electronLanguages": ["zh-CN", "en-US"],
   "files": ["dist-electron", "dist"],
   "mac": {
     "artifactName": "${productName}_${version}_${arch}.${ext}",
