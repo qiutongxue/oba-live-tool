@@ -4,6 +4,7 @@ export const URLS = {
   /** 淘宝需要从直播计划进入中控台 */
   LIVE_LIST: 'https://liveplatform.taobao.com/restful/index/live/list', // 这是直播计划，并不是中控台，真正的中控台需要直播中才能访问
   LIVE_CONTROL_WITH_ID: 'https://liveplatform.taobao.com/restful/index/live/control?liveId=', // 后面的 liveId 需要动态获取
+  HOME_PAGE: 'https://liveplatform.taobao.com/restful/index/home/dashboard-new',
 } as const
 
 export const REGEXPS = {
@@ -12,7 +13,7 @@ export const REGEXPS = {
 
 export const SELECTORS = {
   LOGGED_IN: 'span[class^=header-anchor-name]',
-  ACCOUNT_NAME: 'span[class^=header-anchor-name]',
+  ACCOUNT_NAME: 'div[class^=username]',
   IN_LIVE_LIST: 'div.tblalm-lm-content', // 这是直播计划
   LIVE_ID:
     '#scrollableDiv .tblalm-lm-list-item-live.online .tblalm-lm-list-item-live-subTitle-id .tui-number-figure',
