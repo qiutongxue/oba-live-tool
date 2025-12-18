@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.5.19
+
+[compare changes](https://github.com/qiutongxue/oba-live-tool/compare/v1.5.18...v1.5.19)
+
+### 🚀 Features
+
+- 大大减轻了应用体积（减少了约 100MB）！
+
+### 🐞 Bug Fixes
+
+- 修改日志的错误堆栈显示信息 ([e3aee11](https://github.com/qiutongxue/oba-live-tool/commit/e3aee11))
+- **淘宝:** 修复淘宝直播找不到评论框的问题 ([5fb39c1](https://github.com/qiutongxue/oba-live-tool/commit/5fb39c1))
+- **淘宝:** 修复淘宝无法获取用户名的问题 ([1ddf73e](https://github.com/qiutongxue/oba-live-tool/commit/1ddf73e))
+
 ## v1.5.18
 
 [compare changes](https://github.com/qiutongxue/oba-live-tool/compare/v1.5.17...v1.5.18)
