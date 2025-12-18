@@ -15,21 +15,21 @@ async function fetchOpenrouterModels() {
     return null
   }
   try {
-    const openai = new OpenAI({
-      baseURL: providers.openrouter.baseURL,
-      apiKey,
-    })
-    const models = await openai.models.list()
-    const filteredModels = models.data
-      .filter(model => {
-        return (
+  const openai = new OpenAI({
+    baseURL: providers.openrouter.baseURL,
+    apiKey,
+  })
+  const models = await openai.models.list()
+  const filteredModels = models.data
+    .filter(model => {
+      return (
           model.architecture?.modality === 'text->text' &&
           model.id?.toLowerCase().includes('deepseek')
-        )
-      })
-      .map(model => model.id)
+      )
+    })
+    .map(model => model.id)
     console.log(`OpenRouter: 找到 ${filteredModels.length} 个模型`)
-    return filteredModels
+  return filteredModels
   } catch (error) {
     console.error('获取 OpenRouter 模型失败:', error.message)
     return null
@@ -43,18 +43,18 @@ async function fetchSiliconflowModels() {
     return null
   }
   try {
-    const openai = new OpenAI({
-      baseURL: providers.siliconflow.baseURL,
-      apiKey,
-    })
-    const models = await openai.models.list()
-    const filteredModels = models.data
-      .filter(model => {
+  const openai = new OpenAI({
+    baseURL: providers.siliconflow.baseURL,
+    apiKey,
+  })
+  const models = await openai.models.list()
+  const filteredModels = models.data
+    .filter(model => {
         return model.id?.toLowerCase().includes('deepseek')
-      })
-      .map(model => model.id)
+    })
+    .map(model => model.id)
     console.log(`硅基流动: 找到 ${filteredModels.length} 个模型`)
-    return filteredModels
+  return filteredModels
   } catch (error) {
     console.error('获取硅基流动模型失败:', error.message)
     return null
@@ -68,14 +68,14 @@ const updaters = {
 
 async function main() {
   try {
-    const newProviders = { ...providers }
+const newProviders = { ...providers }
     let hasChanges = false
 
-    for (const [key, fetchModels] of Object.entries(updaters)) {
+for (const [key, fetchModels] of Object.entries(updaters)) {
       console.log(`正在更新 ${key} 模型列表...`)
-      const models = await fetchModels()
+  const models = await fetchModels()
       if (models && models.length > 0) {
-        newProviders[key].models = models
+    newProviders[key].models = models
         hasChanges = true
         console.log(`✓ ${key} 更新完成，共 ${models.length} 个模型`)
       } else {
