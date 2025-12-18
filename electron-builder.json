@@ -8,7 +8,7 @@
   "electronLanguages": ["zh-CN", "en-US"],
   "files": ["dist-electron", "dist"],
   "mac": {
-    "artifactName": "${productName}_${version}_${arch}.${ext}",
+    "artifactName": "${productName}_${version}_macos_${arch}.${ext}",
     "target": [
       {
         "target": "dmg",
@@ -25,7 +25,7 @@
       }
     ],
     "icon": "public/favicon.ico",
-    "artifactName": "${productName}_${version}.${ext}"
+    "artifactName": "${productName}_${version}_windows_${arch}.${ext}"
   },
   "nsis": {
     "oneClick": false,
