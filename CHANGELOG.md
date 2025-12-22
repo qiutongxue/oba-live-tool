@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.5.20
+
+[compare changes](https://github.com/qiutongxue/oba-live-tool/compare/v1.5.19...v1.5.20)
+
+### 🐞 Bug Fixes
+
+- **淘宝**: 修复淘宝初次登录时无法连接中控台的问题 ([0059158](https://github.com/qiutongxue/oba-live-tool/commit/0059158))
+
 ## v1.5.19
 
 [compare changes](https://github.com/qiutongxue/oba-live-tool/compare/v1.5.18...v1.5.19)
