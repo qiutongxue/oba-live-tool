@@ -10,6 +10,7 @@ export const providers = {
     baseURL: 'https://openrouter.ai/api/v1',
     apiUrl: 'https://openrouter.ai/keys',
     models: [
+      'nex-agi/deepseek-v3.1-nex-n1:free',
       'deepseek/deepseek-v3.2-speciale',
       'deepseek/deepseek-v3.2',
       'deepseek/deepseek-v3.2-exp',
@@ -19,6 +20,7 @@ export const providers = {
       'tngtech/deepseek-r1t2-chimera:free',
       'tngtech/deepseek-r1t2-chimera',
       'deepseek/deepseek-r1-0528-qwen3-8b',
+      'deepseek/deepseek-r1-0528:free',
       'deepseek/deepseek-r1-0528',
       'deepseek/deepseek-prover-v2',
       'tngtech/deepseek-r1t-chimera:free',
