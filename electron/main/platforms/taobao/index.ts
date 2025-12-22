@@ -66,7 +66,7 @@ export class TaobaoPlatform implements IPlatform, IPerformPopup, IPerformComment
       await session.page.goto(URLS.LOGIN_PAGE)
     }
 
-    await session.page.waitForSelector(SELECTORS.LOGGED_IN, {
+    await session.page.waitForSelector(SELECTORS.IN_LIVE_LIST, {
       timeout: 0,
     })
   }

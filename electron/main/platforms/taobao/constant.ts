@@ -12,7 +12,6 @@ export const REGEXPS = {
 }
 
 export const SELECTORS = {
-  LOGGED_IN: 'span[class^=header-anchor-name]',
   ACCOUNT_NAME: 'div[class^=username]',
   IN_LIVE_LIST: 'div.tblalm-lm-content', // 这是直播计划
   LIVE_ID:
