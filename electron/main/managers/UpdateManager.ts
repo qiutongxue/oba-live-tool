@@ -64,7 +64,7 @@ function extractChanges(changelogContent: string, userVersion: string): string {
   return result.slice(1).join('\n')
 }
 
-async function fetchWithRetry(url: string | URL, retries = 3, delay = 1000) {
+async function fetchWithRetry(url: string | URL, retries = 3, delay = 1000): Promise<Response> {
   for (let i = 0; i < retries; i++) {
     try {
       const res = (await timeoutFetch(url)) as Response
@@ -75,6 +75,7 @@ async function fetchWithRetry(url: string | URL, retries = 3, delay = 1000) {
       await sleep(delay)
     }
   }
+  throw new Error('Fetch failed after retries')
 }
 
 async function timeoutFetch(url: string | URL, timeout = 5000) {
@@ -102,15 +103,51 @@ async function timeoutFetch(url: string | URL, timeout = 5000) {
 const releaseNotes: Record<string, string> = {}
 let latestVersion: string | null = null
 
+function normalizeVersion(input: unknown): string | null {
+  if (typeof input !== 'string') return null
+  const cleaned = input.trim().replace(/^v/i, '')
+  const coerced = semver.coerce(cleaned)?.version
+  return coerced ?? null
+}
+
+function pickNewestVersion(versions: Array<string | null>) {
+  const valid = versions.filter((v): v is string => Boolean(v) && Boolean(semver.valid(v)))
+  if (valid.length === 0) return null
+  return valid.sort(semver.rcompare)[0]
+}
+
+async function fetchLatestVersionFromCdn(): Promise<string | null> {
+  const url = new URL(`${GITHUB_OWNER}/${GITHUB_REPO}@main/package.json?t=${Date.now()}`, CDN_URL)
+  const version = await fetchWithRetry(url)
+    .then(resp => resp.json() as Promise<{ version?: unknown }>)
+    .then(data => normalizeVersion(data?.version))
+  return version
+}
+
+async function fetchLatestVersionFromGithubRaw(): Promise<string | null> {
+  const url = new URL(
+    `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/main/package.json?t=${Date.now()}`,
+  )
+  const version = await fetchWithRetry(url)
+    .then(resp => resp.json() as Promise<{ version?: unknown }>)
+    .then(data => normalizeVersion(data?.version))
+  return version
+}
+
 async function getLatestVersion() {
   try {
-    // 从 package.json 获取最新版本号
-    const version = await fetch(
-      new URL(`${GITHUB_OWNER}/${GITHUB_REPO}@main/package.json`, CDN_URL),
+    const [cdnResult, rawResult] = await Promise.allSettled([
+      fetchLatestVersionFromCdn(),
+      fetchLatestVersionFromGithubRaw(),
+    ])
+
+    const cdnVersion = cdnResult.status === 'fulfilled' ? cdnResult.value : null
+    const rawVersion = rawResult.status === 'fulfilled' ? rawResult.value : null
+
+    const version = pickNewestVersion([cdnVersion, rawVersion])
+    logger.debug(
+      `从 package.json 获取到的版本为 ${version ?? 'unknown'} (cdn=${cdnVersion ?? 'unknown'}, raw=${rawVersion ?? 'unknown'})`,
     )
-      .then(resp => resp.json())
-      .then(data => data.version)
-    logger.debug(`从 package.json 获取到的版本为 ${version}`)
     latestVersion = version
     return version
   } catch (error) {
@@ -154,7 +191,7 @@ interface Updater {
 }
 
 class UpdateManager {
-  constructor(private updater: Updater) {}
+  constructor(private updater: Updater) { }
 
   public async checkForUpdates(source = 'github') {
     await this.updater.checkForUpdates(source)
