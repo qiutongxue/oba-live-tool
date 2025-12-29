@@ -13,7 +13,7 @@ const availablePlatforms: LiveControlPlatform[] = [
   'douyin',
   'buyin',
   'wxchannel',
-  'redbook',
+  'xiaohongshu',
   'pgy',
   'dev',
 ]

@@ -50,7 +50,7 @@ export default function Sidebar() {
       name: '自动回复',
       isRunning: isAutoReplyRunning,
       icon: <CarbonIbmEventAutomation className="w-5 h-5" />,
-      platform: ['douyin', 'buyin', 'wxchannel', 'redbook', 'pgy', 'dev'],
+      platform: ['douyin', 'buyin', 'wxchannel', 'xiaohongshu', 'pgy', 'dev'],
     },
     {
       id: '/ai-chat',
