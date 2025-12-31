@@ -1,9 +1,6 @@
 import { Result } from '@praha/byethrow'
 import type { ElementHandle, Page } from 'playwright'
-import {
-  ElementDisabledError,
-  ElementNotFoundError,
-} from '#/errors/PlatformError'
+import { ElementDisabledError, ElementNotFoundError } from '#/errors/PlatformError'
 import { commonElementFinder, type IElementFinder } from './../IElementFinder'
 import { SELECTORS } from './constant'
 
@@ -22,9 +19,7 @@ export const douyinEosElementFinder: IElementFinder = {
         }),
       )
     }
-    if (
-      await sendMessageButton.evaluate(el => el.className.includes('disable'))
-    ) {
+    if (await sendMessageButton.evaluate(el => el.className.includes('disable'))) {
       return Result.fail(
         new ElementDisabledError({
           elementName: '发送评论按钮',
@@ -35,9 +30,7 @@ export const douyinEosElementFinder: IElementFinder = {
     return Result.succeed(sendMessageButton)
   },
 
-  async getPopUpButtonFromGoodsItem(
-    item: ElementHandle<SVGElement | HTMLElement>,
-  ) {
+  async getPopUpButtonFromGoodsItem(item: ElementHandle<SVGElement | HTMLElement>) {
     const button = await item.$(SELECTORS.goodsItem.POPUP_BUTTON)
     if (!button) {
       return Result.fail(
@@ -63,23 +56,14 @@ export const douyinEosElementFinder: IElementFinder = {
   },
 
   async getCurrentGoodsItemsList(page: Page) {
-    return commonElementFinder.getCurrentGoodsItemsList(
-      page,
-      SELECTORS.GOODS_ITEM,
-    )
+    return commonElementFinder.getCurrentGoodsItemsList(page, SELECTORS.GOODS_ITEM)
   },
 
   async getGoodsItemsScrollContainer(page: Page) {
-    return commonElementFinder.getGoodsItemsScrollContainer(
-      page,
-      SELECTORS.GOODS_ITEMS_WRAPPER,
-    )
+    return commonElementFinder.getGoodsItemsScrollContainer(page, SELECTORS.GOODS_ITEMS_WRAPPER)
   },
 
   async getCommentTextarea(page: Page) {
-    return commonElementFinder.getCommentTextarea(
-      page,
-      SELECTORS.commentInput.TEXTAREA,
-    )
+    return commonElementFinder.getCommentTextarea(page, SELECTORS.commentInput.TEXTAREA)
   },
 }

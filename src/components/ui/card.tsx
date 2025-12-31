@@ -11,10 +11,7 @@ function Card({
   return (
     <div
       ref={ref}
-      className={cn(
-        'rounded-xl border bg-card text-card-foreground shadow-sm',
-        className,
-      )}
+      className={cn('rounded-xl border bg-card text-card-foreground shadow-sm', className)}
       {...props}
     />
   )
@@ -28,13 +25,7 @@ function CardHeader({
 }: React.HTMLAttributes<HTMLDivElement> & {
   ref?: React.RefObject<HTMLDivElement>
 }) {
-  return (
-    <div
-      ref={ref}
-      className={cn('flex flex-col space-y-1.5 p-6', className)}
-      {...props}
-    />
-  )
+  return <div ref={ref} className={cn('flex flex-col space-y-1.5 p-6', className)} {...props} />
 }
 CardHeader.displayName = 'CardHeader'
 
@@ -62,13 +53,7 @@ function CardDescription({
 }: React.HTMLAttributes<HTMLDivElement> & {
   ref?: React.RefObject<HTMLDivElement>
 }) {
-  return (
-    <div
-      ref={ref}
-      className={cn('text-sm text-muted-foreground', className)}
-      {...props}
-    />
-  )
+  return <div ref={ref} className={cn('text-sm text-muted-foreground', className)} {...props} />
 }
 CardDescription.displayName = 'CardDescription'
 
@@ -90,13 +75,7 @@ function CardFooter({
 }: React.HTMLAttributes<HTMLDivElement> & {
   ref?: React.RefObject<HTMLDivElement>
 }) {
-  return (
-    <div
-      ref={ref}
-      className={cn('flex items-center p-6 pt-0', className)}
-      {...props}
-    />
-  )
+  return <div ref={ref} className={cn('flex items-center p-6 pt-0', className)} {...props} />
 }
 CardFooter.displayName = 'CardFooter'
 

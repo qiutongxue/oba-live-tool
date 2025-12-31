@@ -1,9 +1,6 @@
 import { Result } from '@praha/byethrow'
 import type { ElementHandle, Page } from 'playwright'
-import {
-  ElementDisabledError,
-  ElementNotFoundError,
-} from '#/errors/PlatformError'
+import { ElementDisabledError, ElementNotFoundError } from '#/errors/PlatformError'
 import { commonElementFinder, type IElementFinder } from '../IElementFinder'
 import { SELECTORS, TEXTS } from './constant'
 
@@ -46,9 +43,7 @@ export const douyinElementFinder: IElementFinder = {
     return Result.succeed(submit_btn)
   },
 
-  async getPopUpButtonFromGoodsItem(
-    item: ElementHandle<SVGElement | HTMLElement>,
-  ) {
+  async getPopUpButtonFromGoodsItem(item: ElementHandle<SVGElement | HTMLElement>) {
     const goodsAction = await item.$(SELECTORS.goodsItem.ACTION)
     if (!goodsAction) {
       return Result.fail(
@@ -78,17 +73,11 @@ export const douyinElementFinder: IElementFinder = {
   },
 
   async getGoodsItemsScrollContainer(page: Page) {
-    return commonElementFinder.getGoodsItemsScrollContainer(
-      page,
-      SELECTORS.GOODS_ITEMS_WRAPPER,
-    )
+    return commonElementFinder.getGoodsItemsScrollContainer(page, SELECTORS.GOODS_ITEMS_WRAPPER)
   },
 
   async getCurrentGoodsItemsList(page: Page) {
-    return commonElementFinder.getCurrentGoodsItemsList(
-      page,
-      SELECTORS.GOODS_ITEM,
-    )
+    return commonElementFinder.getCurrentGoodsItemsList(page, SELECTORS.GOODS_ITEM)
   },
 
   async getIdFromGoodsItem(item: ElementHandle<SVGElement | HTMLElement>) {
@@ -96,9 +85,6 @@ export const douyinElementFinder: IElementFinder = {
   },
 
   async getCommentTextarea(page: Page) {
-    return commonElementFinder.getCommentTextarea(
-      page,
-      SELECTORS.commentInput.TEXTAREA,
-    )
+    return commonElementFinder.getCommentTextarea(page, SELECTORS.commentInput.TEXTAREA)
   },
 }

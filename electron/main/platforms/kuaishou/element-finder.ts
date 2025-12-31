@@ -1,16 +1,11 @@
 import { Result } from '@praha/byethrow'
 import type { ElementHandle, Page } from 'playwright'
-import {
-  ElementDisabledError,
-  ElementNotFoundError,
-} from '#/errors/PlatformError'
+import { ElementDisabledError, ElementNotFoundError } from '#/errors/PlatformError'
 import { commonElementFinder, type IElementFinder } from '../IElementFinder'
 import { SELECTORS } from './constant'
 
 export const kuaishouElementFinder: IElementFinder = {
-  async getPopUpButtonFromGoodsItem(
-    item: ElementHandle<SVGElement | HTMLElement>,
-  ) {
+  async getPopUpButtonFromGoodsItem(item: ElementHandle<SVGElement | HTMLElement>) {
     const button = await item.$(SELECTORS.goodsItem.POPUP_BUTTON)
     if (!button) {
       return Result.fail(
@@ -28,10 +23,7 @@ export const kuaishouElementFinder: IElementFinder = {
   },
 
   async getCurrentGoodsItemsList(page: Page) {
-    const items = await commonElementFinder.getCurrentGoodsItemsList(
-      page,
-      SELECTORS.GOODS_ITEM,
-    )
+    const items = await commonElementFinder.getCurrentGoodsItemsList(page, SELECTORS.GOODS_ITEM)
     if (Result.isFailure(items)) {
       return items
     }
@@ -47,17 +39,11 @@ export const kuaishouElementFinder: IElementFinder = {
   },
 
   async getGoodsItemsScrollContainer(page: Page) {
-    return commonElementFinder.getGoodsItemsScrollContainer(
-      page,
-      SELECTORS.GOODS_ITEMS_WRAPPER,
-    )
+    return commonElementFinder.getGoodsItemsScrollContainer(page, SELECTORS.GOODS_ITEMS_WRAPPER)
   },
 
   getCommentTextarea(page: Page) {
-    return commonElementFinder.getCommentTextarea(
-      page,
-      SELECTORS.commentInput.TEXTAREA,
-    )
+    return commonElementFinder.getCommentTextarea(page, SELECTORS.commentInput.TEXTAREA)
   },
 
   async getClickableSubmitCommentButton(page: Page) {

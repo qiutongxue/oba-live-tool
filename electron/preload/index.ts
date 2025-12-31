@@ -11,10 +11,8 @@ const ipcRendererApi: ElectronAPI['ipcRenderer'] = {
     channel: Channel,
     listener: (...args: Parameters<IpcChannels[Channel]>) => void,
   ): () => void {
-    const subscription = (
-      _event: IpcRendererEvent,
-      ...args: Parameters<IpcChannels[Channel]>
-    ) => listener(...args)
+    const subscription = (_event: IpcRendererEvent, ...args: Parameters<IpcChannels[Channel]>) =>
+      listener(...args)
 
     ipcRenderer.on(channel as string, subscription)
     return () => {
@@ -33,10 +31,7 @@ const ipcRendererApi: ElectronAPI['ipcRenderer'] = {
     channel: Channel,
     ...args: Parameters<IpcChannels[Channel]>
   ): IpcRendererInvokeReturnType<Channel> => {
-    return ipcRenderer.invoke(
-      channel as string,
-      ...args,
-    ) as IpcRendererInvokeReturnType<Channel>
+    return ipcRenderer.invoke(channel as string, ...args) as IpcRendererInvokeReturnType<Channel>
   },
 }
 
@@ -44,9 +39,7 @@ const ipcRendererApi: ElectronAPI['ipcRenderer'] = {
 contextBridge.exposeInMainWorld('ipcRenderer', ipcRendererApi)
 
 // --------- Preload scripts loading ---------
-function domReady(
-  condition: DocumentReadyState[] = ['complete', 'interactive'],
-) {
+function domReady(condition: DocumentReadyState[] = ['complete', 'interactive']) {
   return new Promise(resolve => {
     if (condition.includes(document.readyState)) {
       resolve(true)

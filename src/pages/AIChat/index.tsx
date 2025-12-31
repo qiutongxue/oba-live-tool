@@ -13,9 +13,7 @@ export default function AIChat() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">AI 助手</h1>
-          <p className="text-muted-foreground mt-2">
-            与 AI 助手进行对话，获取帮助。
-          </p>
+          <p className="text-muted-foreground mt-2">与 AI 助手进行对话，获取帮助。</p>
         </div>
         <div className="flex items-center gap-2">
           <APIKeyDialog />

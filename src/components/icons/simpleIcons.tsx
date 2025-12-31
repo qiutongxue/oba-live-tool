@@ -2,13 +2,7 @@ import type { SVGProps } from 'react'
 
 export function SimpleIconsGooglechrome(props: SVGProps<SVGSVGElement>) {
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="1em"
-      height="1em"
-      viewBox="0 0 24 24"
-      {...props}
-    >
+    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" {...props}>
       <title>Google Chrome</title>
       <path
         fill="currentColor"
@@ -20,13 +14,7 @@ export function SimpleIconsGooglechrome(props: SVGProps<SVGSVGElement>) {
 
 export function SimpleIconsMicrosoftedge(props: SVGProps<SVGSVGElement>) {
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="1em"
-      height="1em"
-      viewBox="0 0 24 24"
-      {...props}
-    >
+    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" {...props}>
       <title>Microsoft Edge</title>
       <path
         fill="currentColor"
@@ -38,13 +26,7 @@ export function SimpleIconsMicrosoftedge(props: SVGProps<SVGSVGElement>) {
 
 export function SimpleIconsGithub(props: SVGProps<SVGSVGElement>) {
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="1em"
-      height="1em"
-      viewBox="0 0 24 24"
-      {...props}
-    >
+    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" {...props}>
       <title>GitHub</title>
       <path
         fill="currentColor"

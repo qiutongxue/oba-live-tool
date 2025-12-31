@@ -40,24 +40,14 @@ const ShortcutConfigTab = React.memo(() => {
             开启后程序后台运行时也可触发，建议使用<strong>组合键</strong>
           </p>
         </div>
-        <Switch
-          checked={isGlobalShortcut}
-          onCheckedChange={setGlobalShortcut}
-        />
+        <Switch checked={isGlobalShortcut} onCheckedChange={setGlobalShortcut} />
       </div>
       <div className="flex items-center justify-between">
         <div className="space-y-1">
           <Label>快捷键映射</Label>
-          <p className="text-sm text-muted-foreground">
-            配置快捷键以快速切换商品列表
-          </p>
+          <p className="text-sm text-muted-foreground">配置快捷键以快速切换商品列表</p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={addNewShortcut}
-          disabled={isAddingNew}
-        >
+        <Button variant="outline" size="sm" onClick={addNewShortcut} disabled={isAddingNew}>
           <PlusIcon className="mr-2 h-4 w-4" />
           添加快捷键
         </Button>

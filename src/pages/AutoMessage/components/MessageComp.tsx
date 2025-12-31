@@ -47,9 +47,7 @@ const MessageComp = React.memo(
             </div>
             <span
               className={`text-xs ${
-                message.content.length > 50
-                  ? 'text-destructive'
-                  : 'text-muted-foreground'
+                message.content.length > 50 ? 'text-destructive' : 'text-muted-foreground'
               }`}
             >
               {message.content.length}

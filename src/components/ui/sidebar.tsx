@@ -8,12 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import { Sheet, SheetContent } from '@/components/ui/sheet'
 import { Skeleton } from '@/components/ui/skeleton'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { cn } from '@/lib/utils'
 
@@ -90,10 +85,7 @@ const SidebarProvider = ({
   // Adds a keyboard shortcut to toggle the sidebar.
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (
-        event.key === SIDEBAR_KEYBOARD_SHORTCUT &&
-        (event.metaKey || event.ctrlKey)
-      ) {
+      if (event.key === SIDEBAR_KEYBOARD_SHORTCUT && (event.metaKey || event.ctrlKey)) {
         event.preventDefault()
         toggleSidebar()
       }
@@ -238,11 +230,7 @@ const Sidebar = ({
 }
 Sidebar.displayName = 'Sidebar'
 
-const SidebarTrigger = ({
-  className,
-  onClick,
-  ...props
-}: React.ComponentProps<typeof Button>) => {
+const SidebarTrigger = ({ className, onClick, ...props }: React.ComponentProps<typeof Button>) => {
   const { toggleSidebar } = useSidebar()
 
   return (
@@ -264,10 +252,7 @@ const SidebarTrigger = ({
 }
 SidebarTrigger.displayName = 'SidebarTrigger'
 
-const SidebarRail = ({
-  className,
-  ...props
-}: React.ComponentProps<'button'>) => {
+const SidebarRail = ({ className, ...props }: React.ComponentProps<'button'>) => {
   const { toggleSidebar } = useSidebar()
 
   return (
@@ -293,10 +278,7 @@ const SidebarRail = ({
 }
 SidebarRail.displayName = 'SidebarRail'
 
-const SidebarInset = ({
-  className,
-  ...props
-}: React.ComponentProps<'main'>) => {
+const SidebarInset = ({ className, ...props }: React.ComponentProps<'main'>) => {
   return (
     <main
       className={cn(
@@ -310,10 +292,7 @@ const SidebarInset = ({
 }
 SidebarInset.displayName = 'SidebarInset'
 
-const SidebarInput = ({
-  className,
-  ...props
-}: React.ComponentProps<typeof Input>) => {
+const SidebarInput = ({ className, ...props }: React.ComponentProps<typeof Input>) => {
   return (
     <Input
       data-sidebar="input"
@@ -327,38 +306,21 @@ const SidebarInput = ({
 }
 SidebarInput.displayName = 'SidebarInput'
 
-const SidebarHeader = ({
-  className,
-  ...props
-}: React.ComponentProps<'div'>) => {
+const SidebarHeader = ({ className, ...props }: React.ComponentProps<'div'>) => {
   return (
-    <div
-      data-sidebar="header"
-      className={cn('flex flex-col gap-2 p-2', className)}
-      {...props}
-    />
+    <div data-sidebar="header" className={cn('flex flex-col gap-2 p-2', className)} {...props} />
   )
 }
 SidebarHeader.displayName = 'SidebarHeader'
 
-const SidebarFooter = ({
-  className,
-  ...props
-}: React.ComponentProps<'div'>) => {
+const SidebarFooter = ({ className, ...props }: React.ComponentProps<'div'>) => {
   return (
-    <div
-      data-sidebar="footer"
-      className={cn('flex flex-col gap-2 p-2', className)}
-      {...props}
-    />
+    <div data-sidebar="footer" className={cn('flex flex-col gap-2 p-2', className)} {...props} />
   )
 }
 SidebarFooter.displayName = 'SidebarFooter'
 
-const SidebarSeparator = ({
-  className,
-  ...props
-}: React.ComponentProps<typeof Separator>) => {
+const SidebarSeparator = ({ className, ...props }: React.ComponentProps<typeof Separator>) => {
   return (
     <Separator
       data-sidebar="separator"
@@ -369,10 +331,7 @@ const SidebarSeparator = ({
 }
 SidebarSeparator.displayName = 'SidebarSeparator'
 
-const SidebarContent = ({
-  className,
-  ...props
-}: React.ComponentProps<'div'>) => {
+const SidebarContent = ({ className, ...props }: React.ComponentProps<'div'>) => {
   return (
     <div
       data-sidebar="content"
@@ -441,17 +400,8 @@ const SidebarGroupAction = ({
 }
 SidebarGroupAction.displayName = 'SidebarGroupAction'
 
-const SidebarGroupContent = ({
-  className,
-  ...props
-}: React.ComponentProps<'div'>) => {
-  return (
-    <div
-      data-sidebar="group-content"
-      className={cn('w-full text-sm', className)}
-      {...props}
-    />
-  )
+const SidebarGroupContent = ({ className, ...props }: React.ComponentProps<'div'>) => {
+  return <div data-sidebar="group-content" className={cn('w-full text-sm', className)} {...props} />
 }
 SidebarGroupContent.displayName = 'SidebarGroupContent'
 
@@ -466,16 +416,9 @@ const SidebarMenu = ({ className, ...props }: React.ComponentProps<'ul'>) => {
 }
 SidebarMenu.displayName = 'SidebarMenu'
 
-const SidebarMenuItem = ({
-  className,
-  ...props
-}: React.ComponentProps<'li'>) => {
+const SidebarMenuItem = ({ className, ...props }: React.ComponentProps<'li'>) => {
   return (
-    <li
-      data-sidebar="menu-item"
-      className={cn('group/menu-item relative', className)}
-      {...props}
-    />
+    <li data-sidebar="menu-item" className={cn('group/menu-item relative', className)} {...props} />
   )
 }
 SidebarMenuItem.displayName = 'SidebarMenuItem'
@@ -584,10 +527,7 @@ const SidebarMenuAction = ({
 }
 SidebarMenuAction.displayName = 'SidebarMenuAction'
 
-const SidebarMenuBadge = ({
-  className,
-  ...props
-}: React.ComponentProps<'div'>) => (
+const SidebarMenuBadge = ({ className, ...props }: React.ComponentProps<'div'>) => (
   <div
     data-sidebar="menu-badge"
     className={cn(
@@ -622,12 +562,7 @@ const SidebarMenuSkeleton = ({
       className={cn('flex h-8 items-center gap-2 rounded-md px-2', className)}
       {...props}
     >
-      {showIcon && (
-        <Skeleton
-          className="size-4 rounded-md"
-          data-sidebar="menu-skeleton-icon"
-        />
-      )}
+      {showIcon && <Skeleton className="size-4 rounded-md" data-sidebar="menu-skeleton-icon" />}
       <Skeleton
         className="h-4 max-w-(--skeleton-width) flex-1"
         data-sidebar="menu-skeleton-text"
@@ -642,10 +577,7 @@ const SidebarMenuSkeleton = ({
 }
 SidebarMenuSkeleton.displayName = 'SidebarMenuSkeleton'
 
-const SidebarMenuSub = ({
-  className,
-  ...props
-}: React.ComponentProps<'ul'>) => (
+const SidebarMenuSub = ({ className, ...props }: React.ComponentProps<'ul'>) => (
   <ul
     data-sidebar="menu-sub"
     className={cn(
@@ -658,9 +590,7 @@ const SidebarMenuSub = ({
 )
 SidebarMenuSub.displayName = 'SidebarMenuSub'
 
-const SidebarMenuSubItem = ({ ...props }: React.ComponentProps<'li'>) => (
-  <li {...props} />
-)
+const SidebarMenuSubItem = ({ ...props }: React.ComponentProps<'li'>) => <li {...props} />
 SidebarMenuSubItem.displayName = 'SidebarMenuSubItem'
 
 const SidebarMenuSubButton = ({

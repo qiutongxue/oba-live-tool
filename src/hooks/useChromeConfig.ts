@@ -124,9 +124,7 @@ export const useChromeConfigStore = create<ChromeConfigStore>()(
   ),
 )
 
-export function useCurrentChromeConfig<T>(
-  getters: (state: ChromeConfig) => T,
-): T {
+export function useCurrentChromeConfig<T>(getters: (state: ChromeConfig) => T): T {
   const currentAccountId = useAccounts(state => state.currentAccountId)
   return useChromeConfigStore(state => {
     const context = state.contexts[currentAccountId] ?? defaultContext()
@@ -143,10 +141,8 @@ export function useCurrentChromeConfigActions() {
   return useMemo(
     () => ({
       setPath: (path: string) => setPath(currentAccountId, path),
-      setStorageState: (storageState: string) =>
-        setStorageState(currentAccountId, storageState),
-      setHeadless: (headless: boolean) =>
-        setHeadless(currentAccountId, headless),
+      setStorageState: (storageState: string) => setStorageState(currentAccountId, storageState),
+      setHeadless: (headless: boolean) => setHeadless(currentAccountId, headless),
     }),
     [currentAccountId, setPath, setStorageState, setHeadless],
   )

@@ -12,9 +12,7 @@ export default function MessageEditor({
   onChange: (messages: Message[]) => void
 }) {
   const [localMessages, setLocalMessages] = useState<Message[]>(messages)
-  const [text, setText] = useState(() =>
-    messages.map(msg => msg.content).join('\n'),
-  )
+  const [text, setText] = useState(() => messages.map(msg => msg.content).join('\n'))
 
   useDebounceEffect(
     () => {
@@ -70,10 +68,7 @@ export default function MessageEditor({
                   fill="currentColor"
                 />
               ) : (
-                <PinOffIcon
-                  size={16}
-                  className="text-gray-400 group-hover:text-gray-600"
-                />
+                <PinOffIcon size={16} className="text-gray-400 group-hover:text-gray-600" />
               )}
               <span className="ml-2">{i + 1}</span>
             </button>

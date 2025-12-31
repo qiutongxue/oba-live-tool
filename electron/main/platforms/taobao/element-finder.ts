@@ -9,9 +9,7 @@ import { commonElementFinder, type IElementFinder } from '../IElementFinder'
 import { SELECTORS } from './constant'
 
 export const taobaoElementFinder: IElementFinder = {
-  async getPopUpButtonFromGoodsItem(
-    item: ElementHandle<SVGElement | HTMLElement>,
-  ) {
+  async getPopUpButtonFromGoodsItem(item: ElementHandle<SVGElement | HTMLElement>) {
     const button = await item.$(SELECTORS.goodsItem.POPUP_BUTTON)
     if (!button) {
       return Result.fail(
@@ -48,24 +46,15 @@ export const taobaoElementFinder: IElementFinder = {
   },
 
   async getCurrentGoodsItemsList(page: Page) {
-    return commonElementFinder.getCurrentGoodsItemsList(
-      page,
-      SELECTORS.GOODS_ITEM,
-    )
+    return commonElementFinder.getCurrentGoodsItemsList(page, SELECTORS.GOODS_ITEM)
   },
 
   async getGoodsItemsScrollContainer(page: Page) {
-    return commonElementFinder.getGoodsItemsScrollContainer(
-      page,
-      SELECTORS.GOODS_ITEMS_WRAPPER,
-    )
+    return commonElementFinder.getGoodsItemsScrollContainer(page, SELECTORS.GOODS_ITEMS_WRAPPER)
   },
 
   async getCommentTextarea(page: Page) {
-    return commonElementFinder.getCommentTextarea(
-      page,
-      SELECTORS.commentInput.TEXTAREA,
-    )
+    return commonElementFinder.getCommentTextarea(page, SELECTORS.commentInput.TEXTAREA)
   },
 
   async getClickableSubmitCommentButton(page: Page) {

@@ -2,11 +2,7 @@ interface Abortable {
   abortSignal?: AbortSignal
 }
 
-export function abortable<
-  This extends Abortable,
-  Args extends unknown[],
-  Return,
->(
+export function abortable<This extends Abortable, Args extends unknown[], Return>(
   originalMethod: (...args: Args) => Promise<Return> | Return,
   _context: ClassMethodDecoratorContext<
     This,

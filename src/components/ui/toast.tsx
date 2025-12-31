@@ -40,14 +40,8 @@ const Toast = ({
   className,
   variant,
   ...props
-}: React.ComponentProps<typeof ToastPrimitives.Root> &
-  VariantProps<typeof toastVariants>) => {
-  return (
-    <ToastPrimitives.Root
-      className={cn(toastVariants({ variant }), className)}
-      {...props}
-    />
-  )
+}: React.ComponentProps<typeof ToastPrimitives.Root> & VariantProps<typeof toastVariants>) => {
+  return <ToastPrimitives.Root className={cn(toastVariants({ variant }), className)} {...props} />
 }
 Toast.displayName = ToastPrimitives.Root.displayName
 
@@ -97,10 +91,7 @@ const ToastDescription = ({
   className,
   ...props
 }: React.ComponentProps<typeof ToastPrimitives.Description>) => (
-  <ToastPrimitives.Description
-    className={cn('text-sm opacity-90', className)}
-    {...props}
-  />
+  <ToastPrimitives.Description className={cn('text-sm opacity-90', className)} {...props} />
 )
 ToastDescription.displayName = ToastPrimitives.Description.displayName
 

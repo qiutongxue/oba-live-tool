@@ -22,8 +22,7 @@ async function fetchOpenrouterModels() {
   const filteredModels = models.data
     .filter(model => {
       return (
-        model.architecture.modality === 'text->text' &&
-        model.id.toLowerCase().includes('deepseek')
+        model.architecture.modality === 'text->text' && model.id.toLowerCase().includes('deepseek')
       )
     })
     .map(model => model.id)
@@ -63,10 +62,7 @@ for (const [key, fetchModels] of Object.entries(updaters)) {
   }
 }
 
-await writeFile(
-  providerPath,
-  `export const providers = ${JSON.stringify(newProviders)} as const`,
-)
+await writeFile(providerPath, `export const providers = ${JSON.stringify(newProviders)} as const`)
 
 // async function commitProviders() {
 //   const commitMessage = 'chore: 更新 AI 模型列表'

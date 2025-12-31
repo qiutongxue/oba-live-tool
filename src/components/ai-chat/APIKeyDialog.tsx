@@ -60,13 +60,7 @@ const PresetModelSelector = memo(
 
 // 火山引擎的接入点，替换 model 的
 const VolcengineEndpoint = memo(
-  ({
-    model,
-    onChange,
-  }: {
-    model: string
-    onChange: (model: string) => void
-  }) => {
+  ({ model, onChange }: { model: string; onChange: (model: string) => void }) => {
     return (
       <div className="space-y-2">
         <Label>模型或接入点 ID</Label>
@@ -102,13 +96,7 @@ const VolcengineEndpoint = memo(
 )
 
 const CustomModelInput = memo(
-  ({
-    model,
-    onChange,
-  }: {
-    model: string
-    onChange: (model: string) => void
-  }) => {
+  ({ model, onChange }: { model: string; onChange: (model: string) => void }) => {
     return (
       <div className="space-y-2">
         <Label>模型名称</Label>
@@ -220,11 +208,7 @@ const ApiKeyInput = memo(
             onClick={() => setShowPassword(prev => !prev)}
             className="absolute right-1 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
           >
-            {showPassword ? (
-              <EyeOff className="w-4 h-4" />
-            ) : (
-              <Eye className="w-4 h-4" />
-            )}
+            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
           </Button>
         </div>
         {!isCustom && providerInfo && (
@@ -242,9 +226,7 @@ const ApiKeyInput = memo(
           </p>
         )}
         {isCustom && (
-          <p className="text-xs text-muted-foreground">
-            您的密钥将被安全地存储在本地。
-          </p>
+          <p className="text-xs text-muted-foreground">您的密钥将被安全地存储在本地。</p>
         )}
       </div>
     )
@@ -252,22 +234,14 @@ const ApiKeyInput = memo(
 )
 
 export function APIKeyDialog() {
-  const {
-    apiKeys,
-    config,
-    setConfig,
-    setApiKey,
-    customBaseURL,
-    setCustomBaseURL,
-  } = useAIChatStore()
+  const { apiKeys, config, setConfig, setApiKey, customBaseURL, setCustomBaseURL } =
+    useAIChatStore()
   const { toast } = useToast()
 
   const [open, setOpen] = useState(false)
   const [tempKeys, setTempKeys] = useState(apiKeys)
   const [tempConfig, setTempConfig] = useState(config)
-  const [tempCustomBaseURL, setTempCustomBaseURL] = useState(
-    customBaseURL || '',
-  )
+  const [tempCustomBaseURL, setTempCustomBaseURL] = useState(customBaseURL || '')
   const [testLoading, setTestLoading] = useState(false)
   const [testSuccess, setTestSuccess] = useState(false)
 
@@ -285,14 +259,7 @@ export function APIKeyDialog() {
     }
 
     setOpen(false)
-  }, [
-    tempConfig,
-    tempCustomBaseURL,
-    tempKeys,
-    setConfig,
-    setCustomBaseURL,
-    setApiKey,
-  ])
+  }, [tempConfig, tempCustomBaseURL, tempKeys, setConfig, setCustomBaseURL, setApiKey])
 
   const handleProviderChange = useCallback((value: string) => {
     const provider = value as AIProvider
@@ -333,15 +300,11 @@ export function APIKeyDialog() {
     setTestLoading(true)
     setTestSuccess(false)
     try {
-      const result = await window.ipcRenderer.invoke(
-        IPC_CHANNELS.tasks.aiChat.testApiKey,
-        {
-          apiKey: tempKeys[tempConfig.provider],
-          provider: tempConfig.provider,
-          customBaseURL:
-            tempConfig.provider === 'custom' ? tempCustomBaseURL : undefined,
-        },
-      )
+      const result = await window.ipcRenderer.invoke(IPC_CHANNELS.tasks.aiChat.testApiKey, {
+        apiKey: tempKeys[tempConfig.provider],
+        provider: tempConfig.provider,
+        customBaseURL: tempConfig.provider === 'custom' ? tempCustomBaseURL : undefined,
+      })
 
       if (result.success) {
         setTestSuccess(true)
@@ -366,26 +329,19 @@ export function APIKeyDialog() {
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>API Key 配置</DialogTitle>
-          <DialogDescription className="py-1">
-            选择并配置您想要使用的 AI 提供商。
-          </DialogDescription>
+          <DialogDescription className="py-1">选择并配置您想要使用的 AI 提供商。</DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-6 py-4">
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>选择提供商</Label>
-              <Select
-                value={tempConfig.provider}
-                onValueChange={handleProviderChange}
-              >
+              <Select value={tempConfig.provider} onValueChange={handleProviderChange}>
                 <SelectTrigger>
                   <SelectValue placeholder="选择服务商" />
                 </SelectTrigger>
                 <SelectContent>
-                  {(
-                    Object.keys(providers) as Array<keyof typeof providers>
-                  ).map(key => (
+                  {(Object.keys(providers) as Array<keyof typeof providers>).map(key => (
                     <SelectItem key={key} value={key}>
                       {providers[key].name}
                     </SelectItem>
@@ -406,10 +362,7 @@ export function APIKeyDialog() {
               </div>
             )}
 
-            <ModelSelector
-              tempConfig={tempConfig}
-              onModelChange={handleModelChange}
-            />
+            <ModelSelector tempConfig={tempConfig} onModelChange={handleModelChange} />
 
             <ApiKeyInput
               provider={tempConfig.provider}

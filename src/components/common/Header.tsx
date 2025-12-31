@@ -7,9 +7,7 @@ export function Header() {
       {/* <div className=""> */}
       <div className="flex items-center gap-3">
         <Package className="h-6 w-6 text-primary" />
-        <h1 className="text-lg font-semibold text-gray-800 sm:text-xl">
-          直播助手
-        </h1>
+        <h1 className="text-lg font-semibold text-gray-800 sm:text-xl">直播助手</h1>
       </div>
 
       <div className="flex items-center">

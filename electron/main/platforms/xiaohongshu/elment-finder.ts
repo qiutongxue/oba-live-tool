@@ -1,16 +1,11 @@
 import { Result } from '@praha/byethrow'
 import type { ElementHandle, Page } from 'playwright'
-import {
-  ElementDisabledError,
-  ElementNotFoundError,
-} from '#/errors/PlatformError'
+import { ElementDisabledError, ElementNotFoundError } from '#/errors/PlatformError'
 import { commonElementFinder, type IElementFinder } from '../IElementFinder'
 import { SELECTORS, TEXTS } from './constant'
 
 export const xiaohongshuElementFinder: IElementFinder = {
-  async getPopUpButtonFromGoodsItem(
-    item: ElementHandle<SVGElement | HTMLElement>,
-  ) {
+  async getPopUpButtonFromGoodsItem(item: ElementHandle<SVGElement | HTMLElement>) {
     const pannel = await item.$(SELECTORS.GOODS_ITEM_INNER.OPERATION_PANNEL)
     if (!pannel) {
       return Result.fail(
@@ -20,17 +15,13 @@ export const xiaohongshuElementFinder: IElementFinder = {
         }),
       )
     }
-    const operations = await pannel.$$(
-      SELECTORS.GOODS_ITEM_INNER.OPERATION_ITEM,
-    )
+    const operations = await pannel.$$(SELECTORS.GOODS_ITEM_INNER.OPERATION_ITEM)
     for (const operation of operations) {
       if ((await operation.textContent())?.includes(TEXTS.POPUP_BUTTON)) {
         if (
           await operation.evaluate(
             (e, SELECTORS) =>
-              e.classList.contains(
-                SELECTORS.GOODS_ITEM_INNER.POPUP_BUTTON_DISABLED,
-              ),
+              e.classList.contains(SELECTORS.GOODS_ITEM_INNER.POPUP_BUTTON_DISABLED),
             SELECTORS,
           )
         ) {
@@ -52,31 +43,19 @@ export const xiaohongshuElementFinder: IElementFinder = {
   },
 
   async getIdFromGoodsItem(item: ElementHandle<SVGElement | HTMLElement>) {
-    return commonElementFinder.getIdFromGoodsItem(
-      item,
-      SELECTORS.GOODS_ITEM_INNER.ID,
-    )
+    return commonElementFinder.getIdFromGoodsItem(item, SELECTORS.GOODS_ITEM_INNER.ID)
   },
 
   async getCurrentGoodsItemsList(page: Page) {
-    return commonElementFinder.getCurrentGoodsItemsList(
-      page,
-      SELECTORS.GOODS_ITEM,
-    )
+    return commonElementFinder.getCurrentGoodsItemsList(page, SELECTORS.GOODS_ITEM)
   },
 
   getGoodsItemsScrollContainer(page: Page) {
-    return commonElementFinder.getGoodsItemsScrollContainer(
-      page,
-      SELECTORS.GOODS_ITEMS_WRAPPER,
-    )
+    return commonElementFinder.getGoodsItemsScrollContainer(page, SELECTORS.GOODS_ITEMS_WRAPPER)
   },
 
   getCommentTextarea(page: Page) {
-    return commonElementFinder.getCommentTextarea(
-      page,
-      SELECTORS.COMMENT_INPUT.TEXTAREA,
-    )
+    return commonElementFinder.getCommentTextarea(page, SELECTORS.COMMENT_INPUT.TEXTAREA)
   },
 
   async getClickableSubmitCommentButton(page: Page) {
@@ -91,8 +70,7 @@ export const xiaohongshuElementFinder: IElementFinder = {
     }
     if (
       await submitButton.evaluate(
-        (el, SELECTORS) =>
-          el.className.includes(SELECTORS.COMMENT_INPUT.SUBMIT_BUTTON_DISABLED),
+        (el, SELECTORS) => el.className.includes(SELECTORS.COMMENT_INPUT.SUBMIT_BUTTON_DISABLED),
         SELECTORS,
       )
     ) {

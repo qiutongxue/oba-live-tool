@@ -34,10 +34,7 @@ export function AccountSetting() {
     if (currentAccountId === 'default') return
     // 先断开连接
     if (isConnected === 'connected') {
-      await window.ipcRenderer.invoke(
-        IPC_CHANNELS.tasks.liveControl.disconnect,
-        currentAccountId,
-      )
+      await window.ipcRenderer.invoke(IPC_CHANNELS.tasks.liveControl.disconnect, currentAccountId)
     }
     removeAccount(currentAccountId)
     setIsDeleteDialogOpen(false)
@@ -48,9 +45,7 @@ export function AccountSetting() {
     <Card>
       <CardHeader>
         <CardTitle>删除账号</CardTitle>
-        <CardDescription>
-          删除本地的账号配置，不会影响到抖店和百应
-        </CardDescription>
+        <CardDescription>删除本地的账号配置，不会影响到抖店和百应</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="flex items-center justify-between rounded-lg">
@@ -70,12 +65,7 @@ export function AccountSetting() {
                 <span>删除账号</span>
               </Button>
             ) : (
-              <Button
-                variant="destructive"
-                size="sm"
-                className="gap-2"
-                disabled
-              >
+              <Button variant="destructive" size="sm" className="gap-2" disabled>
                 <TrashIcon className="h-4 w-4" />
                 <span>请先断开中控台连接</span>
               </Button>
@@ -88,10 +78,7 @@ export function AccountSetting() {
           )}
         </div>
 
-        <AlertDialog
-          open={isDeleteDialogOpen}
-          onOpenChange={setIsDeleteDialogOpen}
-        >
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>确认删除该账号配置</AlertDialogTitle>
@@ -101,9 +88,7 @@ export function AccountSetting() {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>取消</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDeleteAccount}>
-                确认
-              </AlertDialogAction>
+              <AlertDialogAction onClick={handleDeleteAccount}>确认</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

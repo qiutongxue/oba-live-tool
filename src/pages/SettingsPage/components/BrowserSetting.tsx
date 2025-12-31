@@ -1,14 +1,8 @@
 import { EraserIcon, FolderSearchIcon, SearchIcon } from 'lucide-react'
 import { useId, useState } from 'react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
-import {
-  SimpleIconsGooglechrome,
-  SimpleIconsMicrosoftedge,
-} from '@/components/icons/simpleIcons'
-import {
-  useCurrentChromeConfig,
-  useCurrentChromeConfigActions,
-} from '@/hooks/useChromeConfig'
+import { SimpleIconsGooglechrome, SimpleIconsMicrosoftedge } from '@/components/icons/simpleIcons'
+import { useCurrentChromeConfig, useCurrentChromeConfigActions } from '@/hooks/useChromeConfig'
 import { useToast } from '@/hooks/useToast'
 import {
   AlertDialog,
@@ -48,9 +42,7 @@ export function BrowserSetting() {
 
   const handleSelectChrome = async () => {
     try {
-      const path = await window.ipcRenderer.invoke(
-        IPC_CHANNELS.chrome.selectPath,
-      )
+      const path = await window.ipcRenderer.invoke(IPC_CHANNELS.chrome.selectPath)
       if (path) {
         setPath(path)
 
@@ -64,10 +56,7 @@ export function BrowserSetting() {
   const handleAutoDetect = async () => {
     try {
       setIsDetecting(true)
-      const result = await window.ipcRenderer.invoke(
-        IPC_CHANNELS.chrome.getPath,
-        edgeFirst,
-      )
+      const result = await window.ipcRenderer.invoke(IPC_CHANNELS.chrome.getPath, edgeFirst)
       if (result) {
         setPath(result)
 
@@ -96,9 +85,7 @@ export function BrowserSetting() {
           <div className="flex flex-col space-y-4">
             <div className="flex items-start justify-between gap-4">
               <div className="space-y-1">
-                <h4 className="text-sm font-medium leading-none">
-                  自动检测浏览器
-                </h4>
+                <h4 className="text-sm font-medium leading-none">自动检测浏览器</h4>
                 <p className="text-sm text-muted-foreground">
                   打开浏览器后点击检测，自动获取安装路径
                 </p>
@@ -109,23 +96,14 @@ export function BrowserSetting() {
                 disabled={isDetecting}
                 className="shrink-0"
               >
-                <SearchIcon
-                  className={`mr-2 h-4 w-4 ${isDetecting ? 'animate-spin' : ''}`}
-                />
+                <SearchIcon className={`mr-2 h-4 w-4 ${isDetecting ? 'animate-spin' : ''}`} />
                 {isDetecting ? '检测中...' : '开始检测'}
               </Button>
             </div>
 
             <div className="flex items-center space-x-2">
-              <Switch
-                id={edgeFirstId}
-                checked={edgeFirst}
-                onCheckedChange={setEdgeFirst}
-              />
-              <Label
-                htmlFor={edgeFirstId}
-                className="text-sm text-muted-foreground"
-              >
+              <Switch id={edgeFirstId} checked={edgeFirst} onCheckedChange={setEdgeFirst} />
+              <Label htmlFor={edgeFirstId} className="text-sm text-muted-foreground">
                 优先使用 Edge 浏览器
               </Label>
             </div>
