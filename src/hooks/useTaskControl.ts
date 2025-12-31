@@ -4,20 +4,25 @@ import { useAccounts } from './useAccounts'
 import { useToast } from './useToast'
 
 /**
- * 任务类型
+ * 支持的任务类型
  */
-export type TaskType = 'autoMessage' | 'autoPopUp'
+type Task = AutoCommentTask | AutoPopupTask
+
+/**
+ * 任务类型字符串
+ */
+export type TaskType = Task['type']
 
 /**
  * 任务控制 Hook 参数
  */
-interface UseTaskControlParams<T> {
+interface UseTaskControlParams<T extends TaskType> {
   /** 任务类型 */
-  taskType: TaskType
+  taskType: T
   /** 获取任务运行状态的函数 */
   getIsRunning: () => boolean
   /** 获取任务配置的函数 */
-  getConfig: () => T
+  getConfig: () => Extract<Task, { type: T }>['config']
   /** 设置任务运行状态的函数 */
   setIsRunning: (running: boolean) => void
   /** 任务启动成功提示消息 */
@@ -33,7 +38,7 @@ interface UseTaskControlParams<T> {
  * @param params - 任务控制参数
  * @returns 任务控制相关的状态和方法
  */
-export function useTaskControl<T extends Record<string, unknown>>(params: UseTaskControlParams<T>) {
+export function useTaskControl<T extends TaskType>(params: UseTaskControlParams<T>) {
   const {
     taskType,
     getIsRunning,
@@ -50,19 +55,23 @@ export function useTaskControl<T extends Record<string, unknown>>(params: UseTas
    * 启动任务
    */
   const onStartTask = useCallback(async () => {
-    const channels =
-      taskType === 'autoMessage'
-        ? {
-            start: IPC_CHANNELS.tasks.autoMessage.start,
-            stop: IPC_CHANNELS.tasks.autoMessage.stop,
-          }
-        : {
-            start: IPC_CHANNELS.tasks.autoPopUp.start,
-            stop: IPC_CHANNELS.tasks.autoPopUp.stop,
-          }
     const config = getConfig()
 
-    const result = await window.ipcRenderer.invoke(channels.start, accountId, config)
+    let result: boolean
+    if (taskType === 'auto-comment') {
+      result = await window.ipcRenderer.invoke(
+        IPC_CHANNELS.tasks.autoMessage.start,
+        accountId,
+        config as AutoCommentConfig,
+      )
+    } else {
+      result = await window.ipcRenderer.invoke(
+        IPC_CHANNELS.tasks.autoPopUp.start,
+        accountId,
+        config as AutoPopupConfig,
+      )
+    }
+
     if (result) {
       setIsRunning(true)
       toast.success(startSuccessMessage || `${taskType} 任务已启动`)
@@ -84,17 +93,11 @@ export function useTaskControl<T extends Record<string, unknown>>(params: UseTas
    * 停止任务
    */
   const onStopTask = useCallback(async () => {
-    const channels =
-      taskType === 'autoMessage'
-        ? {
-            start: IPC_CHANNELS.tasks.autoMessage.start,
-            stop: IPC_CHANNELS.tasks.autoMessage.stop,
-          }
-        : {
-            start: IPC_CHANNELS.tasks.autoPopUp.start,
-            stop: IPC_CHANNELS.tasks.autoPopUp.stop,
-          }
-    await window.ipcRenderer.invoke(channels.stop, accountId)
+    if (taskType === 'auto-comment') {
+      await window.ipcRenderer.invoke(IPC_CHANNELS.tasks.autoMessage.stop, accountId)
+    } else {
+      await window.ipcRenderer.invoke(IPC_CHANNELS.tasks.autoPopUp.stop, accountId)
+    }
     setIsRunning(false)
   }, [setIsRunning, accountId, taskType])
 

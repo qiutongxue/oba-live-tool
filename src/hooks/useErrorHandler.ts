@@ -14,8 +14,8 @@ export function useErrorHandler() {
    * @param message - 可选的自定义错误提示消息
    */
   const handleError = useCallback(
-    (error: Error | string, message?: string) => {
-      const errorMessage = error instanceof Error ? error.message : error
+    (error: unknown, message?: string) => {
+      const errorMessage = error instanceof Error ? error.message : String(error)
       const displayMessage = message || errorMessage
 
       // 记录错误到控制台

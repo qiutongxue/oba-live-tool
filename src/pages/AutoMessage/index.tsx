@@ -15,7 +15,7 @@ const useAutoMessageTaskControl = () => {
   const { setIsRunning } = useAutoMessageActions()
 
   return useTaskControl({
-    taskType: 'autoMessage',
+    taskType: 'auto-comment',
     getIsRunning: () => isRunning,
     getConfig: () => config,
     setIsRunning,

@@ -12,7 +12,7 @@ const useAutoPopUpTaskControl = () => {
   const { setIsRunning } = useAutoPopUpActions()
 
   return useTaskControl({
-    taskType: 'autoPopUp',
+    taskType: 'auto-popup',
     getIsRunning: () => isRunning,
     getConfig: () => config,
     setIsRunning,
