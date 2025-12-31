@@ -3,9 +3,7 @@
 // Inspired by react-hot-toast library
 import * as React from 'react'
 import type { ToastActionElement, ToastProps } from '@/components/ui/toast'
-
-const TOAST_LIMIT = 1
-const TOAST_REMOVE_DELAY = 3000
+import { TOAST } from '@/constants'
 
 type ToasterToast = ToastProps & {
   id: string
@@ -66,7 +64,7 @@ function addToRemoveQueue(toastId: string) {
       type: 'REMOVE_TOAST',
       toastId,
     })
-  }, TOAST_REMOVE_DELAY)
+  }, TOAST.REMOVE_DELAY)
 
   toastTimeouts.set(toastId, timeout)
 }
@@ -76,15 +74,13 @@ export function reducer(state: State, action: Action): State {
     case 'ADD_TOAST':
       return {
         ...state,
-        toasts: [action.toast, ...state.toasts].slice(0, TOAST_LIMIT),
+        toasts: [action.toast, ...state.toasts].slice(0, TOAST.LIMIT),
       }
 
     case 'UPDATE_TOAST':
       return {
         ...state,
-        toasts: state.toasts.map(t =>
-          t.id === action.toast.id ? { ...t, ...action.toast } : t,
-        ),
+        toasts: state.toasts.map(t => (t.id === action.toast.id ? { ...t, ...action.toast } : t)),
       }
 
     case 'DISMISS_TOAST': {

@@ -3,11 +3,13 @@ import { useMemo } from 'react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
+import { AUTO_REPLY } from '@/constants'
 import { EVENTS, eventEmitter } from '@/utils/events'
 import { matchObject } from '@/utils/filter'
 import { useAccounts } from './useAccounts'
 import { type AIProvider, type ChatMessage, useAIChatStore } from './useAIChat'
 import { type AutoReplyConfig, useAutoReplyConfig } from './useAutoReplyConfig'
+import { useErrorHandler } from './useErrorHandler'
 import { useCurrentLiveControl } from './useLiveControl'
 
 interface ReplyPreview {
@@ -59,8 +61,6 @@ const createDefaultContext = (): AutoReplyContext => ({
   comments: [],
 })
 
-const USERNAME_PLACEHOLDER = '{用户名}'
-
 export const useAutoReplyStore = create<AutoReplyState & AutoReplyAction>()(
   immer(set => {
     eventEmitter.on(EVENTS.ACCOUNT_REMOVED, (accountId: string) => {
@@ -93,14 +93,11 @@ export const useAutoReplyStore = create<AutoReplyState & AutoReplyAction>()(
         set(state => {
           const context = ensureContext(state, accountId)
           // 限制评论数量，防止内存无限增长
-          const MAX_COMMENTS = 500
-          context.comments = [{ ...comment }, ...context.comments].slice(0, MAX_COMMENTS)
+          context.comments = [{ ...comment }, ...context.comments].slice(0, AUTO_REPLY.MAX_COMMENTS)
         }),
       addReply: (accountId, commentId, nickname, content) =>
         set(state => {
           const context = ensureContext(state, accountId)
-          // 限制回复数量 (可选)
-          const MAX_REPLIES = 500
           context.replies = [
             {
               id: crypto.randomUUID(),
@@ -110,7 +107,7 @@ export const useAutoReplyStore = create<AutoReplyState & AutoReplyAction>()(
               time: new Date().toISOString(),
             },
             ...context.replies,
-          ].slice(0, MAX_REPLIES)
+          ].slice(0, AUTO_REPLY.MAX_REPLIES)
         }),
       removeReply: (accountId, commentId) =>
         set(state => {
@@ -184,6 +181,7 @@ function sendConfiguredReply(
   accountId: string,
   config: AutoReplyConfig,
   sourceMessage: Message,
+  errorHandler: ReturnType<typeof useErrorHandler>['handleError'],
 ): void {
   const replyConfig = config[sourceMessage.msg_type as EventMessageType]
   if (replyConfig.enable && replyConfig.messages.length > 0) {
@@ -200,7 +198,7 @@ function sendConfiguredReply(
     const content = getRandomElement(replyMessages)
     if (content) {
       const message = replaceUsername(content, sourceMessage.nick_name, config.hideUsername)
-      sendMessage(accountId, message) // 注意：这里是异步的，但我们不等待它完成
+      sendMessage(accountId, message, errorHandler) // 注意：这里是异步的，但我们不等待它完成
     }
   }
 }
@@ -211,12 +209,16 @@ function getRandomElement<T>(arr: T[]): T | undefined {
   return arr[randomIndex]
 }
 
-async function sendMessage(accountId: string, content: string) {
+async function sendMessage(
+  accountId: string,
+  content: string,
+  errorHandler: ReturnType<typeof useErrorHandler>['handleError'],
+) {
   if (!content) return
   try {
     await window.ipcRenderer.invoke(IPC_CHANNELS.tasks.autoReply.sendReply, accountId, content)
   } catch (err) {
-    console.error('自动发送回复失败:', err)
+    errorHandler(err, '自动发送回复失败')
   }
 }
 
@@ -226,7 +228,7 @@ function replaceUsername(content: string, username: string, mask: boolean) {
   const displayedUsername = mask
     ? `${String.fromCodePoint(username.codePointAt(0) ?? 42 /* 42 是星号 */)}***`
     : username
-  return content.replace(new RegExp(USERNAME_PLACEHOLDER, 'g'), displayedUsername)
+  return content.replace(new RegExp(AUTO_REPLY.USERNAME_PLACEHOLDER, 'g'), displayedUsername)
 }
 
 /**
@@ -237,6 +239,7 @@ const handleKeywordReply = (
   comment: CommentMessage,
   config: AutoReplyConfig,
   accountId: string,
+  errorHandler: ReturnType<typeof useErrorHandler>['handleError'],
 ): boolean => {
   if (!config.comment.keywordReply.enable || !comment.content) {
     return false
@@ -250,7 +253,7 @@ const handleKeywordReply = (
     const content = getRandomElement(rule.contents)
     if (content) {
       const message = replaceUsername(content, comment.nick_name, config.hideUsername)
-      sendMessage(accountId, message)
+      sendMessage(accountId, message, errorHandler)
       // 注意：关键字回复不通过 addReply 添加到界面，直接发送
       return true // 匹配成功
     }
@@ -279,6 +282,7 @@ const handleAIReply = async (
     customBaseURL: string
   },
   onReply: (content: string) => void,
+  errorHandler: ReturnType<typeof useErrorHandler>['handleError'],
 ) => {
   if (!config.comment.aiReply.enable) return
 
@@ -316,12 +320,11 @@ const handleAIReply = async (
       onReply(replyContent)
       // 自动发送
       if (autoSend) {
-        sendMessage(accountId, replyContent)
+        sendMessage(accountId, replyContent, errorHandler)
       }
     }
   } catch (err) {
-    console.error('AI 生成回复失败:', err)
-    // 可以在这里添加错误处理，比如更新状态或提示用户
+    errorHandler(err, 'AI 生成回复失败')
   }
 }
 
@@ -331,6 +334,7 @@ export function useAutoReply() {
   const accountName = useCurrentLiveControl(ctx => ctx.accountName)
   const aiStore = useAIChatStore()
   const { config } = useAutoReplyConfig()
+  const { handleError } = useErrorHandler()
 
   const context = useMemo(() => {
     return store.contexts[currentAccountId] || createDefaultContext()
@@ -363,7 +367,7 @@ export function useAutoReply() {
         case 'wechat_channel_live_msg':
         case 'comment': {
           // 优先尝试关键字回复
-          const keywordReplied = handleKeywordReply(comment, config, currentAccountId)
+          const keywordReplied = handleKeywordReply(comment, config, currentAccountId, handleError)
           // 如果关键字未回复，且 AI 回复已启用，则尝试 AI 回复
           if (!keywordReplied && config.comment.aiReply.enable) {
             const { provider, model } = aiStore.config
@@ -384,6 +388,7 @@ export function useAutoReply() {
               (replyContent: string) => {
                 store.addReply(accountId, comment.msg_id, comment.nick_name, replyContent)
               },
+              handleError,
             )
           }
           break
@@ -391,12 +396,12 @@ export function useAutoReply() {
         case 'live_order': {
           /* 如果设置了仅已支付回复且当前非已支付时不回复 */
           if (!config.live_order.options?.onlyReplyPaid || comment.order_status === '已付款') {
-            sendConfiguredReply(accountId, config, comment)
+            sendConfiguredReply(accountId, config, comment, handleError)
           }
           break
         }
         default:
-          sendConfiguredReply(accountId, config, comment)
+          sendConfiguredReply(accountId, config, comment, handleError)
       }
     })()
 
