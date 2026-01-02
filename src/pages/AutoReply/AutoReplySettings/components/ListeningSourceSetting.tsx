@@ -15,7 +15,7 @@ const platformListeningSources: Partial<Record<LiveControlPlatform, ListeningSou
   douyin: ['control', 'compass'],
   buyin: ['control', 'compass'],
   wxchannel: ['wechat-channel'],
-  redbook: ['xiaohongshu'],
+  xiaohongshu: ['xiaohongshu'],
   pgy: ['xiaohongshu'],
 }
 const listeningSourceNameMap = {

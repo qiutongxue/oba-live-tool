@@ -12,7 +12,7 @@ import { XiaohongshuPgyPlatform } from './xiaohongshu-pgy'
 export const platformFactory: Record<LiveControlPlatform, { new (): IPlatform }> = {
   buyin: BuyinPlatform,
   douyin: DouyinPlatform,
-  redbook: XiaohongshuPlatform,
+  xiaohongshu: XiaohongshuPlatform,
   wxchannel: WechatChannelPlatform,
   taobao: TaobaoPlatform,
   kuaishou: KuaishouPlatform,

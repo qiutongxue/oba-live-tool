@@ -105,13 +105,11 @@ export const useAutoMessageStore = create<AutoMessageStore>()(
                 random: boolean
               }
             }
-            const messages = persisted.config.messages.map(
-              (message, index) => ({
-                id: crypto.randomUUID(),
-                content: message as string,
-                pinTop: persisted.config.pinTops.includes(index),
-              }),
-            )
+            const messages = persisted.config.messages.map((message, index) => ({
+              id: crypto.randomUUID(),
+              content: message as string,
+              pinTop: persisted.config.pinTops.includes(index),
+            }))
             return {
               contexts: {
                 default: {
@@ -138,9 +136,7 @@ export const useAutoMessageStore = create<AutoMessageStore>()(
             // [accountId, context { isRunning, config }]
             [
               accountId,
-              Object.fromEntries(
-                Object.entries(context).filter(([key]) => key !== 'isRunning'),
-              ),
+              Object.fromEntries(Object.entries(context).filter(([key]) => key !== 'isRunning')),
             ],
           ),
         ),
@@ -154,18 +150,14 @@ export const useAutoMessageActions = () => {
   const setConfig = useAutoMessageStore(state => state.setConfig)
   const setBatchCount = useAutoMessageStore(state => state.setBatchCount)
   const currentAccountId = useAccounts(state => state.currentAccountId)
-  const updateConfig = useMemoizedFn(
-    (newConfig: Partial<AutoMessageConfig>) => {
-      setConfig(currentAccountId, newConfig)
-    },
-  )
+  const updateConfig = useMemoizedFn((newConfig: Partial<AutoMessageConfig>) => {
+    setConfig(currentAccountId, newConfig)
+  })
 
   return useMemo(
     () => ({
-      setIsRunning: (running: boolean) =>
-        setIsRunning(currentAccountId, running),
-      setScheduler: (scheduler: AutoMessageConfig['scheduler']) =>
-        updateConfig({ scheduler }),
+      setIsRunning: (running: boolean) => setIsRunning(currentAccountId, running),
+      setScheduler: (scheduler: AutoMessageConfig['scheduler']) => updateConfig({ scheduler }),
       setMessages: (messages: Message[]) => updateConfig({ messages }),
       setRandom: (random: boolean) => updateConfig({ random }),
       setExtraSpaces: (extraSpaces: boolean) => updateConfig({ extraSpaces }),
@@ -175,15 +167,12 @@ export const useAutoMessageActions = () => {
   )
 }
 
-export const useCurrentAutoMessage = <T>(
-  getter: (context: AutoMessageContext) => T,
-): T => {
+export const useCurrentAutoMessage = <T>(getter: (context: AutoMessageContext) => T): T => {
   const currentAccountId = useAccounts(state => state.currentAccountId)
   const defaultContextRef = useRef(defaultContext())
   return useAutoMessageStore(
     useShallow(state => {
-      const context =
-        state.contexts[currentAccountId] ?? defaultContextRef.current
+      const context = state.contexts[currentAccountId] ?? defaultContextRef.current
       return getter(context)
     }),
   )

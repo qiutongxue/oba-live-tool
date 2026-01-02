@@ -38,11 +38,7 @@ export class AIChatService {
     this.openai = new OpenAI({ apiKey, baseURL })
   }
 
-  public static createService(
-    apiKey: string,
-    provider: ProviderType,
-    customBaseURL?: string,
-  ) {
+  public static createService(apiKey: string, provider: ProviderType, customBaseURL?: string) {
     let baseURL: string
     if (provider === 'custom') {
       if (!customBaseURL) {
@@ -70,10 +66,9 @@ export class AIChatService {
 
       for await (const chunk of stream) {
         const delta = chunk.choices[0].delta
-        const { content, reasoning_content: reasoning } =
-          delta as typeof delta & {
-            reasoning_content?: string
-          }
+        const { content, reasoning_content: reasoning } = delta as typeof delta & {
+          reasoning_content?: string
+        }
 
         contentLength += content?.length ?? 0
         reasoningLength += reasoning?.length ?? 0

@@ -5,10 +5,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAccounts } from '@/hooks/useAccounts'
-import {
-  useAutoMessageActions,
-  useCurrentAutoMessage,
-} from '@/hooks/useAutoMessage'
+import { useAutoMessageActions, useCurrentAutoMessage } from '@/hooks/useAutoMessage'
 import { useCurrentLiveControl } from '@/hooks/useLiveControl'
 
 export function MessageOneKey() {
@@ -19,10 +16,7 @@ export function MessageOneKey() {
   const isConnected = useCurrentLiveControl(ctx => ctx.isConnected)
   const accountId = useAccounts(s => s.currentAccountId)
 
-  const mappedMessages = useMemo(
-    () => messages.map(msg => msg.content),
-    [messages],
-  )
+  const mappedMessages = useMemo(() => messages.map(msg => msg.content), [messages])
 
   const handleClick = async () => {
     setIsRunning(true)
@@ -52,10 +46,7 @@ export function MessageOneKey() {
                 onChange={e => setBatchCount(+e.target.value)}
                 className="w-24"
               />
-              <Button
-                onClick={handleClick}
-                disabled={isConnected !== 'connected' || isRunning}
-              >
+              <Button onClick={handleClick} disabled={isConnected !== 'connected' || isRunning}>
                 {isRunning ? '运行中' : '一键刷屏'}
               </Button>
             </div>

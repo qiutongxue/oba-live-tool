@@ -109,9 +109,6 @@ export function emitEvent<E extends EventName>(
 }
 
 // 类型安全的事件监听器
-export function onEvent<E extends EventName>(
-  event: E,
-  callback: EventTypes[(typeof EVENTS)[E]],
-) {
+export function onEvent<E extends EventName>(event: E, callback: EventTypes[(typeof EVENTS)[E]]) {
   return eventEmitter.on(EVENTS[event], callback as EventCallback)
 }

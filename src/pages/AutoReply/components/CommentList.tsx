@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import { Pause, Play, RefreshCcw } from 'lucide-react'
-import { useId, useMemo, useState } from 'react'
+import { memo, useId, useMemo, useState } from 'react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -73,44 +73,53 @@ const getOrderStatusColor = (status: LiveOrderMessage['order_status']) => {
   }
 }
 
-const MessageItem = ({ message, isHighlighted }: { message: Message; isHighlighted: boolean }) => {
-  const displayName = message.nick_name
+const MessageItem = memo(
+  ({ message, isHighlighted }: { message: Message; isHighlighted: boolean }) => {
+    const displayName = message.nick_name
 
-  return (
-    <div
-      className={cn(
-        'flex items-start gap-3 py-2 px-3 rounded-lg hover:bg-muted/50 transition-colors',
-        isHighlighted ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-muted/50',
-      )}
-    >
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="truncate text-sm text-muted-foreground">{displayName}</span>
-          {message.msg_type === 'live_order' && (
-            <Badge
-              variant="outline"
-              className={cn('text-xs px-1.5 py-0', getOrderStatusColor(message.order_status))}
-            >
-              {message.order_status}
-            </Badge>
-          )}
-          <span className="text-xs text-muted-foreground ml-auto">{message.time}</span>
-        </div>
-
-        <div className="mt-0.5 text-sm">
-          <p
-            className={cn(
-              getMessageColor(message.msg_type),
-              message.msg_type === 'live_order' ? 'font-medium' : '',
+    return (
+      <div
+        className={cn(
+          'flex items-start gap-3 py-2 px-3 rounded-lg hover:bg-muted/50 transition-colors',
+          isHighlighted ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-muted/50',
+        )}
+      >
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="truncate text-sm text-muted-foreground">{displayName}</span>
+            {message.msg_type === 'live_order' && (
+              <Badge
+                variant="outline"
+                className={cn('text-xs px-1.5 py-0', getOrderStatusColor(message.order_status))}
+              >
+                {message.order_status}
+              </Badge>
             )}
-          >
-            {getMessageText(message)}
-          </p>
+            <span className="text-xs text-muted-foreground ml-auto">{message.time}</span>
+          </div>
+
+          <div className="mt-0.5 text-sm">
+            <p
+              className={cn(
+                getMessageColor(message.msg_type),
+                message.msg_type === 'live_order' ? 'font-medium' : '',
+              )}
+            >
+              {getMessageText(message)}
+            </p>
+          </div>
         </div>
       </div>
-    </div>
-  )
-}
+    )
+  },
+  (prevProps, nextProps) => {
+    // 只有当 message.msg_id 或 isHighlighted 发生变化时才重新渲染
+    return (
+      prevProps.message.msg_id === nextProps.message.msg_id &&
+      prevProps.isHighlighted === nextProps.isHighlighted
+    )
+  },
+)
 
 const _EnterRoomMessage = ({ message }: { message: Message }) => {
   const displayName = message.nick_name

@@ -14,10 +14,7 @@ const PopUpSettingsCard = React.memo(() => {
   const handleIntervalChange = useMemoizedFn((index: 0 | 1, value: string) => {
     const numValue = Number(value) * 1000
     setScheduler({
-      interval:
-        index === 0
-          ? [numValue, scheduler.interval[1]]
-          : [scheduler.interval[0], numValue],
+      interval: index === 0 ? [numValue, scheduler.interval[1]] : [scheduler.interval[0], numValue],
     })
   })
 
@@ -30,16 +27,10 @@ const PopUpSettingsCard = React.memo(() => {
           <div className="flex items-center justify-between">
             <div className="space-y-1">
               <Label>弹窗设置</Label>
-              <p className="text-sm text-muted-foreground">
-                配置商品弹窗的相关选项
-              </p>
+              <p className="text-sm text-muted-foreground">配置商品弹窗的相关选项</p>
             </div>
             <div className="flex items-center space-x-2">
-              <Switch
-                id={randomPopUpId}
-                checked={random}
-                onCheckedChange={setRandom}
-              />
+              <Switch id={randomPopUpId} checked={random} onCheckedChange={setRandom} />
               <Label htmlFor={randomPopUpId} className="cursor-pointer">
                 随机弹窗
               </Label>

@@ -86,15 +86,13 @@ export const useAIChatStore = create<AIChatStore>()(
         setConfig: config => {
           set(state => {
             if (config.provider) {
-              const newModel =
-                config.model || state.config.modelPreferences[config.provider]
+              const newModel = config.model || state.config.modelPreferences[config.provider]
               state.config.provider = config.provider
               state.config.model = newModel
               state.config.modelPreferences[config.provider] = newModel
             } else if (config.model) {
               state.config.model = config.model
-              state.config.modelPreferences[state.config.provider] =
-                config.model
+              state.config.modelPreferences[state.config.provider] = config.model
             }
           })
         },
@@ -114,9 +112,7 @@ export const useAIChatStore = create<AIChatStore>()(
         },
         appendToChat: chunk => {
           set(state => {
-            if (
-              state.messages[state.messages.length - 1].role !== 'assistant'
-            ) {
+            if (state.messages[state.messages.length - 1].role !== 'assistant') {
               state.messages.push({
                 role: 'assistant',
                 content: chunk,
@@ -130,9 +126,7 @@ export const useAIChatStore = create<AIChatStore>()(
         },
         appendToReasoning: chunk => {
           set(state => {
-            if (
-              state.messages[state.messages.length - 1].role !== 'assistant'
-            ) {
+            if (state.messages[state.messages.length - 1].role !== 'assistant') {
               state.messages.push({
                 role: 'assistant',
                 reasoning_content: chunk,
@@ -141,8 +135,7 @@ export const useAIChatStore = create<AIChatStore>()(
                 timestamp: Date.now(),
               })
             } else {
-              state.messages[state.messages.length - 1].reasoning_content +=
-                chunk
+              state.messages[state.messages.length - 1].reasoning_content += chunk
             }
           })
         },

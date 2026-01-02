@@ -148,9 +148,7 @@ export const useAutoPopUpStore = create<AutoPopUpStore>()(
           Object.entries(state.contexts).map(([accountId, context]) => [
             // [accountId, context { isRunning, config }]
             accountId,
-            Object.fromEntries(
-              Object.entries(context).filter(([key]) => key !== 'isRunning'),
-            ),
+            Object.fromEntries(Object.entries(context).filter(([key]) => key !== 'isRunning')),
           ]),
         ),
       }),
@@ -169,27 +167,21 @@ export const useAutoPopUpActions = () => {
   })
   return useMemo(
     () => ({
-      setIsRunning: (running: boolean) =>
-        setIsRunning(currentAccountId, running),
-      setScheduler: (scheduler: AutoPopUpConfig['scheduler']) =>
-        updateConfig({ scheduler }),
-      setGoodsIds: (goodsIds: AutoPopUpConfig['goodsIds']) =>
-        updateConfig({ goodsIds }),
+      setIsRunning: (running: boolean) => setIsRunning(currentAccountId, running),
+      setScheduler: (scheduler: AutoPopUpConfig['scheduler']) => updateConfig({ scheduler }),
+      setGoodsIds: (goodsIds: AutoPopUpConfig['goodsIds']) => updateConfig({ goodsIds }),
       setRandom: (random: boolean) => updateConfig({ random }),
       // 添加设置快捷键映射的方法
-      setShortcuts: (shortcuts: ShortcutMapping[]) =>
-        setShortcuts(currentAccountId, shortcuts),
+      setShortcuts: (shortcuts: ShortcutMapping[]) => setShortcuts(currentAccountId, shortcuts),
       // 添加单个快捷键映射
       addShortcut: (shortcut: ShortcutMapping) => {
         const currentShortcuts =
-          useAutoPopUpStore.getState().contexts[currentAccountId]?.shortcuts ??
-          []
+          useAutoPopUpStore.getState().contexts[currentAccountId]?.shortcuts ?? []
         setShortcuts(currentAccountId, [shortcut, ...currentShortcuts])
       },
       updateShortcut: (shortcut: ShortcutMapping) => {
         const currentShortcuts =
-          useAutoPopUpStore.getState().contexts[currentAccountId]?.shortcuts ??
-          []
+          useAutoPopUpStore.getState().contexts[currentAccountId]?.shortcuts ?? []
         setShortcuts(
           currentAccountId,
           currentShortcuts.map(s => (s.id === shortcut.id ? shortcut : s)),
@@ -198,8 +190,7 @@ export const useAutoPopUpActions = () => {
       // 删除快捷键映射
       removeShortcut: (id: string) => {
         const currentShortcuts =
-          useAutoPopUpStore.getState().contexts[currentAccountId]?.shortcuts ||
-          []
+          useAutoPopUpStore.getState().contexts[currentAccountId]?.shortcuts || []
         setShortcuts(
           currentAccountId,
           currentShortcuts.filter(s => s.id !== id),
@@ -209,13 +200,7 @@ export const useAutoPopUpActions = () => {
         setGlobalShortcut(currentAccountId, value)
       },
     }),
-    [
-      currentAccountId,
-      setIsRunning,
-      updateConfig,
-      setShortcuts,
-      setGlobalShortcut,
-    ],
+    [currentAccountId, setIsRunning, updateConfig, setShortcuts, setGlobalShortcut],
   )
 }
 
@@ -256,18 +241,14 @@ export const useShortcutListener = () => {
     )
 
     return () => {
-      window.ipcRenderer.invoke(
-        IPC_CHANNELS.tasks.autoPopUp.unregisterShortcuts,
-      )
+      window.ipcRenderer.invoke(IPC_CHANNELS.tasks.autoPopUp.unregisterShortcuts)
     }
   }, [isGlobalShortcut, shortcuts, isRunning, accountId])
 
   const throttledKeydown = useThrottleFn(
     (e: KeyboardEvent, shortcuts: ShortcutMapping[]) => {
       // 检查是否有匹配的快捷键
-      const shortcut = shortcuts.find(
-        s => s.key.toLocaleLowerCase() === e.key.toLocaleLowerCase(),
-      )
+      const shortcut = shortcuts.find(s => s.key.toLocaleLowerCase() === e.key.toLocaleLowerCase())
       if (
         shortcut &&
         !!shortcut.ctrl ===
@@ -276,13 +257,9 @@ export const useShortcutListener = () => {
         !!shortcut.alt === e.altKey &&
         !!shortcut.shift === e.shiftKey
       ) {
-        window.ipcRenderer.invoke(
-          IPC_CHANNELS.tasks.autoPopUp.updateConfig,
-          accountId,
-          {
-            goodsIds: shortcut.goodsIds,
-          },
-        )
+        window.ipcRenderer.invoke(IPC_CHANNELS.tasks.autoPopUp.updateConfig, accountId, {
+          goodsIds: shortcut.goodsIds,
+        })
       }
     },
     { wait: 1000, trailing: false },
@@ -306,15 +283,12 @@ export const useShortcutListener = () => {
   }, [shortcuts, isRunning, isGlobalShortcut, throttledKeydown])
 }
 
-export const useCurrentAutoPopUp = <T>(
-  getter: (context: AutoPopUpContext) => T,
-): T => {
+export const useCurrentAutoPopUp = <T>(getter: (context: AutoPopUpContext) => T): T => {
   const currentAccountId = useAccounts(state => state.currentAccountId)
   const defaultContextRef = useRef(defaultContext())
   return useAutoPopUpStore(
     useShallow(state => {
-      const context =
-        state.contexts[currentAccountId] ?? defaultContextRef.current
+      const context = state.contexts[currentAccountId] ?? defaultContextRef.current
       return getter(context)
     }),
   )

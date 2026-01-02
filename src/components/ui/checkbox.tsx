@@ -3,10 +3,7 @@ import { Check } from 'lucide-react'
 import type React from 'react'
 import { cn } from '@/lib/utils'
 
-const Checkbox = ({
-  className,
-  ...props
-}: React.ComponentProps<typeof CheckboxPrimitive.Root>) => (
+const Checkbox = ({ className, ...props }: React.ComponentProps<typeof CheckboxPrimitive.Root>) => (
   <CheckboxPrimitive.Root
     data-slot="checkbox"
     className={cn(
@@ -15,9 +12,7 @@ const Checkbox = ({
     )}
     {...props}
   >
-    <CheckboxPrimitive.Indicator
-      className={cn('flex items-center justify-center text-current')}
-    >
+    <CheckboxPrimitive.Indicator className={cn('flex items-center justify-center text-current')}>
       <Check className="h-4 w-4" />
     </CheckboxPrimitive.Indicator>
   </CheckboxPrimitive.Root>

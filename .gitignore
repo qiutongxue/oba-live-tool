@@ -38,3 +38,5 @@ release/
 
 TROUBLE.md
 .env
+
+coverage/

@@ -6,16 +6,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import {
-  useCurrentLiveControl,
-  useCurrentLiveControlActions,
-} from '@/hooks/useLiveControl'
+import { useCurrentLiveControl, useCurrentLiveControlActions } from '@/hooks/useLiveControl'
 
 const basePlatforms: Record<LiveControlPlatform, string> = {
   douyin: '抖音小店',
   buyin: '巨量百应',
   eos: '抖音团购',
-  redbook: '小红书千帆',
+  xiaohongshu: '小红书千帆',
   pgy: '小红书蒲公英',
   wxchannel: '视频号',
   kuaishou: '快手小店',
@@ -38,11 +35,7 @@ const PlatformSelect = React.memo(() => {
   const { setPlatform } = useCurrentLiveControlActions()
 
   return (
-    <Select
-      value={platform}
-      onValueChange={setPlatform}
-      disabled={isConnected !== 'disconnected'}
-    >
+    <Select value={platform} onValueChange={setPlatform} disabled={isConnected !== 'disconnected'}>
       <SelectTrigger className="w-[140px]">
         <SelectValue placeholder="选择平台" />
       </SelectTrigger>

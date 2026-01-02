@@ -5,30 +5,12 @@ import { useAccounts } from '@/hooks/useAccounts'
 import { useCurrentLiveControl } from '@/hooks/useLiveControl'
 import { useToast } from '@/hooks/useToast'
 import { Button } from '../ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '../ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog'
 import { Input } from '../ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../ui/select'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select'
 
 export const AccountSwitcher = React.memo(() => {
-  const {
-    accounts,
-    currentAccountId,
-    addAccount,
-    switchAccount,
-    updateAccountName,
-  } = useAccounts()
+  const { accounts, currentAccountId, addAccount, switchAccount, updateAccountName } = useAccounts()
   const isConnected = useCurrentLiveControl(context => context.isConnected)
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
@@ -70,9 +52,7 @@ export const AccountSwitcher = React.memo(() => {
 
     if (
       accounts.some(
-        account =>
-          account.name === editingAccount.name &&
-          account.id !== editingAccount.id,
+        account => account.name === editingAccount.name && account.id !== editingAccount.id,
       )
     ) {
       toast.error('账号名称已存在')
@@ -85,12 +65,10 @@ export const AccountSwitcher = React.memo(() => {
     toast.success('修改账号名称成功')
   })
 
-  const openEditDialog = useMemoizedFn(
-    (account: { id: string; name: string }) => {
-      setEditingAccount(account)
-      setIsEditDialogOpen(true)
-    },
-  )
+  const openEditDialog = useMemoizedFn((account: { id: string; name: string }) => {
+    setEditingAccount(account)
+    setIsEditDialogOpen(true)
+  })
 
   // useWhyDidYouUpdate('AccountSwitcher', {
   //   accounts,
@@ -119,9 +97,7 @@ export const AccountSwitcher = React.memo(() => {
         className="h-6 w-6"
         onClick={e => {
           e.stopPropagation()
-          openEditDialog(
-            accounts.find(acc => acc.id === currentAccountId) as Account,
-          )
+          openEditDialog(accounts.find(acc => acc.id === currentAccountId) as Account)
         }}
       >
         <Pencil className="h-4 w-4" />
@@ -147,11 +123,7 @@ export const AccountSwitcher = React.memo(() => {
         </SelectContent>
       </Select>
 
-      <Button
-        variant="outline"
-        size="icon"
-        onClick={() => setIsAddDialogOpen(true)}
-      >
+      <Button variant="outline" size="icon" onClick={() => setIsAddDialogOpen(true)}>
         <Plus className="h-4 w-4" />
       </Button>
 
@@ -182,9 +154,7 @@ export const AccountSwitcher = React.memo(() => {
               placeholder="账号名称"
               value={editingAccount?.name ?? ''}
               onChange={e =>
-                setEditingAccount(prev =>
-                  prev ? { ...prev, name: e.target.value } : null,
-                )
+                setEditingAccount(prev => (prev ? { ...prev, name: e.target.value } : null))
               }
             />
             <Button onClick={handleEditAccount}>确定</Button>

@@ -15,9 +15,7 @@ export function Message({
   isError,
   onRetry,
 }: ChatMessage & {
-  onRetry: (
-    messages: { role: string; content: string; reasoning_content?: string }[],
-  ) => void
+  onRetry: (messages: { role: string; content: string; reasoning_content?: string }[]) => void
 }) {
   const { messages, setMessages } = useAIChatStore()
 
@@ -84,9 +82,7 @@ function UserMessage({
         className="max-w-[80%] rounded-lg px-4 py-2 break-words shadow-sm bg-primary text-primary-foreground"
         style={{ overflowWrap: 'break-word', wordBreak: 'break-word' }}
       >
-        <div className="whitespace-pre-wrap leading-relaxed text-[15px]">
-          {content}
-        </div>
+        <div className="whitespace-pre-wrap leading-relaxed text-[15px]">{content}</div>
         <div className="absolute -bottom-5 select-none right-1">
           <span className="text-[11px] text-primary/70">
             {new Date(timestamp).toLocaleTimeString()}
@@ -112,17 +108,13 @@ function AssistantMessage({
     <div className="relative flex justify-start group">
       <div
         className={`max-w-[80%] rounded-lg px-4 py-2 break-words shadow-sm ${
-          isError
-            ? 'bg-destructive text-destructive-foreground'
-            : 'bg-muted hover:bg-muted/80'
+          isError ? 'bg-destructive text-destructive-foreground' : 'bg-muted hover:bg-muted/80'
         }`}
         style={{ overflowWrap: 'break-word', wordBreak: 'break-word' }}
       >
         <div className="whitespace-pre-wrap leading-relaxed text-[15px]">
           {reasoning_content && (
-            <p className="text-muted-foreground text-[13px]">
-              {reasoning_content}
-            </p>
+            <p className="text-muted-foreground text-[13px]">{reasoning_content}</p>
           )}
           {reasoning_content && content && <Separator className="my-2" />}
           <MessageContent content={content} />

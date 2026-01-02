@@ -2,13 +2,7 @@ import { BugIcon, ExternalLinkIcon, FileTextIcon } from 'lucide-react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { SimpleIconsGithub } from '@/components/icons/simpleIcons'
 import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
 export function OtherSetting() {
   const handleOpenLogFolder = async () => {
@@ -26,16 +20,9 @@ export function OtherSetting() {
           <div className="flex items-center justify-between">
             <div className="space-y-1">
               <h4 className="text-sm font-medium leading-none">运行日志</h4>
-              <p className="text-sm text-muted-foreground">
-                查看程序运行日志文件 main.log
-              </p>
+              <p className="text-sm text-muted-foreground">查看程序运行日志文件 main.log</p>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-2"
-              onClick={handleOpenLogFolder}
-            >
+            <Button variant="outline" size="sm" className="gap-2" onClick={handleOpenLogFolder}>
               <FileTextIcon className="h-4 w-4" />
               打开日志文件夹
             </Button>
@@ -44,9 +31,7 @@ export function OtherSetting() {
           <div className="flex items-center justify-between">
             <div className="space-y-1">
               <h4 className="text-sm font-medium leading-none">项目信息</h4>
-              <p className="text-sm text-muted-foreground">
-                了解更多项目相关内容
-              </p>
+              <p className="text-sm text-muted-foreground">了解更多项目相关内容</p>
             </div>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" className="gap-2" asChild>

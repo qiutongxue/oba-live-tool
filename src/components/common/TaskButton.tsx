@@ -2,12 +2,7 @@ import { useDebounceFn } from 'ahooks'
 import { useCurrentLiveControl } from '@/hooks/useLiveControl'
 import { CarbonPlayFilledAlt, CarbonStopFilledAlt } from '../icons/carbon'
 import { Button } from '../ui/button'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '../ui/tooltip'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip'
 
 export function TaskButton({
   isTaskRunning,

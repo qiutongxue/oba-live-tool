@@ -129,9 +129,7 @@ const useScrollToBottom = (messages: ContextMessage[]) => {
 
   useEffect(() => {
     if (scrollAreaRef.current) {
-      const viewport = scrollAreaRef.current.querySelector(
-        '[data-radix-scroll-area-viewport]',
-      )
+      const viewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]')
       if (viewport instanceof HTMLDivElement) {
         ;(viewportRef as { current: HTMLDivElement }).current = viewport
       }
@@ -184,11 +182,7 @@ export default function ChatBox() {
     <Card className="flex flex-col h-[calc(100vh-20rem)] border-none">
       <CardContent className="flex-1 flex flex-col gap-4 p-0 overflow-hidden">
         <ScrollArea ref={scrollAreaRef} className="flex-1 px-6 py-4">
-          <MessageList
-            messages={messages}
-            status={status}
-            onRetry={sendMessage}
-          />
+          <MessageList messages={messages} status={status} onRetry={sendMessage} />
         </ScrollArea>
 
         <div className="flex gap-2 items-stretch p-4 border-t">

@@ -18,7 +18,7 @@ export const IPC_CHANNELS = {
       stop: 'tasks:autoPopUp:stop',
       updateConfig: 'tasks:autoPopUp:updateConfig',
       stoppedEvent: 'tasks:autoPopUp:stoppedEvent',
-      registerShortcuts: 'tasks:autoPopup:registerShortuct',
+      registerShortcuts: 'tasks:autoPopup:registerShortcut',
       unregisterShortcuts: 'tasks:autoPopup:unregisterShortcut',
     },
     aiChat: {

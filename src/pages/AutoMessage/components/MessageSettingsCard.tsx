@@ -4,15 +4,10 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
-import {
-  useAutoMessageActions,
-  useCurrentAutoMessage,
-} from '@/hooks/useAutoMessage'
+import { useAutoMessageActions, useCurrentAutoMessage } from '@/hooks/useAutoMessage'
 
 const MessageSettingsCard = React.memo(() => {
-  const { scheduler, random, extraSpaces } = useCurrentAutoMessage(
-    context => context.config,
-  )
+  const { scheduler, random, extraSpaces } = useCurrentAutoMessage(context => context.config)
   const { setScheduler, setRandom, setExtraSpaces } = useAutoMessageActions()
   const randomId = useId()
   const extraSpacesId = useId()
@@ -20,10 +15,7 @@ const MessageSettingsCard = React.memo(() => {
   const handleIntervalChange = useMemoizedFn((index: 0 | 1, value: string) => {
     const numValue = Number(value) * 1000
     setScheduler({
-      interval:
-        index === 0
-          ? [numValue, scheduler.interval[1]]
-          : [scheduler.interval[0], numValue],
+      interval: index === 0 ? [numValue, scheduler.interval[1]] : [scheduler.interval[0], numValue],
     })
   })
 
@@ -34,16 +26,10 @@ const MessageSettingsCard = React.memo(() => {
           <div className="flex items-center justify-between">
             <div className="space-y-1">
               <Label>发送设置</Label>
-              <p className="text-sm text-muted-foreground">
-                配置消息发送的相关选项
-              </p>
+              <p className="text-sm text-muted-foreground">配置消息发送的相关选项</p>
             </div>
             <div className="flex items-center space-x-2">
-              <Switch
-                id={randomId}
-                checked={random}
-                onCheckedChange={setRandom}
-              />
+              <Switch id={randomId} checked={random} onCheckedChange={setRandom} />
               <Label htmlFor={randomId} className="cursor-pointer">
                 随机发送
               </Label>
@@ -78,11 +64,7 @@ const MessageSettingsCard = React.memo(() => {
           </div>
 
           <div className="flex items-center space-x-2">
-            <Switch
-              id={extraSpacesId}
-              checked={extraSpaces}
-              onCheckedChange={setExtraSpaces}
-            />
+            <Switch id={extraSpacesId} checked={extraSpaces} onCheckedChange={setExtraSpaces} />
             <Label htmlFor={extraSpacesId} className="cursor-pointer">
               插入随机空格
             </Label>

@@ -50,8 +50,7 @@ const ShortcutListItem: React.FC<ShortcutListItemProps> = ({
   const { toast } = useToast()
   const osPlatform = useOSPlatform()
 
-  const keyMap =
-    osPlatform === 'MacOS' ? PLATFORM_KEY_MAP.mac : PLATFORM_KEY_MAP.win
+  const keyMap = osPlatform === 'MacOS' ? PLATFORM_KEY_MAP.mac : PLATFORM_KEY_MAP.win
 
   // 开始编辑
   const startEditing = useMemoizedFn(() => {
@@ -166,9 +165,7 @@ const ShortcutListItem: React.FC<ShortcutListItemProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="flex gap-2 items-center">
-              {shortcut.ctrl && (
-                <Badge variant={'outline'}>{keyMap.ctrl}</Badge>
-              )}
+              {shortcut.ctrl && <Badge variant={'outline'}>{keyMap.ctrl}</Badge>}
               {shortcut.shift && (
                 <Badge variant={'outline'}>
                   {/* <ArrowBigUpIcon className="w-4 h-4" /> */}
@@ -199,19 +196,12 @@ const ShortcutListItem: React.FC<ShortcutListItemProps> = ({
                 </span>
               ))}
               {shortcut.goodsIds.length === 0 && (
-                <span className="text-sm text-muted-foreground italic">
-                  未设置商品
-                </span>
+                <span className="text-sm text-muted-foreground italic">未设置商品</span>
               )}
             </div>
           </div>
           <div className="flex items-center space-x-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={startEditing}
-              title="编辑此快捷键映射"
-            >
+            <Button variant="ghost" size="sm" onClick={startEditing} title="编辑此快捷键映射">
               <Edit2Icon className="h-4 w-4" />
             </Button>
             <Button
@@ -235,25 +225,13 @@ const ShortcutListItem: React.FC<ShortcutListItemProps> = ({
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <div className="flex gap-2 justify-center items-center">
-            <Toggle
-              variant={'outline'}
-              pressed={ctrlKey}
-              onPressedChange={e => setCtrlKey(e)}
-            >
+            <Toggle variant={'outline'} pressed={ctrlKey} onPressedChange={e => setCtrlKey(e)}>
               <span>{keyMap.ctrl}</span>
             </Toggle>
-            <Toggle
-              variant={'outline'}
-              pressed={shiftKey}
-              onPressedChange={e => setShiftKey(e)}
-            >
+            <Toggle variant={'outline'} pressed={shiftKey} onPressedChange={e => setShiftKey(e)}>
               <span>{keyMap.shift}</span>
             </Toggle>
-            <Toggle
-              variant={'outline'}
-              pressed={altKey}
-              onPressedChange={e => setAltKey(e)}
-            >
+            <Toggle variant={'outline'} pressed={altKey} onPressedChange={e => setAltKey(e)}>
               <span>{keyMap.alt}</span>
             </Toggle>
 
@@ -302,9 +280,7 @@ const ShortcutListItem: React.FC<ShortcutListItemProps> = ({
             </div>
           ))}
           {newGoodsIds.length === 0 && (
-            <span className="text-sm text-muted-foreground italic py-1">
-              请添加商品序号
-            </span>
+            <span className="text-sm text-muted-foreground italic py-1">请添加商品序号</span>
           )}
         </div>
         <div className="flex justify-between items-center">
@@ -323,31 +299,16 @@ const ShortcutListItem: React.FC<ShortcutListItemProps> = ({
                 }
               }}
             />
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={addGoodsId}
-            >
+            <Button type="button" variant="outline" size="sm" onClick={addGoodsId}>
               添加
             </Button>
           </div>
           <div className="flex items-center space-x-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={cancelEditing}
-              className="gap-1.5"
-            >
+            <Button variant="ghost" size="sm" onClick={cancelEditing} className="gap-1.5">
               <X className="h-4 w-4" />
               取消
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={saveEditing}
-              className="gap-1.5"
-            >
+            <Button variant="outline" size="sm" onClick={saveEditing} className="gap-1.5">
               <Save className="h-4 w-4" />
               保存
             </Button>

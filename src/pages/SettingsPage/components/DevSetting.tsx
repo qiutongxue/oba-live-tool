@@ -29,12 +29,8 @@ export function DevSetting() {
       <CardContent>
         <div className="flex items-center justify-between space-y-1">
           <div>
-            <h4 className="text-sm font-medium leading-none mb-2">
-              开发者模式
-            </h4>
-            <p className="text-sm text-muted-foreground">
-              开启后可以通过鼠标右键打开开发者工具
-            </p>
+            <h4 className="text-sm font-medium leading-none mb-2">开发者模式</h4>
+            <p className="text-sm text-muted-foreground">开启后可以通过鼠标右键打开开发者工具</p>
           </div>
           <Switch checked={devMode} onCheckedChange={handleToggleDevMode} />
         </div>

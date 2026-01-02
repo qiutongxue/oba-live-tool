@@ -30,7 +30,7 @@
     "puppeteer-extra-plugin-stealth": "^2.11.2"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.3.7",
+    "@biomejs/biome": "^2.3.10",
     "@praha/byethrow": "^0.8.1",
     "@praha/error-factory": "^1.2.1",
     "@radix-ui/react-alert-dialog": "^1.1.6",

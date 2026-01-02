@@ -112,8 +112,7 @@ const ContextMenuCheckboxItem = ({
     {children}
   </ContextMenuPrimitive.CheckboxItem>
 )
-ContextMenuCheckboxItem.displayName =
-  ContextMenuPrimitive.CheckboxItem.displayName
+ContextMenuCheckboxItem.displayName = ContextMenuPrimitive.CheckboxItem.displayName
 
 const ContextMenuRadioItem = ({
   className,
@@ -147,11 +146,7 @@ const ContextMenuLabel = ({
 }) => (
   <ContextMenuPrimitive.Label
     data-slot="context-menu-label"
-    className={cn(
-      'px-2 py-1.5 text-sm font-semibold text-foreground',
-      inset && 'pl-8',
-      className,
-    )}
+    className={cn('px-2 py-1.5 text-sm font-semibold text-foreground', inset && 'pl-8', className)}
     {...props}
   />
 )
@@ -171,17 +166,11 @@ const ContextMenuSeparator = ({
 )
 ContextMenuSeparator.displayName = ContextMenuPrimitive.Separator.displayName
 
-function ContextMenuShortcut({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLSpanElement>) {
+function ContextMenuShortcut({ className, ...props }: React.HTMLAttributes<HTMLSpanElement>) {
   return (
     <span
       data-slot="context-menu-shortcut"
-      className={cn(
-        'ml-auto text-xs tracking-widest text-muted-foreground',
-        className,
-      )}
+      className={cn('ml-auto text-xs tracking-widest text-muted-foreground', className)}
       {...props}
     />
   )

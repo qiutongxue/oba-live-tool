@@ -1,7 +1,6 @@
 export const URLS = {
   LOGIN_PAGE: 'https://pgy.xiaohongshu.com',
-  LIVE_CONTROL_PAGE:
-    'https://pgy.xiaohongshu.com/commerce/redlive/live_center_control',
+  LIVE_CONTROL_PAGE: 'https://pgy.xiaohongshu.com/commerce/redlive/live_center_control',
   INDEX_PAGE: 'https://pgy.xiaohongshu.com/microapp/selection/buyer_home',
 } as const
 

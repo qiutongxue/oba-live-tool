@@ -71,10 +71,7 @@ export const useLiveControlStore = create<LiveControlStore>()(
     {
       name: 'live-control-storage',
       partialize: state => {
-        const contexts: Record<
-          string,
-          Pick<LiveControlContext, 'platform'>
-        > = {}
+        const contexts: Record<string, Pick<LiveControlContext, 'platform'>> = {}
         for (const key in state.contexts) {
           contexts[key] = { platform: state.contexts[key].platform }
         }
@@ -121,9 +118,7 @@ export const useCurrentLiveControlActions = () => {
   )
 }
 
-export const useCurrentLiveControl = <T>(
-  getter: (context: LiveControlContext) => T,
-): T => {
+export const useCurrentLiveControl = <T>(getter: (context: LiveControlContext) => T): T => {
   const currentAccountId = useAccounts(state => state.currentAccountId)
   return useLiveControlStore(state => {
     const context = state.contexts[currentAccountId] ?? defaultContext()

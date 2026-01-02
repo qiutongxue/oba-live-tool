@@ -6,11 +6,7 @@ interface LoadingIconProps {
   className?: string
 }
 
-export function LoadingIcon({
-  size = 'md',
-  color = 'text-primary',
-  className,
-}: LoadingIconProps) {
+export function LoadingIcon({ size = 'md', color = 'text-primary', className }: LoadingIconProps) {
   const sizeClasses = {
     sm: 'w-4 h-4 border',
     md: 'w-6 h-6 border-2',

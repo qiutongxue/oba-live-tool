@@ -41,9 +41,7 @@ const CommonList = () => {
       <div className="flex items-center justify-between">
         <div className="space-y-1">
           <Label>商品列表</Label>
-          <p className="text-sm text-muted-foreground">
-            添加需要自动弹出的商品序号
-          </p>
+          <p className="text-sm text-muted-foreground">添加需要自动弹出的商品序号</p>
         </div>
         <Button variant="outline" size="sm" onClick={addGoodsId}>
           <PlusIcon className="mr-2 h-4 w-4" />
