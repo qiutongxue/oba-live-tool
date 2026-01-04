@@ -363,6 +363,7 @@ export function useAutoReply() {
         return
       }
       switch (comment.msg_type) {
+        case 'taobao_comment':
         case 'xiaohongshu_comment':
         case 'wechat_channel_live_msg':
         case 'comment': {

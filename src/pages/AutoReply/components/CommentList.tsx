@@ -18,10 +18,6 @@ import { cn } from '@/lib/utils'
 
 const getMessageColor = (type: Message['msg_type']) => {
   switch (type) {
-    case 'xiaohongshu_comment':
-    case 'wechat_channel_live_msg':
-    case 'comment':
-      return 'text-foreground'
     case 'room_enter':
       return 'text-blue-500'
     case 'room_like':
@@ -41,10 +37,6 @@ const getMessageColor = (type: Message['msg_type']) => {
 
 const getMessageText = (message: Message) => {
   switch (message.msg_type) {
-    case 'xiaohongshu_comment':
-    case 'wechat_channel_live_msg':
-    case 'comment':
-      return message.content
     case 'room_enter':
       return '进入直播间'
     case 'room_like':
@@ -58,7 +50,7 @@ const getMessageText = (message: Message) => {
     case 'ecom_fansclub_participate':
       return '加入了粉丝团'
     default:
-      return '未知消息'
+      return message.content
   }
 }
 
