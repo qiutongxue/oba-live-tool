@@ -1,5 +1,6 @@
 import { Result } from '@praha/byethrow'
 import type { Page } from 'playwright'
+import { PageNotFoundError } from '#/errors/PlatformError'
 import type { BrowserSession } from '#/managers/BrowserSessionManager'
 import { sleep } from '#/utils'
 import {
@@ -10,7 +11,8 @@ import {
   getItemFromVirtualScroller,
   openUrlByElement,
 } from '../helper'
-import type { IPerformComment, IPerformPopup, IPlatform } from '../IPlatform'
+import type { ICommentListener, IPerformComment, IPerformPopup, IPlatform } from '../IPlatform'
+import { TaobaoCommentListener } from './commentListener'
 import { REGEXPS, SELECTORS, URLS } from './constant'
 import { taobaoElementFinder as elementFinder } from './element-finder'
 
@@ -19,10 +21,12 @@ const PLATFORM_NAME = '淘宝' as const
 /**
  * 淘宝
  */
-export class TaobaoPlatform implements IPlatform, IPerformPopup, IPerformComment {
+export class TaobaoPlatform implements IPlatform, IPerformPopup, IPerformComment, ICommentListener {
+  readonly _isCommentListener = true
   readonly _isPerformComment = true
   readonly _isPerformPopup = true
   private mainPage: Page | null = null
+  private commentListener: TaobaoCommentListener | null = null
 
   async connect(session: BrowserSession): Promise<boolean> {
     const { page } = session
@@ -99,6 +103,28 @@ export class TaobaoPlatform implements IPlatform, IPerformPopup, IPerformComment
       ensurePage(this.mainPage),
       Result.andThen(page => comment(page, elementFinder, message, false)),
     )
+  }
+
+  startCommentListener(
+    onComment: (comment: LiveMessage) => void,
+    source: CommentListenerConfig['source'],
+  ): void | Promise<void> {
+    if (source !== 'taobao') {
+      throw new Error('淘宝评论监听器只能用于淘宝平台')
+    }
+    this.commentListener = new TaobaoCommentListener(this.mainPage!, onComment)
+    this.commentListener.start()
+  }
+
+  stopCommentListener(): void {
+    this.commentListener?.stop()
+  }
+
+  getCommentListenerPage(): Page {
+    if (!this.commentListener) {
+      throw new PageNotFoundError()
+    }
+    return this.commentListener.getPage()
   }
 
   getPopupPage() {
