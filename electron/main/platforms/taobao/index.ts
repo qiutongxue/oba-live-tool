@@ -112,7 +112,10 @@ export class TaobaoPlatform implements IPlatform, IPerformPopup, IPerformComment
     if (source !== 'taobao') {
       throw new Error('淘宝评论监听器只能用于淘宝平台')
     }
-    this.commentListener = new TaobaoCommentListener(this.mainPage!, onComment)
+    if (!this.mainPage) {
+      throw new PageNotFoundError()
+    }
+    this.commentListener = new TaobaoCommentListener(this.mainPage, onComment)
     this.commentListener.start()
   }
 
@@ -128,11 +131,11 @@ export class TaobaoPlatform implements IPlatform, IPerformPopup, IPerformComment
   }
 
   getPopupPage() {
-    return ensurePage(this.mainPage)
+    return this.mainPage
   }
 
   getCommentPage() {
-    return ensurePage(this.mainPage)
+    return this.mainPage
   }
 
   get platformName() {

@@ -114,10 +114,8 @@ export function createAutoCommentTask(
         logger,
         signal,
         onRetryError: () => {
-          Result.pipe(
-            platform.getCommentPage(),
-            Result.map(page => takeScreenshot(page, TASK_NAME, account.name)),
-          )
+          const page = platform.getCommentPage()
+          if (page) takeScreenshot(page, TASK_NAME, account.name)
         },
       },
     )

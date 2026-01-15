@@ -54,11 +54,10 @@ export function createAutoPopupTask(
         ...retryOptions,
         logger,
         signal,
-        onRetryError: () =>
-          Result.pipe(
-            platform.getPopupPage(),
-            Result.map(page => takeScreenshot(page, TASK_NAME, account.name)),
-          ),
+        onRetryError: () => {
+          const page = platform.getPopupPage()
+          if (page) takeScreenshot(page, TASK_NAME, account.name)
+        },
       },
     )
     return result

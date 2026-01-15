@@ -99,10 +99,10 @@ export class BuyinPlatform implements IPlatform, IPerformPopup, IPerformComment,
   }
 
   getPopupPage() {
-    return ensurePage(this.mainPage)
+    return this.mainPage
   }
 
   getCommentPage() {
-    return ensurePage(this.mainPage)
+    return this.mainPage
   }
 }
