@@ -65,7 +65,7 @@ export class KuaishouPlatform implements IPlatform, IPerformPopup, IPerformComme
   }
 
   getCommentPage() {
-    return ensurePage(this.mainPage)
+    return this.mainPage
   }
 
   async performPopup(id: number) {
@@ -125,7 +125,7 @@ export class KuaishouPlatform implements IPlatform, IPerformPopup, IPerformComme
   }
 
   getPopupPage() {
-    return ensurePage(this.mainPage)
+    return this.mainPage
   }
 
   get platformName() {

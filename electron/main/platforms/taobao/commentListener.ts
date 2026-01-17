@@ -33,12 +33,18 @@ interface TaobaoComment {
     isOrder: '0' | '1'
 
     liveId: string
+    /** 似乎主播是 '0'，观众从 '1' 开始 */
     fanLevel: string
+    /** 观众才会有的 */
+    userToken?: string
 
     tbUserIdEncode: string
     /** 可能可以区分普通评论和下单/加购的评论？ */
     showMod: 'COMMON' | string
-
+    /** 'normal' */
+    commentType: string
+    /** JSON  字符串，只有回复的时候才会出现，转化为 ReplyJSON */
+    reply?: string
     medalIcon: string
   }
   /** 涉及回复的评论ID（0表示未回复） */
@@ -48,6 +54,23 @@ interface TaobaoComment {
   // 这是淘宝昵称（也是获取的 AccountName）
   tbNick: string
   timestamp: string
+}
+
+interface ReplyJSON {
+  /** 回复的内容 */
+  content: string
+  /** 主播回复@xxx */
+  headerline: string
+  /** 引用的内容 */
+  quote: string
+  /** 回复评论 id，对应 TaobaoComment['commentId']，但这里竟然是 number? */
+  replyToCommentId: number
+  /** 用户的淘宝昵称 */
+  replyToUserNick: string
+  /** 'manual_reply' | ... */
+  targetType: string
+  /** 'simple' */
+  type: string
 }
 
 export class TaobaoCommentListener {
@@ -75,9 +98,10 @@ export class TaobaoCommentListener {
           this.handleComment({
             msg_type: 'taobao_comment',
             msg_id: comment.commentId,
-            // TODO: 这里用publisherNick还是tbNick？
-            // tbNick 才能过滤主播评论吧？
-            nick_name: comment.publisherNick,
+            // 主播：publisherNick
+            // 观众：tbNick(publisherNick)
+            // 鉴于无需关心主播的 publisherNick，这里统一用 tbNick
+            nick_name: comment.tbNick,
             user_id: comment.publisherId,
             time: new Date(Number(comment.timestamp)).toLocaleTimeString(),
             content: comment.content,

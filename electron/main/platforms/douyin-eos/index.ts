@@ -73,11 +73,11 @@ export class DouyinEosPlatform implements IPlatform, IPerformPopup, IPerformComm
   }
 
   getPopupPage() {
-    return ensurePage(this.mainPage)
+    return this.mainPage
   }
 
   getCommentPage() {
-    return ensurePage(this.mainPage)
+    return this.mainPage
   }
 
   get platformName() {

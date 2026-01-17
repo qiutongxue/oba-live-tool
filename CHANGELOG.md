@@ -1,5 +1,20 @@
 # Changelog
 
+## v1.5.21
+
+[compare changes](https://github.com/qiutongxue/oba-live-tool/compare/v1.5.20...v1.5.21)
+
+### 🚀 Features
+
+- **淘宝:** 新增自动回复功能（仅简单的评论回复） ([450dba1](https://github.com/qiutongxue/oba-live-tool/commit/450dba1))
+
+### 🐞 Bug Fixes
+
+- 修正自动弹窗任务中注册快捷键的拼写错误 ([6e48bae](https://github.com/qiutongxue/oba-live-tool/commit/6e48bae))
+- 修复目录不存在时截屏报错的问题 ([68abdb2](https://github.com/qiutongxue/oba-live-tool/commit/68abdb2))
+- **淘宝:** 修复淘宝（企业店铺）自动弹窗时找不到商品ID的问题 ([ac10b8b](https://github.com/qiutongxue/oba-live-tool/commit/ac10b8b))
+- 修复淘宝评论监听的昵称显示问题 ([2b6550a](https://github.com/qiutongxue/oba-live-tool/commit/2b6550a))
+
 ## v1.5.20
 
 [compare changes](https://github.com/qiutongxue/oba-live-tool/compare/v1.5.19...v1.5.20)
