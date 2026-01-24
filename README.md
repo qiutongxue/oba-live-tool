@@ -5,7 +5,7 @@
   <p> 抖音小店/巨量百应/抖音团购/小红书/视频号/快手小店/淘宝直播小工具 </p>
   <br>
 
-[![GitHub Release][github release badge]](https://github.com/TuoLingTeam/TLS-live-tool/releases/latest)
+[![GitHub Release][github release badge]]((https://github.com/TuoLingTeam/TLS-live-tool/releases/latest)
 ![GitHub][github license badge]
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/qiutongxue/oba-live-tool)
  
@@ -43,12 +43,12 @@
 
 ### 下载安装
 
-访问 [Releases](https://github.com/TuoLingTeam/TLS-live-tool/releases/latest) 页面下载最新版本安装包
+访问 [Releases]((https://github.com/TuoLingTeam/TLS-live-tool/releases/latest) 页面下载最新版本安装包
 
 ### 源码构建
 
 ```bash
-git clone https://github.com/TuoLingTeam/TLS-live-tool.git
+git clone (https://github.com/TuoLingTeam/TLS-live-tool.git
 cd TLS-live-tool
 pnpm install
 pnpm build
@@ -179,7 +179,7 @@ pnpm build
 
 WebSocket 功能负责将监听到的评论信息广播到所有连接的客户端。可以在自动回复的设置页面中开启 WebSocket 服务，并配置相应的端口号。开启 WebSocket 并点击「开始监听」后，应用会自行启动 WebSocket **服务端**，绑定本机所有 ip 接口（`0.0.0.0`）。
 
-发送格式为 JSON 字符串，[类型定义参照这里](https://github.com/qiutongxue/oba-live-tool/blob/3c482728ac94ab33c76e072ed0424f9507a9dc3f/shared/types.d.ts#L84-L171)
+发送格式为 JSON 字符串，[类型定义参照这里](https://github.com/TuoLingTeam/blob/3c482728ac94ab33c76e072ed0424f9507a9dc3f/shared/types.d.ts#L84-L171)
 
 ### AI 助手
 
@@ -231,7 +231,7 @@ AI 助手只支持文本对话，在使用 AI 助手功能前，请先设置好�
 设置自定义代理加速方式如下：
 
 1. 找到一个能够代理加速 github release 的站点，如 `gh-proxy.com`
-2. 查看站点提供的加速地址，如下载 1.5.20-windows-x64 版本的地址可以是 `https://gh-proxy.org/https://github.com/qiutongxue/oba-live-tool/releases/download/v1.5.20/oba-live-tool_1.5.20_windows_x64.exe`
+2. 查看站点提供的加速地址，如下载 1.5.20-windows-x64 版本的地址可以是 `https://gh-proxy.org/https://github.com/TuoLingTeam/TLS-live-tool/releases/download/v1.5.20/TLS-live-tool_1.5.20_windows_x64.exe`
 3. 把 `https://github.com/……` 及后面的链接删除，保留前缀 `https://gh-proxy.org/`
 4. 将前缀地址复制到自定义更新源输入框中
 
