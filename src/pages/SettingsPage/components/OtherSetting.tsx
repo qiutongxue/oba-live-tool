@@ -9,6 +9,20 @@ export function OtherSetting() {
     await window.ipcRenderer.invoke(IPC_CHANNELS.app.openLogFolder)
   }
 
+  const handleOpenGitHub = async () => {
+    await window.ipcRenderer.invoke(
+      IPC_CHANNELS.app.openExternal,
+      'https://github.com/TuoLingTeam/TLS-live-tool',
+    )
+  }
+
+  const handleOpenIssues = async () => {
+    await window.ipcRenderer.invoke(
+      IPC_CHANNELS.app.openExternal,
+      'https://github.com/TuoLingTeam/TLS-live-tool/issues',
+    )
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -34,27 +48,15 @@ export function OtherSetting() {
               <p className="text-sm text-muted-foreground">了解更多项目相关内容</p>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" className="gap-2" asChild>
-                <a
-                  href="(https://github.com/TuoLingTeam/TLS-live-tool"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <SimpleIconsGithub className="h-4 w-4" />
-                  GitHub
-                  <ExternalLinkIcon className="h-4 w-4" />
-                </a>
+              <Button variant="outline" size="sm" className="gap-2" onClick={handleOpenGitHub}>
+                <SimpleIconsGithub className="h-4 w-4" />
+                GitHub
+                <ExternalLinkIcon className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="sm" className="gap-2" asChild>
-                <a
-                  href="(https://github.com/TuoLingTeam/TLS-live-tool/issues"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <BugIcon className="h-4 w-4" />
-                  反馈问题
-                  <ExternalLinkIcon className="h-4 w-4" />
-                </a>
+              <Button variant="outline" size="sm" className="gap-2" onClick={handleOpenIssues}>
+                <BugIcon className="h-4 w-4" />
+                反馈问题
+                <ExternalLinkIcon className="h-4 w-4" />
               </Button>
             </div>
           </div>

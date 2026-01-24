@@ -18,10 +18,10 @@ export interface IpcChannels {
   [IPC_CHANNELS.tasks.liveControl.notifyAccountName]: (
     params:
       | {
-        ok: true
-        accountId: string
-        accountName: string | null
-      }
+          ok: true
+          accountId: string
+          accountName: string | null
+        }
       | { ok: false },
   ) => void
 
@@ -89,9 +89,9 @@ export interface IpcChannels {
   [IPC_CHANNELS.tasks.aiChat.stream]: (
     data:
       | {
-        chunk: string
-        type: 'content' | 'reasoning'
-      }
+          chunk: string
+          type: 'content' | 'reasoning'
+        }
       | { done: boolean },
   ) => void
   [IPC_CHANNELS.tasks.aiChat.error]: (data: { error: string }) => void
@@ -119,6 +119,7 @@ export interface IpcChannels {
 
   // App
   [IPC_CHANNELS.app.openLogFolder]: () => void
+  [IPC_CHANNELS.app.openExternal]: (url: string) => void
   [IPC_CHANNELS.app.notifyUpdate]: (arg: {
     currentVersion: string
     latestVersion: string
