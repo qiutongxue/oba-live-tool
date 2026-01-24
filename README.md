@@ -5,7 +5,7 @@
   <p> 抖音小店/巨量百应/抖音团购/小红书/视频号/快手小店/淘宝直播小工具 </p>
   <br>
 
-[![GitHub Release][github release badge]](https://github.com/TLS-802/TLS-live-tool/releases/latest)
+[![GitHub Release][github release badge]](https://github.com/TuoLingTeam/TLS-live-tool/releases/latest)
 ![GitHub][github license badge]
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/qiutongxue/oba-live-tool)
  
@@ -43,12 +43,12 @@
 
 ### 下载安装
 
-访问 [Releases](https://github.com/TLS-802/TLS-live-tool/releases/latest) 页面下载最新版本安装包
+访问 [Releases](https://github.com/TuoLingTeam/TLS-live-tool/releases/latest) 页面下载最新版本安装包
 
 ### 源码构建
 
 ```bash
-git clone https://github.com/TLS-802/TLS-live-tool.git
+git clone https://github.com/TuoLingTeam/TLS-live-tool.git
 cd TLS-live-tool
 pnpm install
 pnpm build
