@@ -15,20 +15,21 @@ async function fetchOpenrouterModels() {
     return null
   }
   try {
-  const openai = new OpenAI({
-    baseURL: providers.openrouter.baseURL,
-    apiKey,
-  })
-  const models = await openai.models.list()
-  const filteredModels = models.data
-    .filter(model => {
-      return (
-        model.architecture.modality === 'text->text' && model.id.toLowerCase().includes('deepseek')
-      )
+    const openai = new OpenAI({
+      baseURL: providers.openrouter.baseURL,
+      apiKey,
     })
-    .map(model => model.id)
+    const models = await openai.models.list()
+    const filteredModels = models.data
+      .filter(model => {
+        return (
+          model.architecture.modality === 'text->text' &&
+          model.id.toLowerCase().includes('deepseek')
+        )
+      })
+      .map(model => model.id)
     console.log(`OpenRouter: 找到 ${filteredModels.length} 个模型`)
-  return filteredModels
+    return filteredModels
   } catch (error) {
     console.error('获取 OpenRouter 模型失败:', error.message)
     return null
@@ -42,18 +43,18 @@ async function fetchSiliconflowModels() {
     return null
   }
   try {
-  const openai = new OpenAI({
-    baseURL: providers.siliconflow.baseURL,
-    apiKey,
-  })
-  const models = await openai.models.list()
-  const filteredModels = models.data
-    .filter(model => {
-        return model.id?.toLowerCase().includes('deepseek')
+    const openai = new OpenAI({
+      baseURL: providers.siliconflow.baseURL,
+      apiKey,
     })
-    .map(model => model.id)
+    const models = await openai.models.list()
+    const filteredModels = models.data
+      .filter(model => {
+        return model.id?.toLowerCase().includes('deepseek')
+      })
+      .map(model => model.id)
     console.log(`硅基流动: 找到 ${filteredModels.length} 个模型`)
-  return filteredModels
+    return filteredModels
   } catch (error) {
     console.error('获取硅基流动模型失败:', error.message)
     return null
@@ -67,14 +68,14 @@ const updaters = {
 
 async function main() {
   try {
-const newProviders = { ...providers }
+    const newProviders = { ...providers }
     let hasChanges = false
 
-for (const [key, fetchModels] of Object.entries(updaters)) {
+    for (const [key, fetchModels] of Object.entries(updaters)) {
       console.log(`正在更新 ${key} 模型列表...`)
-  const models = await fetchModels()
+      const models = await fetchModels()
       if (models && models.length > 0) {
-    newProviders[key].models = models
+        newProviders[key].models = models
         hasChanges = true
         console.log(`✓ ${key} 更新完成，共 ${models.length} 个模型`)
       } else {
@@ -90,7 +91,7 @@ for (const [key, fetchModels] of Object.entries(updaters)) {
     // 使用格式化 JSON 输出（2 个空格缩进）
     const formattedJson = JSON.stringify(newProviders, null, 2)
     const fileContent = `export const providers = ${formattedJson} as const\n`
-    
+
     await writeFile(providerPath, fileContent, 'utf-8')
     console.log('✓ 文件写入成功:', providerPath)
   } catch (error) {
@@ -99,14 +100,4 @@ for (const [key, fetchModels] of Object.entries(updaters)) {
   }
 }
 
-await writeFile(providerPath, `export const providers = ${JSON.stringify(newProviders)} as const`)
-
-// async function commitProviders() {
-//   const commitMessage = 'chore: 更新 AI 模型列表'
-//   await x('git', ['add', 'shared/providers.ts'], {
-//     throwOnError: true,
-//   })
-//   await x('git', ['commit', '-m', commitMessage], { throwOnError: true })
-// }
-
-// await commitProviders()
+main()
