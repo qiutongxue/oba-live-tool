@@ -26,7 +26,7 @@ type LatestYml = {
   releaseDate: string
 }
 
-const GITHUB_OWNER = 'TLS-802'
+const GITHUB_OWNER = 'TuoLingTeam'
 const GITHUB_REPO = 'TLS-live-tool'
 const CDN_URL = 'https://fastly.jsdelivr.net/gh/'
 const PRODUCT_NAME = packageJson.name
@@ -191,7 +191,7 @@ interface Updater {
 }
 
 class UpdateManager {
-  constructor(private updater: Updater) { }
+  constructor(private updater: Updater) {}
 
   public async checkForUpdates(source = 'github') {
     await this.updater.checkForUpdates(source)

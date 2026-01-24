@@ -247,11 +247,11 @@ AI 助手只支持文本对话，在使用 AI 助手功能前，请先设置好�
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=TLS-802/TLS-live-tool&type=Date)](https://www.star-history.com/#TLS-802/TLS-live-tool&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=TuoLingTeam/TLS-live-tool&type=Date)](https://www.star-history.com/#TuoLingTeam/TLS-live-tool&Date)
 
 <!-- badage -->
 
-[github release badge]: https://img.shields.io/github/v/release/TLS-802/TLS-live-tool?style=flat&logo=github&labelColor=%2324292e&color=%231a7f37
+[github release badge]: https://img.shields.io/github/v/release/TuoLingTeam/TLS-live-tool?style=flat&logo=github&labelColor=%2324292e&color=%231a7f37
 
 
 [github license badge]: https://img.shields.io/badge/license-MIT-5c6bc0?style=flat&labelColor=24292e

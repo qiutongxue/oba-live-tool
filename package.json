@@ -4,7 +4,7 @@
   "version": "1.5.21",
   "private": true,
   "description": "直播工具，用于直播带货，能自动弹窗，自动发言",
-  "author": "TLS-802",
+  "author": "TuoLingTeam",
   "license": "MIT",
   "main": "dist-electron/main/index.js",
   "debug": {
