@@ -50,7 +50,6 @@ export const providers = {
       'deepseek-ai/DeepSeek-R1-Distill-Qwen-7B',
       'deepseek-ai/DeepSeek-V2.5',
       'deepseek-ai/deepseek-vl2',
-      'Pro/deepseek-ai/DeepSeek-R1-Distill-Qwen-7B',
     ],
   },
   volcengine: {
