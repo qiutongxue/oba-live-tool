@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.5.22
+
+[compare changes](https://github.com/qiutongxue/oba-live-tool/compare/v1.5.21...v1.5.22)
+
+### 🐞 Bug Fixes
+
+- 修复设置页面外部链接无法打开的问题 ([0a176c7](https://github.com/qiutongxue/oba-live-tool/commit/0a176c7))
+
 ## v1.5.21
 
 [compare changes](https://github.com/qiutongxue/oba-live-tool/compare/v1.5.20...v1.5.21)
