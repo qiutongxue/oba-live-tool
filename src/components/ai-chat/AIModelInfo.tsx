@@ -1,9 +1,14 @@
 import { providers } from 'shared/providers'
-import { useAIChatStore } from '@/hooks/useAIChat'
+import type { AIConfigType } from '@/hooks/useAIProvider'
+import { useAIProvider } from '@/hooks/useAIProvider'
 import { Badge } from '../ui/badge'
 
-export default function AIModelInfo() {
-  const aiConfig = useAIChatStore(context => context.config)
+interface AIModelInfoProps {
+  type?: AIConfigType
+}
+
+export default function AIModelInfo({ type = 'chat' }: AIModelInfoProps) {
+  const { config: aiConfig } = useAIProvider(type)
   return (
     <div className="flex items-center gap-2">
       <Badge variant="dark" className="gap-1">

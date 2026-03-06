@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { useAIChatStore } from '@/hooks/useAIChat'
+import { useAIProvider } from '@/hooks/useAIProvider'
 import { useToast } from '@/hooks/useToast'
 import { messagesToContext } from '@/lib/utils'
 
@@ -13,8 +14,11 @@ export default function ChatInput({
   onSubmit: (messages: { role: string; content: string }[]) => void
 }) {
   const [input, setInput] = useState('')
-  const { status, addMessage, messages, config, apiKeys } = useAIChatStore()
+  const { status, addMessage, messages } = useAIChatStore()
   const { toast } = useToast()
+
+  // 从 useAIProvider 获取配置
+  const { config, apiKeys } = useAIProvider('chat')
 
   const handleSubmit = useMemoizedFn(async () => {
     if (!apiKeys[config.provider]) {

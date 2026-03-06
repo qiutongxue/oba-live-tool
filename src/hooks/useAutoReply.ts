@@ -7,7 +7,8 @@ import { AUTO_REPLY } from '@/constants'
 import { EVENTS, eventEmitter } from '@/utils/events'
 import { matchObject } from '@/utils/filter'
 import { useAccounts } from './useAccounts'
-import { type AIProvider, type ChatMessage, useAIChatStore } from './useAIChat'
+import type { ChatMessage } from './useAIChat'
+import { type AIProvider, useAIProvider } from './useAIProvider'
 import { type AutoReplyConfig, useAutoReplyConfig } from './useAutoReplyConfig'
 import { useErrorHandler } from './useErrorHandler'
 import { useCurrentLiveControl } from './useLiveControl'
@@ -332,7 +333,7 @@ export function useAutoReply() {
   const store = useAutoReplyStore()
   const { currentAccountId } = useAccounts()
   const accountName = useCurrentLiveControl(ctx => ctx.accountName)
-  const aiStore = useAIChatStore()
+  const aiStore = useAIProvider('autoReply')
   const { config } = useAutoReplyConfig()
   const { handleError } = useErrorHandler()
 

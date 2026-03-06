@@ -21,8 +21,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import type { AIProvider, ProviderConfig } from '@/hooks/useAIChat'
-import { useAIChatStore } from '@/hooks/useAIChat'
+import type { AIConfigType, AIProvider, ProviderConfig } from '@/hooks/useAIProvider'
+import { useAIProvider } from '@/hooks/useAIProvider'
 import { useToast } from '@/hooks/useToast'
 import { ScrollArea } from '../ui/scroll-area'
 
@@ -233,9 +233,13 @@ const ApiKeyInput = memo(
   },
 )
 
-export function APIKeyDialog() {
-  const { apiKeys, config, setConfig, setApiKey, customBaseURL, setCustomBaseURL } =
-    useAIChatStore()
+interface APIKeyDialogProps {
+  type?: AIConfigType
+}
+
+export function APIKeyDialog({ type = 'chat' }: APIKeyDialogProps) {
+  const { config, apiKeys, customBaseURL, setConfig, setApiKey, setCustomBaseURL } =
+    useAIProvider(type)
   const { toast } = useToast()
 
   const [open, setOpen] = useState(false)
@@ -244,6 +248,16 @@ export function APIKeyDialog() {
   const [tempCustomBaseURL, setTempCustomBaseURL] = useState(customBaseURL || '')
   const [testLoading, setTestLoading] = useState(false)
   const [testSuccess, setTestSuccess] = useState(false)
+
+  // 当打开对话框时，重置临时状态
+  useEffect(() => {
+    if (open) {
+      setTempKeys(apiKeys)
+      setTempConfig(config)
+      setTempCustomBaseURL(customBaseURL || '')
+      setTestSuccess(false)
+    }
+  }, [open, apiKeys, config, customBaseURL])
 
   // 保存配置
   const handleSave = useCallback(() => {
