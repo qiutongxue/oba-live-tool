@@ -1,4 +1,4 @@
-import { useDebounceEffect } from 'ahooks'
+import { useDebounceEffect, useUpdateEffect } from 'ahooks'
 import { PinIcon, PinOffIcon } from 'lucide-react'
 import type React from 'react'
 import { useState } from 'react'
@@ -13,6 +13,12 @@ export default function MessageEditor({
 }) {
   const [localMessages, setLocalMessages] = useState<Message[]>(messages)
   const [text, setText] = useState(() => messages.map(msg => msg.content).join('\n'))
+
+  // 当 messages prop 变化时，更新本地状态
+  useUpdateEffect(() => {
+    setLocalMessages(messages)
+    setText(messages.map(msg => msg.content).join('\n'))
+  }, [messages])
 
   useDebounceEffect(
     () => {

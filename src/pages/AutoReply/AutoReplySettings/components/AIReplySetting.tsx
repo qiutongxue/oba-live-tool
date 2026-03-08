@@ -66,8 +66,8 @@ export function AIReplySetting() {
           />
           <p className="text-xs text-muted-foreground">提示词将指导AI如何回复用户评论</p>
           <div className="flex justify-between items-center space-x-2">
-            <APIKeyDialog />
-            <AIModelInfo />
+            <APIKeyDialog type="autoReply" />
+            <AIModelInfo type="autoReply" />
           </div>
         </div>
       )}
