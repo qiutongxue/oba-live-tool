@@ -56,7 +56,7 @@ declare type SendBatchMessagesTask = {
 }
 
 declare interface CommentListenerConfig {
-  source: 'compass' | 'control' | 'wechat-channel' | 'xiaohongshu' | 'taobao'
+  source: 'compass' | 'control' | 'wechat-channel' | 'xiaohongshu' | 'taobao' | 'kuaishou'
   ws?: {
     port: number
   }
