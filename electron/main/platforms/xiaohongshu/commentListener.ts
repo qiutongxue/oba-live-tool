@@ -135,7 +135,7 @@ export class XiaohongshuCommentListener {
         nick_name: this.accountName ?? '',
         user_id: data.profile.user_id,
         content: data.comment,
-        time: new Date().toLocaleTimeString(),
+        time: Date.now(),
       }
       this.handleComment(liveMessage)
     }
@@ -155,7 +155,7 @@ export class XiaohongshuCommentListener {
         nick_name: commentMessage.profile.nickname,
         user_id: commentMessage.profile.user_id,
         content: commentMessage.desc,
-        time: new Date(commentMessage.current_time).toLocaleTimeString(),
+        time: commentMessage.current_time,
       }
       this.handleComment(liveMessage)
     })

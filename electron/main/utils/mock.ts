@@ -1,5 +1,5 @@
 export function getRandomDouyinLiveMessage(): DouyinLiveMessage {
-  const now = new Date().toISOString()
+  const now = Date.now()
   const msg_id = Math.random().toString(36).substring(2, 10)
   const nick_name = ['小红', '大壮', '用户123', '测试用户', '阿狸'][Math.floor(Math.random() * 5)]
   const user_id = Math.floor(Math.random() * 1000000).toString()
