@@ -45,7 +45,7 @@ export class KuaishouCommentListener {
           msg_type: 'comment',
           msg_id: comment.commentId,
           nick_name: comment.fromUserName,
-          time: new Date(Number(comment.commentTime)).toLocaleTimeString(),
+          time: Number(comment.commentTime),
         })
       }
     }
