@@ -1,6 +1,7 @@
 import { Settings2 } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
+import { autoReplyPlatforms } from '@/abilities'
 import { TaskButton } from '@/components/common/TaskButton'
 import { Title } from '@/components/common/Title'
 import { Button } from '@/components/ui/button'
@@ -8,15 +9,6 @@ import { useAutoReply } from '@/hooks/useAutoReply'
 import { useCurrentLiveControl } from '@/hooks/useLiveControl'
 import CommentList from '@/pages/AutoReply/components/CommentList'
 import PreviewList from '@/pages/AutoReply/components/PreviewList'
-
-const availablePlatforms: LiveControlPlatform[] = [
-  'douyin',
-  'buyin',
-  'wxchannel',
-  'xiaohongshu',
-  'pgy',
-  'dev',
-]
 
 export default function AutoReply() {
   const { isRunning, setIsRunning } = useAutoReply()
@@ -33,7 +25,7 @@ export default function AutoReply() {
   const navigate = useNavigate()
 
   const platform = useCurrentLiveControl(context => context.platform)
-  if (!availablePlatforms.includes(platform)) {
+  if (!autoReplyPlatforms.includes(platform)) {
     return null
   }
 

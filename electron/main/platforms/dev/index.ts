@@ -54,7 +54,7 @@ export class DevPlatform implements IPlatform, IPerformComment, IPerformPopup, I
   }
 
   getPopupPage() {
-    return ensurePage(this.mainPage)
+    return this.mainPage
   }
 
   async performComment(message: string) {
@@ -65,7 +65,7 @@ export class DevPlatform implements IPlatform, IPerformComment, IPerformPopup, I
   }
 
   getCommentPage() {
-    return ensurePage(this.mainPage)
+    return this.mainPage
   }
 
   get platformName() {

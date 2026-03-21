@@ -32,7 +32,7 @@ export class ControlListener implements ICommentListener {
           nick_name: comment.nick_name,
           content: comment.content,
           msg_type: 'comment',
-          time: new Date().toLocaleTimeString(),
+          time: Date.now(),
         }
         this.handleComment(commentData)
       }
@@ -184,7 +184,7 @@ export class CompassListener implements ICommentListener {
     for (const messages of Object.values(data.data.messages)) {
       if (!messages) continue
       for (const message of messages) {
-        const comment = { ...message, time: new Date().toLocaleTimeString() }
+        const comment = { ...message, time: Date.now() }
         this.handleComment(comment)
       }
     }
@@ -212,7 +212,7 @@ export class CompassListener implements ICommentListener {
     for (const message of messages) {
       const comment = {
         ...message,
-        time: new Date().toLocaleTimeString(),
+        time: Date.now(),
       }
       this.handleComment(comment)
     }

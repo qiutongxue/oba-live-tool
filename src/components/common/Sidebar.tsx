@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router'
+import { abilities, autoReplyPlatforms } from '@/abilities'
 import { useCurrentAutoMessage } from '@/hooks/useAutoMessage'
 import { useCurrentAutoPopUp } from '@/hooks/useAutoPopUp'
 import { useAutoReply } from '@/hooks/useAutoReply'
@@ -50,7 +51,7 @@ export default function Sidebar() {
       name: '自动回复',
       isRunning: isAutoReplyRunning,
       icon: <CarbonIbmEventAutomation className="w-5 h-5" />,
-      platform: ['douyin', 'buyin', 'wxchannel', 'xiaohongshu', 'pgy', 'dev'],
+      platform: autoReplyPlatforms,
     },
     {
       id: '/ai-chat',

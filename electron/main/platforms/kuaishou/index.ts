@@ -4,19 +4,25 @@ import { ElementContentMismatchedError, PageNotFoundError } from '#/errors/Platf
 import type { BrowserSession } from '#/managers/BrowserSessionManager'
 import { sleep } from '#/utils'
 import { comment, connect, ensurePage, getAccountName, getItemFromVirtualScroller } from '../helper'
-import type { IPerformComment, IPerformPopup, IPlatform } from '../IPlatform'
+import type { ICommentListener, IPerformComment, IPerformPopup, IPlatform } from '../IPlatform'
+import { KuaishouCommentListener } from './commentListener'
 import { REGEXPS, SELECTORS, URLS } from './constant'
 import { kuaishouElementFinder as elementFinder } from './element-finder'
 
 const PLATFORM_NAME = '快手小店' as const
 
-export class KuaishouPlatform implements IPlatform, IPerformPopup, IPerformComment {
+export class KuaishouPlatform
+  implements IPlatform, IPerformPopup, IPerformComment, ICommentListener
+{
   readonly _isPerformPopup = true
   readonly _isPerformComment = true
+  readonly _isCommentListener = true
   private mainPage: Page | null = null
+  private commentListener: KuaishouCommentListener | null = null
 
   async connect(browserSession: BrowserSession): Promise<boolean> {
     const { page } = browserSession
+    await KuaishouCommentListener.hook(page)
     const isConnected = await connect(page, {
       isInLiveControlSelector: SELECTORS.IN_LIVE_CONTROL,
       liveControlUrl: URLS.LIVE_CONTROL,
@@ -26,7 +32,7 @@ export class KuaishouPlatform implements IPlatform, IPerformPopup, IPerformComme
     if (isConnected) {
       // 快手小店会弹出莫名其妙的窗口，按 ESC 关闭
       let popover = await page
-        .waitForSelector(SELECTORS.DRIVER_POPOVER, { timeout: 5000 })
+        .waitForSelector(SELECTORS.DRIVER_POPOVER, { timeout: 3000 })
         .catch(_ => null)
       while (popover) {
         await page.press('body', 'Escape')
@@ -65,7 +71,7 @@ export class KuaishouPlatform implements IPlatform, IPerformPopup, IPerformComme
   }
 
   getCommentPage() {
-    return ensurePage(this.mainPage)
+    return this.mainPage
   }
 
   async performPopup(id: number) {
@@ -124,8 +130,29 @@ export class KuaishouPlatform implements IPlatform, IPerformPopup, IPerformComme
     return Result.succeed()
   }
 
+  startCommentListener(onComment: (comment: LiveMessage) => void): void | Promise<void> {
+    const page = ensurePage(this.mainPage)
+    if (Result.isFailure(page)) {
+      throw page.error
+    }
+    if (!this.commentListener) {
+      this.commentListener = new KuaishouCommentListener(page.value)
+    }
+    this.commentListener.startCommentListener(onComment)
+  }
+
+  stopCommentListener(): void {
+    this.commentListener?.stopCommentListener()
+  }
+  getCommentListenerPage(): Page {
+    if (!this.commentListener) {
+      throw new Error('Comment listener not started')
+    }
+    return this.commentListener.getPage()
+  }
+
   getPopupPage() {
-    return ensurePage(this.mainPage)
+    return this.mainPage
   }
 
   get platformName() {

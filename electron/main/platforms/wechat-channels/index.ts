@@ -159,8 +159,8 @@ export class WechatChannelPlatform
     )
   }
 
-  getPinCommentPage(): Result.Result<Page, PlatformError> {
-    return ensurePage(this.mainPage)
+  getPinCommentPage(): Page | null {
+    return this.mainPage
   }
 
   getCommentListenerPage(): Page {
@@ -168,11 +168,11 @@ export class WechatChannelPlatform
   }
 
   getPopupPage() {
-    return ensurePage(this.productsPage)
+    return this.productsPage
   }
 
   getCommentPage() {
-    return ensurePage(this.mainPage)
+    return this.mainPage
   }
 
   get platformName() {

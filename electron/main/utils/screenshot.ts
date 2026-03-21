@@ -5,6 +5,8 @@ import type { Page } from 'playwright'
 
 async function cleanupScreenshotDir() {
   const screenshotDirPath = path.join(app.getPath('logs'), 'screenshot')
+  // 如果目录不存在，创建目录
+  await fs.mkdir(screenshotDirPath, { recursive: true })
   const files = await fs.readdir(screenshotDirPath)
   // files 按照文件名排序（截图的文件名开头是日期）
   if (files.length >= 20) {

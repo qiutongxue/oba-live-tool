@@ -19,6 +19,10 @@ function setupIpcHandlers() {
     shell.openPath(app.getPath('logs'))
   })
 
+  typedIpcMainHandle(IPC_CHANNELS.app.openExternal, (_, url: string) => {
+    shell.openExternal(url)
+  })
+
   typedIpcMainHandle(IPC_CHANNELS.account.switch, (_, { account }) => {
     accountManager.setAccountName(account.id, account.name)
   })

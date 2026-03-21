@@ -23,7 +23,7 @@ export interface IPerformPopup {
   /** 弹窗指定商品序号 */
   performPopup(id: number, signal?: AbortSignal): Result.ResultAsync<void, Error>
   /** 获取弹窗任务所需的页面 */
-  getPopupPage(): Result.Result<Page, PlatformError>
+  getPopupPage(): Page | null
 }
 
 export function isPerformPopup(platform: IPlatform): platform is IPlatform & IPerformPopup {
@@ -35,7 +35,7 @@ export interface IPerformComment {
   /** 在互动评论区域发送评论，返回结果表示是否成功置顶 */
   performComment(message: string, pinTop?: boolean): Result.ResultAsync<boolean, PlatformError>
   /** 获取评论任务所需的页面 */
-  getCommentPage(): Result.Result<Page, PlatformError>
+  getCommentPage(): Page | null
 }
 
 export function isPerformComment(platform: IPlatform): platform is IPlatform & IPerformComment {
@@ -47,7 +47,7 @@ export interface IPinComment {
   /** 置顶评论 */
   pinComment(comment: string, signal?: AbortSignal): Result.ResultAsync<void, PlatformError>
   /** 获取置顶评论任务所需的页面 */
-  getPinCommentPage(): Result.Result<Page, PlatformError>
+  getPinCommentPage(): Page | null
 }
 
 export function isPinComment(platform: IPlatform): platform is IPlatform & IPinComment {

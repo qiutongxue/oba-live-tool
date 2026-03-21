@@ -25,12 +25,8 @@ export const taobaoElementFinder: IElementFinder = {
   async getIdFromGoodsItem(item: ElementHandle<SVGElement | HTMLElement>) {
     const idWrapper = await item.$(SELECTORS.goodsItem.ID)
     if (!idWrapper) {
-      return Result.fail(
-        new ElementNotFoundError({
-          elementName: '商品ID',
-          selector: SELECTORS.goodsItem.ID,
-        }),
-      )
+      // 淘宝企业和达人的商品序号位置不同，达人找不到就改成企业的
+      return commonElementFinder.getIdFromGoodsItem(item, SELECTORS.goodsItem.ID_ALTER)
     }
     const idText = (await idWrapper.textContent())?.match(/\d+/)?.[0] ?? ''
     const id = Number.parseInt(idText, 10)

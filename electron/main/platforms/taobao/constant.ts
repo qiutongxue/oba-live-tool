@@ -25,6 +25,7 @@ export const SELECTORS = {
   },
   goodsItem: {
     ID: 'div.list-item-img-index',
+    ID_ALTER: 'input[data-tblalog-id="sort_input"]',
     POPUP_BUTTON: 'button[data-tblalog-id="tanPin"]', // button[data-tblalog-id="jiangJie"]
   },
   overlays: {
