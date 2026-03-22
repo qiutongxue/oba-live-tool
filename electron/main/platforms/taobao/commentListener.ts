@@ -103,7 +103,7 @@ export class TaobaoCommentListener {
             // 鉴于无需关心主播的 publisherNick，这里统一用 tbNick
             nick_name: comment.tbNick,
             user_id: comment.publisherId,
-            time: new Date(Number(comment.timestamp)).toLocaleTimeString(),
+            time: Number(comment.timestamp),
             content: comment.content,
           })
         }

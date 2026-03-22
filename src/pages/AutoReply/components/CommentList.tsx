@@ -87,7 +87,9 @@ const MessageItem = memo(
                 {message.order_status}
               </Badge>
             )}
-            <span className="text-xs text-muted-foreground ml-auto">{message.time}</span>
+            <span className="text-xs text-muted-foreground ml-auto">
+              {new Date(message.time).toLocaleTimeString()}
+            </span>
           </div>
 
           <div className="mt-0.5 text-sm">

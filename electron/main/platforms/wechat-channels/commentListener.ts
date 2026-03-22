@@ -99,7 +99,7 @@ export class WeChatChannelCommentListener implements ICommentListener {
         nick_name: msg.nickname,
         user_id: msg.username,
         content: msg.content,
-        time: new Date().toLocaleString(),
+        time: Date.now(),
       }
       this.handleComment(message)
     })
@@ -116,7 +116,7 @@ export class WeChatChannelCommentListener implements ICommentListener {
         nick_name: msg.fromUserContact.contact.nickname,
         user_id: msg.fromUserContact.contact.usename,
         content,
-        time: new Date().toLocaleString(),
+        time: Date.now(),
       }
       this.handleComment(message)
     })

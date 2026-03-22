@@ -40,7 +40,7 @@ export function createCommentListenerTask(
   function broadcastMessage(message: LiveMessage) {
     const comment: LiveMessage = {
       ...message,
-      time: new Date().toLocaleTimeString(),
+      time: Date.now(),
     }
     windowManager.send(IPC_CHANNELS.tasks.autoReply.showComment, {
       accountId: account.id,

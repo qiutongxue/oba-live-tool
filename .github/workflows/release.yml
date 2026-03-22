@@ -58,7 +58,7 @@ jobs:
             release/*/*.blockmap
             release/*/latest*.yml
 
-          draft: false
-          # prerelease: ${{ env.IS_DEV == 'false' }}
+          # draft: true
+          # prerelease: ${{ env.IS_DEV == 'true' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # 自动注入的 GitHub Token

@@ -22,6 +22,10 @@ export const listeningSources: Record<ListeningSource, { name: string; tips: str
     name: '淘宝',
     tips: '淘宝监听目前暂时只支持用户评论消息',
   },
+  kuaishou: {
+    name: '快手',
+    tips: '快手监听目前暂时只支持用户评论消息',
+  },
 } as const
 
 type Ability = {
@@ -42,7 +46,11 @@ export const abilities: Record<LiveControlPlatform, Ability> = {
     },
   },
   eos: {},
-  kuaishou: {},
+  kuaishou: {
+    autoReply: {
+      source: ['kuaishou'],
+    },
+  },
   wxchannel: {
     autoReply: {
       source: ['wechat-channel'],

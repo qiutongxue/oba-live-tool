@@ -56,7 +56,7 @@ declare type SendBatchMessagesTask = {
 }
 
 declare interface CommentListenerConfig {
-  source: 'compass' | 'control' | 'wechat-channel' | 'xiaohongshu' | 'taobao'
+  source: 'compass' | 'control' | 'wechat-channel' | 'xiaohongshu' | 'taobao' | 'kuaishou'
   ws?: {
     port: number
   }
@@ -82,7 +82,7 @@ declare type LiveControlTask =
   | PinCommentTask
 
 declare type DouyinLiveMessage = {
-  time: string
+  time: number
 } & (
   | CommentMessage
   | RoomEnterMessage
@@ -153,7 +153,7 @@ declare type WechatChannelLiveMessage = {
   nick_name: string
   user_id: string
   content: string
-  time: string
+  time: number
 }
 
 declare type XiaohongshuCommentLiveMessage = {
@@ -162,7 +162,7 @@ declare type XiaohongshuCommentLiveMessage = {
   nick_name: string
   user_id: string
   content: string
-  time: string
+  time: number
 }
 
 declare type TaobaoCommentLiveMessage = {
@@ -171,7 +171,7 @@ declare type TaobaoCommentLiveMessage = {
   nick_name: string
   user_id: string
   content: string
-  time: string
+  time: number
 }
 
 declare type LiveMessage =
