@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.5.24
+
+[compare changes](https://github.com/qiutongxue/oba-live-tool/compare/v1.5.23...v1.5.24)
+
+### 🚀 Features
+
+- 添加快手小店的自动回复功能 ([a0bfcca](https://github.com/qiutongxue/oba-live-tool/commit/a0bfcca))
+
 ## v1.5.23
 
 [compare changes](https://github.com/qiutongxue/oba-live-tool/compare/v1.5.22...v1.5.23)
