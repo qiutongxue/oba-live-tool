@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.5.23
+
+[compare changes](https://github.com/qiutongxue/oba-live-tool/compare/v1.5.22...v1.5.23)
+
+### 🚀 Features
+
+- 分离AI对话和自动回复的AI配置 ([2ec6cc2](https://github.com/qiutongxue/oba-live-tool/commit/2ec6cc2))
+- 添加无效数据的清理功能 ([6f0e90b](https://github.com/qiutongxue/oba-live-tool/commit/6f0e90b))
+
+### 🐞 Bug Fixes
+
+- 修复在自动发言页面切换账号时对应的评论内容无法更新的问题 ([ad67174](https://github.com/qiutongxue/oba-live-tool/commit/ad67174))
+- **小红书:** 修复小红书无法发送评论的问题 #283 ([#283](https://github.com/qiutongxue/oba-live-tool/issues/283))
+
 ## v1.5.22
 
 [compare changes](https://github.com/qiutongxue/oba-live-tool/compare/v1.5.21...v1.5.22)

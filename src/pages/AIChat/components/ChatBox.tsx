@@ -5,6 +5,7 @@ import { LoadingIcon } from '@/components/icons/loading'
 import { Card, CardContent } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { type ChatMessage, useAIChatStore } from '@/hooks/useAIChat'
+import { useAIProvider } from '@/hooks/useAIProvider'
 import ChatInput from './ChatInput'
 import { Message } from './Message'
 
@@ -21,12 +22,12 @@ const useChatMessaging = () => {
     appendToChat,
     appendToReasoning,
     tryToHandleEmptyMessage,
-    config,
-    apiKeys,
-    customBaseURL,
     autoScroll,
     setAutoScroll,
   } = useAIChatStore()
+
+  // 从 useAIProvider 获取配置
+  const { config, apiKeys, customBaseURL } = useAIProvider('chat')
 
   useEventListener('wheel', ev => {
     if (ev.deltaY < 0 && autoScroll && status === 'replying') {

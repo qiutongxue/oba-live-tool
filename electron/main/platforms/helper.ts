@@ -67,8 +67,25 @@ export async function comment(
     // 发送评论
     Result.andThrough(_ =>
       Result.pipe(
+        // 直接点击发送评论按钮
         elementFinder.getClickableSubmitCommentButton(page),
         Result.inspect(btn => btn.dispatchEvent('click')),
+        // 下策：尝试直接用 Enter 发送评论
+        Result.orElse(err => {
+          if (err.name === 'ElementNotFoundError') {
+            return Result.pipe(
+              elementFinder.getCommentTextarea(page),
+              Result.andThen(textarea => {
+                return Result.try({
+                  try: () => textarea.press('Enter'),
+                  catch: _ => err,
+                  immediate: true,
+                })
+              }),
+            )
+          }
+          return Result.fail(err)
+        }),
       ),
     ),
   )
