@@ -5,7 +5,7 @@ import { useAutoMessageActions, useCurrentAutoMessage } from '@/hooks/useAutoMes
 import MessageEditor from './MessageEditor'
 
 const MessageListCard = React.memo(() => {
-  const messages = useCurrentAutoMessage(context => context.config.messages)
+  const { messages, unlimitedLength } = useCurrentAutoMessage(context => context.config)
   const { setMessages } = useAutoMessageActions()
 
   return (
@@ -33,7 +33,11 @@ const MessageListCard = React.memo(() => {
                 {'进入直播间 -> 欢迎家人进入直播间'}
               </p>
             </div>
-            <MessageEditor messages={messages} onChange={messages => setMessages(messages)} />
+            <MessageEditor
+              messages={messages}
+              unlimitedLength={unlimitedLength}
+              onChange={messages => setMessages(messages)}
+            />
           </div>
         </div>
       </CardContent>

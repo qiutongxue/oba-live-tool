@@ -4,17 +4,20 @@ import type React from 'react'
 import { useState } from 'react'
 import type { Message } from '@/hooks/useAutoMessage'
 
+const MAX_LENGTH = 50
+
 export default function MessageEditor({
   messages,
+  unlimitedLength,
   onChange,
 }: {
   messages: Message[]
+  unlimitedLength: boolean
   onChange: (messages: Message[]) => void
 }) {
   const [localMessages, setLocalMessages] = useState<Message[]>(messages)
   const [text, setText] = useState(() => messages.map(msg => msg.content).join('\n'))
 
-  // 当 messages prop 变化时，更新本地状态
   useUpdateEffect(() => {
     setLocalMessages(messages)
     setText(messages.map(msg => msg.content).join('\n'))
@@ -29,7 +32,12 @@ export default function MessageEditor({
   )
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const text = e.target.value
+    let text = e.target.value
+    if (!unlimitedLength) {
+      const lines = text.split('\n')
+      const limitedLines = lines.map(line => line.slice(0, MAX_LENGTH))
+      text = limitedLines.join('\n')
+    }
     setText(text)
     setLocalMessages(prev =>
       text.split('\n').map((content, i) =>
@@ -55,33 +63,43 @@ export default function MessageEditor({
     })
   }
 
+  const getLineLengthInfo = (index: number) => {
+    const line = localMessages[index]
+    if (!line) return null
+    const length = line.content.length
+    const isOverLimit = !unlimitedLength && length > MAX_LENGTH
+    return { length, isOverLimit }
+  }
+
   return (
     <div>
       <div className="border rounded flex">
         <div className="bg-gray-100 text-right px-1 py-1 font-mono text-gray-500 select-none">
-          {localMessages.map((msg, i) => (
-            <button
-              type="button"
-              title="置顶"
-              key={msg.id}
-              className="h-8 px-1 leading-8 cursor-pointer flex items-center justify-between group"
-              onClick={() => handleCheckboxChange(i, !msg.pinTop)}
-            >
-              {msg.pinTop ? (
-                <PinIcon
-                  size={16}
-                  className="text-gray-500 group-hover:text-gray-600"
-                  fill="currentColor"
-                />
-              ) : (
-                <PinOffIcon size={16} className="text-gray-400 group-hover:text-gray-600" />
-              )}
-              <span className="ml-2">{i + 1}</span>
-            </button>
-          ))}
+          {localMessages.map((msg, i) => {
+            const lengthInfo = getLineLengthInfo(i)
+            return (
+              <button
+                type="button"
+                title="置顶"
+                key={msg.id}
+                className="h-8 px-1 leading-8 cursor-pointer flex items-center justify-between group"
+                onClick={() => handleCheckboxChange(i, !msg.pinTop)}
+              >
+                {msg.pinTop ? (
+                  <PinIcon
+                    size={16}
+                    className="text-gray-500 group-hover:text-gray-600"
+                    fill="currentColor"
+                  />
+                ) : (
+                  <PinOffIcon size={16} className="text-gray-400 group-hover:text-gray-600" />
+                )}
+                <span className="ml-2">{i + 1}</span>
+              </button>
+            )
+          })}
         </div>
 
-        {/* textarea 如果单行内容过长会出现横向滚动条影响行号的对齐，故隐藏该滚动条 */}
         <style>
           {`.no-scrollbar::-webkit-scrollbar {
                 display: none;
@@ -97,6 +115,9 @@ export default function MessageEditor({
           style={{ lineHeight: '2rem' }}
         />
       </div>
+      {!unlimitedLength && (
+        <p className="text-xs text-muted-foreground mt-1">每行最多 {MAX_LENGTH} 个字符</p>
+      )}
     </div>
   )
 }
