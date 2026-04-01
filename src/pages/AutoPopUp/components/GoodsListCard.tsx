@@ -12,8 +12,21 @@ import ShortcutConfigTab from './ShortcutConfigTab'
 
 const CommonList = () => {
   const goodsIds = useCurrentAutoPopUp(context => context.config.goodsIds)
-  const { setGoodsIds } = useAutoPopUpActions()
+  const goodsItems = useCurrentAutoPopUp(context => context.config.goodsItems)
+  const { setGoodsIds, setGoodsItems } = useAutoPopUpActions()
   const { toast } = useToast()
+
+  // 合并 goodsItems 和 goodsIds：以 goodsItems 为主，goodsIds 作为兼容
+  const items = React.useMemo(() => {
+    if (goodsItems && goodsItems.length > 0) return goodsItems
+    return goodsIds.map(id => ({ id, repeatCount: 1, itemInterval: undefined }))
+  }, [goodsItems, goodsIds])
+
+  // 同步更新 goodsIds 和 goodsItems
+  const syncUpdate = useMemoizedFn((newItems: typeof items) => {
+    setGoodsItems(newItems)
+    setGoodsIds(newItems.map(item => item.id))
+  })
 
   const handleGoodsIdChange = useMemoizedFn((index: number, value: string) => {
     const numValue = Number(value)
@@ -21,27 +34,53 @@ const CommonList = () => {
       toast.error('请输入有效的商品序号')
       return
     }
-    const newIds = [...goodsIds]
-    if (newIds.includes(numValue)) {
+    if (items.some((item, i) => item.id === numValue && i !== index)) {
       toast.error('商品序号不能重复！')
       return
     }
-    newIds[index] = numValue
+    const newItems = items.map((item, i) => (i === index ? { ...item, id: numValue } : item))
+    syncUpdate(newItems)
+  })
 
-    setGoodsIds(newIds)
+  const handleRepeatCountChange = useMemoizedFn((index: number, value: number) => {
+    const count = Math.max(1, Math.min(Math.floor(value), 10000))
+    const newItems = items.map((item, i) =>
+      i === index ? { ...item, repeatCount: count } : item,
+    )
+    syncUpdate(newItems)
+  })
+
+  const handleItemIntervalChange = useMemoizedFn((index: number, min: number, max: number) => {
+    const minMs = Math.max(0, Math.floor(min)) * 1000
+    const maxMs = Math.max(0, Math.floor(max)) * 1000
+    const newItems = items.map((item, i) =>
+      i === index
+        ? {
+            ...item,
+            itemInterval:
+              minMs === 0 && maxMs === 0
+                ? undefined
+                : ([minMs, maxMs] as [number, number]),
+          }
+        : item,
+    )
+    syncUpdate(newItems)
   })
 
   const addGoodsId = useMemoizedFn(() => {
     let id = 1
-    while (goodsIds.includes(id)) id += 1
-    setGoodsIds([...goodsIds, id])
+    while (items.some(item => item.id === id)) id += 1
+    syncUpdate([...items, { id, repeatCount: 1, itemInterval: undefined }])
   })
+
   return (
     <>
       <div className="flex items-center justify-between">
         <div className="space-y-1">
           <Label>商品列表</Label>
-          <p className="text-sm text-muted-foreground">添加需要自动弹出的商品序号</p>
+          <p className="text-sm text-muted-foreground">
+            序号 x 循环次数 | 单品弹窗间隔（0 = 用全局间隔）
+          </p>
         </div>
         <Button variant="outline" size="sm" onClick={addGoodsId}>
           <PlusIcon className="mr-2 h-4 w-4" />
@@ -49,17 +88,18 @@ const CommonList = () => {
         </Button>
       </div>
 
-      <div className="space-y-4">
-        {goodsIds.map((id, index) => (
+      <div className="space-y-3">
+        {items.map((item, index) => (
           <GoodsListItem
             // biome-ignore lint/suspicious/noArrayIndexKey: 下标不影响
             key={index}
-            id={id}
+            item={item}
             index={index}
-            onChange={handleGoodsIdChange}
+            onChangeId={handleGoodsIdChange}
+            onChangeRepeatCount={handleRepeatCountChange}
+            onChangeItemInterval={handleItemIntervalChange}
             onDelete={() => {
-              const newGoodsIds = goodsIds.filter((_, i) => i !== index)
-              setGoodsIds(newGoodsIds)
+              syncUpdate(items.filter((_, i) => i !== index))
             }}
           />
         ))}

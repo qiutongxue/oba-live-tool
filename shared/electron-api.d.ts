@@ -99,6 +99,9 @@ export interface IpcChannels {
   // 视频号上墙
   [IPC_CHANNELS.tasks.pinComment]: (params: { accountId: string; content: string }) => void
 
+  // 一键发红包
+  [IPC_CHANNELS.tasks.redPacket.send]: (accountId: string, duration: string) => boolean
+
   // Updater
   [IPC_CHANNELS.updater.checkUpdate]: () => Promise<
     { latestVersion: string; currentVersion: string; releaseNote?: string } | undefined

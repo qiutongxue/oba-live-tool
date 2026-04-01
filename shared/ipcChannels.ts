@@ -40,6 +40,10 @@ export const IPC_CHANNELS = {
     },
     // 视频号上墙
     pinComment: 'tasks:pinComment',
+    // 一键发红包
+    redPacket: {
+      send: 'tasks:redPacket:send',
+    },
   },
   config: {
     save: 'config:save',

@@ -5,6 +5,7 @@ import AutoPopUp from '@/pages/AutoPopUp'
 import AutoReply from '@/pages/AutoReply'
 import AutoReplySettings from '@/pages/AutoReply/AutoReplySettings'
 import LiveControl from '@/pages/LiveControl'
+import RedPacket from '@/pages/RedPacket'
 import Settings from '@/pages/SettingsPage'
 import App from '../App'
 
@@ -40,6 +41,10 @@ export const router = createHashRouter([
       {
         path: '/auto-reply/settings',
         element: <AutoReplySettings />,
+      },
+      {
+        path: '/red-packet',
+        element: <RedPacket />,
       },
     ],
   },

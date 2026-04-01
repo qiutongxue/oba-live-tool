@@ -54,6 +54,17 @@ export function isPinComment(platform: IPlatform): platform is IPlatform & IPinC
   return '_isPinComment' in platform && platform._isPinComment === true
 }
 
+export interface ISendRedPacket {
+  _isSendRedPacket: true
+  /** 一键发红包：点击发红包按钮，选择店铺红包，投放已有红包，选择限时领取时长 */
+  sendRedPacket(duration: string, signal?: AbortSignal): Result.ResultAsync<void, PlatformError>
+  getRedPacketPage(): Page | null
+}
+
+export function isSendRedPacket(platform: IPlatform): platform is IPlatform & ISendRedPacket {
+  return '_isSendRedPacket' in platform && platform._isSendRedPacket === true
+}
+
 export interface IPlatform {
   get platformName(): string
   /** 连接到中控台，最终停留在中控台页面 */
