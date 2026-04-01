@@ -24,7 +24,7 @@
     "slow-server": "node ./scripts/slow-server.js"
   },
   "dependencies": {
-    "electron-updater": "6.6.2",
+    "electron-updater": "6.8.3",
     "playwright": "^1.50.0",
     "playwright-extra": "^4.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2"
