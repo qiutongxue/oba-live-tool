@@ -15,20 +15,11 @@
 
 ## 📸 界面预览
 
+![主界面预览](./screenshot/main_page.png)
 
-![主要修改1、增加单商品循环次数和独立间隔](./screenshot/TANCHUANGYEMIAN.png)
+![ai](./screenshot/ai_assistant.png)
 
-![主要修改2、增加抖店一键发红包功能](./screenshot/HOGNBAO.png)
-
-![涉及到新增和修改的文件](./screenshot/gengxingoneng.png)
-
-## ✨ 功能
-
-重大修改 
-
-1、新增抖店自动发红包功能，因为红包涉及到金额以免填错，所以建议大家后台自己提前设置好红包，主播可以一键发红包，逻辑是先废除生效红包，然后根据表格内的时间自动选取去发1-6小时生效红包，且为了误触，设计了冷却时间  可以自行修改  比如一分钟内不能再发，
-
-2、根据抖店很多时候排品虽多，但是可能主推品和次推品之间还是要有弹窗比例的，所以增加单品循环次数
+![自动回复](./screenshot/auto_reply_new.png)
 
 ## ✨ 功能
 
