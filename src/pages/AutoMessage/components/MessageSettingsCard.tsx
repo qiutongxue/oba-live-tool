@@ -1,5 +1,15 @@
 import { useMemoizedFn } from 'ahooks'
-import React, { useId } from 'react'
+import React, { useId, useState } from 'react'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -7,10 +17,27 @@ import { Switch } from '@/components/ui/switch'
 import { useAutoMessageActions, useCurrentAutoMessage } from '@/hooks/useAutoMessage'
 
 const MessageSettingsCard = React.memo(() => {
-  const { scheduler, random, extraSpaces } = useCurrentAutoMessage(context => context.config)
-  const { setScheduler, setRandom, setExtraSpaces } = useAutoMessageActions()
+  const { scheduler, random, extraSpaces, unlimitedLength } = useCurrentAutoMessage(
+    context => context.config,
+  )
+  const { setScheduler, setRandom, setExtraSpaces, setUnlimitedLength } = useAutoMessageActions()
   const randomId = useId()
   const extraSpacesId = useId()
+  const unlimitedLengthId = useId()
+  const [showWarning, setShowWarning] = useState(false)
+
+  const handleUnlimitedLengthChange = useMemoizedFn((checked: boolean) => {
+    if (checked) {
+      setShowWarning(true)
+    } else {
+      setUnlimitedLength(false)
+    }
+  })
+
+  const handleConfirmUnlimited = useMemoizedFn(() => {
+    setUnlimitedLength(true)
+    setShowWarning(false)
+  })
 
   const handleIntervalChange = useMemoizedFn((index: 0 | 1, value: string) => {
     const numValue = Number(value) * 1000
@@ -69,8 +96,34 @@ const MessageSettingsCard = React.memo(() => {
               插入随机空格
             </Label>
           </div>
+
+          <div className="flex items-center space-x-2">
+            <Switch
+              id={unlimitedLengthId}
+              checked={unlimitedLength}
+              onCheckedChange={handleUnlimitedLengthChange}
+            />
+            <Label htmlFor={unlimitedLengthId} className="cursor-pointer">
+              解除字数限制
+            </Label>
+          </div>
         </div>
       </CardContent>
+
+      <AlertDialog open={showWarning} onOpenChange={setShowWarning}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>警告</AlertDialogTitle>
+            <AlertDialogDescription>
+              解除字数限制后，将不再对消息内容进行字数限制。请确保您输入的内容能够在目标平台正常发布，过长的内容可能导致发送失败或被截断。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmUnlimited}>确认解除</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   )
 })

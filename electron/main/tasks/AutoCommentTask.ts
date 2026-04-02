@@ -66,7 +66,8 @@ export function createAutoCommentTask(
     const validateMessage = (messages: AutoCommentConfig['messages']) => {
       const isEmptyArray = messages.length === 0
       const overLengthIndex = messages.findIndex(
-        msg => msg.content.length > 50 && maxLength(msg.content) > 50,
+        msg =>
+          !userConfig.unlimitedLength && msg.content.length > 50 && maxLength(msg.content) > 50,
       )
       const emptyContentIndex = messages.findIndex(msg => msg.content.trim().length === 0)
       if (isEmptyArray) return '必须提供至少一条消息'
