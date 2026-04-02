@@ -32,12 +32,7 @@ export default function MessageEditor({
   )
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    let text = e.target.value
-    if (!unlimitedLength) {
-      const lines = text.split('\n')
-      const limitedLines = lines.map(line => line.slice(0, MAX_LENGTH))
-      text = limitedLines.join('\n')
-    }
+    const text = e.target.value
     setText(text)
     setLocalMessages(prev =>
       text.split('\n').map((content, i) =>
@@ -69,6 +64,16 @@ export default function MessageEditor({
     const length = line.content.length
     const isOverLimit = !unlimitedLength && length > MAX_LENGTH
     return { length, isOverLimit }
+  }
+
+  const getOverLimitLines = () => {
+    if (unlimitedLength) return []
+    return localMessages
+      .map((msg, index) => ({
+        index: index + 1,
+        length: msg.content.length,
+      }))
+      .filter(item => item.length > MAX_LENGTH)
   }
 
   return (
@@ -116,7 +121,18 @@ export default function MessageEditor({
         />
       </div>
       {!unlimitedLength && (
-        <p className="text-xs text-muted-foreground mt-1">每行最多 {MAX_LENGTH} 个字符</p>
+        <div className="mt-1 space-y-1">
+          <p className="text-xs text-muted-foreground">每行最多 {MAX_LENGTH} 个字符</p>
+          {getOverLimitLines().length > 0 && (
+            <p className="text-xs text-destructive">
+              第{' '}
+              {getOverLimitLines()
+                .map(item => item.index)
+                .join('、')}{' '}
+              行超出字数限制
+            </p>
+          )}
+        </div>
       )}
     </div>
   )
