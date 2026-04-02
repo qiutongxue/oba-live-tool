@@ -37,6 +37,7 @@ declare type AutoCommentConfig = {
   }[]
   random?: boolean
   extraSpaces?: boolean
+  unlimitedLength?: boolean
 }
 
 declare type AutoCommentTask = {
