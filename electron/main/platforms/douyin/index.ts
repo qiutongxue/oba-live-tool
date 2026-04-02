@@ -141,11 +141,11 @@ export class DouyinPlatform
   ): Result.ResultAsync<void, PlatformError> {
     return Result.pipe(
       ensurePage(this.mainPage),
-      Result.andThen(page => this.performSendRedPacket(page, duration, signal)),
+      Result.andThen(page => DouyinPlatform.performSendRedPacket(page, duration, signal)),
     )
   }
 
-  private async performSendRedPacket(
+  private static async performSendRedPacket(
     page: Page,
     duration: string,
     _signal?: AbortSignal,
