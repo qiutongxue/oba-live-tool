@@ -1,8 +1,12 @@
 import { Result } from '@praha/byethrow'
 import type { Page } from 'playwright'
-import type { BrowserSession } from '#/managers/BrowserSessionManager'
 import { UnexpectedError } from '#/errors/AppError'
-import { ElementNotFoundError, type PlatformError } from '#/errors/PlatformError'
+import {
+  ElementDisabledError,
+  ElementNotFoundError,
+  type PlatformError,
+} from '#/errors/PlatformError'
+import type { BrowserSession } from '#/managers/BrowserSessionManager'
 import { sleep } from '#/utils'
 import {
   comment,
@@ -131,7 +135,10 @@ export class DouyinPlatform
     throw new Error('Method not implemented.')
   }
 
-  async sendRedPacket(duration: string, signal?: AbortSignal): Result.ResultAsync<void, PlatformError> {
+  async sendRedPacket(
+    duration: string,
+    signal?: AbortSignal,
+  ): Result.ResultAsync<void, PlatformError> {
     return Result.pipe(
       ensurePage(this.mainPage),
       Result.andThen(page => this.performSendRedPacket(page, duration, signal)),
@@ -148,11 +155,16 @@ export class DouyinPlatform
       try: async () => {
         // 1. 点击中控台的"发红包"按钮
         const redPacketBtn = await page.waitForSelector(
-          'button:has-text("发红包"), div[class*="redPacket"], [data-e2e="red-packet-btn"], :text("发红包")',
+          'div[class*="liveTools"] div[class^="container"]:has-text("发红包")',
           { timeout: 5000 },
         )
-        if (!redPacketBtn)
-          throw new ElementNotFoundError({ elementName: '发红包按钮' })
+        if (!redPacketBtn) throw new ElementNotFoundError({ elementName: '发红包按钮' })
+        if ((await redPacketBtn.getAttribute('aria-disabled')) === 'true') {
+          throw new ElementDisabledError({
+            elementName: '发红包按钮',
+            element: await redPacketBtn.evaluate(el => el.outerHTML),
+          })
+        }
         await redPacketBtn.click()
         await sleep(1500)
 
@@ -161,8 +173,7 @@ export class DouyinPlatform
           ':text("店铺红包"), div[role="tab"]:has-text("店铺红包"), span:has-text("店铺红包")',
           { timeout: 5000 },
         )
-        if (!shopTab)
-          throw new ElementNotFoundError({ elementName: '店铺红包标签' })
+        if (!shopTab) throw new ElementNotFoundError({ elementName: '店铺红包标签' })
         await shopTab.click()
         await sleep(1500)
 
@@ -189,49 +200,50 @@ export class DouyinPlatform
         }
 
         // 4. 找到第一个"未生效"红包行，点击其"投放"按钮
-        const inactiveRow = await page.waitForSelector(
-          'tr.auxo-table-row:has-text("未生效")',
-          { timeout: 5000 },
-        )
-        if (!inactiveRow)
-          throw new ElementNotFoundError({ elementName: '未生效红包' })
+        const inactiveRow = await page.waitForSelector('tr.auxo-table-row:has-text("未生效")', {
+          timeout: 5000,
+        })
+        if (!inactiveRow) throw new ElementNotFoundError({ elementName: '未生效红包' })
         const deployBtn = await inactiveRow.$('button:has-text("投放")')
-        if (!deployBtn)
-          throw new ElementNotFoundError({ elementName: '投放按钮' })
+        if (!deployBtn) throw new ElementNotFoundError({ elementName: '投放按钮' })
         await deployBtn.click()
         await sleep(1500)
 
         // 5. 在投放设置弹窗中，找到"限时领取"那个下拉框（当前值是"10分钟"）
         // 弹窗内有2个 select：第1个是"设置后 5 推荐"，第2个是"限时领取 10分钟"
         // 精确定位：找包含 span[title="10分钟"] 的那个 select
-        const dropdown = await page.waitForSelector(
-          'div.auxo-select:has(span[title="10分钟"]) .auxo-select-selector',
-          { timeout: 5000 },
-        ).catch(() => null)
+        const dropdown =
+          (await page
+            .waitForSelector('div.auxo-select:has(span[title="10分钟"]) .auxo-select-selector', {
+              timeout: 5000,
+            })
+            .catch(() => null)) ??
           // 回退：通过 evaluate 找弹窗内第二个 select-selector
-          ?? await page.evaluateHandle(() => {
-            const modal = document.querySelector('.auxo-modal-body')
-            if (!modal) return null
-            const selectors = modal.querySelectorAll('.auxo-select-selector')
-            return selectors.length >= 2 ? selectors[selectors.length - 1] : selectors[0] ?? null
-          }).then(h => h.asElement()).catch(() => null)
-        if (!dropdown)
-          throw new ElementNotFoundError({ elementName: '限时领取下拉框' })
+          (await page
+            .evaluateHandle(() => {
+              const modal = document.querySelector('.auxo-modal-body')
+              if (!modal) return null
+              const selectors = modal.querySelectorAll('.auxo-select-selector')
+              return selectors.length >= 2
+                ? selectors[selectors.length - 1]
+                : (selectors[0] ?? null)
+            })
+            .then(h => h.asElement())
+            .catch(() => null))
+        if (!dropdown) throw new ElementNotFoundError({ elementName: '限时领取下拉框' })
         await dropdown.click()
         await sleep(1000)
 
         // 6. 在下拉列表中选择指定的限时领取时长
         // 下拉选项渲染在 body 层的 .auxo-select-dropdown 中
-        const durationOption = await page.waitForSelector(
-          `div.auxo-select-item-option[title="${duration}"]`,
-          { timeout: 5000 },
-        ).catch(() => null)
-          ?? await page.waitForSelector(
-            `div.auxo-select-item[label="${duration}"]`,
-            { timeout: 3000 },
-          ).catch(() => null)
-        if (!durationOption)
-          throw new ElementNotFoundError({ elementName: `${duration}选项` })
+        const durationOption =
+          (await page
+            .waitForSelector(`div.auxo-select-item-option[title="${duration}"]`, { timeout: 5000 })
+            .catch(() => null)) ??
+          (await page
+            .waitForSelector(`div.auxo-select-item[label="${duration}"]`, { timeout: 3000 })
+            .catch(() => null))
+        if (!durationOption) throw new ElementNotFoundError({ elementName: `${duration}选项` })
         await durationOption.click()
         await sleep(500)
 
@@ -240,8 +252,7 @@ export class DouyinPlatform
           'div.auxo-modal-footer button.auxo-btn-primary:has-text("确定"), button.auxo-btn-primary:has-text("确定")',
           { timeout: 5000 },
         )
-        if (!confirmBtn)
-          throw new ElementNotFoundError({ elementName: '确定按钮' })
+        if (!confirmBtn) throw new ElementNotFoundError({ elementName: '确定按钮' })
         await confirmBtn.click()
         await sleep(500)
       },
