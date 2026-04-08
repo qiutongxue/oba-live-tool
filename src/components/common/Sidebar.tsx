@@ -9,6 +9,7 @@ import {
   CarbonBlockStorage,
   CarbonChat,
   CarbonContentDeliveryNetwork,
+  CarbonGift,
   CarbonIbmEventAutomation,
   CarbonIbmWatsonTextToSpeech,
   CarbonSettings,
@@ -52,6 +53,12 @@ export default function Sidebar() {
       isRunning: isAutoReplyRunning,
       icon: <CarbonIbmEventAutomation className="w-5 h-5" />,
       platform: autoReplyPlatforms,
+    },
+    {
+      id: '/red-packet',
+      name: '一键发红包',
+      icon: <CarbonGift className="w-5 h-5" />,
+      platform: ['douyin', 'buyin'],
     },
     {
       id: '/ai-chat',

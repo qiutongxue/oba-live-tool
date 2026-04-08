@@ -147,6 +147,18 @@ export function CarbonPlayFilledAlt(props: SVGProps<SVGSVGElement>) {
   )
 }
 
+export function CarbonGift(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 32 32" {...props}>
+      <title>Gift</title>
+      <path
+        fill="currentColor"
+        d="M26 12h-4.46a5 5 0 0 0 .46-2a4 4 0 0 0-7-2.65A4 4 0 0 0 8 10a5 5 0 0 0 .46 2H6a2 2 0 0 0-2 2v4a1 1 0 0 0 1 1v9a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2v-9a1 1 0 0 0 1-1v-4a2 2 0 0 0-2-2m-10 2h-2v-2h2zm0-4h-1a2 2 0 0 1 0-4a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1m3-4a2 2 0 0 1 0 4h-1a1 1 0 0 1-1-1V9a2 2 0 0 1 2-2M6 14v-2h9v2zm1 2h8v12H7zm18 12h-8V16h8zm1-12H17v-2h9z"
+      />
+    </svg>
+  )
+}
+
 export function CarbonStopFilledAlt(props: SVGProps<SVGSVGElement>) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 32 32" {...props}>

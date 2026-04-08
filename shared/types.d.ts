@@ -14,11 +14,20 @@ declare type LiveControlPlatform =
   | 'taobao'
   | 'dev'
 
+declare type GoodsItem = {
+  id: number
+  /** 单品循环弹窗次数，默认 1 */
+  repeatCount?: number
+  /** 单品弹窗间隔 [min, max] 毫秒，不设则用全局间隔 */
+  itemInterval?: [number, number]
+}
+
 declare type AutoPopupConfig = {
   scheduler: {
     interval: [number, number]
   }
   goodsIds: number[]
+  goodsItems?: GoodsItem[]
   random?: boolean
 }
 
@@ -37,6 +46,7 @@ declare type AutoCommentConfig = {
   }[]
   random?: boolean
   extraSpaces?: boolean
+  unlimitedLength?: boolean
 }
 
 declare type AutoCommentTask = {

@@ -15,6 +15,7 @@ import {
   isPerformComment,
   isPerformPopup,
   isPinComment,
+  isSendRedPacket,
 } from '#/platforms/IPlatform'
 import { createAutoCommentTask } from '#/tasks/AutoCommentTask'
 import { createAutoPopupTask } from '#/tasks/AutoPopupTask'
@@ -140,6 +141,13 @@ export class AccountSession {
     } else {
       this.logger.warn('无法停止任务：未找到正在运行中的任务')
     }
+  }
+
+  public async sendRedPacket(duration: string): Result.ResultAsync<void, Error> {
+    if (!isSendRedPacket(this.platform)) {
+      return Result.fail(new TaskNotSupportedError({ taskName: '一键发红包', targetName: this.platform.platformName }))
+    }
+    return this.platform.sendRedPacket(duration)
   }
 
   public updateTaskConfig<T extends LiveControlTask>(

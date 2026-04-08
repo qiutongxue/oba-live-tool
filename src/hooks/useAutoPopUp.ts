@@ -19,11 +19,18 @@ export interface ShortcutMapping {
   goodsIds: number[]
 }
 
+interface AutoPopUpGoodsItem {
+  id: number
+  repeatCount?: number
+  itemInterval?: [number, number]
+}
+
 interface AutoPopUpConfig {
   scheduler: {
     interval: [number, number]
   }
   goodsIds: number[]
+  goodsItems?: AutoPopUpGoodsItem[]
   random: boolean
 }
 
@@ -170,6 +177,7 @@ export const useAutoPopUpActions = () => {
       setIsRunning: (running: boolean) => setIsRunning(currentAccountId, running),
       setScheduler: (scheduler: AutoPopUpConfig['scheduler']) => updateConfig({ scheduler }),
       setGoodsIds: (goodsIds: AutoPopUpConfig['goodsIds']) => updateConfig({ goodsIds }),
+      setGoodsItems: (goodsItems: AutoPopUpGoodsItem[]) => updateConfig({ goodsItems }),
       setRandom: (random: boolean) => updateConfig({ random }),
       // 添加设置快捷键映射的方法
       setShortcuts: (shortcuts: ShortcutMapping[]) => setShortcuts(currentAccountId, shortcuts),

@@ -20,6 +20,7 @@ interface AutoMessageConfig {
   messages: Message[]
   random: boolean
   extraSpaces: boolean
+  unlimitedLength: boolean
 }
 
 interface AutoMessageContext {
@@ -37,6 +38,7 @@ const defaultContext = (): AutoMessageContext => ({
     messages: [],
     random: false,
     extraSpaces: false,
+    unlimitedLength: false,
   },
 })
 
@@ -161,6 +163,7 @@ export const useAutoMessageActions = () => {
       setMessages: (messages: Message[]) => updateConfig({ messages }),
       setRandom: (random: boolean) => updateConfig({ random }),
       setExtraSpaces: (extraSpaces: boolean) => updateConfig({ extraSpaces }),
+      setUnlimitedLength: (unlimitedLength: boolean) => updateConfig({ unlimitedLength }),
       setBatchCount: (count: number) => setBatchCount(currentAccountId, count),
     }),
     [currentAccountId, setIsRunning, updateConfig, setBatchCount],

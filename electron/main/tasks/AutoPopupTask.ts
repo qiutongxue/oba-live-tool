@@ -15,6 +15,30 @@ const retryOptions = {
   retryDelay: 1000,
 }
 
+/**
+ * 将 goodsItems 展开为执行序列：每个 item 按 repeatCount 展开
+ * 返回 { id, interval } 数组
+ */
+function buildExecutionQueue(config: AutoPopupConfig): { id: number; interval: [number, number] }[] {
+  const globalInterval = config.scheduler.interval
+  const items = config.goodsItems
+  if (!items || items.length === 0) {
+    // 兼容旧配置：没有 goodsItems 时用 goodsIds
+    return config.goodsIds.map(id => ({ id, interval: globalInterval }))
+  }
+  const queue: { id: number; interval: [number, number] }[] = []
+  for (const item of items) {
+    const count = Math.max(1, Math.min(item.repeatCount ?? 1, 10000))
+    const interval = item.itemInterval && item.itemInterval[0] > 0 && item.itemInterval[1] > 0
+      ? item.itemInterval
+      : globalInterval
+    for (let i = 0; i < count; i++) {
+      queue.push({ id: item.id, interval })
+    }
+  }
+  return queue
+}
+
 export function createAutoPopupTask(
   platform: IPerformPopup,
   taskConfig: AutoPopupConfig,
@@ -22,8 +46,9 @@ export function createAutoPopupTask(
   _logger: ScopedLogger,
 ) {
   const logger = _logger.scope(TASK_NAME)
-  let arrayIndex = -1
   let config = { ...taskConfig }
+  let queue = buildExecutionQueue(config)
+  let queueIndex = -1
 
   const intervalTaskResult = createIntervalTask(execute, {
     interval: config.scheduler.interval,
@@ -38,15 +63,18 @@ export function createAutoPopupTask(
   const intervalTask = intervalTaskResult.value
 
   async function execute(signal: AbortSignal) {
+    const next = getNext()
+    // 更新当前执行项的间隔
+    intervalTask.updateInterval(next.interval)
+
     const result = await runWithRetry(
       async () => {
         if (signal.aborted) {
           return Result.fail(new AbortError())
         }
-        const goodsId = getNextGoodsId()
-        const result = await platform.performPopup(goodsId, signal)
+        const result = await platform.performPopup(next.id, signal)
         if (Result.isSuccess(result)) {
-          logger.success(`商品 ${goodsId} 讲解成功`)
+          logger.success(`商品 ${next.id} 讲解成功`)
         }
         return result
       },
@@ -63,25 +91,28 @@ export function createAutoPopupTask(
     return result
   }
 
-  function getNextGoodsId(): number {
+  function getNext(): { id: number; interval: [number, number] } {
     if (config.random) {
-      arrayIndex = randomInt(0, config.goodsIds.length - 1)
+      queueIndex = randomInt(0, queue.length - 1)
     } else {
-      arrayIndex = (arrayIndex + 1) % config.goodsIds.length
+      queueIndex = (queueIndex + 1) % queue.length
     }
-    return config.goodsIds[arrayIndex]
+    return queue[queueIndex]
   }
 
   function validateConfig(userConfig: AutoPopupConfig) {
     return Result.pipe(
       intervalTask.validateInterval(userConfig.scheduler.interval),
       Result.andThen(() => {
-        if (userConfig.goodsIds.length === 0)
+        const hasItems = userConfig.goodsItems && userConfig.goodsItems.length > 0
+        const hasIds = userConfig.goodsIds.length > 0
+        if (!hasItems && !hasIds)
           return Result.fail(new Error('商品配置验证失败: 必须提供至少一个商品ID'))
         return Result.succeed()
       }),
       Result.inspect(() => {
-        logger.info(`商品配置验证通过，共加载 ${userConfig.goodsIds.length} 个商品`)
+        const q = buildExecutionQueue(userConfig)
+        logger.info(`商品配置验证通过，共加载 ${q.length} 个弹窗任务`)
       }),
     )
   }
@@ -93,6 +124,8 @@ export function createAutoPopupTask(
       Result.andThen(_ => intervalTask.validateInterval(mergedConfig.scheduler.interval)),
       Result.inspect(() => {
         config = mergedConfig
+        queue = buildExecutionQueue(config)
+        queueIndex = -1
         // 更新配置后重新启动任务
         intervalTask.restart()
       }),

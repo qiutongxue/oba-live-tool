@@ -55,7 +55,10 @@ function setupIpcHandlers() {
             Result.pipe(
               accountManager.getSession(accountId),
               Result.andThen(accountSession =>
-                accountSession.updateTaskConfig(TASK_TYPE, { goodsIds: sc.goodsIds }),
+                accountSession.updateTaskConfig(TASK_TYPE, {
+                  goodsIds: sc.goodsIds,
+                  goodsItems: [], // 清空单品循环配置，保证快捷键正常执行
+                }),
               ),
               Result.inspect(_ => logger.info(`切换到商品组[${sc.goodsIds.join(',')}]`)),
               Result.inspectError(error => {

@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.6.0
+
+[compare changes](https://github.com/qiutongxue/oba-live-tool/compare/v1.5.24...v1.6.0)
+
+### 🚀 Features
+
+- **自动发言:** 增加解除字数限制的开关 ([#301](https://github.com/qiutongxue/oba-live-tool/pull/301))
+- **自动弹窗:** 新增自动弹窗的单品循环功能（感谢 [@zuowangyan](https://github.com/zuowangyan)）
+- **抖店/百应:** 增加发红包功能（感谢 [@zuowangyan](https://github.com/zuowangyan)）
+
 ## v1.5.24
 
 [compare changes](https://github.com/qiutongxue/oba-live-tool/compare/v1.5.23...v1.5.24)
