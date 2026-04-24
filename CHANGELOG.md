@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.6.1
+
+[compare changes](https://github.com/qiutongxue/oba-live-tool/compare/v1.6.0...v1.6.1)
+
+### 🚀 Features
+
+- 模型列表更新 DeepSeek-V4，（deepseek-chat 和 deepseek-reasoner 即将弃用）
+- 将 AI 提供商的模型列表更新转移到线上（ ([5e5ecf1](https://github.com/qiutongxue/oba-live-tool/commit/5e5ecf1))
+
 ## v1.6.0
 
 [compare changes](https://github.com/qiutongxue/oba-live-tool/compare/v1.5.24...v1.6.0)
