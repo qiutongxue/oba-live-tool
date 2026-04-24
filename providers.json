@@ -3,13 +3,15 @@
     "name": "DeepSeek",
     "baseURL": "https://api.deepseek.com",
     "apiUrl": "https://platform.deepseek.com/api_keys",
-    "models": ["deepseek-v4-flash", "deepseek-v4-pro", "deepseek-chat", "deepseek-reasoner"]
+    "models": ["deepseek-v4-flash", "deepseek-v4-pro"]
   },
   "openrouter": {
     "name": "OpenRouter",
     "baseURL": "https://openrouter.ai/api/v1",
     "apiUrl": "https://openrouter.ai/keys",
     "models": [
+      "deepseek/deepseek-v4-pro",
+      "deepseek/deepseek-v4-flash",
       "nex-agi/deepseek-v3.1-nex-n1",
       "deepseek/deepseek-v3.2-speciale",
       "deepseek/deepseek-v3.2",
@@ -42,9 +44,7 @@
       "deepseek-ai/DeepSeek-R1-0528-Qwen3-8B",
       "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B",
       "deepseek-ai/DeepSeek-R1-Distill-Qwen-14B",
-      "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B",
-      "deepseek-ai/DeepSeek-V2.5",
-      "deepseek-ai/deepseek-vl2"
+      "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B"
     ]
   },
   "volcengine": {
