@@ -10,6 +10,8 @@ export const providers = {
     baseURL: 'https://openrouter.ai/api/v1',
     apiUrl: 'https://openrouter.ai/keys',
     models: [
+      'deepseek/deepseek-v4-pro',
+      'deepseek/deepseek-v4-flash',
       'nex-agi/deepseek-v3.1-nex-n1',
       'deepseek/deepseek-v3.2-speciale',
       'deepseek/deepseek-v3.2',
@@ -43,7 +45,6 @@ export const providers = {
       'deepseek-ai/DeepSeek-R1-Distill-Qwen-32B',
       'deepseek-ai/DeepSeek-R1-Distill-Qwen-14B',
       'deepseek-ai/DeepSeek-R1-Distill-Qwen-7B',
-      'deepseek-ai/DeepSeek-V2.5',
     ],
   },
   volcengine: {
