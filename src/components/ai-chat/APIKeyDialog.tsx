@@ -1,7 +1,6 @@
 import { CheckIcon, Eye, EyeOff, SettingsIcon } from 'lucide-react'
 import { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
-import { providers } from 'shared/providers'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -23,16 +22,17 @@ import {
 } from '@/components/ui/select'
 import type { AIConfigType, AIProvider, ProviderConfig } from '@/hooks/useAIProvider'
 import { useAIProvider } from '@/hooks/useAIProvider'
+import { useProviders } from '@/hooks/useProviders'
 import { useToast } from '@/hooks/useToast'
 import { ScrollArea } from '../ui/scroll-area'
 
 const PresetModelSelector = memo(
   ({
-    provider,
+    models,
     model,
     onChange,
   }: {
-    provider: keyof typeof providers
+    models: string[]
     model: string
     onChange: (model: string) => void
   }) => {
@@ -45,9 +45,9 @@ const PresetModelSelector = memo(
           </SelectTrigger>
           <SelectContent>
             <ScrollArea className="h-[200px]">
-              {providers[provider].models.map(model => (
-                <SelectItem key={model} value={model}>
-                  {model}
+              {models.map(m => (
+                <SelectItem key={m} value={m}>
+                  {m}
                 </SelectItem>
               ))}
             </ScrollArea>
@@ -114,9 +114,11 @@ const CustomModelInput = memo(
 const ModelSelector = memo(
   ({
     tempConfig,
+    models,
     onModelChange,
   }: {
     tempConfig: ProviderConfig
+    models: string[]
     onModelChange: (model: string) => void
   }) => {
     const handleModelChange = useCallback(
@@ -146,7 +148,7 @@ const ModelSelector = memo(
 
     return (
       <PresetModelSelector
-        provider={tempConfig.provider as keyof typeof providers}
+        models={models}
         model={tempConfig.modelPreferences[tempConfig.provider] || ''}
         onChange={handleModelChange}
       />
@@ -157,6 +159,8 @@ const ModelSelector = memo(
 const ApiKeyInput = memo(
   ({
     provider,
+    providerName,
+    apiUrl,
     apiKey,
     onChange,
     onTest,
@@ -164,6 +168,8 @@ const ApiKeyInput = memo(
     testLoading,
   }: {
     provider: AIProvider
+    providerName: string
+    apiUrl: string
     apiKey: string
     onChange: (key: string) => void
     onTest: () => void
@@ -171,7 +177,6 @@ const ApiKeyInput = memo(
     testLoading: boolean
   }) => {
     const isCustom = provider === 'custom'
-    const providerInfo = providers[provider as keyof typeof providers]
     const [showPassword, setShowPassword] = useState(false)
 
     return (
@@ -198,7 +203,7 @@ const ApiKeyInput = memo(
             type={showPassword ? 'text' : 'password'}
             value={apiKey}
             onChange={e => onChange(e.target.value)}
-            placeholder={`请输入您的 ${providerInfo?.name || '自定义服务'} API Key`}
+            placeholder={`请输入您的 ${providerName} API Key`}
             className="font-mono pr-10"
           />
           <Button
@@ -211,16 +216,16 @@ const ApiKeyInput = memo(
             {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
           </Button>
         </div>
-        {!isCustom && providerInfo && (
+        {!isCustom && (
           <p className="text-xs text-muted-foreground">
             您可以在
             <a
-              href={providerInfo.apiUrl}
+              href={apiUrl}
               rel="noreferrer"
               target="_blank"
               className="px-1 text-primary hover:underline"
             >
-              {providerInfo.name}
+              {providerName}
             </a>
             获取 API Key。您的密钥将被安全地存储在本地。
           </p>
@@ -240,6 +245,7 @@ interface APIKeyDialogProps {
 export function APIKeyDialog({ type = 'chat' }: APIKeyDialogProps) {
   const { config, apiKeys, customBaseURL, setConfig, setApiKey, setCustomBaseURL } =
     useAIProvider(type)
+  const providers = useProviders()
   const { toast } = useToast()
 
   const [open, setOpen] = useState(false)
@@ -273,7 +279,7 @@ export function APIKeyDialog({ type = 'chat' }: APIKeyDialogProps) {
     }
 
     setOpen(false)
-  }, [tempConfig, tempCustomBaseURL, tempKeys, setConfig, setCustomBaseURL, setApiKey])
+  }, [tempConfig, tempCustomBaseURL, tempKeys, setConfig, setCustomBaseURL, setApiKey, providers])
 
   const handleProviderChange = useCallback((value: string) => {
     const provider = value as AIProvider
@@ -355,7 +361,7 @@ export function APIKeyDialog({ type = 'chat' }: APIKeyDialogProps) {
                   <SelectValue placeholder="选择服务商" />
                 </SelectTrigger>
                 <SelectContent>
-                  {(Object.keys(providers) as Array<keyof typeof providers>).map(key => (
+                  {Object.keys(providers).map(key => (
                     <SelectItem key={key} value={key}>
                       {providers[key].name}
                     </SelectItem>
@@ -376,10 +382,16 @@ export function APIKeyDialog({ type = 'chat' }: APIKeyDialogProps) {
               </div>
             )}
 
-            <ModelSelector tempConfig={tempConfig} onModelChange={handleModelChange} />
+            <ModelSelector
+              tempConfig={tempConfig}
+              models={providers[tempConfig.provider]?.models ?? []}
+              onModelChange={handleModelChange}
+            />
 
             <ApiKeyInput
               provider={tempConfig.provider}
+              providerName={providers[tempConfig.provider]?.name || '自定义服务'}
+              apiUrl={providers[tempConfig.provider]?.apiUrl || ''}
               apiKey={tempKeys[tempConfig.provider] || ''}
               onChange={handleApiKeyChange}
               onTest={handleTestApiKey}
@@ -401,6 +413,7 @@ export function APIKeyDialog({ type = 'chat' }: APIKeyDialogProps) {
       tempConfig,
       tempKeys,
       tempCustomBaseURL,
+      providers,
       handleProviderChange,
       handleModelChange,
       handleApiKeyChange,

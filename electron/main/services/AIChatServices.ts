@@ -1,8 +1,8 @@
 import OpenAI, { AuthenticationError, NotFoundError } from 'openai'
-import { providers } from 'shared/providers'
 import { createLogger } from '#/logger'
+import { providerService } from '#/services/ProviderService'
 
-type ProviderType = keyof typeof providers
+type ProviderType = string
 
 interface ChatMessage {
   role: 'assistant' | 'system' | 'user'
@@ -46,7 +46,7 @@ export class AIChatService {
       }
       baseURL = customBaseURL
     } else {
-      baseURL = providers[provider].baseURL
+      baseURL = providerService.providers[provider].baseURL
     }
 
     return new AIChatService(apiKey, baseURL, provider)
@@ -164,7 +164,7 @@ export class AIChatService {
   }
 
   private async checkOpenRouterAPIKey(): Promise<CheckAPIKeyResult> {
-    const url = `${providers.openrouter.baseURL}/credits`
+    const url = `${providerService.providers.openrouter.baseURL}/credits`
     const options = {
       method: 'GET',
       headers: { Authorization: `Bearer ${this.apiKey}` },

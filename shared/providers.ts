@@ -1,9 +1,14 @@
-export const providers = {
+/**
+ * 内置默认 providers，作为首次启动或离线时的降级方案。
+ * 应用启动时会从 GitHub 获取最新 providers 并缓存到本地，
+ * 后续启动优先使用缓存。
+ */
+export const providers: Record<string, ProviderInfo> = {
   deepseek: {
     name: 'DeepSeek',
     baseURL: 'https://api.deepseek.com',
     apiUrl: 'https://platform.deepseek.com/api_keys',
-    models: ['deepseek-chat', 'deepseek-reasoner'],
+    models: ['deepseek-v4-flash', 'deepseek-v4-pro', 'deepseek-chat', 'deepseek-reasoner'],
   },
   openrouter: {
     name: 'OpenRouter',
@@ -53,4 +58,4 @@ export const providers = {
     models: [],
   },
   custom: { name: '自定义', baseURL: '', apiUrl: '', models: [] },
-} as const
+}

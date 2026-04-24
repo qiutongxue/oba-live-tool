@@ -73,5 +73,7 @@ export const IPC_CHANNELS = {
     openLogFolder: 'app:openLogFolder',
     notifyUpdate: 'app:notifyUpdate',
     openExternal: 'app:openExternal',
+    getProviders: 'app:getProviders',
+    providersUpdated: 'app:providersUpdated',
   },
 } as const

@@ -4,7 +4,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
 
-export type AIProvider = keyof typeof providers | 'custom'
+export type AIProvider = string
 
 type APIKeys = {
   [key in AIProvider]: string
@@ -37,10 +37,10 @@ interface AIProviderStore {
 const createDefaultConfig = (): ProviderConfig => {
   const modelPreferences = Object.keys(providers).reduce(
     (acc, provider) => {
-      acc[provider as AIProvider] = providers[provider as keyof typeof providers].models[0] || ''
+      acc[provider] = providers[provider].models[0] || ''
       return acc
     },
-    {} as Record<AIProvider, string>,
+    {} as Record<string, string>,
   )
 
   return {
@@ -53,10 +53,10 @@ const createDefaultConfig = (): ProviderConfig => {
 const createDefaultApiKeys = (): APIKeys => {
   return Object.keys(providers).reduce(
     (acc, provider) => {
-      acc[provider as AIProvider] = ''
+      acc[provider] = ''
       return acc
     },
-    {} as Record<AIProvider, string>,
+    {} as Record<string, string>,
   )
 }
 

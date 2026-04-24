@@ -3,6 +3,13 @@ declare type Account = {
   name: string
 }
 
+declare interface ProviderInfo {
+  name: string
+  baseURL: string
+  apiUrl: string
+  models: string[]
+}
+
 declare type LiveControlPlatform =
   | 'douyin'
   | 'buyin'

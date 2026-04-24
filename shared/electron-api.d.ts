@@ -1,7 +1,5 @@
 import type { LogMessage } from 'electron-log'
 import type { ProgressInfo, UpdateDownloadedEvent } from 'electron-updater'
-import type { providers } from 'shared/providers'
-
 import { IPC_CHANNELS } from './ipcChannels'
 
 export interface IpcChannels {
@@ -69,19 +67,19 @@ export interface IpcChannels {
   // AIChat
   [IPC_CHANNELS.tasks.aiChat.normalChat]: (params: {
     messages: AIChatMessage[]
-    provider: keyof typeof providers
+    provider: string
     model: string
     apiKey: string
     customBaseURL?: string
   }) => string | null
   [IPC_CHANNELS.tasks.aiChat.testApiKey]: (params: {
     apiKey: string
-    provider: keyof typeof providers
+    provider: string
     customBaseURL?: string
   }) => { success: boolean; models?: string[]; error?: string }
   [IPC_CHANNELS.tasks.aiChat.chat]: (params: {
     messages: AIChatMessage[]
-    provider: keyof typeof providers
+    provider: string
     model: string
     apiKey: string
     customBaseURL?: string
@@ -128,6 +126,8 @@ export interface IpcChannels {
     latestVersion: string
     releaseNote?: string
   }) => void
+  [IPC_CHANNELS.app.getProviders]: () => Record<string, ProviderInfo>
+  [IPC_CHANNELS.app.providersUpdated]: (providers: Record<string, ProviderInfo>) => void
 
   [IPC_CHANNELS.account.switch]: (params: { account: Account }) => void
 

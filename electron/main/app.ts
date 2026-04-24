@@ -3,7 +3,10 @@ import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
+import { IPC_CHANNELS } from 'shared/ipcChannels'
+import { emitter } from './event/eventBus'
 import { updateManager } from './managers/UpdateManager'
+import { providerService } from './services/ProviderService'
 import windowManager from './windowManager'
 import './ipc'
 import { createLogger } from './logger'
@@ -123,9 +126,18 @@ async function createWindow() {
     if (url.startsWith('https:')) shell.openExternal(url)
     return { action: 'deny' }
   })
+
+  // 当返回最新 providers 时推送到渲染进程
+  emitter.on('providers-updated', providers => {
+    win?.webContents.send(IPC_CHANNELS.app.providersUpdated, providers)
+  })
 }
 
-app.whenReady().then(logStartupInfo).then(createWindow)
+app
+  .whenReady()
+  .then(logStartupInfo)
+  .then(() => providerService.initialize())
+  .then(createWindow)
 
 app.on('window-all-closed', async () => {
   win = null
