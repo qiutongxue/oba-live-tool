@@ -42,7 +42,7 @@ jobs:
           git config user.email 'github-actions[bot]@users.noreply.github.com'
           if [ -n "$(git status --porcelain providers.json)" ]; then
             git add providers.json
-            git commit -m 'chore: update providers models [automated]'
+            git commit --no-verify -m 'chore: update providers models [automated]'
             git push
           else
             echo 'providers.json 无变化，跳过提交'
