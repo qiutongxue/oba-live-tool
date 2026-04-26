@@ -3,7 +3,10 @@
     "name": "DeepSeek",
     "baseURL": "https://api.deepseek.com",
     "apiUrl": "https://platform.deepseek.com/api_keys",
-    "models": ["deepseek-v4-flash", "deepseek-v4-pro"]
+    "models": [
+      "deepseek-v4-flash",
+      "deepseek-v4-pro"
+    ]
   },
   "openrouter": {
     "name": "OpenRouter",
@@ -32,6 +35,7 @@
     "baseURL": "https://api.siliconflow.cn/v1",
     "apiUrl": "https://cloud.siliconflow.cn/account/ak",
     "models": [
+      "deepseek-ai/DeepSeek-V4-Flash",
       "deepseek-ai/DeepSeek-V3.2",
       "Pro/deepseek-ai/DeepSeek-V3.2",
       "deepseek-ai/DeepSeek-V3.1-Terminus",
