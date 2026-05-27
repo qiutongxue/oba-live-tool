@@ -35,6 +35,7 @@
     "baseURL": "https://api.siliconflow.cn/v1",
     "apiUrl": "https://cloud.siliconflow.cn/account/ak",
     "models": [
+      "deepseek-ai/DeepSeek-V4-Pro",
       "deepseek-ai/DeepSeek-V4-Flash",
       "deepseek-ai/DeepSeek-V3.2",
       "Pro/deepseek-ai/DeepSeek-V3.2",
