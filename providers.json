@@ -15,7 +15,6 @@
     "models": [
       "deepseek/deepseek-v4-pro",
       "deepseek/deepseek-v4-flash",
-      "nex-agi/deepseek-v3.1-nex-n1",
       "deepseek/deepseek-v3.2",
       "deepseek/deepseek-v3.2-exp",
       "deepseek/deepseek-v3.1-terminus",
