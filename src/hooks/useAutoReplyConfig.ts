@@ -1,3 +1,4 @@
+import { current } from 'immer'
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
@@ -147,7 +148,10 @@ export const useAutoReplyConfigStore = create<AutoReplyConfigStore>()(
         updateConfig: (accountId, configUpdates) =>
           set(state => {
             const context = ensureContext(state, accountId)
-            const newConfig = mergeWithoutArray(context.config, configUpdates)
+            // context.config 是 immer 的 draft（Proxy），不能直接交给 lodash 的
+            // mergeWith 遍历——immer 11 会因触发 Proxy 不变量而抛错（读取 prototype）。
+            // 先用 current() 取一份纯对象快照再合并。
+            const newConfig = mergeWithoutArray(current(context.config), configUpdates)
             context.config = newConfig
           }),
       }
