@@ -256,7 +256,7 @@ AI 助手只支持文本对话，在使用 AI 助手功能前，请先设置好�
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=qiutongxue/oba-live-tool&type=Date)](https://www.star-history.com/#qiutongxue/oba-live-tool&Date)
+[![Star History Chart](https://star-history.dera.page/svg?repos=qiutongxue/oba-live-tool&type=Date)](https://star-history.dera.page/#qiutongxue/oba-live-tool&Date)
 
 <!-- badage -->
 
