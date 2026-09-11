@@ -1,7 +1,7 @@
 <div align="center">
 
   <img src="./public/favicon.png" alt="logo" width="256px" height="auto">
-  <h1> oba live tool </h1>
+  <h1> TLS live tool </h1>
   <p> 抖音小店/巨量百应/抖音团购/小红书/视频号/快手小店/淘宝直播小工具 </p>
   <br>
 
