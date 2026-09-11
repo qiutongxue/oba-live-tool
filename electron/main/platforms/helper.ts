@@ -30,6 +30,7 @@ export async function connect(
     }),
     page.waitForSelector(loginConstants.isInLiveControlSelector, {
       timeout: 0,
+      state: 'attached',
     }),
   ])
 
