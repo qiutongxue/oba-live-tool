@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.6.3
+
+[compare changes](https://github.com/qiutongxue/oba-live-tool/compare/v1.6.1...v1.6.3)
+
+### 🐞 Bug Fixes
+
+- **抖音小店:** 修复抖音小店中控台无法连接的问题 #320 ([#320](https://github.com/qiutongxue/oba-live-tool/issues/320))
+- **抖音小店:** 修复抖店连接后功能无法正常使用的问题，#322 ([#322](https://github.com/qiutongxue/oba-live-tool/issues/322))
+
 ## v1.6.2
 
 [compare changes](https://github.com/qiutongxue/oba-live-tool/compare/v1.6.1...v1.6.2)
