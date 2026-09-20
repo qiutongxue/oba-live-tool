@@ -1,7 +1,7 @@
 {
   "name": "TLS-live-tool",
   "type": "module",
-  "version": "1.6.1",
+  "version": "1.6.3",
   "private": true,
   "description": "直播工具，用于直播带货，能自动弹窗，自动发言",
   "author": "TuoLingTeam",
@@ -90,6 +90,7 @@
     "semver": "^7.7.1",
     "tailwind-merge": "^3.0.2",
     "tailwindcss": "^4.0.15",
+    "tinyexec": "^1.3.1",
     "tsx": "^4.19.4",
     "tw-animate-css": "^1.2.4",
     "typescript": "^5.9.3",

@@ -54,6 +54,11 @@ export class DouyinPlatform
     if (isConnected) {
       this.mainPage = page
     }
+    // 2026.9
+    // 抖店直接登录进入中控台的话会有两个一模一样的页面元素，
+    // 导致无法定位到正常的元素，经测试手动刷新后就恢复正常
+    // 这里直接模拟手动刷新页面
+    await page.reload({ waitUntil: 'load' })
     return isConnected
   }
 
