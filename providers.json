@@ -15,10 +15,8 @@
     "models": [
       "~deepseek/deepseek-pro-latest",
       "deepseek/deepseek-v4-pro-0813",
-      "deepseek/deepseek-v4-pro-0813:batch",
       "~deepseek/deepseek-v4-flash-latest",
       "deepseek/deepseek-v4-flash-0731",
-      "deepseek/deepseek-v4-flash-0731:batch",
       "deepseek/deepseek-v4-pro",
       "deepseek/deepseek-v4-flash",
       "deepseek/deepseek-v3.2",
