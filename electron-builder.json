@@ -1,6 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json",
-  "appId": "com.qbw.obalivetool",
+  "appId": "com.qbw.tlslivetool",
   "asar": true,
   "directories": {
     "output": "release/${version}"
