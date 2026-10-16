@@ -22,6 +22,8 @@ export interface ShortcutMapping {
 interface AutoPopUpGoodsItem {
   id: number
   repeatCount?: number
+  /** 无限循环：永远参与轮转，不受 repeatCount 上限约束 */
+  repeatInfinite?: boolean
   itemInterval?: [number, number]
 }
 

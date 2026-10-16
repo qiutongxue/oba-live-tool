@@ -44,6 +44,17 @@ export const IPC_CHANNELS = {
     redPacket: {
       send: 'tasks:redPacket:send',
     },
+    // 营销工具（抖音团购：福袋 / 优惠券）
+    marketing: {
+      getGiftBagTemplates: 'tasks:marketing:getGiftBagTemplates',
+      sendGiftBag: 'tasks:marketing:sendGiftBag',
+      getCoupons: 'tasks:marketing:getCoupons',
+      sendCoupon: 'tasks:marketing:sendCoupon',
+      startLoop: 'tasks:marketing:startLoop',
+      stopLoop: 'tasks:marketing:stopLoop',
+      updateLoopConfig: 'tasks:marketing:updateLoopConfig',
+      loopStoppedEvent: 'tasks:marketing:loopStoppedEvent',
+    },
   },
   config: {
     save: 'config:save',

@@ -32,6 +32,11 @@ type Ability = {
   autoReply?: {
     source: ListeningSource[]
   }
+  /** 营销工具：福袋 / 优惠券（目前仅抖音团购支持） */
+  marketing?: {
+    giftBag: boolean
+    coupon: boolean
+  }
 }
 
 export const abilities: Record<LiveControlPlatform, Ability> = {
@@ -45,7 +50,12 @@ export const abilities: Record<LiveControlPlatform, Ability> = {
       source: ['compass', 'control'],
     },
   },
-  eos: {},
+  eos: {
+    marketing: {
+      giftBag: true,
+      coupon: true,
+    },
+  },
   kuaishou: {
     autoReply: {
       source: ['kuaishou'],
@@ -80,4 +90,9 @@ export const abilities: Record<LiveControlPlatform, Ability> = {
 
 export const autoReplyPlatforms = Object.entries(abilities)
   .filter(([_, s]) => s.autoReply && s.autoReply.source.length > 0)
+  .map(([p, _]) => p) as LiveControlPlatform[]
+
+/** 支持「营销助手」（福袋 / 优惠券）的平台 */
+export const marketingPlatforms = Object.entries(abilities)
+  .filter(([_, s]) => s.marketing?.giftBag || s.marketing?.coupon)
   .map(([p, _]) => p) as LiveControlPlatform[]

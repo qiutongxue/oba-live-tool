@@ -65,6 +65,29 @@ export function isSendRedPacket(platform: IPlatform): platform is IPlatform & IS
   return '_isSendRedPacket' in platform && platform._isSendRedPacket === true
 }
 
+/** 营销工具（福袋 / 优惠券） */
+export interface IMarketingTool {
+  _isMarketingTool: true
+  /** 读取「本场直播福袋」列表（作为可复制的模板） */
+  getGiftBagTemplates(): Result.ResultAsync<GiftBagTemplate[], PlatformError>
+  /** 复制指定序号的福袋模板并提交审核（走页面免审规则），返回表单里记录的时长 */
+  sendGiftBag(
+    index: number,
+    signal?: AbortSignal,
+  ): Result.ResultAsync<SendGiftBagResult, PlatformError>
+  /** 读取「本场直播优惠券」列表 */
+  getCoupons(): Result.ResultAsync<CouponInfo[], PlatformError>
+  /** 发放优惠券 */
+  sendCoupon(
+    params: SendCouponParams,
+    signal?: AbortSignal,
+  ): Result.ResultAsync<void, PlatformError>
+}
+
+export function isMarketingTool(platform: IPlatform): platform is IPlatform & IMarketingTool {
+  return '_isMarketingTool' in platform && platform._isMarketingTool === true
+}
+
 export interface IPlatform {
   get platformName(): string
   /** 连接到中控台，最终停留在中控台页面 */

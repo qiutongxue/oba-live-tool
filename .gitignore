@@ -43,3 +43,7 @@ coverage/
 
 .trae
 .claude
+
+# 取证脚本产物（含登录态截图/DOM，禁止提交）
+recon/
+.recon-chrome-profile/

@@ -2,10 +2,12 @@ import { TrashIcon } from 'lucide-react'
 import React from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { cn } from '@/lib/utils'
 
 interface GoodsItemData {
   id: number
   repeatCount?: number
+  repeatInfinite?: boolean
   itemInterval?: [number, number]
 }
 
@@ -15,6 +17,7 @@ const GoodsListItem = React.memo(function GoodsListItem({
   index,
   onChangeId,
   onChangeRepeatCount,
+  onChangeRepeatInfinite,
   onChangeItemInterval,
   onDelete,
 }: {
@@ -22,10 +25,12 @@ const GoodsListItem = React.memo(function GoodsListItem({
   index: number
   onChangeId: (index: number, value: string) => void
   onChangeRepeatCount: (index: number, value: number) => void
+  onChangeRepeatInfinite: (index: number, value: boolean) => void
   onChangeItemInterval: (index: number, min: number, max: number) => void
   onDelete: () => void
 }) {
   const repeatCount = item.repeatCount ?? 1
+  const repeatInfinite = item.repeatInfinite ?? false
   const intervalMin = item.itemInterval ? item.itemInterval[0] / 1000 : 0
   const intervalMax = item.itemInterval ? item.itemInterval[1] / 1000 : 0
 
@@ -43,22 +48,31 @@ const GoodsListItem = React.memo(function GoodsListItem({
       <span className="text-xs text-muted-foreground whitespace-nowrap">x</span>
       <Input
         type="number"
-        value={repeatCount}
+        value={repeatInfinite ? '' : repeatCount}
         onChange={e => onChangeRepeatCount(index, Number(e.target.value) || 1)}
         className="w-20"
         min="1"
         max="10000"
-        placeholder="次数"
+        placeholder={repeatInfinite ? '无限' : '次数'}
+        disabled={repeatInfinite}
         title="循环弹窗次数"
       />
       <span className="text-xs text-muted-foreground whitespace-nowrap">次</span>
+      <Button
+        type="button"
+        variant={repeatInfinite ? 'default' : 'outline'}
+        size="sm"
+        onClick={() => onChangeRepeatInfinite(index, !repeatInfinite)}
+        className={cn('h-9 shrink-0 px-2 text-xs', repeatInfinite && 'font-medium')}
+        title="无限循环：该商品永远参与轮转，不受 10000 次上限约束"
+      >
+        无限
+      </Button>
       <span className="text-xs text-muted-foreground whitespace-nowrap ml-1">间隔</span>
       <Input
         type="number"
         value={intervalMin}
-        onChange={e =>
-          onChangeItemInterval(index, Number(e.target.value) || 0, intervalMax)
-        }
+        onChange={e => onChangeItemInterval(index, Number(e.target.value) || 0, intervalMax)}
         className="w-20"
         min="0"
         max="20000"
@@ -69,9 +83,7 @@ const GoodsListItem = React.memo(function GoodsListItem({
       <Input
         type="number"
         value={intervalMax}
-        onChange={e =>
-          onChangeItemInterval(index, intervalMin, Number(e.target.value) || 0)
-        }
+        onChange={e => onChangeItemInterval(index, intervalMin, Number(e.target.value) || 0)}
         className="w-20"
         min="0"
         max="20000"

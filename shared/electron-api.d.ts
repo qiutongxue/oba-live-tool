@@ -100,6 +100,28 @@ export interface IpcChannels {
   // 一键发红包
   [IPC_CHANNELS.tasks.redPacket.send]: (accountId: string, duration: string) => boolean
 
+  // 营销工具（抖音团购：福袋 / 优惠券）
+  [IPC_CHANNELS.tasks.marketing.getGiftBagTemplates]: (accountId: string) => GiftBagTemplate[]
+  [IPC_CHANNELS.tasks.marketing.sendGiftBag]: (
+    accountId: string,
+    params: SendGiftBagParams,
+  ) => boolean
+  [IPC_CHANNELS.tasks.marketing.getCoupons]: (accountId: string) => CouponInfo[]
+  [IPC_CHANNELS.tasks.marketing.sendCoupon]: (
+    accountId: string,
+    params: SendCouponParams,
+  ) => boolean
+  [IPC_CHANNELS.tasks.marketing.startLoop]: (
+    accountId: string,
+    config: MarketingLoopConfig,
+  ) => boolean
+  [IPC_CHANNELS.tasks.marketing.stopLoop]: (accountId: string) => boolean
+  [IPC_CHANNELS.tasks.marketing.updateLoopConfig]: (
+    accountId: string,
+    config: Partial<MarketingLoopConfig>,
+  ) => void
+  [IPC_CHANNELS.tasks.marketing.loopStoppedEvent]: (id: string) => void
+
   // Updater
   [IPC_CHANNELS.updater.checkUpdate]: () => Promise<
     { latestVersion: string; currentVersion: string; releaseNote?: string } | undefined
