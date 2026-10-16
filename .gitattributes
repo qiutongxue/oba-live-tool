@@ -1,0 +1,30 @@
+# 统一换行符：仓库内一律以 LF 存储与检出。
+#
+# 背景：本仓库历史上换行符是混用的（绝大多数 LF，个别文件 CRLF）。
+# 而 husky 的 pre-commit 会跑 `biome check --write`，biome 默认输出 LF，
+# 于是每次提交都会把 CRLF 文件整体重写，混进大量纯换行符噪音。
+# 这里显式声明 eol=lf，让 git 与 biome 的期望一致，从根上消除这个冲突。
+* text=auto eol=lf
+
+# Windows 批处理/脚本必须保持 CRLF，否则 cmd 可能解析出错
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# 二进制文件不做任何换行符转换
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.icns binary
+*.bmp binary
+*.ttf binary
+*.otf binary
+*.woff binary
+*.woff2 binary
+*.zip binary
+*.7z binary
+*.exe binary
+*.dll binary
+*.node binary
