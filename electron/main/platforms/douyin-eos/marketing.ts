@@ -199,32 +199,41 @@ export async function clickConfirmIfAny(page: Page, timeout = 3000): Promise<boo
 }
 
 /**
- * 等一次「提交」真正结束：主提交按钮从 `disabled + loading` 恢复，或所在弹窗消失。
+ * 点击「确定发放」后等待**发券弹窗关闭**，期间反复点掉二次确认。
  *
- * eos 提交后按钮会先变 disabled+loading，此时**不能**再认为操作失败；
- * 反过来也不该在按钮还处于提交中就往下走。
- * 返回 `closed`（弹窗关闭，通常表示已接受）/ `settled`（按钮恢复可用）/ `timeout`。
+ * 与福袋 `waitGiftBagFormClosed` 同源的问题（2026-10-18 一并修复）：
+ * 原来先 `waitForSubmitSettled` 再「点一次」确认，二次确认弹窗晚渲染时会漏点，
+ * 随后 `closeAllDrawers` 把弹窗关掉 = 替用户点了取消，但函数照样返回成功。
+ *
+ * @returns true = 弹窗已关闭；false = 超时仍未关闭
  */
-export async function waitForSubmitSettled(
-  page: Page,
-  submitSelector: string,
-  timeout = 20000,
-): Promise<'closed' | 'settled' | 'timeout'> {
-  // 先给一点时间让 loading 状态出现，避免"刚点完还没变化"被误判为已结束
-  await sleep(800)
+async function waitCouponDialogClosed(page: Page, timeout = 10000): Promise<boolean> {
   const deadline = Date.now() + timeout
+  // 先给 loading 状态出现的时间
+  await sleep(800)
+  let confirmClicks = 0
+
   while (Date.now() < deadline) {
-    const n = await page
-      .locator(submitSelector)
-      .count()
-      .catch(() => 0)
-    if (n === 0) return 'closed'
-    const btn = page.locator(submitSelector).first()
-    if (!(await btn.isVisible().catch(() => false))) return 'closed'
-    if (!(await btn.isDisabled().catch(() => true))) return 'settled'
-    await sleep(400)
+    if (confirmClicks < 3 && (await clickConfirmIfAny(page, 2000))) {
+      confirmClicks += 1
+      await sleep(400)
+      continue
+    }
+
+    const confirm = page.locator(MARKETING.COUPON.CONFIRM)
+    const n = await confirm.count().catch(() => 0)
+    if (n === 0) return true
+    if (
+      !(await confirm
+        .first()
+        .isVisible()
+        .catch(() => false))
+    ) {
+      return true
+    }
+    await sleep(300)
   }
-  return 'timeout'
+  return false
 }
 
 /**
@@ -301,15 +310,85 @@ async function readSelectedDuration(page: Page): Promise<string | null> {
 }
 
 /**
+ * 点击「提交审核」后等待**表单抽屉关闭**，期间反复点掉二次确认弹窗。
+ *
+ * ⚠️ 2026-10-18 定位到的偶发失败根因：
+ * 原来的实现是「点提交 → sleep 1.5s → 点一次确认 → sleep 1.5s → 直接返回成功」。
+ * 二次确认弹窗（确定/取消）有时要好几秒才渲染出来，一次没点中就会漏掉；
+ * 随后 `closeAllDrawers` 把还开着的确认弹窗关掉 —— **等于替用户点了取消**，
+ * 但函数照样返回成功。表现就是「提示已发放、实际一个福袋都没创建」，且概率性发生。
+ *
+ * 现在改成边等边点：只要确认弹窗出现就点掉（最多 3 次，防止误触），
+ * 直到表单抽屉消失或超时。
+ *
+ * @returns true = 表单已关闭；false = 超时仍未关闭
+ */
+async function waitGiftBagFormClosed(page: Page, timeout = 10000): Promise<boolean> {
+  const deadline = Date.now() + timeout
+  // 先给 loading 状态出现的时间
+  await sleep(1000)
+  let confirmClicks = 0
+
+  while (Date.now() < deadline) {
+    if (confirmClicks < 3 && (await clickConfirmIfAny(page, 2000))) {
+      confirmClicks += 1
+      await sleep(600)
+      continue
+    }
+
+    const submit = page.locator(MARKETING.GIFT_BAG.SUBMIT)
+    const n = await submit.count().catch(() => 0)
+    if (n === 0) return true
+    if (
+      !(await submit
+        .first()
+        .isVisible()
+        .catch(() => false))
+    ) {
+      return true
+    }
+    await sleep(400)
+  }
+  return false
+}
+
+/**
+ * 重新打开福袋弹窗，数一下当前列表有多少数据行；读不到返回 null。
+ * 用于提交后校验「列表里是否真的多了一条」。
+ */
+async function countGiftBagRows(page: Page): Promise<number | null> {
+  try {
+    await closeAllDrawers(page)
+    await openMarketingTile(page, MARKETING.GIFT_BAG.TILE, MARKETING.GIFT_BAG.MODAL_READY)
+    await waitForTableRows(page, 10000)
+    return await page
+      .locator(MARKETING.TABLE_ROW)
+      .count()
+      .catch(() => 0)
+  } catch {
+    return null
+  } finally {
+    await closeAllDrawers(page)
+  }
+}
+
+/**
  * 复制第 index 个福袋模板并提交审核（走页面「免审规则」）。
  * index 与 readGiftBagTemplates 返回的序号一致。
  *
- * 返回表单里记录的时长，供营销循环估算下一次检查时间。
+ * 返回表单里记录的时长（供营销循环估算下次检查时间），
+ * 以及提交后是否在列表里**确认到新增**（`verified`）。
  */
 export async function sendGiftBagByIndex(page: Page, index: number): Promise<SendGiftBagResult> {
   await openMarketingTile(page, MARKETING.GIFT_BAG.TILE, MARKETING.GIFT_BAG.MODAL_READY)
   try {
     await waitForTableRows(page)
+
+    // 提交前记录列表行数，提交后用它校验是否真的新增了一条
+    const beforeRows = await page
+      .locator(MARKETING.TABLE_ROW)
+      .count()
+      .catch(() => 0)
 
     const copyRows = page
       .locator('tr')
@@ -335,13 +414,26 @@ export async function sendGiftBagByIndex(page: Page, index: number): Promise<Sen
       throw new Error('「提交审核」按钮不可用，福袋表单可能未就绪')
     }
     await submitBtn.click()
-    await sleep(1500)
-    await clickConfirmIfAny(page)
-    await sleep(1500)
+
+    // 边等边点二次确认，直到表单关闭（不再是「点一次就赌它成功」）
+    const formClosed = await waitGiftBagFormClosed(page)
+
+    // 重新读一次列表，确认是否真的多了一条福袋
+    const afterRows = await countGiftBagRows(page)
+    const verified = afterRows !== null && afterRows > beforeRows
+
+    // 表单没关 + 列表也没新增 → 基本可以确定这次没发出去，明确报错，不要谎报成功
+    if (!formClosed && !verified) {
+      throw new Error(
+        '已点击「提交审核」，但 10 秒内表单没有关闭、列表里也没出现新的福袋 —— 本次大概率没有发放成功' +
+          '（表单校验未通过、被服务端拒绝或确认弹窗未点掉）。请到中控台核对后重试',
+      )
+    }
 
     return {
       durationText,
       durationMs: durationText ? parseDurationText(durationText) : null,
+      verified,
     }
   } finally {
     await closeAllDrawers(page)
@@ -379,6 +471,29 @@ export async function readCoupons(page: Page): Promise<CouponInfo[]> {
     return result
   } finally {
     await closeAllDrawers(page)
+  }
+}
+
+/**
+ * 提交后复查：重新读一次优惠券列表，看目标券是否真的进入了「发放中」。
+ * 读不到（列表打不开等）返回 null，调用方不要把 null 当成失败。
+ */
+async function isCouponSending(
+  page: Page,
+  couponName: string,
+  timeout = 6000,
+): Promise<boolean | null> {
+  const deadline = Date.now() + timeout
+  while (true) {
+    try {
+      const list = await readCoupons(page)
+      const target = list.find(c => c.name === couponName)
+      if (target?.sending) return true
+    } catch {
+      return null
+    }
+    if (Date.now() >= deadline) return false
+    await sleep(1500)
   }
 }
 
@@ -439,15 +554,19 @@ export async function sendCouponOnPage(page: Page, params: SendCouponParams): Pr
     }
     await confirmBtn.click()
 
-    // 提交后按钮会进入 disabled+loading，等它恢复或弹窗消失，再判断结果
-    const settled = await waitForSubmitSettled(page, MARKETING.COUPON.CONFIRM, 15000)
-    if (settled === 'timeout') {
-      throw new Error(
-        '已点击「确定发放」，但按钮持续处于提交中超过 15 秒；请先到中控台核对该券是否已发放，避免重复发放',
-      )
+    // 边等边点二次确认，直到发券弹窗关闭（不再「点一次就赌它成功」）
+    const closed = await waitCouponDialogClosed(page)
+    if (!closed) {
+      // 弹窗没关闭：再读一次列表，确认是不是其实已经发出去了
+      const sending = await isCouponSending(page, params.couponName)
+      // 只有明确读到「没在发放中」才判失败；读不到（null）不武断下结论
+      if (sending === false) {
+        throw new Error(
+          '已点击「确定发放」，但 10 秒内弹窗没有关闭、列表里该券也没进入「发放中」——' +
+            '本次大概率没有发放成功（确认弹窗未点掉或被服务端拒绝）。请到中控台核对后重试',
+        )
+      }
     }
-    await clickConfirmIfAny(page)
-    await sleep(1200)
   } finally {
     await closeAllDrawers(page)
   }

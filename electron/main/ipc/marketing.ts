@@ -41,20 +41,25 @@ function setupIpcHandlers() {
     const session = accountManager.getSession(accountId)
     if (Result.isFailure(session)) {
       logger.error('发放福袋失败：账号未连接')
-      return false
+      return null
     }
     logger.info(`正在复制福袋 #${params.index} 并提交审核…`)
     const result = await session.value.sendGiftBag(params.index)
     if (Result.isFailure(result)) {
       logger.error('发放福袋失败：', result.error)
-      return false
+      return null
     }
-    logger.success(
-      result.value.durationText
-        ? `福袋已提交审核（免审规则下将直接发放），表单时长：${result.value.durationText}`
-        : '福袋已提交审核（免审规则下将直接发放），未读到表单时长',
-    )
-    return true
+    const { durationText, verified } = result.value
+    if (verified) {
+      logger.success(
+        `福袋已创建并提交审核（列表已确认新增），表单时长：${durationText ?? '未读到'}`,
+      )
+    } else {
+      logger.warn(
+        `福袋已点击提交，但列表里没确认到新增（可能列表未及时刷新），表单时长：${durationText ?? '未读到'}`,
+      )
+    }
+    return result.value
   })
 
   // 读取「本场直播优惠券」列表

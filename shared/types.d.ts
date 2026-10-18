@@ -261,6 +261,13 @@ declare type SendGiftBagResult = {
   durationText: string | null
   /** 时长的毫秒数；没读到为 null */
   durationMs: number | null
+  /**
+   * 提交后是否在福袋列表里确认到「新增了一条」。
+   * - true  → 确实创建成功
+   * - false → 提交动作已完成，但列表没刷新出新增（可能只是列表未及时刷新，不代表失败）
+   * 调用方据此决定是「按发放时长等待」还是「按轮询间隔尽快复查」。
+   */
+  verified: boolean
 }
 
 /**

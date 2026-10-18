@@ -33,6 +33,15 @@ const DEFAULT_COUPON_PARAMS: SendCouponParams = {
   restop: false,
 }
 
+/** 时间戳 → HH:MM:SS，用于显示列表上次读取的时间 */
+const formatReadTime = (ts: number) =>
+  new Date(ts).toLocaleTimeString('zh-CN', {
+    hour12: false,
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  })
+
 export default function Marketing() {
   const isConnected = useCurrentLiveControl(context => context.isConnected)
   const connected = isConnected === 'connected'
@@ -42,6 +51,8 @@ export default function Marketing() {
   const {
     giftBags,
     coupons,
+    giftBagsUpdatedAt,
+    couponsUpdatedAt,
     loadingGiftBags,
     loadingCoupons,
     sending,
@@ -153,21 +164,30 @@ export default function Marketing() {
                 选择本场直播中的一个福袋作为模板，程序会复制它并提交审核（不改动奖品与口令，走免审规则）。
               </CardDescription>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRefreshGiftBags}
-              disabled={busy || loadingGiftBags}
-            >
-              <CarbonRenew className={cn('mr-2 h-4 w-4', loadingGiftBags && 'animate-spin')} />
-              {loadingGiftBags ? '读取中…' : '读取列表'}
-            </Button>
+            <div className="flex shrink-0 flex-col items-end gap-1">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefreshGiftBags}
+                disabled={busy || loadingGiftBags}
+              >
+                <CarbonRenew className={cn('mr-2 h-4 w-4', loadingGiftBags && 'animate-spin')} />
+                {loadingGiftBags ? '读取中…' : '读取列表'}
+              </Button>
+              {giftBagsUpdatedAt !== null && (
+                <span className="text-xs text-muted-foreground">
+                  上次读取 {formatReadTime(giftBagsUpdatedAt)}
+                </span>
+              )}
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
           {giftBags.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              还没有数据，点击右上角「读取列表」从直播间拉取福袋。
+              {loadingGiftBags
+                ? '正在读取福袋列表…'
+                : '还没有数据，点击右上角「读取列表」从直播间拉取福袋。'}
             </p>
           ) : (
             <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
@@ -240,21 +260,30 @@ export default function Marketing() {
                 选择一张优惠券并设置发券数量与时长，程序会打开「发放优惠券」并确认发放。
               </CardDescription>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRefreshCoupons}
-              disabled={busy || loadingCoupons}
-            >
-              <CarbonRenew className={cn('mr-2 h-4 w-4', loadingCoupons && 'animate-spin')} />
-              {loadingCoupons ? '读取中…' : '读取列表'}
-            </Button>
+            <div className="flex shrink-0 flex-col items-end gap-1">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefreshCoupons}
+                disabled={busy || loadingCoupons}
+              >
+                <CarbonRenew className={cn('mr-2 h-4 w-4', loadingCoupons && 'animate-spin')} />
+                {loadingCoupons ? '读取中…' : '读取列表'}
+              </Button>
+              {couponsUpdatedAt !== null && (
+                <span className="text-xs text-muted-foreground">
+                  上次读取 {formatReadTime(couponsUpdatedAt)}
+                </span>
+              )}
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
           {coupons.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              还没有数据，点击右上角「读取列表」从直播间拉取优惠券。
+              {loadingCoupons
+                ? '正在读取优惠券列表…'
+                : '还没有数据，点击右上角「读取列表」从直播间拉取优惠券。'}
             </p>
           ) : (
             <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
@@ -387,7 +416,15 @@ export default function Marketing() {
         <CardHeader>
           <div className="flex items-start justify-between gap-4">
             <div>
-              <CardTitle>循环调度</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                循环调度
+                {loopRunning && (
+                  <span
+                    className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"
+                    title="营销循环运行中"
+                  />
+                )}
+              </CardTitle>
               <CardDescription>
                 控制上面两个「循环发放」的节奏。任务为状态驱动：发放成功后会把当时的时长记下来，
                 等这段时长过去才再去检查；只有在状态不确定时才按下面的间隔轮询。

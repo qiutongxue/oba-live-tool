@@ -105,7 +105,7 @@ export interface IpcChannels {
   [IPC_CHANNELS.tasks.marketing.sendGiftBag]: (
     accountId: string,
     params: SendGiftBagParams,
-  ) => boolean
+  ) => SendGiftBagResult | null
   [IPC_CHANNELS.tasks.marketing.getCoupons]: (accountId: string) => CouponInfo[]
   [IPC_CHANNELS.tasks.marketing.sendCoupon]: (
     accountId: string,

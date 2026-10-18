@@ -33,7 +33,9 @@ function formatDuration(ms: number): string {
  * 就退回用户配置的轮询间隔继续检查（页面状态里带倒计时时用倒计时精确等待）。
  *
  * - 福袋：没有任何「发放中」的福袋时才复制并提交指定序号；
- * - 优惠券：目标券不在「发放中」且可用库存 > 0 时才发放；库存为 0 → 记 warn 并结束循环。
+ * - 优惠券：目标券不在「发放中」且可用库存 > 0 时才发放；库存为 0 → 记 warn 并结束循环；
+ * - 页面 bug 兜底：状态列的倒计时可能卡在「00:00」不刷新（实际已结束），
+ *   连续两轮读到 00:00 才判定为卡死，随后照常重发（优惠券会先点一次「停止发放」清掉残留状态）。
  *
  * 与 AutoPopupTask 一样基于 createIntervalTask，停止时通过 IPC 通知渲染层。
  */
@@ -58,6 +60,14 @@ export function createMarketingLoopTask(
    */
   let giftBagEndsAt: number | null = null
   let couponEndsAt: number | null = null
+
+  /**
+   * 页面倒计时连续卡在 00:00 的轮数。
+   * 页面有 bug：实际已发放结束，但状态列会一直显示「发放中 00:00」不刷新。
+   * 读到一次 00:00 可能是刚好赶在结束边界，连续两轮都是 00:00 才判定为「卡死，视为结束」。
+   */
+  let giftBagStuckZeroRounds = 0
+  let couponStuckZeroRounds = 0
 
   const intervalTaskResult = createIntervalTask(execute, {
     interval: config.scheduler.interval,
@@ -203,15 +213,30 @@ export function createMarketingLoopTask(
     if (sendingList.length > 0) {
       // 状态里可能带倒计时（「发放中 02:31」），有就精确等待，没有就退回轮询
       const countdown = parseCountdownText(sendingList[0].statusText)
-      giftBagEndsAt = countdown !== null ? Date.now() + countdown : null
-      logger.info(
-        `已有 ${sendingList.length} 个福袋正在发放中${
-          countdown !== null
-            ? `（剩余约 ${formatDuration(countdown)}，已记录）`
-            : '，等它结束后再发'
-        }`,
-      )
-      return Result.succeed()
+      if (countdown !== null && countdown <= 0) {
+        // 页面 bug：倒计时卡在 00:00 不刷新但实际已结束。连续两轮都读到 00:00 才确认卡死
+        giftBagStuckZeroRounds += 1
+        giftBagEndsAt = null
+        if (giftBagStuckZeroRounds < 2) {
+          logger.info(
+            `福袋状态显示「${sendingList[0].statusText}」，可能是刚好结束或页面未刷新，下一轮再确认`,
+          )
+          return Result.succeed()
+        }
+        logger.warn('福袋倒计时持续卡在 00:00（页面未刷新），视为发放已结束，继续执行复制发放')
+        giftBagStuckZeroRounds = 0
+      } else {
+        giftBagStuckZeroRounds = 0
+        giftBagEndsAt = countdown !== null ? Date.now() + countdown : null
+        logger.info(
+          `已有 ${sendingList.length} 个福袋正在发放中${
+            countdown !== null
+              ? `（剩余约 ${formatDuration(countdown)}，已记录）`
+              : '，等它结束后再发'
+          }`,
+        )
+        return Result.succeed()
+      }
     }
 
     if (cfg.index < 1 || cfg.index > templates.length) {
@@ -229,8 +254,15 @@ export function createMarketingLoopTask(
       return sendResult
     }
 
-    const { durationText, durationMs } = sendResult.value
+    const { durationText, durationMs, verified } = sendResult.value
     giftBagEndsAt = durationMs !== null ? Date.now() + durationMs : null
+    if (!verified) {
+      // 不直接判失败：列表可能只是没及时刷新。下一轮会重新读列表核对，
+      // 真没发出去的话下一轮会看到「没有发放中」并再次复制发放。
+      logger.warn(
+        `福袋 #${cfg.index} 已点击提交，但列表里没确认到新增（可能列表未刷新），下一轮会重新核对`,
+      )
+    }
     logger.success(
       durationMs !== null
         ? `福袋 #${cfg.index} 已提交；已记录表单时长 ${durationText}，${formatDuration(
@@ -261,18 +293,39 @@ export function createMarketingLoopTask(
       return Result.succeed()
     }
 
+    // 页面卡 00:00 时行内仍显示「停止发放」，重新发放前需要先点停止
+    let needsRestop = false
+
     if (target.sending) {
       // 优惠券状态文本本身就带倒计时（如「发放中 03:31」），用它精确等待
       const countdown = parseCountdownText(target.status)
-      couponEndsAt = countdown !== null ? Date.now() + countdown : null
-      logger.info(
-        `优惠券「${target.name}」正在发放中（${target.status}）${
-          countdown !== null
-            ? `，剩余约 ${formatDuration(countdown)}，已记录`
-            : '，等它结束后自动重发'
-        }`,
-      )
-      return Result.succeed()
+      if (countdown !== null && countdown <= 0) {
+        // 页面 bug：倒计时卡在 00:00 不刷新但实际已结束。连续两轮都读到 00:00 才确认卡死
+        couponStuckZeroRounds += 1
+        couponEndsAt = null
+        if (couponStuckZeroRounds < 2) {
+          logger.info(
+            `优惠券「${target.name}」状态显示「${target.status}」，可能是刚好结束或页面未刷新，下一轮再确认`,
+          )
+          return Result.succeed()
+        }
+        logger.warn(
+          `优惠券「${target.name}」倒计时持续卡在 00:00（页面未刷新），视为已停止发放，准备重新发放`,
+        )
+        couponStuckZeroRounds = 0
+        needsRestop = true
+      } else {
+        couponStuckZeroRounds = 0
+        couponEndsAt = countdown !== null ? Date.now() + countdown : null
+        logger.info(
+          `优惠券「${target.name}」正在发放中（${target.status}）${
+            countdown !== null
+              ? `，剩余约 ${formatDuration(countdown)}，已记录`
+              : '，等它结束后自动重发'
+          }`,
+        )
+        return Result.succeed()
+      }
     }
 
     const stock = parseStock(target.availableStock)
@@ -285,8 +338,9 @@ export function createMarketingLoopTask(
     logger.info(
       `优惠券「${target.name}」已停止发放，正在自动发放（数量 ${cfg.params.count} / 时长 ${cfg.params.duration}）…`,
     )
-    // 循环的闸门已经保证「不在发放中」，这里不需要先停止
-    const sendResult = await platform.sendCoupon({ ...cfg.params, restop: false }, signal)
+    // 循环的闸门已经保证「不在发放中」，一般不需要先停止；
+    // 只有「倒计时卡 00:00」的恢复路径才 needsRestop（行内可能仍残留「停止发放」按钮）
+    const sendResult = await platform.sendCoupon({ ...cfg.params, restop: needsRestop }, signal)
     if (Result.isFailure(sendResult)) {
       logger.error('发放优惠券失败：', sendResult.error)
       couponEndsAt = null
@@ -349,6 +403,8 @@ export function createMarketingLoopTask(
         // 目标可能变了，之前记录的结束时间作废
         giftBagEndsAt = null
         couponEndsAt = null
+        giftBagStuckZeroRounds = 0
+        couponStuckZeroRounds = 0
         intervalTask.restart()
       }),
       Result.inspectError(err => logger.error('配置更新失败：', err)),
