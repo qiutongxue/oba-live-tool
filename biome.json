@@ -19,6 +19,20 @@
     ]
   },
   "formatter": { "enabled": true, "indentStyle": "space", "lineWidth": 100, "lineEnding": "lf" },
+  "overrides": [
+    {
+      "includes": [
+        "electron/main/ipc/index.ts",
+        "electron/main/platforms/IPlatform.ts",
+        "electron/main/services/AccountSession.ts",
+        "src/components/common/Sidebar.tsx",
+        "src/components/icons/carbon.tsx",
+        "src/hooks/useAutoPopUp.ts",
+        "src/router/index.tsx"
+      ],
+      "formatter": { "lineEnding": "crlf" }
+    }
+  ],
   "assist": { "actions": { "source": { "organizeImports": "on" } } },
   "linter": {
     "enabled": true,
