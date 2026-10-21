@@ -6,6 +6,11 @@
 # 这里显式声明 eol=lf，让 git 与 biome 的期望一致，从根上消除这个冲突。
 * text=auto eol=lf
 
+# README.md 保持与上游仓库（qiutongxue/oba-live-tool）逐字节一致（上游是 CRLF）。
+# 若让它参与 LF 规范化，README 会在 PR 里显示为「已修改」，
+# 从而触发与改动无关的 markdownlint 检查。
+README.md -text
+
 # Windows 批处理/脚本必须保持 CRLF，否则 cmd 可能解析出错
 *.bat text eol=crlf
 *.cmd text eol=crlf
