@@ -51,6 +51,14 @@ export interface IpcChannels {
   ) => void
   [IPC_CHANNELS.tasks.autoPopUp.unregisterShortcuts]: () => void
 
+  // 评论列表自动滚动
+  [IPC_CHANNELS.tasks.commentScroll.start]: (
+    accountId: string,
+    config: CommentScrollConfig,
+  ) => boolean
+  [IPC_CHANNELS.tasks.commentScroll.stop]: (accountId: string) => boolean
+  [IPC_CHANNELS.tasks.commentScroll.stoppedEvent]: (id: string) => void
+
   // AutoReply
   [IPC_CHANNELS.tasks.autoReply.startCommentListener]: (
     accountId: string,

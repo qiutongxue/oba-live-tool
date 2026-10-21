@@ -4,7 +4,9 @@ import { TaskButton } from '@/components/common/TaskButton'
 import { Title } from '@/components/common/Title'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useAutoMessageActions, useCurrentAutoMessage } from '@/hooks/useAutoMessage'
+import { useCurrentLiveControl } from '@/hooks/useLiveControl'
 import { useTaskControl } from '@/hooks/useTaskControl'
+import CommentScrollCard from './components/CommentScrollCard'
 import MessageListCard from './components/MessageListCard'
 import MessageSettingsCard from './components/MessageSettingsCard'
 import { MessageOneKey } from './components/MessagesOneKey'
@@ -27,6 +29,7 @@ const useAutoMessageTaskControl = () => {
 export default function AutoMessage() {
   const { isRunning, onStartTask, onStopTask } = useAutoMessageTaskControl()
   const [validationError] = useState<string | null>(null)
+  const platform = useCurrentLiveControl(state => state.platform)
 
   const handleTaskButtonClick = useMemoizedFn(() => {
     if (!isRunning) onStartTask()
@@ -50,6 +53,8 @@ export default function AutoMessage() {
         <MessageListCard />
         <MessageSettingsCard />
         <MessageOneKey />
+        {/* 评论管理自动滚动目前只有抖音团购（eos）中控台需要 */}
+        {platform === 'eos' && <CommentScrollCard />}
       </div>
     </div>
   )

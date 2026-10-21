@@ -12,7 +12,14 @@ import {
   getItemFromVirtualScroller,
   toggleButton,
 } from '../helper'
-import type { IMarketingTool, IPerformComment, IPerformPopup, IPlatform } from '../IPlatform'
+import type {
+  IMarketingTool,
+  IPerformComment,
+  IPerformPopup,
+  IPlatform,
+  IScrollComments,
+} from '../IPlatform'
+import { scrollCommentListToBottom } from './commentScroll'
 import { REGEXPS, SELECTORS, TEXTS, URLS } from './constant'
 import { douyinEosElementFinder as elementFinder } from './element-finder'
 import {
@@ -28,11 +35,12 @@ const PLATFORM_NAME = '抖音团购' as const
  * 抖音团购
  */
 export class DouyinEosPlatform
-  implements IPlatform, IPerformPopup, IPerformComment, IMarketingTool
+  implements IPlatform, IPerformPopup, IPerformComment, IMarketingTool, IScrollComments
 {
   readonly _isPerformComment = true
   readonly _isPerformPopup = true
   readonly _isMarketingTool = true
+  readonly _isScrollComments = true
   public mainPage: Page | null = null
 
   /**
@@ -108,6 +116,23 @@ export class DouyinEosPlatform
 
   getCommentPage() {
     return this.mainPage
+  }
+
+  // ==================== 评论列表自动滚动 ====================
+
+  scrollCommentsToBottom(): Result.ResultAsync<CommentScrollReport, PlatformError> {
+    return this.pageLock.run(() =>
+      Result.pipe(
+        ensurePage(this.mainPage),
+        Result.andThen(page =>
+          Result.try({
+            immediate: true,
+            try: () => scrollCommentListToBottom(page),
+            catch: err => new UnexpectedError({ description: String(err) }),
+          }),
+        ),
+      ),
+    )
   }
 
   // ==================== 营销工具：福袋 / 优惠券 ====================

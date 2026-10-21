@@ -65,6 +65,20 @@ export function isSendRedPacket(platform: IPlatform): platform is IPlatform & IS
   return '_isSendRedPacket' in platform && platform._isSendRedPacket === true
 }
 
+/** 评论区自动滚动（让「评论管理」列表始终停在最新消息处） */
+export interface IScrollComments {
+  _isScrollComments: true
+  /**
+   * 把评论列表滚到底部。
+   * 返回诊断报告，便于任务层区分「没找到列表」和「已经在底部」并记录失败原因。
+   */
+  scrollCommentsToBottom(): Result.ResultAsync<CommentScrollReport, PlatformError>
+}
+
+export function isScrollComments(platform: IPlatform): platform is IPlatform & IScrollComments {
+  return '_isScrollComments' in platform && platform._isScrollComments === true
+}
+
 /** 营销工具（福袋 / 优惠券） */
 export interface IMarketingTool {
   _isMarketingTool: true

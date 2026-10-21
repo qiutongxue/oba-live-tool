@@ -93,12 +93,41 @@ declare type PinCommentTask = {
   }
 }
 
+/**
+ * 评论区自动滚动：把中控台「评论管理」里的消息列表持续滚到底部。
+ * eos 页面的评论列表偶尔会停止自动跟随，导致一直停留在旧消息上。
+ */
+declare type CommentScrollConfig = {
+  /** 滚动间隔（毫秒区间），默认 [2500, 4000] */
+  interval?: [number, number]
+}
+
+declare type CommentScrollTask = {
+  type: 'comment-scroll'
+  config: CommentScrollConfig
+}
+
+/** 一次滚动尝试的结果 */
+declare type CommentScrollStatus = 'scrolled' | 'already-bottom' | 'no-title' | 'no-scrollable'
+
+/** 一次滚动的诊断报告：失败时靠它定位到底卡在哪一步 */
+declare type CommentScrollReport = {
+  status: CommentScrollStatus
+  /** 命中方式：text=按「评论管理」文本定位；class=按 comment 类名兜底；none=都没命中 */
+  via: 'text' | 'class' | 'none'
+  /** 找到的可滚动候选数量 */
+  candidates: number
+  /** 选中的容器摘要（类名片段 + 尺寸），没选中时为空串 */
+  target: string
+}
+
 declare type LiveControlTask =
   | AutoPopupTask
   | AutoCommentTask
   | SendBatchMessagesTask
   | CommentListenerTask
   | PinCommentTask
+  | CommentScrollTask
   | MarketingLoopTask
 
 declare type DouyinLiveMessage = {

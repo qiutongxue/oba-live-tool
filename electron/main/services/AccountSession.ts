@@ -16,11 +16,13 @@ import {
   isPerformComment,
   isPerformPopup,
   isPinComment,
+  isScrollComments,
   isSendRedPacket,
 } from '#/platforms/IPlatform'
 import { createAutoCommentTask } from '#/tasks/AutoCommentTask'
 import { createAutoPopupTask } from '#/tasks/AutoPopupTask'
 import { createCommentListenerTask } from '#/tasks/CommentListenerTask'
+import { createCommentScrollTask } from '#/tasks/CommentScrollTask'
 import type { ITask } from '#/tasks/ITask'
 import { createMarketingLoopTask } from '#/tasks/MarketingLoopTask'
 import { createPinCommentTask } from '#/tasks/PinCommentTask'
@@ -230,6 +232,9 @@ function makeTask<T extends LiveControlTask>(
   }
   if (task.type === 'pin-comment' && isPinComment(platform)) {
     return createPinCommentTask(platform, task.config.comment, account.id, logger)
+  }
+  if (task.type === 'comment-scroll' && isScrollComments(platform)) {
+    return createCommentScrollTask(platform, task.config, account, logger)
   }
   if (task.type === 'marketing-loop' && isMarketingTool(platform)) {
     return createMarketingLoopTask(platform, task.config, account, logger)
