@@ -19,7 +19,12 @@ const CommonList = () => {
   // 合并 goodsItems 和 goodsIds：以 goodsItems 为主，goodsIds 作为兼容
   const items = React.useMemo(() => {
     if (goodsItems && goodsItems.length > 0) return goodsItems
-    return goodsIds.map(id => ({ id, repeatCount: 1, itemInterval: undefined }))
+    return goodsIds.map(id => ({
+      id,
+      repeatCount: 1,
+      repeatInfinite: false,
+      itemInterval: undefined,
+    }))
   }, [goodsItems, goodsIds])
 
   // 同步更新 goodsIds 和 goodsItems
@@ -44,8 +49,13 @@ const CommonList = () => {
 
   const handleRepeatCountChange = useMemoizedFn((index: number, value: number) => {
     const count = Math.max(1, Math.min(Math.floor(value), 10000))
+    const newItems = items.map((item, i) => (i === index ? { ...item, repeatCount: count } : item))
+    syncUpdate(newItems)
+  })
+
+  const handleRepeatInfiniteChange = useMemoizedFn((index: number, value: boolean) => {
     const newItems = items.map((item, i) =>
-      i === index ? { ...item, repeatCount: count } : item,
+      i === index ? { ...item, repeatInfinite: value } : item,
     )
     syncUpdate(newItems)
   })
@@ -58,9 +68,7 @@ const CommonList = () => {
         ? {
             ...item,
             itemInterval:
-              minMs === 0 && maxMs === 0
-                ? undefined
-                : ([minMs, maxMs] as [number, number]),
+              minMs === 0 && maxMs === 0 ? undefined : ([minMs, maxMs] as [number, number]),
           }
         : item,
     )
@@ -70,7 +78,7 @@ const CommonList = () => {
   const addGoodsId = useMemoizedFn(() => {
     let id = 1
     while (items.some(item => item.id === id)) id += 1
-    syncUpdate([...items, { id, repeatCount: 1, itemInterval: undefined }])
+    syncUpdate([...items, { id, repeatCount: 1, repeatInfinite: false, itemInterval: undefined }])
   })
 
   return (
@@ -79,7 +87,8 @@ const CommonList = () => {
         <div className="space-y-1">
           <Label>商品列表</Label>
           <p className="text-sm text-muted-foreground">
-            序号 x 循环次数 | 单品弹窗间隔（0 = 用全局间隔）
+            序号 x 循环次数 | 点「无限」则该商品永远轮转（不受 10000 次上限）| 单品弹窗间隔（0 =
+            用全局间隔）
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={addGoodsId}>
@@ -97,6 +106,7 @@ const CommonList = () => {
             index={index}
             onChangeId={handleGoodsIdChange}
             onChangeRepeatCount={handleRepeatCountChange}
+            onChangeRepeatInfinite={handleRepeatInfiniteChange}
             onChangeItemInterval={handleItemIntervalChange}
             onDelete={() => {
               syncUpdate(items.filter((_, i) => i !== index))

@@ -242,32 +242,61 @@ export async function toggleButton(
       }),
     )
   }
-  const buttonText = (await button.textContent())?.trim() || ''
-  if (buttonText !== sourceContent && buttonText !== targetContent) {
+
+  let buttonText = ''
+  let disabled = false
+  try {
+    buttonText = (await button.textContent())?.trim() || ''
+    if (buttonText !== sourceContent && buttonText !== targetContent) {
+      return Result.fail(
+        new ElementContentMismatchedError({
+          current: buttonText,
+          target: `${targetContent} 或 ${sourceContent}`,
+        }),
+      )
+    }
+
+    // 两种情况：
+    // 1. 商品未讲解：buttonText === sourceContent，点击变为 targetContent 即可
+    // 2. 商品正在讲解：需要先点击一次取消讲解，变为未讲解状态
+    if (buttonText === targetContent && tryCount > 0) {
+      return Result.succeed()
+    }
+    disabled = await button.isDisabled()
+  } catch (err) {
+    /**
+     * ⚠️ 页面重渲染会让 ElementHandle 失效，此时 textContent / isDisabled 会直接抛
+     * `elementHandle.isDisabled: Element is not attached to the DOM`。
+     * 这个异常绝不能抛给任务调度层：它会穿透 runWithRetry（那里没有 try/catch），
+     * 让 IntervalTask 直接把「自动弹窗」任务判定为「错误中断」并退出，重试形同虚设。
+     *
+     * 已经点过（tryCount > 0）时，说明点击已经派发、元素是被这次点击引发的重渲染
+     * 挤掉的，此时**视为本次切换成功**——否则重新解析元素后再点一次，会把刚弹出的
+     * 讲解又关掉（反向操作）。
+     */
+    if (tryCount > 0) {
+      return Result.succeed()
+    }
+    return Result.fail(err instanceof Error ? err : new UnexpectedError({ cause: err }))
+  }
+
+  if (disabled) {
+    const elementHtml = await button.evaluate(el => el.outerHTML).catch(() => '')
     return Result.fail(
-      new ElementContentMismatchedError({
-        current: buttonText,
-        target: `${targetContent} 或 ${sourceContent}`,
+      new ElementDisabledError({
+        elementName: '讲解按钮',
+        element: elementHtml,
       }),
     )
   }
 
-  // 两种情况：
-  // 1. 商品未讲解：buttonText === sourceContent，点击变为 targetContent 即可
-  // 2. 商品正在讲解：需要先点击一次取消讲解，变为未讲解状态
-  if (buttonText === targetContent && tryCount > 0) {
-    return Result.succeed()
-  }
-  if (await button.isDisabled()) {
-    return Result.fail(
-      new ElementDisabledError({
-        elementName: '讲解按钮',
-        element: await button.evaluate(el => el.outerHTML),
-      }),
-    )
-  }
   // button.click() 在抖店&百应的表现很诡异，所以用 dispatchEvent('click')
-  await button.dispatchEvent('click')
+  try {
+    await button.dispatchEvent('click')
+  } catch (err) {
+    return Result.fail(err instanceof Error ? err : new UnexpectedError({ cause: err }))
+  }
+
   return Result.pipe(
     abortableSleep(1000, signal),
     Result.andThen(() => toggleButton(button, sourceContent, targetContent, signal, tryCount + 1)),

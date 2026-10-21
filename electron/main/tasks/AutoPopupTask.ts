@@ -1,6 +1,6 @@
 import { Result } from '@praha/byethrow'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
-import { AbortError } from '#/errors/AppError'
+import { AbortError, UnexpectedError } from '#/errors/AppError'
 import type { ScopedLogger } from '#/logger'
 import type { IPerformPopup } from '#/platforms/IPlatform'
 import { mergeWithoutArray, randomInt, takeScreenshot } from '#/utils'
@@ -15,28 +15,37 @@ const retryOptions = {
   retryDelay: 1000,
 }
 
+/** 单个商品的执行计划：count 为 Infinity 表示无限循环 */
+type PlanStep = { id: number; interval: [number, number]; count: number }
+
+/** 有限次数的上限（「无限循环」不受此限制） */
+const MAX_REPEAT = 10000
+
 /**
- * 将 goodsItems 展开为执行序列：每个 item 按 repeatCount 展开
- * 返回 { id, interval } 数组
+ * 把商品列表编译成「加权执行计划」。
+ *
+ * - 有限次数：与原先「按次数展开成数组再取模轮转」的序列**完全一致**；
+ * - `repeatInfinite`：count = Infinity，表示永远参与轮转，不受 10000 上限约束。
+ *
+ * 不再把次数展开成数组，因为无限次数无法物化，且大次数会占用大量内存。
  */
-function buildExecutionQueue(config: AutoPopupConfig): { id: number; interval: [number, number] }[] {
+function buildPlan(config: AutoPopupConfig): PlanStep[] {
   const globalInterval = config.scheduler.interval
   const items = config.goodsItems
   if (!items || items.length === 0) {
     // 兼容旧配置：没有 goodsItems 时用 goodsIds
-    return config.goodsIds.map(id => ({ id, interval: globalInterval }))
+    return config.goodsIds.map(id => ({ id, interval: globalInterval, count: 1 }))
   }
-  const queue: { id: number; interval: [number, number] }[] = []
-  for (const item of items) {
-    const count = Math.max(1, Math.min(item.repeatCount ?? 1, 10000))
-    const interval = item.itemInterval && item.itemInterval[0] > 0 && item.itemInterval[1] > 0
-      ? item.itemInterval
-      : globalInterval
-    for (let i = 0; i < count; i++) {
-      queue.push({ id: item.id, interval })
-    }
-  }
-  return queue
+  return items.map(item => ({
+    id: item.id,
+    interval:
+      item.itemInterval && item.itemInterval[0] > 0 && item.itemInterval[1] > 0
+        ? item.itemInterval
+        : globalInterval,
+    count: item.repeatInfinite
+      ? Number.POSITIVE_INFINITY
+      : Math.max(1, Math.min(Math.floor(item.repeatCount ?? 1), MAX_REPEAT)),
+  }))
 }
 
 export function createAutoPopupTask(
@@ -47,8 +56,11 @@ export function createAutoPopupTask(
 ) {
   const logger = _logger.scope(TASK_NAME)
   let config = { ...taskConfig }
-  let queue = buildExecutionQueue(config)
-  let queueIndex = -1
+  let plan = buildPlan(config)
+  /** 当前处在计划的哪一段 */
+  let planIndex = 0
+  /** 当前这一段已经执行了几次 */
+  let usedInStep = 0
 
   const intervalTaskResult = createIntervalTask(execute, {
     interval: config.scheduler.interval,
@@ -72,11 +84,20 @@ export function createAutoPopupTask(
         if (signal.aborted) {
           return Result.fail(new AbortError())
         }
-        const result = await platform.performPopup(next.id, signal)
-        if (Result.isSuccess(result)) {
-          logger.success(`商品 ${next.id} 讲解成功`)
+        try {
+          const result = await platform.performPopup(next.id, signal)
+          if (Result.isSuccess(result)) {
+            logger.success(`商品 ${next.id} 讲解成功`)
+          }
+          return result
+        } catch (err) {
+          // ⚠️ Playwright 在元素被页面重渲染挤掉时会直接抛异常（而不是返回失败），
+          // 而 runWithRetry 内部没有 try/catch —— 不在这里兜住的话异常会一路冒到
+          // IntervalTask，任务被直接判定为「错误中断」退出，3 次重试完全不起作用。
+          return Result.fail(
+            err instanceof Error ? err : new UnexpectedError({ description: String(err) }),
+          )
         }
-        return result
       },
       {
         ...retryOptions,
@@ -92,12 +113,33 @@ export function createAutoPopupTask(
   }
 
   function getNext(): { id: number; interval: [number, number] } {
-    if (config.random) {
-      queueIndex = randomInt(0, queue.length - 1)
-    } else {
-      queueIndex = (queueIndex + 1) % queue.length
+    if (plan.length === 0) {
+      // 理论上不会发生（validateConfig 已保证非空），兜底避免抛错
+      return { id: 0, interval: config.scheduler.interval }
     }
-    return queue[queueIndex]
+
+    if (config.random) {
+      const infinite = plan.filter(step => !Number.isFinite(step.count))
+      if (infinite.length > 0) {
+        // 有无限循环商品时，只在它们之间随机
+        return infinite[randomInt(0, infinite.length - 1)]
+      }
+      const total = plan.reduce((sum, step) => sum + step.count, 0)
+      let r = randomInt(0, total - 1)
+      for (const step of plan) {
+        if (r < step.count) return step
+        r -= step.count
+      }
+      return plan[plan.length - 1]
+    }
+
+    const step = plan[planIndex]
+    usedInStep += 1
+    if (usedInStep >= step.count) {
+      usedInStep = 0
+      planIndex = (planIndex + 1) % plan.length
+    }
+    return step
   }
 
   function validateConfig(userConfig: AutoPopupConfig) {
@@ -111,8 +153,22 @@ export function createAutoPopupTask(
         return Result.succeed()
       }),
       Result.inspect(() => {
-        const q = buildExecutionQueue(userConfig)
-        logger.info(`商品配置验证通过，共加载 ${q.length} 个弹窗任务`)
+        const p = buildPlan(userConfig)
+        const finiteTotal = p.reduce(
+          (sum, step) => sum + (Number.isFinite(step.count) ? step.count : 0),
+          0,
+        )
+        const infiniteSteps = p.filter(step => !Number.isFinite(step.count))
+        logger.info(
+          infiniteSteps.length > 0
+            ? `商品配置验证通过，共加载 ${finiteTotal} 个弹窗任务，其中 ${infiniteSteps.length} 个商品为无限循环`
+            : `商品配置验证通过，共加载 ${finiteTotal} 个弹窗任务`,
+        )
+        // 无限循环项之后的任务永远不会被执行，提前告知
+        const infiniteIndex = p.findIndex(step => !Number.isFinite(step.count))
+        if (infiniteIndex >= 0 && infiniteIndex < p.length - 1) {
+          logger.warn('无限循环商品之后还有商品，它们将不会被执行（无限循环商品会一直轮到自己）')
+        }
       }),
     )
   }
@@ -124,8 +180,9 @@ export function createAutoPopupTask(
       Result.andThen(_ => intervalTask.validateInterval(mergedConfig.scheduler.interval)),
       Result.inspect(() => {
         config = mergedConfig
-        queue = buildExecutionQueue(config)
-        queueIndex = -1
+        plan = buildPlan(config)
+        planIndex = 0
+        usedInStep = 0
         // 更新配置后重新启动任务
         intervalTask.restart()
       }),

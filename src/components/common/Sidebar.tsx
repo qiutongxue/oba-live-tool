@@ -1,9 +1,10 @@
 import { NavLink } from 'react-router'
-import { abilities, autoReplyPlatforms } from '@/abilities'
+import { abilities, autoReplyPlatforms, marketingPlatforms } from '@/abilities'
 import { useCurrentAutoMessage } from '@/hooks/useAutoMessage'
 import { useCurrentAutoPopUp } from '@/hooks/useAutoPopUp'
 import { useAutoReply } from '@/hooks/useAutoReply'
 import { useCurrentLiveControl } from '@/hooks/useLiveControl'
+import { useCurrentMarketingLoop } from '@/hooks/useMarketingLoop'
 import { cn } from '@/lib/utils'
 import {
   CarbonBlockStorage,
@@ -12,6 +13,7 @@ import {
   CarbonGift,
   CarbonIbmEventAutomation,
   CarbonIbmWatsonTextToSpeech,
+  CarbonRocket,
   CarbonSettings,
 } from '../icons/carbon'
 
@@ -27,6 +29,7 @@ export default function Sidebar() {
   const isAutoMessageRunning = useCurrentAutoMessage(context => context.isRunning)
   const isAutoPopupRunning = useCurrentAutoPopUp(context => context.isRunning)
   const { isRunning: isAutoReplyRunning } = useAutoReply()
+  const isMarketingRunning = useCurrentMarketingLoop(context => context.isRunning)
   const platform = useCurrentLiveControl(context => context.platform)
 
   const tabs: SidebarTab[] = [
@@ -59,6 +62,13 @@ export default function Sidebar() {
       name: '一键发红包',
       icon: <CarbonGift className="w-5 h-5" />,
       platform: ['douyin', 'buyin'],
+    },
+    {
+      id: '/marketing',
+      name: '营销助手',
+      isRunning: isMarketingRunning,
+      icon: <CarbonRocket className="w-5 h-5" />,
+      platform: marketingPlatforms,
     },
     {
       id: '/ai-chat',

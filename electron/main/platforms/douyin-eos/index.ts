@@ -1,6 +1,9 @@
 import { Result } from '@praha/byethrow'
 import type { Page } from 'playwright'
+import { AbortError, UnexpectedError } from '#/errors/AppError'
+import type { PlatformError } from '#/errors/PlatformError'
 import type { BrowserSession } from '#/managers/BrowserSessionManager'
+import { AsyncLock } from '#/utils'
 import {
   comment,
   connect,
@@ -9,19 +12,46 @@ import {
   getItemFromVirtualScroller,
   toggleButton,
 } from '../helper'
-import type { IPerformComment, IPerformPopup, IPlatform } from '../IPlatform'
+import type {
+  IMarketingTool,
+  IPerformComment,
+  IPerformPopup,
+  IPlatform,
+  IScrollComments,
+} from '../IPlatform'
+import { scrollCommentListToBottom } from './commentScroll'
 import { REGEXPS, SELECTORS, TEXTS, URLS } from './constant'
 import { douyinEosElementFinder as elementFinder } from './element-finder'
+import {
+  readCoupons,
+  readGiftBagTemplates,
+  sendCouponOnPage,
+  sendGiftBagByIndex,
+} from './marketing'
 
 const PLATFORM_NAME = '抖音团购' as const
 
 /**
  * 抖音团购
  */
-export class DouyinEosPlatform implements IPlatform, IPerformPopup, IPerformComment {
+export class DouyinEosPlatform
+  implements IPlatform, IPerformPopup, IPerformComment, IMarketingTool, IScrollComments
+{
   readonly _isPerformComment = true
   readonly _isPerformPopup = true
+  readonly _isMarketingTool = true
+  readonly _isScrollComments = true
   public mainPage: Page | null = null
+
+  /**
+   * 页面级互斥锁：本平台所有 DOM 操作都排队执行。
+   * 「自动弹窗」「自动发言」「营销循环」共用同一个页面，任何一方的操作都会让页面
+   * 重渲染、把另一方刚拿到的 ElementHandle 挤掉（报 not attached to the DOM）；
+   * 串行化之后这些任务就能**同时运行**而不互相干扰。
+   *
+   * 注意：不能在锁内再去抢同一把锁（会死锁），所以这里只在最外层包一次。
+   */
+  private readonly pageLock = new AsyncLock()
 
   async connect(browserSession: BrowserSession) {
     const { page } = browserSession
@@ -55,20 +85,28 @@ export class DouyinEosPlatform implements IPlatform, IPerformPopup, IPerformComm
   }
 
   async performPopup(id: number, signal?: AbortSignal) {
-    return Result.pipe(
-      ensurePage(this.mainPage),
-      Result.andThen(page => getItemFromVirtualScroller(page, elementFinder, id)),
-      Result.andThen(item => elementFinder.getPopUpButtonFromGoodsItem(item)),
-      Result.andThen(popupBtn =>
-        toggleButton(popupBtn, TEXTS.POPUP_BUTTON, TEXTS.POPUP_BUTTON_CANCLE, signal),
-      ),
-    )
+    return this.pageLock.run<Result.Result<void, Error>>(() => {
+      // 排队等锁期间任务可能已经被停止；这里再确认一次，避免"停了还弹一次"
+      if (signal?.aborted) {
+        return Promise.resolve(Result.fail(new AbortError()))
+      }
+      return Result.pipe(
+        ensurePage(this.mainPage),
+        Result.andThen(page => getItemFromVirtualScroller(page, elementFinder, id)),
+        Result.andThen(item => elementFinder.getPopUpButtonFromGoodsItem(item)),
+        Result.andThen(popupBtn =>
+          toggleButton(popupBtn, TEXTS.POPUP_BUTTON, TEXTS.POPUP_BUTTON_CANCLE, signal),
+        ),
+      )
+    })
   }
 
   async performComment(message: string) {
-    return Result.pipe(
-      ensurePage(this.mainPage),
-      Result.andThen(page => comment(page, elementFinder, message, false)),
+    return this.pageLock.run(() =>
+      Result.pipe(
+        ensurePage(this.mainPage),
+        Result.andThen(page => comment(page, elementFinder, message, false)),
+      ),
     )
   }
 
@@ -78,6 +116,85 @@ export class DouyinEosPlatform implements IPlatform, IPerformPopup, IPerformComm
 
   getCommentPage() {
     return this.mainPage
+  }
+
+  // ==================== 评论列表自动滚动 ====================
+
+  scrollCommentsToBottom(): Result.ResultAsync<CommentScrollReport, PlatformError> {
+    return this.pageLock.run(() =>
+      Result.pipe(
+        ensurePage(this.mainPage),
+        Result.andThen(page =>
+          Result.try({
+            immediate: true,
+            try: () => scrollCommentListToBottom(page),
+            catch: err => new UnexpectedError({ description: String(err) }),
+          }),
+        ),
+      ),
+    )
+  }
+
+  // ==================== 营销工具：福袋 / 优惠券 ====================
+
+  getGiftBagTemplates(): Result.ResultAsync<GiftBagTemplate[], PlatformError> {
+    return this.pageLock.run(() =>
+      Result.pipe(
+        ensurePage(this.mainPage),
+        Result.andThen(page =>
+          Result.try({
+            immediate: true,
+            try: () => readGiftBagTemplates(page),
+            catch: err => new UnexpectedError({ description: String(err) }),
+          }),
+        ),
+      ),
+    )
+  }
+
+  sendGiftBag(index: number): Result.ResultAsync<SendGiftBagResult, PlatformError> {
+    return this.pageLock.run(() =>
+      Result.pipe(
+        ensurePage(this.mainPage),
+        Result.andThen(page =>
+          Result.try({
+            immediate: true,
+            try: () => sendGiftBagByIndex(page, index),
+            catch: err => new UnexpectedError({ description: String(err) }),
+          }),
+        ),
+      ),
+    )
+  }
+
+  getCoupons(): Result.ResultAsync<CouponInfo[], PlatformError> {
+    return this.pageLock.run(() =>
+      Result.pipe(
+        ensurePage(this.mainPage),
+        Result.andThen(page =>
+          Result.try({
+            immediate: true,
+            try: () => readCoupons(page),
+            catch: err => new UnexpectedError({ description: String(err) }),
+          }),
+        ),
+      ),
+    )
+  }
+
+  sendCoupon(params: SendCouponParams): Result.ResultAsync<void, PlatformError> {
+    return this.pageLock.run(() =>
+      Result.pipe(
+        ensurePage(this.mainPage),
+        Result.andThen(page =>
+          Result.try({
+            immediate: true,
+            try: () => sendCouponOnPage(page, params),
+            catch: err => new UnexpectedError({ description: String(err) }),
+          }),
+        ),
+      ),
+    )
   }
 
   get platformName() {

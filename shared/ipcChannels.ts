@@ -21,6 +21,11 @@ export const IPC_CHANNELS = {
       registerShortcuts: 'tasks:autoPopup:registerShortcut',
       unregisterShortcuts: 'tasks:autoPopup:unregisterShortcut',
     },
+    commentScroll: {
+      start: 'tasks:commentScroll:start',
+      stop: 'tasks:commentScroll:stop',
+      stoppedEvent: 'tasks:commentScroll:stoppedEvent',
+    },
     aiChat: {
       chat: 'tasks:aiChat:chat',
       stream: 'tasks:aiChat:stream',
@@ -43,6 +48,17 @@ export const IPC_CHANNELS = {
     // 一键发红包
     redPacket: {
       send: 'tasks:redPacket:send',
+    },
+    // 营销工具（抖音团购：福袋 / 优惠券）
+    marketing: {
+      getGiftBagTemplates: 'tasks:marketing:getGiftBagTemplates',
+      sendGiftBag: 'tasks:marketing:sendGiftBag',
+      getCoupons: 'tasks:marketing:getCoupons',
+      sendCoupon: 'tasks:marketing:sendCoupon',
+      startLoop: 'tasks:marketing:startLoop',
+      stopLoop: 'tasks:marketing:stopLoop',
+      updateLoopConfig: 'tasks:marketing:updateLoopConfig',
+      loopStoppedEvent: 'tasks:marketing:loopStoppedEvent',
     },
   },
   config: {

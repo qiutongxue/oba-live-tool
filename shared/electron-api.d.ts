@@ -51,6 +51,14 @@ export interface IpcChannels {
   ) => void
   [IPC_CHANNELS.tasks.autoPopUp.unregisterShortcuts]: () => void
 
+  // 评论列表自动滚动
+  [IPC_CHANNELS.tasks.commentScroll.start]: (
+    accountId: string,
+    config: CommentScrollConfig,
+  ) => boolean
+  [IPC_CHANNELS.tasks.commentScroll.stop]: (accountId: string) => boolean
+  [IPC_CHANNELS.tasks.commentScroll.stoppedEvent]: (id: string) => void
+
   // AutoReply
   [IPC_CHANNELS.tasks.autoReply.startCommentListener]: (
     accountId: string,
@@ -99,6 +107,28 @@ export interface IpcChannels {
 
   // 一键发红包
   [IPC_CHANNELS.tasks.redPacket.send]: (accountId: string, duration: string) => boolean
+
+  // 营销工具（抖音团购：福袋 / 优惠券）
+  [IPC_CHANNELS.tasks.marketing.getGiftBagTemplates]: (accountId: string) => GiftBagTemplate[]
+  [IPC_CHANNELS.tasks.marketing.sendGiftBag]: (
+    accountId: string,
+    params: SendGiftBagParams,
+  ) => SendGiftBagResult | null
+  [IPC_CHANNELS.tasks.marketing.getCoupons]: (accountId: string) => CouponInfo[]
+  [IPC_CHANNELS.tasks.marketing.sendCoupon]: (
+    accountId: string,
+    params: SendCouponParams,
+  ) => boolean
+  [IPC_CHANNELS.tasks.marketing.startLoop]: (
+    accountId: string,
+    config: MarketingLoopConfig,
+  ) => boolean
+  [IPC_CHANNELS.tasks.marketing.stopLoop]: (accountId: string) => boolean
+  [IPC_CHANNELS.tasks.marketing.updateLoopConfig]: (
+    accountId: string,
+    config: Partial<MarketingLoopConfig>,
+  ) => void
+  [IPC_CHANNELS.tasks.marketing.loopStoppedEvent]: (id: string) => void
 
   // Updater
   [IPC_CHANNELS.updater.checkUpdate]: () => Promise<
