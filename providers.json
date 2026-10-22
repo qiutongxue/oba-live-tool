@@ -25,7 +25,6 @@
       "deepseek/deepseek-chat-v3.1",
       "deepseek/deepseek-r1-0528",
       "deepseek/deepseek-chat-v3-0324",
-      "deepseek/deepseek-r1",
       "deepseek/deepseek-chat"
     ]
   },
@@ -34,6 +33,7 @@
     "baseURL": "https://api.siliconflow.cn/v1",
     "apiUrl": "https://cloud.siliconflow.cn/account/ak",
     "models": [
+      "deepseek-ai/DeepSeek-V4.1-Flash",
       "deepseek-ai/DeepSeek-V4-Flash",
       "deepseek-ai/DeepSeek-V4-Pro",
       "deepseek-ai/DeepSeek-V3.2",
