@@ -16,14 +16,14 @@ export function OtherSetting() {
   const handleOpenGitHub = async () => {
     await window.ipcRenderer.invoke(
       IPC_CHANNELS.app.openExternal,
-      'https://github.com/qiutongxue/oba-live-tool',
+      'https://github.com/TuoLingTeam/TLS-live-tool',
     )
   }
 
   const handleOpenIssues = async () => {
     await window.ipcRenderer.invoke(
       IPC_CHANNELS.app.openExternal,
-      'https://github.com/qiutongxue/oba-live-tool/issues',
+      'https://github.com/TuoLingTeam/TLS-live-tool/issues',
     )
   }
 
