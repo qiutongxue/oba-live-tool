@@ -69,7 +69,11 @@ export const commonElementFinder = {
   },
 
   async getCommentTextarea(page: Page, textareaSelector: string) {
-    const textarea = await page.$(textareaSelector)
+    // ⚠️ 原来用 page.$() 是瞬时查询：页面重渲染/切换的瞬间取不到就直接判失败。
+    // 慢机器上这个窗口更明显，会让「自动发言」偶发失败甚至停机。这里改成短暂等待。
+    const textarea = await page
+      .waitForSelector(textareaSelector, { timeout: 5000, state: 'visible' })
+      .catch(() => null)
     if (!textarea) {
       return Result.fail(
         new ElementNotFoundError({

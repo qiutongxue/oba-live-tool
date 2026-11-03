@@ -61,6 +61,15 @@ export const IPC_CHANNELS = {
       loopStoppedEvent: 'tasks:marketing:loopStoppedEvent',
     },
   },
+  seckill: {
+    read: 'seckill:read',
+    restock: 'seckill:restock',
+    dump: 'seckill:dump',
+    recordClick: 'seckill:recordClick',
+    openFloat: 'seckill:openFloat',
+    closeFloat: 'seckill:closeFloat',
+    setFloatMode: 'seckill:setFloatMode',
+  },
   config: {
     save: 'config:save',
     load: 'config:load',

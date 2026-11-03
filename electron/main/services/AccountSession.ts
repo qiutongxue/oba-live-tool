@@ -17,6 +17,7 @@ import {
   isPerformPopup,
   isPinComment,
   isScrollComments,
+  isSeckill,
   isSendRedPacket,
 } from '#/platforms/IPlatform'
 import { createAutoCommentTask } from '#/tasks/AutoCommentTask'
@@ -198,6 +199,48 @@ export class AccountSession {
       )
     }
     return this.platform.sendCoupon(params)
+  }
+
+  // ==================== 秒杀补货 ====================
+
+  public async readSeckillGoods(): Result.ResultAsync<SeckillGoods[], Error> {
+    if (!isSeckill(this.platform)) {
+      return Result.fail(
+        new TaskNotSupportedError({ taskName: '秒杀补货', targetName: this.platform.platformName }),
+      )
+    }
+    return this.platform.readSeckillGoods()
+  }
+
+  public async restockSeckill(
+    index: number,
+    addCount: number,
+    manualEntry: boolean,
+  ): Result.ResultAsync<SeckillRestockResult, Error> {
+    if (!isSeckill(this.platform)) {
+      return Result.fail(
+        new TaskNotSupportedError({ taskName: '秒杀补货', targetName: this.platform.platformName }),
+      )
+    }
+    return this.platform.restockSeckill(index, addCount, manualEntry)
+  }
+
+  public async recordSeckillClick(): Result.ResultAsync<string, Error> {
+    if (!isSeckill(this.platform)) {
+      return Result.fail(
+        new TaskNotSupportedError({ taskName: '秒杀补货', targetName: this.platform.platformName }),
+      )
+    }
+    return this.platform.recordSeckillClick()
+  }
+
+  public async dumpSeckillDom(): Result.ResultAsync<string, Error> {
+    if (!isSeckill(this.platform)) {
+      return Result.fail(
+        new TaskNotSupportedError({ taskName: '秒杀补货', targetName: this.platform.platformName }),
+      )
+    }
+    return this.platform.dumpSeckillDom()
   }
 
   public updateTaskConfig<T extends LiveControlTask>(

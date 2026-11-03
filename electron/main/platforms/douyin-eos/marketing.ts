@@ -310,46 +310,76 @@ async function readSelectedDuration(page: Page): Promise<string | null> {
 }
 
 /**
- * 点击「提交审核」后等待**表单抽屉关闭**，期间反复点掉二次确认弹窗。
+ * 提交阶段的等待参数。
  *
- * ⚠️ 2026-10-18 定位到的偶发失败根因：
- * 原来的实现是「点提交 → sleep 1.5s → 点一次确认 → sleep 1.5s → 直接返回成功」。
- * 二次确认弹窗（确定/取消）有时要好几秒才渲染出来，一次没点中就会漏掉；
- * 随后 `closeAllDrawers` 把还开着的确认弹窗关掉 —— **等于替用户点了取消**，
- * 但函数照样返回成功。表现就是「提示已发放、实际一个福袋都没创建」，且概率性发生。
- *
- * 现在改成边等边点：只要确认弹窗出现就点掉（最多 3 次，防止误触），
- * 直到表单抽屉消失或超时。
- *
- * @returns true = 表单已关闭；false = 超时仍未关闭
+ * ⚠️ 慢机器/慢网络下，eos 从「点提交」到「响应回来、抽屉关闭」十几秒很常见。
+ * 之前固定等 10 秒就判超时，而超时后又会关抽屉（= 取消提交），
+ * 于是表现为「偶发发不出去」「卡住」（2026-10-24 定位）。
  */
-async function waitGiftBagFormClosed(page: Page, timeout = 10000): Promise<boolean> {
-  const deadline = Date.now() + timeout
-  // 先给 loading 状态出现的时间
-  await sleep(1000)
-  let confirmClicks = 0
+const SUBMIT_TIMING = {
+  /** 点提交后先给 loading 出现的时间 */
+  graceMs: 1200,
+  /** 表单可见、但既不在提交中也没关闭，持续这么久 → 认为没提交成功（如校验未通过） */
+  idleTimeoutMs: 15000,
+  /** 一直处于「提交中」最多等这么久（给慢机器留余量） */
+  submittingTimeoutMs: 60000,
+  /** 最多点几次二次确认（防止误触） */
+  maxConfirmClicks: 3,
+} as const
 
-  while (Date.now() < deadline) {
-    if (confirmClicks < 3 && (await clickConfirmIfAny(page, 2000))) {
+/** 判断提交按钮是否处于「提交中」：disabled，或者带 loading 类名 */
+async function isSubmitting(btn: Locator): Promise<boolean> {
+  if (await btn.isDisabled().catch(() => false)) return true
+  const cls = (await btn.getAttribute('class').catch(() => '')) ?? ''
+  return /loading|spin/i.test(cls)
+}
+
+/**
+ * 点击「提交审核」后等待提交结束，期间反复点掉二次确认弹窗。
+ *
+ * 三种结果，调用方据此决定「能不能关抽屉」：
+ * - `closed`     抽屉消失（提交成功的正常表现）
+ * - `idle`       表单还在、按钮可用且一直没进入提交态 → 多半被校验/服务端拒绝
+ * - `submitting` 一直卡在提交中 → 请求还没回来，**此时绝不能关抽屉（等于取消）**
+ */
+async function waitGiftBagSubmitOutcome(page: Page): Promise<GiftBagSubmitOutcome> {
+  const started = Date.now()
+  await sleep(SUBMIT_TIMING.graceMs)
+
+  let confirmClicks = 0
+  let idleSince: number | null = null
+
+  while (true) {
+    const elapsed = Date.now() - started
+
+    // 1) 二次确认可能延迟数秒才渲染，边等边点
+    if (confirmClicks < SUBMIT_TIMING.maxConfirmClicks && (await clickConfirmIfAny(page, 2000))) {
       confirmClicks += 1
-      await sleep(600)
+      idleSince = null
+      await sleep(500)
       continue
     }
 
+    // 2) 抽屉消失 = 提交已结束
     const submit = page.locator(MARKETING.GIFT_BAG.SUBMIT)
     const n = await submit.count().catch(() => 0)
-    if (n === 0) return true
-    if (
-      !(await submit
-        .first()
-        .isVisible()
-        .catch(() => false))
-    ) {
-      return true
+    if (n === 0) return 'closed'
+    const btn = submit.first()
+    if (!(await btn.isVisible().catch(() => false))) return 'closed'
+
+    // 3) 还在提交中 → 继续等（慢机器最多等 60 秒）
+    if (await isSubmitting(btn)) {
+      idleSince = null
+      if (elapsed > SUBMIT_TIMING.submittingTimeoutMs) return 'submitting'
+      await sleep(400)
+      continue
     }
+
+    // 4) 可见且空闲：可能还没开始提交，也可能被拒绝
+    idleSince ??= Date.now()
+    if (Date.now() - idleSince > SUBMIT_TIMING.idleTimeoutMs) return 'idle'
     await sleep(400)
   }
-  return false
 }
 
 /**
@@ -360,7 +390,7 @@ async function countGiftBagRows(page: Page): Promise<number | null> {
   try {
     await closeAllDrawers(page)
     await openMarketingTile(page, MARKETING.GIFT_BAG.TILE, MARKETING.GIFT_BAG.MODAL_READY)
-    await waitForTableRows(page, 10000)
+    await waitForTableRows(page, 15000)
     return await page
       .locator(MARKETING.TABLE_ROW)
       .count()
@@ -380,9 +410,14 @@ async function countGiftBagRows(page: Page): Promise<number | null> {
  * 以及提交后是否在列表里**确认到新增**（`verified`）。
  */
 export async function sendGiftBagByIndex(page: Page, index: number): Promise<SendGiftBagResult> {
+  const startedAt = Date.now()
+  // 各阶段耗时：慢机器排障时看这一行就知道卡在哪儿
+  const timings: GiftBagTimings = { listMs: 0, formMs: 0, submitMs: 0, verifyMs: 0, totalMs: 0 }
+
   await openMarketingTile(page, MARKETING.GIFT_BAG.TILE, MARKETING.GIFT_BAG.MODAL_READY)
   try {
     await waitForTableRows(page)
+    timings.listMs = Date.now() - startedAt
 
     // 提交前记录列表行数，提交后用它校验是否真的新增了一条
     const beforeRows = await page
@@ -402,8 +437,10 @@ export async function sendGiftBagByIndex(page: Page, index: number): Promise<Sen
     const targetRow = copyRows.nth(index - 1)
     await targetRow.locator(`:text-is("${MARKETING.GIFT_BAG.COPY_TEXT}")`).first().click()
 
-    // 等待「复制并创建福袋」表单
-    await page.waitForSelector(MARKETING.GIFT_BAG.FORM_READY, { timeout: 20000, state: 'visible' })
+    // 等待「复制并创建福袋」表单（慢机器上抽屉渲染可能要更久）
+    const formStartedAt = Date.now()
+    await page.waitForSelector(MARKETING.GIFT_BAG.FORM_READY, { timeout: 30000, state: 'visible' })
+    timings.formMs = Date.now() - formStartedAt
     await sleep(800)
 
     // ⚠️ 提交前先记录表单里的时长（复制模板时不动它，走免审）
@@ -413,28 +450,40 @@ export async function sendGiftBagByIndex(page: Page, index: number): Promise<Sen
     if (await submitBtn.isDisabled().catch(() => false)) {
       throw new Error('「提交审核」按钮不可用，福袋表单可能未就绪')
     }
+    const submitStartedAt = Date.now()
     await submitBtn.click()
 
-    // 边等边点二次确认，直到表单关闭（不再是「点一次就赌它成功」）
-    const formClosed = await waitGiftBagFormClosed(page)
+    // 边等边点二次确认；按「是否还在提交中」决定等多久（不再是固定 10 秒）
+    const outcome = await waitGiftBagSubmitOutcome(page)
+    timings.submitMs = Date.now() - submitStartedAt
 
-    // 重新读一次列表，确认是否真的多了一条福袋
+    const durationMs = durationText ? parseDurationText(durationText) : null
+
+    // ⚠️ 还在提交中时**绝对不能**去关抽屉复核：关掉就等于取消提交。
+    // 这种情况返回「未确认」，由任务层稍后重新读列表判断，绝不在这里下失败结论
+    // （误判失败会触发重发 → 重复创建福袋）。
+    if (outcome === 'submitting') {
+      timings.totalMs = Date.now() - startedAt
+      return { durationText, durationMs, verified: false, outcome, timings }
+    }
+
+    // 表单已关闭或已空闲 → 可以安全地重开抽屉核对列表
+    const verifyStartedAt = Date.now()
     const afterRows = await countGiftBagRows(page)
+    timings.verifyMs = Date.now() - verifyStartedAt
+    timings.totalMs = Date.now() - startedAt
+
     const verified = afterRows !== null && afterRows > beforeRows
 
-    // 表单没关 + 列表也没新增 → 基本可以确定这次没发出去，明确报错，不要谎报成功
-    if (!formClosed && !verified) {
+    // 表单一直可用（没进入提交态）+ 列表也没新增 → 明确失败，不要谎报成功
+    if (outcome === 'idle' && !verified) {
       throw new Error(
-        '已点击「提交审核」，但 10 秒内表单没有关闭、列表里也没出现新的福袋 —— 本次大概率没有发放成功' +
-          '（表单校验未通过、被服务端拒绝或确认弹窗未点掉）。请到中控台核对后重试',
+        '已点击「提交审核」，但表单一直停留在可提交状态、列表里也没出现新的福袋 —— 本次没有发放成功' +
+          '（可能是表单校验未通过或被服务端拒绝）。请到中控台核对后重试',
       )
     }
 
-    return {
-      durationText,
-      durationMs: durationText ? parseDurationText(durationText) : null,
-      verified,
-    }
+    return { durationText, durationMs, verified, outcome, timings }
   } finally {
     await closeAllDrawers(page)
   }

@@ -79,6 +79,30 @@ export function isScrollComments(platform: IPlatform): platform is IPlatform & I
   return '_isScrollComments' in platform && platform._isScrollComments === true
 }
 
+/** 秒杀补货（读取直播商品列表 + 对售罄商品补货） */
+export interface ISeckill {
+  _isSeckill: true
+  /** 读取「直播商品」列表（含剩余库存与售罄状态） */
+  readSeckillGoods(): Result.ResultAsync<SeckillGoods[], PlatformError>
+  /** 对第 index 个商品补货：投放库存 = 当前值 + addCount */
+  restockSeckill(
+    index: number,
+    addCount: number,
+    manualEntry: boolean,
+  ): Result.ResultAsync<SeckillRestockResult, PlatformError>
+  /** 导出页面结构，定位失败时排查用 */
+  dumpSeckillDom(): Result.ResultAsync<string, PlatformError>
+  /**
+   * 录制用户在页面上的一次真实点击，返回点击目标链。
+   * 用于「我点一次，你按这个写脚本」——比盲猜选择器可靠。
+   */
+  recordSeckillClick(): Result.ResultAsync<string, PlatformError>
+}
+
+export function isSeckill(platform: IPlatform): platform is IPlatform & ISeckill {
+  return '_isSeckill' in platform && platform._isSeckill === true
+}
+
 /** 营销工具（福袋 / 优惠券） */
 export interface IMarketingTool {
   _isMarketingTool: true

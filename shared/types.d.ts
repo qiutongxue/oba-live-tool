@@ -121,6 +121,72 @@ declare type CommentScrollReport = {
   target: string
 }
 
+// ============================ 秒杀补货 ============================
+
+/** 「直播商品」列表里的一个商品（含秒杀信息） */
+declare type SeckillGoods = {
+  /** 列表里的序号（1-based） */
+  index: number
+  title: string
+  /** 剩余库存；读不到为 null */
+  stock: number | null
+  /** 秒杀价（文本）；非秒杀商品或读不到为 null */
+  price: string | null
+  /** 是否已售罄 */
+  soldOut: boolean
+  /** 是否秒杀商品（行内含「秒杀价」或「仅剩N件」） */
+  isSeckill?: boolean
+  /** 「已售/库存」原文，如 654/99万+，排查用 */
+  soldStockText?: string | null
+  /** 原始文本，排查用 */
+  rawText: string
+}
+
+/** 一次补货的结果 */
+declare type SeckillRestockResult = {
+  index: number
+  title: string
+  /** 「投放库存」原来的值 */
+  before: number
+  /** 提交时写入的值（before + 每次补货数量） */
+  next: number
+  /** 补货前读到的剩余库存 */
+  beforeStock: number | null
+  /** 补货后读到的剩余库存（没读到为 null） */
+  afterStock: number | null
+  /** 是否复核到库存变化 */
+  verified: boolean
+  /** 「投放秒杀」弹窗是否关闭 */
+  closed: boolean
+  message: string
+  timings: {
+    openModalMs: number
+    readStockMs: number
+    submitMs: number
+    verifyMs: number
+  }
+}
+
+/** 悬浮窗的打开方式 */
+declare type SeckillFloatMode = 'shortcut' | 'auto'
+
+/** 秒杀补货的参数（渲染层持久化，随调用一起传给主进程） */
+declare type SeckillRestockConfig = {
+  /** 每次补货在「投放库存」当前值上加多少 */
+  addCount: number
+  /** 售罄后等多少秒再补 */
+  delaySeconds: number
+  /** 自动模式：多久检查一次（秒） */
+  checkIntervalSeconds: number
+  /** 悬浮窗打开方式 */
+  floatMode: SeckillFloatMode
+  /**
+   * 手动打开弹窗：由用户自己点开「秒杀详情 → 编辑」，
+   * 程序只负责等「投放库存」出现后填数并提交（入口点击不再自动猜测）
+   */
+  manualEntry: boolean
+}
+
 declare type LiveControlTask =
   | AutoPopupTask
   | AutoCommentTask
@@ -285,6 +351,24 @@ declare type SendGiftBagParams = {
  * 发放福袋的结果。
  * 提交前会从表单里读一次当前选中的时长，供营销循环估算「下次什么时候再检查」。
  */
+/** 福袋提交阶段的判定结果 */
+declare type GiftBagSubmitOutcome =
+  /** 表单抽屉关闭（提交成功的正常表现） */
+  | 'closed'
+  /** 表单还在且按钮一直可用 —— 多半被校验/服务端拒绝 */
+  | 'idle'
+  /** 一直卡在提交中 —— 请求还没回来，此时不能关抽屉（等于取消） */
+  | 'submitting'
+
+/** 福袋发放各阶段耗时（毫秒），慢机器排障用 */
+declare type GiftBagTimings = {
+  listMs: number
+  formMs: number
+  submitMs: number
+  verifyMs: number
+  totalMs: number
+}
+
 declare type SendGiftBagResult = {
   /** 表单里读到的时长文本，如「5分钟」；没读到为 null */
   durationText: string | null
@@ -294,9 +378,13 @@ declare type SendGiftBagResult = {
    * 提交后是否在福袋列表里确认到「新增了一条」。
    * - true  → 确实创建成功
    * - false → 提交动作已完成，但列表没刷新出新增（可能只是列表未及时刷新，不代表失败）
-   * 调用方据此决定是「按发放时长等待」还是「按轮询间隔尽快复查」。
+   * 调用方据此决定是「按发放时长等待」还是「稍后复查」。
    */
   verified: boolean
+  /** 提交阶段的判定结果 */
+  outcome?: GiftBagSubmitOutcome
+  /** 各阶段耗时，用于排查慢机器/卡顿 */
+  timings?: GiftBagTimings
 }
 
 /**

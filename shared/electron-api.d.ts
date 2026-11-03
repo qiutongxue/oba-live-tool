@@ -115,6 +115,20 @@ export interface IpcChannels {
     params: SendGiftBagParams,
   ) => SendGiftBagResult | null
   [IPC_CHANNELS.tasks.marketing.getCoupons]: (accountId: string) => CouponInfo[]
+  // 秒杀补货
+  [IPC_CHANNELS.seckill.read]: (accountId: string) => SeckillGoods[]
+  [IPC_CHANNELS.seckill.restock]: (
+    accountId: string,
+    index: number,
+    addCount: number,
+    manualEntry: boolean,
+  ) => SeckillRestockResult | null
+  [IPC_CHANNELS.seckill.dump]: (accountId: string) => string
+  [IPC_CHANNELS.seckill.recordClick]: (accountId: string) => string
+  [IPC_CHANNELS.seckill.openFloat]: () => void
+  [IPC_CHANNELS.seckill.closeFloat]: () => void
+  [IPC_CHANNELS.seckill.setFloatMode]: (accountId: string, mode: SeckillFloatMode) => void
+
   [IPC_CHANNELS.tasks.marketing.sendCoupon]: (
     accountId: string,
     params: SendCouponParams,

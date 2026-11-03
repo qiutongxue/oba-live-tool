@@ -18,6 +18,7 @@ import type {
   IPerformPopup,
   IPlatform,
   IScrollComments,
+  ISeckill,
 } from '../IPlatform'
 import { scrollCommentListToBottom } from './commentScroll'
 import { REGEXPS, SELECTORS, TEXTS, URLS } from './constant'
@@ -28,6 +29,7 @@ import {
   sendCouponOnPage,
   sendGiftBagByIndex,
 } from './marketing'
+import { dumpSeckillDom, readSeckillGoods, recordSeckillClick, restockSeckill } from './seckill'
 
 const PLATFORM_NAME = '抖音团购' as const
 
@@ -35,12 +37,13 @@ const PLATFORM_NAME = '抖音团购' as const
  * 抖音团购
  */
 export class DouyinEosPlatform
-  implements IPlatform, IPerformPopup, IPerformComment, IMarketingTool, IScrollComments
+  implements IPlatform, IPerformPopup, IPerformComment, IMarketingTool, IScrollComments, ISeckill
 {
   readonly _isPerformComment = true
   readonly _isPerformPopup = true
   readonly _isMarketingTool = true
   readonly _isScrollComments = true
+  readonly _isSeckill = true
   public mainPage: Page | null = null
 
   /**
@@ -128,6 +131,70 @@ export class DouyinEosPlatform
           Result.try({
             immediate: true,
             try: () => scrollCommentListToBottom(page),
+            catch: err => new UnexpectedError({ description: String(err) }),
+          }),
+        ),
+      ),
+    )
+  }
+
+  // ==================== 秒杀补货 ====================
+
+  readSeckillGoods(): Result.ResultAsync<SeckillGoods[], PlatformError> {
+    return this.pageLock.run(() =>
+      Result.pipe(
+        ensurePage(this.mainPage),
+        Result.andThen(page =>
+          Result.try({
+            immediate: true,
+            try: () => readSeckillGoods(page),
+            catch: err => new UnexpectedError({ description: String(err) }),
+          }),
+        ),
+      ),
+    )
+  }
+
+  restockSeckill(
+    index: number,
+    addCount: number,
+    manualEntry: boolean,
+  ): Result.ResultAsync<SeckillRestockResult, PlatformError> {
+    return this.pageLock.run(() =>
+      Result.pipe(
+        ensurePage(this.mainPage),
+        Result.andThen(page =>
+          Result.try({
+            immediate: true,
+            try: () => restockSeckill(page, index, addCount, manualEntry),
+            catch: err => new UnexpectedError({ description: String(err) }),
+          }),
+        ),
+      ),
+    )
+  }
+
+  recordSeckillClick(): Result.ResultAsync<string, PlatformError> {
+    return Result.pipe(
+      ensurePage(this.mainPage),
+      Result.andThen(page =>
+        Result.try({
+          immediate: true,
+          try: () => recordSeckillClick(page),
+          catch: err => new UnexpectedError({ description: String(err) }),
+        }),
+      ),
+    )
+  }
+
+  dumpSeckillDom(): Result.ResultAsync<string, PlatformError> {
+    return this.pageLock.run(() =>
+      Result.pipe(
+        ensurePage(this.mainPage),
+        Result.andThen(page =>
+          Result.try({
+            immediate: true,
+            try: () => dumpSeckillDom(page),
             catch: err => new UnexpectedError({ description: String(err) }),
           }),
         ),

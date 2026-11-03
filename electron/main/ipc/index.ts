@@ -9,6 +9,7 @@ import { setupLiveControlIpcHandlers } from './connection'
 import { setupMarketingIpcHandlers } from './marketing'
 import { setupPinCommentIpcHandler } from './pinComment'
 import { setupRedPacketIpcHandlers } from './redPacket'
+import { initSeckillShortcut, setupSeckillIpcHandlers } from './seckill'
 import { setupUpdateIpcHandlers } from './update'
 
 setupLiveControlIpcHandlers()
@@ -23,3 +24,5 @@ setupPinCommentIpcHandler()
 setupRedPacketIpcHandlers()
 setupMarketingIpcHandlers()
 setupCommentScrollIpcHandlers()
+setupSeckillIpcHandlers()
+initSeckillShortcut()

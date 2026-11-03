@@ -13,6 +13,7 @@ import {
   CarbonGift,
   CarbonIbmEventAutomation,
   CarbonIbmWatsonTextToSpeech,
+  CarbonRenew,
   CarbonRocket,
   CarbonSettings,
 } from '../icons/carbon'
@@ -69,6 +70,12 @@ export default function Sidebar() {
       isRunning: isMarketingRunning,
       icon: <CarbonRocket className="w-5 h-5" />,
       platform: marketingPlatforms,
+    },
+    {
+      id: '/seckill',
+      name: '秒杀补货',
+      icon: <CarbonRenew className="w-5 h-5" />,
+      platform: ['eos'],
     },
     {
       id: '/ai-chat',

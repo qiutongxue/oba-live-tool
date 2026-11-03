@@ -61,8 +61,8 @@ export async function comment(
   return Result.pipe(
     // 评论框
     elementFinder.getCommentTextarea(page),
-    // 填写评论内容
-    Result.inspect(textarea => textarea.fill(message, { timeout: 5000 })),
+    // 填写评论内容（慢机器上输入框可编辑状态出现较慢，5 秒容易超时抛异常 → 任务直接停）
+    Result.inspect(textarea => textarea.fill(message, { timeout: 15000 })),
     // 点击置顶选项
     Result.andThen(_ => (pinTop ? clickPinTopButton(page) : Result.succeed(false))),
     // 发送评论

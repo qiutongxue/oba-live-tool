@@ -16,6 +16,14 @@ const CHECK_BUFFER_MS = 5 * 1000
 /** 自适应等待的下限，避免频繁开合抽屉 */
 const MIN_ADAPTIVE_WAIT_MS = 10 * 1000
 
+/**
+ * 「提交了但列表没确认到新增」时，最短等多久才允许重新发放。
+ *
+ * 为什么要等：eos 列表是异步刷新的，刚创建的福袋可能几十秒后才出现在列表里。
+ * 如果复查太快就重发，会**重复创建**；等够这段时间，绝大多数情况下列表已经刷出来了。
+ */
+const UNVERIFIED_RECHECK_MS = 60 * 1000
+
 /** 毫秒 → 「8分32秒」，用于日志 */
 function formatDuration(ms: number): string {
   const total = Math.max(0, Math.round(ms / 1000))
@@ -68,6 +76,16 @@ export function createMarketingLoopTask(
    */
   let giftBagStuckZeroRounds = 0
   let couponStuckZeroRounds = 0
+
+  /**
+   * 「提交了但没在列表确认到新增」的时间戳。
+   *
+   * 有了它才能既快速复查、又不重复创建：复查发现列表真的多了一条就确认成功；
+   * 超过 UNVERIFIED_RECHECK_MS 还没出现，才判定没发出去并允许重发。
+   */
+  let giftBagPendingVerifySince: number | null = null
+  /** 上次提交前列表里的福袋数量，用来判断「是不是多了一条」 */
+  let giftBagRowsBeforeSend: number | null = null
 
   const intervalTaskResult = createIntervalTask(execute, {
     interval: config.scheduler.interval,
@@ -209,6 +227,30 @@ export function createMarketingLoopTask(
       return Result.succeed()
     }
 
+    // 上一轮「提交了但没确认到新增」：先看列表里是不是已经多出来了，
+    // 多出来就确认成功；没多出来且还没等够时间就继续等，绝不贸然重发（会重复创建）
+    if (giftBagPendingVerifySince !== null) {
+      const grew = giftBagRowsBeforeSend !== null && templates.length > giftBagRowsBeforeSend
+      if (grew) {
+        logger.success(`上一轮提交的福袋已出现在列表里（共 ${templates.length} 个），确认创建成功`)
+        giftBagPendingVerifySince = null
+        giftBagRowsBeforeSend = null
+      } else if (Date.now() - giftBagPendingVerifySince < UNVERIFIED_RECHECK_MS) {
+        logger.info(
+          `上一轮提交还没在列表里看到新增（已等 ${formatDuration(
+            Date.now() - giftBagPendingVerifySince,
+          )}），继续等页面刷新，暂不重发`,
+        )
+        return Result.succeed()
+      } else {
+        logger.warn(
+          `上一轮提交超过 ${formatDuration(UNVERIFIED_RECHECK_MS)} 仍未出现在列表里，判定没发出去，本轮重新发放`,
+        )
+        giftBagPendingVerifySince = null
+        giftBagRowsBeforeSend = null
+      }
+    }
+
     const sendingList = templates.filter(t => t.status.includes('发放中'))
     if (sendingList.length > 0) {
       // 状态里可能带倒计时（「发放中 02:31」），有就精确等待，没有就退回轮询
@@ -247,28 +289,46 @@ export function createMarketingLoopTask(
     }
 
     logger.info(`当前没有发放中的福袋，开始复制福袋 #${cfg.index} 并提交审核…`)
+    giftBagRowsBeforeSend = templates.length
     const sendResult = await platform.sendGiftBag(cfg.index, signal)
     if (Result.isFailure(sendResult)) {
       logger.error('发放福袋失败：', sendResult.error)
       giftBagEndsAt = null
+      giftBagPendingVerifySince = null
+      giftBagRowsBeforeSend = null
       return sendResult
     }
 
-    const { durationText, durationMs, verified } = sendResult.value
-    giftBagEndsAt = durationMs !== null ? Date.now() + durationMs : null
-    if (!verified) {
-      // 不直接判失败：列表可能只是没及时刷新。下一轮会重新读列表核对，
-      // 真没发出去的话下一轮会看到「没有发放中」并再次复制发放。
-      logger.warn(
-        `福袋 #${cfg.index} 已点击提交，但列表里没确认到新增（可能列表未刷新），下一轮会重新核对`,
+    const { durationText, durationMs, verified, outcome, timings } = sendResult.value
+    const timingText = timings
+      ? `耗时：列表 ${formatDuration(timings.listMs)}｜表单 ${formatDuration(
+          timings.formMs,
+        )}｜提交 ${formatDuration(timings.submitMs)}｜复核 ${formatDuration(
+          timings.verifyMs,
+        )}｜合计 ${formatDuration(timings.totalMs)}`
+      : ''
+
+    if (verified) {
+      giftBagEndsAt = durationMs !== null ? Date.now() + durationMs : null
+      giftBagPendingVerifySince = null
+      giftBagRowsBeforeSend = null
+      logger.success(
+        durationMs !== null
+          ? `福袋 #${cfg.index} 已发放（列表已确认新增）；表单时长 ${durationText}，${formatDuration(
+              durationMs,
+            )} 后再检查。${timingText}`
+          : `福袋 #${cfg.index} 已发放（列表已确认新增，未读到表单时长，按轮询间隔检查）。${timingText}`,
       )
+      return Result.succeed()
     }
-    logger.success(
-      durationMs !== null
-        ? `福袋 #${cfg.index} 已提交；已记录表单时长 ${durationText}，${formatDuration(
-            durationMs,
-          )} 后再检查`
-        : `福袋 #${cfg.index} 已提交（未读到表单时长，将按轮询间隔检查）`,
+
+    // 没确认到新增：不判失败（误判会触发重发 → 重复创建），改为「稍后复查」
+    giftBagPendingVerifySince = Date.now()
+    giftBagEndsAt = null
+    logger.warn(
+      `福袋 #${cfg.index} 已点击提交，但列表暂未确认到新增（提交阶段=${
+        outcome ?? '未知'
+      }）。稍后复查：${formatDuration(UNVERIFIED_RECHECK_MS)} 内看到新增就确认成功，否则才重发。${timingText}`,
     )
     return Result.succeed()
   }

@@ -49,14 +49,19 @@ function setupIpcHandlers() {
       logger.error('发放福袋失败：', result.error)
       return null
     }
-    const { durationText, verified } = result.value
+    const { durationText, verified, outcome, timings } = result.value
+    const timingText = timings
+      ? `（列表 ${timings.listMs}ms｜表单 ${timings.formMs}ms｜提交 ${timings.submitMs}ms｜复核 ${timings.verifyMs}ms｜合计 ${timings.totalMs}ms）`
+      : ''
     if (verified) {
       logger.success(
-        `福袋已创建并提交审核（列表已确认新增），表单时长：${durationText ?? '未读到'}`,
+        `福袋已创建并提交审核（列表已确认新增），表单时长：${durationText ?? '未读到'}${timingText}`,
       )
     } else {
       logger.warn(
-        `福袋已点击提交，但列表里没确认到新增（可能列表未及时刷新），表单时长：${durationText ?? '未读到'}`,
+        `福袋已点击提交，但列表里没确认到新增（提交阶段=${outcome ?? '未知'}），表单时长：${
+          durationText ?? '未读到'
+        }${timingText}`,
       )
     }
     return result.value
