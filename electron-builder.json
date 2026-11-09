@@ -22,6 +22,10 @@
       {
         "target": "nsis",
         "arch": ["x64"]
+      },
+      {
+        "target": "portable",
+        "arch": ["x64"]
       }
     ],
     "icon": "public/favicon.ico",
@@ -33,5 +37,8 @@
     "allowToChangeInstallationDirectory": true,
     "deleteAppDataOnUninstall": false,
     "differentialPackage": true
+  },
+  "portable": {
+    "artifactName": "${productName}_${version}_portable_${arch}.${ext}"
   }
 }

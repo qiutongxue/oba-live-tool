@@ -22,7 +22,9 @@ import { useAutoMessageStore } from './hooks/useAutoMessage'
 import { useAutoPopUpStore } from './hooks/useAutoPopUp'
 import { useAutoReply, useAutoReplyStore } from './hooks/useAutoReply'
 import { useChromeConfigStore } from './hooks/useChromeConfig'
+import { useCommentScrollStore } from './hooks/useCommentScroll'
 import { useLiveControlStore } from './hooks/useLiveControl'
+import { useMarketingLoopStore } from './hooks/useMarketingLoop'
 import { useToast } from './hooks/useToast'
 import { useUpdateConfigStore, useUpdateStore } from './hooks/useUpdate'
 
@@ -32,6 +34,8 @@ function useGlobalIpcListener() {
   const { setIsConnected, setAccountName } = useLiveControlStore()
   const setIsRunningAutoMessage = useAutoMessageStore(s => s.setIsRunning)
   const setIsRunningAutoPopUp = useAutoPopUpStore(s => s.setIsRunning)
+  const setIsRunningMarketingLoop = useMarketingLoopStore(s => s.setIsRunning)
+  const setCommentScrollRunning = useCommentScrollStore(s => s.setRunning)
   const setStorageState = useChromeConfigStore(s => s.setStorageState)
   const enableAutoCheckUpdate = useUpdateConfigStore(s => s.enableAutoCheckUpdate)
   const handleUpdate = useUpdateStore.use.handleUpdate()
@@ -54,6 +58,15 @@ function useGlobalIpcListener() {
   useIpcListener(IPC_CHANNELS.tasks.autoPopUp.stoppedEvent, id => {
     setIsRunningAutoPopUp(id, false)
     toast.error('自动弹窗已停止')
+  })
+
+  useIpcListener(IPC_CHANNELS.tasks.marketing.loopStoppedEvent, id => {
+    setIsRunningMarketingLoop(id, false)
+    toast.error('营销循环已停止')
+  })
+
+  useIpcListener(IPC_CHANNELS.tasks.commentScroll.stoppedEvent, id => {
+    setCommentScrollRunning(id, false)
   })
 
   useIpcListener(IPC_CHANNELS.tasks.autoReply.listenerStopped, id => {

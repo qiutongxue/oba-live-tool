@@ -5,7 +5,10 @@ import AutoPopUp from '@/pages/AutoPopUp'
 import AutoReply from '@/pages/AutoReply'
 import AutoReplySettings from '@/pages/AutoReply/AutoReplySettings'
 import LiveControl from '@/pages/LiveControl'
+import Marketing from '@/pages/Marketing'
 import RedPacket from '@/pages/RedPacket'
+import Seckill from '@/pages/Seckill'
+import SeckillFloat from '@/pages/Seckill/Float'
 import Settings from '@/pages/SettingsPage'
 import App from '../App'
 
@@ -46,6 +49,19 @@ export const router = createHashRouter([
         path: '/red-packet',
         element: <RedPacket />,
       },
+      {
+        path: '/marketing',
+        element: <Marketing />,
+      },
+      {
+        path: '/seckill',
+        element: <Seckill />,
+      },
     ],
+  },
+  {
+    // 秒杀补货悬浮窗：独立的无边框窗口，不要放进 App 布局（否则会带侧边栏）
+    path: '/seckill-float',
+    element: <SeckillFloat />,
   },
 ])

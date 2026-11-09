@@ -12,15 +12,20 @@ import { platformFactory } from '#/platforms'
 import {
   type IPlatform,
   isCommentListener,
+  isMarketingTool,
   isPerformComment,
   isPerformPopup,
   isPinComment,
+  isScrollComments,
+  isSeckill,
   isSendRedPacket,
 } from '#/platforms/IPlatform'
 import { createAutoCommentTask } from '#/tasks/AutoCommentTask'
 import { createAutoPopupTask } from '#/tasks/AutoPopupTask'
 import { createCommentListenerTask } from '#/tasks/CommentListenerTask'
+import { createCommentScrollTask } from '#/tasks/CommentScrollTask'
 import type { ITask } from '#/tasks/ITask'
+import { createMarketingLoopTask } from '#/tasks/MarketingLoopTask'
 import { createPinCommentTask } from '#/tasks/PinCommentTask'
 import { createSendBatchMessageTask } from '#/tasks/SendBatchMessageTask'
 import windowManager from '#/windowManager'
@@ -145,9 +150,97 @@ export class AccountSession {
 
   public async sendRedPacket(duration: string): Result.ResultAsync<void, Error> {
     if (!isSendRedPacket(this.platform)) {
-      return Result.fail(new TaskNotSupportedError({ taskName: '一键发红包', targetName: this.platform.platformName }))
+      return Result.fail(
+        new TaskNotSupportedError({
+          taskName: '一键发红包',
+          targetName: this.platform.platformName,
+        }),
+      )
     }
     return this.platform.sendRedPacket(duration)
+  }
+
+  // ==================== 营销工具：福袋 / 优惠券 ====================
+
+  public async getGiftBagTemplates(): Result.ResultAsync<GiftBagTemplate[], Error> {
+    if (!isMarketingTool(this.platform)) {
+      return Result.fail(
+        new TaskNotSupportedError({ taskName: '营销工具', targetName: this.platform.platformName }),
+      )
+    }
+    return this.platform.getGiftBagTemplates()
+  }
+
+  public async sendGiftBag(index: number): Result.ResultAsync<SendGiftBagResult, Error> {
+    if (!isMarketingTool(this.platform)) {
+      return Result.fail(
+        new TaskNotSupportedError({ taskName: '发放福袋', targetName: this.platform.platformName }),
+      )
+    }
+    return this.platform.sendGiftBag(index)
+  }
+
+  public async getCoupons(): Result.ResultAsync<CouponInfo[], Error> {
+    if (!isMarketingTool(this.platform)) {
+      return Result.fail(
+        new TaskNotSupportedError({ taskName: '营销工具', targetName: this.platform.platformName }),
+      )
+    }
+    return this.platform.getCoupons()
+  }
+
+  public async sendCoupon(params: SendCouponParams): Result.ResultAsync<void, Error> {
+    if (!isMarketingTool(this.platform)) {
+      return Result.fail(
+        new TaskNotSupportedError({
+          taskName: '发放优惠券',
+          targetName: this.platform.platformName,
+        }),
+      )
+    }
+    return this.platform.sendCoupon(params)
+  }
+
+  // ==================== 秒杀补货 ====================
+
+  public async readSeckillGoods(): Result.ResultAsync<SeckillGoods[], Error> {
+    if (!isSeckill(this.platform)) {
+      return Result.fail(
+        new TaskNotSupportedError({ taskName: '秒杀补货', targetName: this.platform.platformName }),
+      )
+    }
+    return this.platform.readSeckillGoods()
+  }
+
+  public async restockSeckill(
+    index: number,
+    addCount: number,
+    manualEntry: boolean,
+  ): Result.ResultAsync<SeckillRestockResult, Error> {
+    if (!isSeckill(this.platform)) {
+      return Result.fail(
+        new TaskNotSupportedError({ taskName: '秒杀补货', targetName: this.platform.platformName }),
+      )
+    }
+    return this.platform.restockSeckill(index, addCount, manualEntry)
+  }
+
+  public async recordSeckillClick(): Result.ResultAsync<string, Error> {
+    if (!isSeckill(this.platform)) {
+      return Result.fail(
+        new TaskNotSupportedError({ taskName: '秒杀补货', targetName: this.platform.platformName }),
+      )
+    }
+    return this.platform.recordSeckillClick()
+  }
+
+  public async dumpSeckillDom(): Result.ResultAsync<string, Error> {
+    if (!isSeckill(this.platform)) {
+      return Result.fail(
+        new TaskNotSupportedError({ taskName: '秒杀补货', targetName: this.platform.platformName }),
+      )
+    }
+    return this.platform.dumpSeckillDom()
   }
 
   public updateTaskConfig<T extends LiveControlTask>(
@@ -182,6 +275,12 @@ function makeTask<T extends LiveControlTask>(
   }
   if (task.type === 'pin-comment' && isPinComment(platform)) {
     return createPinCommentTask(platform, task.config.comment, account.id, logger)
+  }
+  if (task.type === 'comment-scroll' && isScrollComments(platform)) {
+    return createCommentScrollTask(platform, task.config, account, logger)
+  }
+  if (task.type === 'marketing-loop' && isMarketingTool(platform)) {
+    return createMarketingLoopTask(platform, task.config, account, logger)
   }
   return Result.fail(
     new TaskNotSupportedError({

@@ -2,7 +2,7 @@ import { Result } from '@praha/byethrow'
 import { ErrorFactory } from '@praha/error-factory'
 import { merge } from 'lodash-es'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
-import { AbortError } from '#/errors/AppError'
+import { AbortError, UnexpectedError } from '#/errors/AppError'
 import type { ScopedLogger } from '#/logger'
 import type { IPerformComment } from '#/platforms/IPlatform'
 import { insertRandomSpaces, randomInt, replaceVariant, takeScreenshot } from '#/utils'
@@ -17,6 +17,15 @@ const retryOptions = {
   retryDelay: 1000,
 }
 
+/**
+ * 连续失败多少次才真正停止任务。
+ *
+ * ⚠️ 以前任何一次发送失败（重试 3 次后）都会让整个任务停掉：慢机器上
+ * 输入框/发送按钮在重渲染瞬间取不到、或 fill 超时，一次偶发就把「自动发言」停了。
+ * 现在偶发失败只跳过本条，连续失败到这个次数才判定为真异常（比如直播间关闭/页面变了）。
+ */
+const MAX_CONSECUTIVE_FAILURES = 5
+
 export function createAutoCommentTask(
   platform: IPerformComment,
   taskConfig: AutoCommentConfig,
@@ -25,6 +34,8 @@ export function createAutoCommentTask(
 ) {
   const logger = lgr.scope(TASK_NAME)
   let arrayIndex = -1
+  /** 连续发送失败的次数（成功一次就清零） */
+  let consecutiveFailures = 0
   let config = { ...taskConfig }
 
   const intervalTaskResult = createIntervalTask(execute, {
@@ -91,36 +102,67 @@ export function createAutoCommentTask(
   }
 
   async function execute(signal: AbortSignal) {
-    const result = await runWithRetry(
-      async () => {
-        if (signal.aborted) {
-          return Result.fail(new AbortError())
-        }
-        const message = getNextMessage()
-        // 替换变量
-        let content = replaceVariant(message.content)
-        // 添加随机空格
-        if (config.extraSpaces) {
-          content = insertRandomSpaces(content)
-        }
-        const pinTop = await platform.performComment(content, message.pinTop)
-        if (Result.isFailure(pinTop)) {
-          return pinTop
-        }
-        logger.success(`发送${pinTop.value ? '「置顶」' : ''}消息: ${content}`)
-        return Result.succeed()
-      },
-      {
-        ...retryOptions,
-        logger,
-        signal,
-        onRetryError: () => {
-          const page = platform.getCommentPage()
-          if (page) takeScreenshot(page, TASK_NAME, account.name)
+    let result: Result.Result<void, Error>
+    try {
+      result = await runWithRetry(
+        async () => {
+          if (signal.aborted) {
+            return Result.fail(new AbortError())
+          }
+          const message = getNextMessage()
+          // 替换变量
+          let content = replaceVariant(message.content)
+          // 添加随机空格
+          if (config.extraSpaces) {
+            content = insertRandomSpaces(content)
+          }
+          const pinTop = await platform.performComment(content, message.pinTop)
+          if (Result.isFailure(pinTop)) {
+            return pinTop
+          }
+          logger.success(`发送${pinTop.value ? '「置顶」' : ''}消息: ${content}`)
+          return Result.succeed()
         },
-      },
+        {
+          ...retryOptions,
+          logger,
+          signal,
+          onRetryError: () => {
+            // 截图纯属诊断用，失败不能影响任务本身（未捕获的 Promise 异常会杀掉主进程）
+            try {
+              const page = platform.getCommentPage()
+              if (page) void takeScreenshot(page, TASK_NAME, account.name).catch(() => {})
+            } catch {
+              /* 忽略 */
+            }
+          },
+        },
+      )
+    } catch (err) {
+      // fill/click 这类操作抛出的异常（例如超时）原本会直接冒泡到 IntervalTask，
+      // 触发 task.stop(ERROR) —— 一次偶发就停机。这里统一转成失败结果再走「连续失败」策略。
+      result = Result.fail(
+        err instanceof Error ? err : new UnexpectedError({ description: String(err) }),
+      )
+    }
+
+    if (Result.isSuccess(result)) {
+      consecutiveFailures = 0
+      return result
+    }
+    // 任务被手动停止时照常返回，交给 IntervalTask 处理
+    if (result.error instanceof AbortError) return result
+
+    consecutiveFailures += 1
+    if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+      logger.error(`连续 ${consecutiveFailures} 次发送失败，任务停止：`, result.error)
+      return result
+    }
+    logger.warn(
+      `本条消息发送失败（连续第 ${consecutiveFailures}/${MAX_CONSECUTIVE_FAILURES} 次），已跳过，下一轮继续：`,
+      result.error,
     )
-    return result
+    return Result.succeed()
   }
 
   function updateConfig(newConfig: Partial<AutoCommentConfig>) {

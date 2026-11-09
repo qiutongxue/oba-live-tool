@@ -1,6 +1,7 @@
 import { Result } from '@praha/byethrow'
 import type { ElementHandle, Page } from 'playwright'
 import { ElementDisabledError, ElementNotFoundError } from '#/errors/PlatformError'
+import { sleep } from '#/utils'
 import { commonElementFinder, type IElementFinder } from './../IElementFinder'
 import { SELECTORS } from './constant'
 
@@ -10,7 +11,11 @@ export const douyinEosElementFinder: IElementFinder = {
   },
 
   async getClickableSubmitCommentButton(page: Page) {
-    const sendMessageButton = await page.$(SELECTORS.commentInput.SUBMIT_BUTTON)
+    // ⚠️ 同样不要用 page.$() 瞬时查询：发送按钮在重渲染瞬间会短暂缺失，
+    // 而且刚 fill 完输入框时按钮可能还差一拍才从 disable 变成可用。
+    const sendMessageButton = await page
+      .waitForSelector(SELECTORS.commentInput.SUBMIT_BUTTON, { timeout: 5000, state: 'visible' })
+      .catch(() => null)
     if (!sendMessageButton) {
       return Result.fail(
         new ElementNotFoundError({
@@ -19,13 +24,19 @@ export const douyinEosElementFinder: IElementFinder = {
         }),
       )
     }
-    if (await sendMessageButton.evaluate(el => el.className.includes('disable'))) {
-      return Result.fail(
-        new ElementDisabledError({
-          elementName: '发送评论按钮',
-          element: await sendMessageButton.evaluate(el => el.outerHTML),
-        }),
-      )
+
+    // 最多再等 3 秒等它变可用（输入框有内容后才启用）
+    const deadline = Date.now() + 3000
+    while (await sendMessageButton.evaluate(el => el.className.includes('disable'))) {
+      if (Date.now() >= deadline) {
+        return Result.fail(
+          new ElementDisabledError({
+            elementName: '发送评论按钮',
+            element: await sendMessageButton.evaluate(el => el.outerHTML),
+          }),
+        )
+      }
+      await sleep(200)
     }
     return Result.succeed(sendMessageButton)
   },
