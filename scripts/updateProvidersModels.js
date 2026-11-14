@@ -24,7 +24,7 @@ async function fetchOpenrouterModels(baseURL) {
   const apiKey = process.env.OPENROUTER_API_KEY
   if (!apiKey) {
     console.error('未找到 OpenRouter 的 API KEY')
-    return
+    return null
   }
   const openai = new OpenAI({ baseURL, apiKey })
   const models = await openai.models.list()
@@ -43,7 +43,7 @@ async function fetchSiliconflowModels(baseURL) {
   const apiKey = process.env.SILICONFLOW_API_KEY
   if (!apiKey) {
     console.error('未找到硅基流动的 API KEY')
-    return
+    return null
   }
   const openai = new OpenAI({ baseURL, apiKey })
   const models = await openai.models.list()
