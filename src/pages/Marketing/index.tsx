@@ -1,4 +1,4 @@
-import { useId, useMemo } from 'react'
+import { useEffect, useId, useMemo, useState } from 'react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { TaskButton } from '@/components/common/TaskButton'
 import { Title } from '@/components/common/Title'
@@ -22,8 +22,7 @@ import { useCurrentMarketingLoop, useMarketingLoopActions } from '@/hooks/useMar
 import { useToast } from '@/hooks/useToast'
 import { cn } from '@/lib/utils'
 
-/** 与 eos「发放优惠券」弹窗中的可选项保持一致（不含需要额外输入的「自定义」） */
-const COUPON_COUNT_OPTIONS = ['10张', '50张', '100张', '500张', '1000张', '全部库存'] as const
+/** 发券时长可选项（与 eos「发放优惠券」弹窗保持一致） */
 const COUPON_DURATION_OPTIONS = ['1分钟', '3分钟', '5分钟', '10分钟'] as const
 
 const DEFAULT_COUPON_PARAMS: SendCouponParams = {
@@ -60,6 +59,7 @@ export default function Marketing() {
     refreshCoupons,
     sendGiftBag,
     sendCoupon,
+    getCouponSendOptions,
   } = useMarketing()
 
   // 循环配置（持久化，按账号分开）
@@ -85,11 +85,56 @@ export default function Marketing() {
   )
   const needRestop = Boolean(selectedCouponInfo?.sending)
 
+  /**
+   * 从所选券的「总库存」文本里识别发放规模的单位：
+   * 普通券是「1000张」，平台补贴券是「5000元」。
+   * 识别到「元」时提醒用户填金额，避免把「50张」当成 50 元发出去。
+   */
+  const couponUnit = useMemo<'张' | '元' | null>(() => {
+    const text = selectedCouponInfo?.totalStock ?? ''
+    if (text.includes('元')) return '元'
+    if (text.includes('张')) return '张'
+    return null
+  }, [selectedCouponInfo])
+
+  const countNeedsUnitFix = couponUnit === '元' && /张\s*$/.test(couponParams.count.trim())
+
+  /** 每张券在「发放优惠券」弹窗里实际可选的规模与时长（从页面读出来，不猜选项名） */
+  const [couponOptions, setCouponOptions] = useState<Record<string, CouponSendOptions>>({})
+  const [loadingOptionsFor, setLoadingOptionsFor] = useState<string | null>(null)
+
+  // 选中某张券时读一次它的可选项；重新读列表会让缓存作废
+  useEffect(() => {
+    if (!connected || !selectedCoupon || couponOptions[selectedCoupon]) return
+    let alive = true
+    setLoadingOptionsFor(selectedCoupon)
+    void getCouponSendOptions(selectedCoupon).then(options => {
+      if (!alive) return
+      setLoadingOptionsFor(null)
+      if (options.scale.length === 0 && options.duration.length === 0) return
+      setCouponOptions(prev => ({ ...prev, [selectedCoupon]: options }))
+    })
+    return () => {
+      alive = false
+    }
+  }, [connected, selectedCoupon, couponOptions, getCouponSendOptions])
+
+  const selectedOptions = selectedCoupon ? couponOptions[selectedCoupon] : undefined
+  const scaleOptions = selectedOptions?.scale ?? []
+  const durationOptions = selectedOptions?.duration ?? []
+  const optionsLoading = loadingOptionsFor === selectedCoupon && !selectedOptions
+  // 有可选项时，当前值必须来自这些选项：老配置里的「50张」不能拿去点元券的弹窗
+  const scaleValid = scaleOptions.length === 0 || scaleOptions.includes(couponParams.count)
+  const durationValid =
+    durationOptions.length === 0 || durationOptions.includes(couponParams.duration)
+
   const handleRefreshGiftBags = async () => {
     await refreshGiftBags()
   }
 
   const handleRefreshCoupons = async () => {
+    // 重新读列表后，之前读到的发放选项可能已变（券的状态/配置会改），一并作废
+    setCouponOptions({})
     await refreshCoupons()
   }
 
@@ -119,6 +164,10 @@ export default function Marketing() {
     }
     if (couponLoop && !selectedCoupon) {
       toast.error('请先在优惠券列表里选择一个目标')
+      return
+    }
+    if (couponLoop && (!scaleValid || !durationValid)) {
+      toast.error('请先选择这张券的发放规模与发券时长')
       return
     }
 
@@ -257,7 +306,8 @@ export default function Marketing() {
             <div>
               <CardTitle>优惠券</CardTitle>
               <CardDescription>
-                选择一张优惠券并设置发券数量与时长，程序会打开「发放优惠券」并确认发放。
+                选择一张优惠券并设置发放规模与时长。发放规模支持「50张」或「5000元」，
+                不写单位时按券的类型自动识别（平台补贴券按元算）。
               </CardDescription>
             </div>
             <div className="flex shrink-0 flex-col items-end gap-1">
@@ -313,39 +363,71 @@ export default function Marketing() {
 
           <div className="flex flex-wrap items-end gap-6">
             <div className="space-y-2">
-              <Label>发券数量</Label>
-              <Select
-                value={couponParams.count}
-                onValueChange={count => updateCouponParams({ count })}
+              <Label htmlFor="coupon-count">发放规模</Label>
+              {scaleOptions.length > 0 ? (
+                <Select
+                  value={scaleValid ? couponParams.count : undefined}
+                  onValueChange={count => updateCouponParams({ count })}
+                >
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="请选择" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {scaleOptions.map(opt => (
+                      <SelectItem key={opt} value={opt}>
+                        {opt}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input
+                  id="coupon-count"
+                  className="w-40"
+                  value={couponParams.count}
+                  placeholder="如 50张 或 5000元"
+                  onChange={e => updateCouponParams({ count: e.target.value })}
+                />
+              )}
+              <p
+                className={cn(
+                  'max-w-56 text-xs',
+                  !scaleValid || countNeedsUnitFix ? 'text-destructive' : 'text-muted-foreground',
+                )}
               >
-                <SelectTrigger className="w-40">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {COUPON_COUNT_OPTIONS.map(opt => (
-                    <SelectItem key={opt} value={opt}>
-                      {opt}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                {optionsLoading
+                  ? '正在读取这张券的可选项…'
+                  : scaleOptions.length > 0
+                    ? scaleValid
+                      ? '选项来自「发放优惠券」弹窗，选哪个就点哪个'
+                      : '请从下拉里选择发放规模（当前值不在可选项里）'
+                    : countNeedsUnitFix
+                      ? `这张券按「元」发放，当前填的是「${couponParams.count}」，请改成金额（如 5000）`
+                      : couponUnit === '元'
+                        ? '这张券按「元」发放，填预算金额即可（如 5000）'
+                        : couponUnit === '张'
+                          ? '这张券按「张」发放，填数量即可（如 50）'
+                          : '单位自动识别：可填「50张」或「5000元」'}
+              </p>
             </div>
 
             <div className="space-y-2">
               <Label>发券时长</Label>
               <Select
-                value={couponParams.duration}
+                value={durationValid ? couponParams.duration : undefined}
                 onValueChange={duration => updateCouponParams({ duration })}
               >
                 <SelectTrigger className="w-40">
-                  <SelectValue />
+                  <SelectValue placeholder="请选择" />
                 </SelectTrigger>
                 <SelectContent>
-                  {COUPON_DURATION_OPTIONS.map(opt => (
-                    <SelectItem key={opt} value={opt}>
-                      {opt}
-                    </SelectItem>
-                  ))}
+                  {(durationOptions.length > 0 ? durationOptions : COUPON_DURATION_OPTIONS).map(
+                    opt => (
+                      <SelectItem key={opt} value={opt}>
+                        {opt}
+                      </SelectItem>
+                    ),
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -369,16 +451,30 @@ export default function Marketing() {
 
           <div className="flex items-center gap-4">
             <Button
-              onClick={() =>
-                selectedCoupon &&
-                sendCoupon({
+              onClick={async () => {
+                if (!selectedCoupon) return
+                const ok = await sendCoupon({
                   couponName: selectedCoupon,
                   count: couponParams.count,
                   duration: couponParams.duration,
                   restop: couponParams.restop,
                 })
+                // 发完状态变了，缓存的可选项作废，下次选中重新读
+                if (ok) {
+                  setCouponOptions(prev => {
+                    const next = { ...prev }
+                    delete next[selectedCoupon]
+                    return next
+                  })
+                }
+              }}
+              disabled={
+                busy ||
+                !selectedCoupon ||
+                (needRestop && !couponParams.restop) ||
+                !scaleValid ||
+                !durationValid
               }
-              disabled={busy || !selectedCoupon || (needRestop && !couponParams.restop)}
               size="lg"
             >
               <CarbonPlayFilledAlt className="mr-2 h-4 w-4" />
@@ -404,7 +500,7 @@ export default function Marketing() {
             <p className="text-xs text-muted-foreground">
               每隔一个轮询间隔检查一次：
               <strong>只有目标券不再「发放中」且还有可用库存时</strong>
-              ，才会自动发放，用上面选的数量与时长；发放后按这个时长等待再去检查。 库存为 0
+              ，才会自动发放，用上面选的发放规模与时长；发放后按这个时长等待再去检查。 库存为 0
               时循环会自动结束。
             </p>
           </div>

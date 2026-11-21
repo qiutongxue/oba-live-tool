@@ -329,11 +329,19 @@ declare type CouponInfo = {
   availableStock: string
 }
 
+/** 发券弹窗里实际可选的项（从页面读出来，避免猜文案） */
+declare type CouponSendOptions = {
+  /** 发放规模选项，如「全部预算」「1000元」「50张」「全部库存」 */
+  scale: string[]
+  /** 发券时长选项，如「1分钟」「5分钟」 */
+  duration: string[]
+}
+
 /** 发放优惠券的参数 */
 declare type SendCouponParams = {
   /** 目标券名称（用于在列表中定位） */
   couponName: string
-  /** 发券数量选项，如「50张」「全部库存」「自定义」 */
+  /** 发放规模：优先用弹窗里读到的选项原文（如「全部预算」「1000元」「50张」）；手填时支持不带单位，按券自动识别 */
   count: string
   /** 发券时长选项，如「5分钟」「自定义」 */
   duration: string

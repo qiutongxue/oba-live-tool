@@ -96,6 +96,8 @@ export class AccountSession {
       task.stop()
     })
     this.activeTasks.clear()
+    // 秒杀补货不走任务体系，靠事件通知它自己停（否则断开后还在空转读货架）
+    emitter.emit('account-disconnected', { accountId: this.account.id })
     // 通知渲染层
     windowManager.send(IPC_CHANNELS.tasks.liveControl.disconnectedEvent, this.account.id)
   }
@@ -187,6 +189,17 @@ export class AccountSession {
       )
     }
     return this.platform.getCoupons()
+  }
+
+  public async getCouponSendOptions(
+    couponName: string,
+  ): Result.ResultAsync<CouponSendOptions, Error> {
+    if (!isMarketingTool(this.platform)) {
+      return Result.fail(
+        new TaskNotSupportedError({ taskName: '营销工具', targetName: this.platform.platformName }),
+      )
+    }
+    return this.platform.getCouponSendOptions(couponName)
   }
 
   public async sendCoupon(params: SendCouponParams): Result.ResultAsync<void, Error> {

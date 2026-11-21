@@ -171,6 +171,216 @@ export async function pickRadio(page: Page, text: string): Promise<boolean> {
   return await input.isChecked().catch(() => false)
 }
 
+// ==================== 发放规模（张 / 元 自动识别） ====================
+
+/** 发放规模的解析结果 */
+type CouponScale = { kind: 'all' } | { kind: 'value'; num: number; unit: '张' | '元' | null }
+
+/**
+ * 解析用户填的「发放规模」。
+ *
+ * 平台补贴券的规模按「元」算，普通券按「张」算，界面只给一个输入框，
+ * 所以单位可以省略——不带单位时按弹窗里实际出现的单位自动识别。
+ * 支持：50张 / 5000元 / 5,000元 / 5000 / 全部库存。
+ */
+export function parseCouponScale(raw: string): CouponScale {
+  const text = (raw ?? '').replace(/\s+/g, '')
+  if (!text) throw new Error('发放规模不能为空：请填「50张」或「5000元」这类值')
+  if (text.includes('全部')) return { kind: 'all' }
+
+  const matched = text.match(/^([\d,]+(?:\.\d+)?)(张|元)?$/)
+  if (!matched) {
+    throw new Error(`发放规模「${raw}」无法识别：只支持「50张」「5000元」「5000」或「全部库存」`)
+  }
+  const num = Number(matched[1].replace(/,/g, ''))
+  if (!Number.isFinite(num) || num <= 0) throw new Error(`发放规模「${raw}」不是有效数字`)
+  const unit = (matched[2] as '张' | '元' | undefined) ?? null
+  return { kind: 'value', num, unit }
+}
+
+/** 页面内扫描：找出「发放规模」那一组单选项，以及这一组用的是什么单位 */
+const PROBE_SCALE_OPTIONS = `(() => {
+  const visible = (el) => {
+    const r = el.getBoundingClientRect()
+    return r.height > 0 && r.width > 0
+  }
+  const allLabels = Array.from(document.querySelectorAll('label')).filter(
+    (l) => l.querySelector('input[type="radio"]') && visible(l),
+  )
+  const textOf = (el) => (el.innerText || el.textContent || '').replace(/\\s+/g, '')
+
+  // 优先只看「发放规模 / 发放数量」所在容器里的单选项，避免把券面额之类的「元」认成规模单位
+  let scoped = []
+  for (const label of allLabels) {
+    let scope = label.parentElement
+    for (let depth = 0; depth < 4 && scope; depth++) {
+      const t = scope.innerText || ''
+      if (/发放规模|发放数量|发放张数/.test(t)) {
+        scoped = Array.from(scope.querySelectorAll('label')).filter(
+          (l) => l.querySelector('input[type="radio"]') && visible(l),
+        )
+        break
+      }
+      scope = scope.parentElement
+    }
+    if (scoped.length > 0) break
+  }
+
+  const picked = scoped.length > 0 ? scoped : allLabels
+  const texts = picked.map(textOf).filter(Boolean)
+  const unit = texts.some((t) => t.includes('元'))
+    ? '元'
+    : texts.some((t) => t.includes('张'))
+      ? '张'
+      : null
+  return { texts, unit, scoped: scoped.length > 0 }
+})()`
+
+/** 在弹窗里标记「发放规模」的数字输入框（有些券没有单选项，只给一个输入框） */
+const MARK_SCALE_INPUT = `(() => {
+  const visible = (el) => {
+    const r = el.getBoundingClientRect()
+    return r.height > 0 && r.width > 0
+  }
+  document.querySelectorAll('[data-oba-scale]').forEach((el) => el.removeAttribute('data-oba-scale'))
+  const inputs = Array.from(document.querySelectorAll('input')).filter((el) => {
+    const type = (el.getAttribute('type') || 'text').toLowerCase()
+    return (type === 'text' || type === 'number') && visible(el)
+  })
+  let best = null
+  let bestScore = -1
+  for (const input of inputs) {
+    let scope = input.parentElement
+    let text = ''
+    for (let depth = 0; depth < 4 && scope; depth++) {
+      text += ' ' + (scope.innerText || '')
+      scope = scope.parentElement
+    }
+    let score = 0
+    if (/发放规模|发放数量|发放张数|预算/.test(text)) score += 3
+    if (/元|张/.test(text)) score += 1
+    if ((input.getAttribute('type') || '').toLowerCase() === 'number') score += 1
+    if (score > bestScore) {
+      bestScore = score
+      best = input
+    }
+  }
+  // 只有一个输入框时直接用它（弹窗里除了规模没有别的数字项）
+  if (best && bestScore <= 0 && inputs.length > 1) best = null
+  if (!best) return null
+  best.setAttribute('data-oba-scale', '1')
+  return { placeholder: best.getAttribute('placeholder') || '', value: best.value }
+})()`
+
+/** 把数字写进「发放规模」输入框，写完回读确认 */
+async function fillScaleInput(page: Page, num: number): Promise<boolean> {
+  const found = (await page.evaluate(MARK_SCALE_INPUT).catch(() => null)) as {
+    placeholder: string
+  } | null
+  if (!found) return false
+
+  const input = page.locator('[data-oba-scale="1"]').first()
+  if ((await input.count().catch(() => 0)) === 0) return false
+
+  const wanted = String(num)
+  const normalize = (v: string) => v.replace(/[\s,]/g, '')
+
+  const clicked = await input
+    .click({ timeout: 3000 })
+    .then(() => true)
+    .catch(() => false)
+  if (clicked) {
+    await input.press('ControlOrMeta+a').catch(() => {})
+    await input.press('Backspace').catch(() => {})
+    await input.pressSequentially(wanted, { delay: 60 }).catch(() => {})
+    await input.press('Tab').catch(() => {})
+    await sleep(200)
+    if (normalize(await input.inputValue().catch(() => '')) === wanted) return true
+  }
+
+  // 兜底：原生 setter（自定义输入组件不吃键盘事件时）
+  const fallback = (await input
+    .evaluate((el, value) => {
+      const node = el as HTMLInputElement
+      const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set
+      setter?.call(node, String(value))
+      node.dispatchEvent(new Event('input', { bubbles: true }))
+      node.dispatchEvent(new Event('change', { bubbles: true }))
+      node.blur()
+      return node.value
+    }, num)
+    .catch(() => '')) as string
+  return normalize(fallback) === wanted
+}
+
+/**
+ * 设置「发放规模」。
+ *
+ * 1. 先看弹窗里这一组选项用的是「张」还是「元」，用户没写单位就按它来（自动识别）；
+ * 2. 能命中现成的单选项（如 50张 / 5000元）就直接选；
+ * 3. 选不到就点「自定义」再填数字；
+ * 4. 还没有就找弹窗里的数字输入框直接填；
+ * 5. 都不行时把页面上实际有哪些选项带出来，方便定位。
+ */
+export async function applyCouponScale(page: Page, raw: string): Promise<void> {
+  const rawText = (raw ?? '').trim()
+  const probe = (await page.evaluate(PROBE_SCALE_OPTIONS).catch(() => null)) as {
+    texts: string[]
+    unit: '张' | '元' | null
+  } | null
+  const optionTexts = probe?.texts ?? []
+  const optionList = optionTexts.join(' / ') || '无'
+
+  // 0) 选项通常来自界面下拉（就是页面上的原文，如「全部预算」「5000元」），先按原样点
+  if (rawText && (await pickRadio(page, rawText))) return
+
+  let parsed: CouponScale
+  try {
+    parsed = parseCouponScale(rawText)
+  } catch (err) {
+    throw new Error(
+      `${err instanceof Error ? err.message : String(err)}；弹窗里可选择的是：${optionList}`,
+    )
+  }
+
+  if (parsed.kind === 'all') {
+    // 「全部」在不同券上叫「全部库存」「全部预算」，不写死文案：取第一个「全部」开头的选项
+    const allOption = optionTexts.find(text => text.startsWith('全部'))
+    if (allOption && (await pickRadio(page, allOption))) return
+    if (await pickRadio(page, '全部库存')) return
+    throw new Error(`发券弹窗里没有「全部」类选项，当前可选：${optionList}`)
+  }
+
+  const unit = parsed.unit ?? probe?.unit ?? '张'
+  if (parsed.unit && probe?.unit && parsed.unit !== probe.unit) {
+    throw new Error(
+      `这张券的发放规模按「${probe.unit}」算，但填的是「${parsed.unit}」：` +
+        `请改成「${parsed.num}${probe.unit}」或直接填「${parsed.num}」`,
+    )
+  }
+
+  // 1) 命中现成选项：5000元 / 5,000元 / 50张
+  const withUnit = `${parsed.num}${unit}`
+  const thousands = `${parsed.num.toLocaleString('zh-CN')}${unit}`
+  for (const candidate of new Set([withUnit, thousands])) {
+    if (await pickRadio(page, candidate)) return
+  }
+
+  // 2) 「自定义」+ 输入框
+  const customSelected = await pickRadio(page, '自定义')
+  if (customSelected) {
+    await sleep(300)
+    if (await fillScaleInput(page, parsed.num)) return
+  }
+
+  // 3) 直接找输入框（有些券只有一个数字框）
+  if (await fillScaleInput(page, parsed.num)) return
+
+  throw new Error(
+    `没能设置发放规模「${rawText}」：弹窗里可选的规模是「${optionList}」，也没有找到能填数字的输入框`,
+  )
+}
+
 /**
  * 提交后可能出现的二次确认弹窗（文本**精确等于**「确定」/「确认」）。
  *
@@ -524,6 +734,66 @@ export async function readCoupons(page: Page): Promise<CouponInfo[]> {
 }
 
 /**
+ * 页面内扫描发券弹窗里所有可见的单选项，按「规模 / 时长」分类。
+ *
+ * 不能靠猜选项名：普通券是「1000张」，平台补贴券是「5000元」，
+ * 「全部」在有些券上叫「全部库存」、有些叫「全部预算」。
+ * 所以直接把页面上的文案读出来，交给界面做下拉。
+ */
+const COLLECT_COUPON_OPTIONS = `(() => {
+  const visible = (el) => {
+    const r = el.getBoundingClientRect()
+    return r.height > 0 && r.width > 0
+  }
+  const texts = []
+  for (const label of Array.from(document.querySelectorAll('label'))) {
+    if (!label.querySelector('input[type="radio"]')) continue
+    if (!visible(label)) continue
+    const text = (label.innerText || label.textContent || '').replace(/\\s+/g, '')
+    if (text) texts.push(text)
+  }
+  const scale = []
+  const duration = []
+  for (const text of texts) {
+    // 「自定义」需要再填数字，下拉里驱动不了，直接跳过
+    if (/自定义|其他/.test(text)) continue
+    if (/分钟|小时|秒$/.test(text)) {
+      if (!duration.includes(text)) duration.push(text)
+      continue
+    }
+    if (/张|元|预算|库存/.test(text)) {
+      if (!scale.includes(text)) scale.push(text)
+    }
+  }
+  return { scale, duration }
+})()`
+
+/** 打开某张券的「发放优惠券」弹窗，读走里面可选的发放规模与时长 */
+export async function readCouponSendOptions(
+  page: Page,
+  couponName: string,
+): Promise<CouponSendOptions> {
+  await openMarketingTile(page, MARKETING.COUPON.TILE, MARKETING.COUPON.MODAL_READY)
+  try {
+    await waitForTableRows(page)
+    const row = page.locator('tr').filter({ hasText: couponName }).first()
+    if ((await row.count()) === 0) throw new Error(`未在优惠券列表中找到「${couponName}」`)
+
+    const sendBtn = row.locator(MARKETING.COUPON.SEND_BUTTON).first()
+    const canOpen = (await sendBtn.count()) > 0 && (await sendBtn.isVisible().catch(() => false))
+    if (!canOpen) throw new Error('该券正在发放中，现在读不到发放选项（等这轮发完或先停止）')
+
+    await sendBtn.click()
+    await page.waitForSelector(MARKETING.COUPON.DIALOG_READY, { timeout: 20000, state: 'visible' })
+    await sleep(600)
+    return (await page.evaluate(COLLECT_COUPON_OPTIONS)) as CouponSendOptions
+  } finally {
+    // 读选项会把弹窗打开，必须关掉，否则会挡住后续操作
+    await closeAllDrawers(page)
+  }
+}
+
+/**
  * 提交后复查：重新读一次优惠券列表，看目标券是否真的进入了「发放中」。
  * 读不到（列表打不开等）返回 null，调用方不要把 null 当成失败。
  */
@@ -591,8 +861,7 @@ export async function sendCouponOnPage(page: Page, params: SendCouponParams): Pr
     await page.waitForSelector(MARKETING.COUPON.DIALOG_READY, { timeout: 20000, state: 'visible' })
     await sleep(600)
 
-    const countOk = await pickRadio(page, params.count)
-    if (!countOk) throw new Error(`发券数量选项「${params.count}」不存在`)
+    await applyCouponScale(page, params.count)
     const durationOk = await pickRadio(page, params.duration)
     if (!durationOk) throw new Error(`发券时长选项「${params.duration}」不存在`)
 

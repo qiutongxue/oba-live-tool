@@ -24,6 +24,7 @@ import { scrollCommentListToBottom } from './commentScroll'
 import { REGEXPS, SELECTORS, TEXTS, URLS } from './constant'
 import { douyinEosElementFinder as elementFinder } from './element-finder'
 import {
+  readCouponSendOptions,
   readCoupons,
   readGiftBagTemplates,
   sendCouponOnPage,
@@ -242,6 +243,21 @@ export class DouyinEosPlatform
           Result.try({
             immediate: true,
             try: () => readCoupons(page),
+            catch: err => new UnexpectedError({ description: String(err) }),
+          }),
+        ),
+      ),
+    )
+  }
+
+  getCouponSendOptions(couponName: string): Result.ResultAsync<CouponSendOptions, PlatformError> {
+    return this.pageLock.run(() =>
+      Result.pipe(
+        ensurePage(this.mainPage),
+        Result.andThen(page =>
+          Result.try({
+            immediate: true,
+            try: () => readCouponSendOptions(page, couponName),
             catch: err => new UnexpectedError({ description: String(err) }),
           }),
         ),

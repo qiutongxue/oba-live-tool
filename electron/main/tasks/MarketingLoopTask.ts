@@ -396,7 +396,7 @@ export function createMarketingLoopTask(
     }
 
     logger.info(
-      `优惠券「${target.name}」已停止发放，正在自动发放（数量 ${cfg.params.count} / 时长 ${cfg.params.duration}）…`,
+      `优惠券「${target.name}」已停止发放，正在自动发放（发放规模 ${cfg.params.count} / 时长 ${cfg.params.duration}）…`,
     )
     // 循环的闸门已经保证「不在发放中」，一般不需要先停止；
     // 只有「倒计时卡 00:00」的恢复路径才 needsRestop（行内可能仍残留「停止发放」按钮）

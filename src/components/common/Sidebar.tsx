@@ -5,6 +5,7 @@ import { useCurrentAutoPopUp } from '@/hooks/useAutoPopUp'
 import { useAutoReply } from '@/hooks/useAutoReply'
 import { useCurrentLiveControl } from '@/hooks/useLiveControl'
 import { useCurrentMarketingLoop } from '@/hooks/useMarketingLoop'
+import { useCurrentSeckillRunning } from '@/hooks/useSeckill'
 import { cn } from '@/lib/utils'
 import {
   CarbonBlockStorage,
@@ -31,6 +32,7 @@ export default function Sidebar() {
   const isAutoPopupRunning = useCurrentAutoPopUp(context => context.isRunning)
   const { isRunning: isAutoReplyRunning } = useAutoReply()
   const isMarketingRunning = useCurrentMarketingLoop(context => context.isRunning)
+  const isSeckillRunning = useCurrentSeckillRunning()
   const platform = useCurrentLiveControl(context => context.platform)
 
   const tabs: SidebarTab[] = [
@@ -74,6 +76,7 @@ export default function Sidebar() {
     {
       id: '/seckill',
       name: '秒杀补货',
+      isRunning: isSeckillRunning,
       icon: <CarbonRenew className="w-5 h-5" />,
       platform: ['eos'],
     },

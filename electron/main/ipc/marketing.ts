@@ -85,6 +85,30 @@ function setupIpcHandlers() {
     return result.value
   })
 
+  // 读取某张券「发放优惠券」弹窗里可选的发放规模与时长（界面下拉用）
+  typedIpcMainHandle(
+    IPC_CHANNELS.tasks.marketing.getCouponSendOptions,
+    async (_, accountId, couponName) => {
+      const logger = logFor(accountId)
+      const session = accountManager.getSession(accountId)
+      if (Result.isFailure(session)) {
+        logger.error('读取发放选项失败：账号未连接')
+        return { scale: [], duration: [] }
+      }
+      logger.info(`正在读取「${couponName}」的可选发放规模与时长…`)
+      const result = await session.value.getCouponSendOptions(couponName)
+      if (Result.isFailure(result)) {
+        logger.error('读取发放选项失败：', result.error)
+        return { scale: [], duration: [] }
+      }
+      logger.success(
+        `「${couponName}」可选规模 ${result.value.scale.join(' / ') || '无'}；` +
+          `可选时长 ${result.value.duration.join(' / ') || '无'}`,
+      )
+      return result.value
+    },
+  )
+
   // 发放优惠券
   typedIpcMainHandle(IPC_CHANNELS.tasks.marketing.sendCoupon, async (_, accountId, params) => {
     const logger = logFor(accountId)
@@ -94,7 +118,7 @@ function setupIpcHandlers() {
       return false
     }
     logger.info(
-      `正在发放优惠券「${params.couponName}」（数量 ${params.count} / 时长 ${params.duration}）…`,
+      `正在发放优惠券「${params.couponName}」（发放规模 ${params.count} / 时长 ${params.duration}）…`,
     )
     const result = await session.value.sendCoupon(params)
     if (Result.isFailure(result)) {

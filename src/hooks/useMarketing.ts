@@ -49,6 +49,8 @@ interface MarketingStore {
   /** 成功返回发放结果（含是否确认到新增），失败返回 null */
   sendGiftBag: (accountId: string, index: number) => Promise<SendGiftBagResult | null>
   sendCoupon: (accountId: string, params: SendCouponParams) => Promise<boolean>
+  /** 读取某张券弹窗里可选的发放规模与时长（读不到返回空数组） */
+  getCouponSendOptions: (accountId: string, couponName: string) => Promise<CouponSendOptions>
 }
 
 export const useMarketingStore = create<MarketingStore>()((set, get) => {
@@ -149,6 +151,19 @@ export const useMarketingStore = create<MarketingStore>()((set, get) => {
         patch(accountId, lists => ({ ...lists, sending: false }))
       }
     },
+
+    getCouponSendOptions: async (accountId, couponName) => {
+      try {
+        const options = await window.ipcRenderer.invoke(
+          IPC_CHANNELS.tasks.marketing.getCouponSendOptions,
+          accountId,
+          couponName,
+        )
+        return { scale: options?.scale ?? [], duration: options?.duration ?? [] }
+      } catch {
+        return { scale: [], duration: [] }
+      }
+    },
   }
 })
 
@@ -220,6 +235,12 @@ export function useMarketing() {
     [accountId, toast],
   )
 
+  const getCouponSendOptions = useCallback(
+    (couponName: string) =>
+      useMarketingStore.getState().getCouponSendOptions(accountId, couponName),
+    [accountId],
+  )
+
   return {
     giftBags,
     coupons,
@@ -232,5 +253,6 @@ export function useMarketing() {
     refreshCoupons,
     sendGiftBag,
     sendCoupon,
+    getCouponSendOptions,
   }
 }

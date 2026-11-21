@@ -115,6 +115,8 @@ export interface IMarketingTool {
   ): Result.ResultAsync<SendGiftBagResult, PlatformError>
   /** 读取「本场直播优惠券」列表 */
   getCoupons(): Result.ResultAsync<CouponInfo[], PlatformError>
+  /** 读取某张券「发放优惠券」弹窗里可选的发放规模与时长 */
+  getCouponSendOptions(couponName: string): Result.ResultAsync<CouponSendOptions, PlatformError>
   /** 发放优惠券 */
   sendCoupon(
     params: SendCouponParams,

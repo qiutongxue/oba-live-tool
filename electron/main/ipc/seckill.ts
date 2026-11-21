@@ -1,16 +1,22 @@
 import { Result } from '@praha/byethrow'
 import { app } from 'electron'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
+import { emitter } from '#/event/eventBus'
 import {
   getFloatMode,
   hideFloatWindow,
   notifySoldOut,
+  onFloatPendingCount,
+  resetSoldOutState,
+  resizeFloatWindow,
   setFloatMode,
   showFloatWindow,
+  updateFloatGoods,
 } from '#/floatWindow'
 import { createLogger } from '#/logger'
 import { accountManager } from '#/managers/AccountManager'
 import { typedIpcMainHandle } from '#/utils'
+import windowManager from '#/windowManager'
 
 const TASK_NAME = '秒杀补货'
 
@@ -19,23 +25,24 @@ function logFor(accountId: string) {
 }
 
 export function setupSeckillIpcHandlers() {
-  // 读取「直播商品」列表
+  // 读取「直播商品」列表。ok=false 表示这次没读出来（页面/连接异常），
+  // 界面据此保留上一次的结果，不能把空数组当成「没有售罄商品」。
   typedIpcMainHandle(IPC_CHANNELS.seckill.read, async (_, accountId) => {
     const logger = logFor(accountId)
     const session = accountManager.getSession(accountId)
     if (Result.isFailure(session)) {
       logger.error('读取货架失败：账号未连接')
-      return []
+      return { goods: [], ok: false }
     }
     logger.info('正在读取直播商品列表…')
     const result = await session.value.readSeckillGoods()
     if (Result.isFailure(result)) {
       logger.error('读取货架失败：', result.error)
-      return []
+      return { goods: [], ok: false }
     }
     const soldOut = result.value.filter(g => g.soldOut).length
     logger.success(`读取到 ${result.value.length} 个商品，其中售罄 ${soldOut} 个`)
-    return result.value
+    return { goods: result.value, ok: true }
   })
 
   // 对指定商品补货（投放库存 = 当前值 + addCount）
@@ -88,11 +95,21 @@ export function setupSeckillIpcHandlers() {
     return result.value
   })
 
-  // 售罄监控：只在「售罄自动弹出」模式下运行，30 秒看一次货架
-  typedIpcMainHandle(IPC_CHANNELS.seckill.setFloatMode, (_, accountId, mode) => {
+  // 打开方式：只在「售罄自动弹出」模式下弹窗，快捷键模式下静默提醒
+  typedIpcMainHandle(IPC_CHANNELS.seckill.setFloatMode, (_, _accountId, mode) => {
+    // 打开方式只管「售罄时弹不弹窗」，监控是否运行由模块开关决定
     setFloatMode(mode)
-    if (mode === 'auto') startSoldOutWatch(accountId)
-    else stopSoldOutWatch()
+  })
+
+  // 模块总开关：开启后每 30 秒巡一次货架
+  typedIpcMainHandle(IPC_CHANNELS.seckill.start, (_, accountId) => {
+    logFor(accountId).success('已开启秒杀补货监控')
+    startSoldOutWatch(accountId)
+  })
+
+  typedIpcMainHandle(IPC_CHANNELS.seckill.stop, (_, accountId) => {
+    logFor(accountId).info('已停止秒杀补货监控')
+    stopSoldOutWatch()
   })
 
   // 录制用户的一次真实点击：点完把目标链写进日志，供分析选择器
@@ -115,35 +132,90 @@ export function setupSeckillIpcHandlers() {
 
   typedIpcMainHandle(IPC_CHANNELS.seckill.openFloat, () => showFloatWindow())
   typedIpcMainHandle(IPC_CHANNELS.seckill.closeFloat, () => hideFloatWindow())
+  // 浮窗内容撑多高，窗口就多高
+  typedIpcMainHandle(IPC_CHANNELS.seckill.setFloatHeight, (_, height) => resizeFloatWindow(height))
+  // 待补数量归零 → 自动弹出的浮窗自己关掉，回到后台继续监听。
+  // 关窗条件：见过待补商品 + 本次是成功读取 + 停留超过 0.8 秒。
+  // 读取失败时 ok=false，绝不关窗（否则一次读失败就表现为「弹一下就消失」）。
+  typedIpcMainHandle(IPC_CHANNELS.seckill.reportFloatCount, (_, count, ok) => {
+    const closed = onFloatPendingCount(count, ok)
+    if (closed && watchAccountId) logFor(watchAccountId).info('补货窗已自动关闭（货架已无售罄）')
+  })
+
+  // 断开中控台时把监控一起停掉（其他模块靠任务体系自动停，秒杀是自己起的定时器）
+  emitter.on('account-disconnected', ({ accountId }) => {
+    if (watchAccountId !== accountId) return
+    stopSoldOutWatch(true)
+  })
 }
 
 // ==================== 售罄监控（自动弹出悬浮窗） ====================
 
-const WATCH_INTERVAL_MS = 30 * 1000
+/** 巡检间隔：10 秒一次，售罄后能更快弹窗；页面读取本身有互斥锁，不会和补货打架 */
+const WATCH_INTERVAL_MS = 10 * 1000
 let watchTimer: ReturnType<typeof setInterval> | null = null
 let watchAccountId: string | null = null
+/** 上次只记过日志的售罄签名（快捷键模式下不重复刷屏） */
+let lastLoggedKey = ''
 
-function stopSoldOutWatch() {
+/** 停止巡检；`notifyRenderer` 为 true 时通知界面把绿点去掉 */
+function stopSoldOutWatch(notifyRenderer = false) {
+  const stoppedAccountId = watchAccountId
   if (watchTimer) clearInterval(watchTimer)
   watchTimer = null
   watchAccountId = null
+  lastLoggedKey = ''
+  resetSoldOutState()
+  if (notifyRenderer && stoppedAccountId) {
+    logFor(stoppedAccountId).warn('已停止秒杀补货监控（连接已断开）')
+    windowManager.send(IPC_CHANNELS.seckill.stoppedEvent, stoppedAccountId)
+  }
 }
 
 function startSoldOutWatch(accountId: string) {
   if (watchTimer && watchAccountId === accountId) return
   stopSoldOutWatch()
   watchAccountId = accountId
-  watchTimer = setInterval(() => {
-    void (async () => {
-      if (getFloatMode() !== 'auto') return
-      const session = accountManager.getSession(accountId)
-      if (Result.isFailure(session)) return
-      const result = await session.value.readSeckillGoods()
-      if (Result.isSuccess(result) && result.value.some(item => item.soldOut)) {
-        notifySoldOut()
-      }
-    })()
-  }, WATCH_INTERVAL_MS)
+
+  // 开启后立刻巡一次，不用干等 30 秒
+  void tickSoldOutWatch(accountId)
+  watchTimer = setInterval(() => void tickSoldOutWatch(accountId), WATCH_INTERVAL_MS)
+}
+
+async function tickSoldOutWatch(accountId: string) {
+  const session = accountManager.getSession(accountId)
+  if (Result.isFailure(session)) return
+
+  const result = await session.value.readSeckillGoods()
+  if (Result.isFailure(result)) return
+
+  const goods = result.value
+  // 窗口开着时把最新货架推过去，页面不再自己读，避免两边数据不一致
+  updateFloatGoods(goods)
+
+  const soldOut = goods.filter(item => item.soldOut)
+  if (soldOut.length === 0) {
+    // 都补上了：清掉签名，下次真售罄还能正常弹
+    resetSoldOutState()
+    lastLoggedKey = ''
+    return
+  }
+
+  // 同一批售罄商品只提醒一次；补完一个又售罄另一个时签名会变，重新提醒
+  const key = soldOut
+    .map(item => `${item.index}:${item.title}`)
+    .sort()
+    .join('|')
+
+  if (key !== lastLoggedKey) {
+    lastLoggedKey = key
+    logFor(accountId).info(
+      getFloatMode() === 'auto'
+        ? `检测到 ${soldOut.length} 个商品售罄，弹出补货窗`
+        : `检测到 ${soldOut.length} 个商品售罄（Ctrl+Shift+B 可打开补货窗）`,
+    )
+  }
+  notifySoldOut(key, goods)
 }
 
 /** 应用启动时先注册快捷键（默认「快捷键唤出」模式） */

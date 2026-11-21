@@ -1,4 +1,5 @@
 import type { Page } from 'playwright'
+import { takeScreenshot } from '#/utils'
 
 /**
  * 秒杀补货（抖音团购 eos 中控台）。
@@ -56,6 +57,36 @@ function parseRowText(text: string) {
   }
 }
 
+/**
+ * 从一段文本里解析数量。
+ *
+ * 页面上的数字可能带千分位、单位或货币符号（「1,000」「1 000 件」「¥10」），
+ * 直接 parseInt 会得到 NaN 或错误值，所以统一先归一化再取第一个数字。
+ */
+function parseQuantity(raw: string | null | undefined): number | null {
+  if (!raw) return null
+  const normalized = raw.replace(/[，,\s]/g, '')
+  const match = normalized.match(/-?\d+(?:\.\d+)?/)
+  if (!match) return null
+  const value = Number.parseFloat(match[0])
+  return Number.isFinite(value) ? Math.round(value) : null
+}
+
+/** 输入框为空时，退而在「投放库存」紧邻的文字里找数字，如「投放库存 10 件」 */
+function parseStockFromScopeText(text: string | null | undefined): number | null {
+  if (!text) return null
+  // 只认紧跟在标签后面的数字，避免把「投放库存?（可售 99）」里的 99 当成当前投放量
+  const match = text.replace(/\s+/g, '').match(/投放库存[:：]?(\d+)/)
+  return match ? Number.parseInt(match[1], 10) : null
+}
+
+/** 从「投放库存 可售库存：0」这类文字里取可售库存 */
+function parseAvailableFromScopeText(text: string | null | undefined): number | null {
+  if (!text) return null
+  const match = text.replace(/\s+/g, '').match(/可售库存[:：]?(\d+)/)
+  return match ? Number.parseInt(match[1], 10) : null
+}
+
 /** 读取「直播商品」列表（含秒杀商品的剩余库存与是否售罄） */
 export async function readSeckillGoods(page: Page): Promise<SeckillGoods[]> {
   const hasRows = await page
@@ -90,49 +121,332 @@ export async function readSeckillGoods(page: Page): Promise<SeckillGoods[]> {
  * 在页面里找「投放库存」输入框：从标签文本往上逐层找最近的 input。
  * 返回 null 表示没找到（弹窗结构变了）。
  */
+/**
+ * 找一个「数量输入框」，并带回足够的信息做兜底解析。
+ *
+ * ⚠️ 必须排除 radio / checkbox / hidden：同一个容器里常有「投放方式」的单选框，
+ * 它们的 value 是 "on" —— 早期版本直接取第一个 input，于是拿到 "on" 判成「不是数字」。
+ * 另外 value 可能为空（当前值显示在 placeholder 或旁边文案里），所以一起返回。
+ */
+const STOCK_INPUT_SELECTOR =
+  'input:not([type="radio"]):not([type="checkbox"]):not([type="hidden"]):not([type="file"])'
+
+/**
+ * 找「投放库存」对应的那个输入框。
+ *
+ * 不能「找到第一个 input 就用」：标签的上层容器可能是整个表单，
+ * 第一个 input 往往是「活动名称」这类空文本框，取到的 value 不是数字。
+ * 这里按特征打分挑最像的：
+ *   +3 与标签同一行   +2 值本身是数字   +2 占位符含 库存/数量/件
+ *   +1 在标签右侧     +1 type=number
+ * 选中后打上 data 标记，写入时按标记找同一个框。
+ */
 const FIND_STOCK_INPUT = `(() => {
-  // 标签旁边通常有个「?」图标，所以不能要求「纯文本节点且完全等于」，
-  // 改成：文本以「投放库存」开头、长度很短的元素（取最内层）。
+  const SELECTOR = ${JSON.stringify(STOCK_INPUT_SELECTOR)};
   const labels = Array.from(document.querySelectorAll('*')).filter((el) => {
     const t = (el.textContent || '').trim();
     return t.startsWith(${JSON.stringify(TEXT.STOCK_LABEL)}) && t.length <= 14;
   });
-  for (let i = labels.length - 1; i >= 0; i--) {
-    let scope = labels[i].parentElement;
-    for (let depth = 0; depth < 5 && scope && scope !== document.body; depth++) {
-      const input = scope.querySelector('input');
-      if (input) {
-        const rect = input.getBoundingClientRect();
-        return { found: true, value: input.value, visible: rect.height > 0 };
-      }
-      scope = scope.parentElement;
+  if (!labels.length) return { found: false, reason: 'no-label', candidates: [] };
+
+  const label = labels[labels.length - 1];
+  const lr = label.getBoundingClientRect();
+
+  const seen = new Set();
+  const candidates = [];
+  let scope = label.parentElement;
+  for (let depth = 0; depth < 6 && scope && scope !== document.body; depth++) {
+    for (const input of Array.from(scope.querySelectorAll(SELECTOR))) {
+      if (seen.has(input)) continue;
+      seen.add(input);
+      const r = input.getBoundingClientRect();
+      if (r.height <= 0) continue;
+
+      const rowTolerance = Math.max(r.height, lr.height, 12);
+      const sameRow = Math.abs((r.y + r.height / 2) - (lr.y + lr.height / 2)) <= rowTolerance;
+      const raw = (input.value || '').trim();
+      const ph = (input.placeholder || '').trim();
+
+      let score = 0;
+      if (sameRow) score += 3;
+      if (r.x >= lr.x) score += 1;
+      // ⚠️ 模板字符串里必须写 \\d，否则 d 会变成 d，正则失效（这里踩过）
+      if (/^-?\\d+([.,]\\d+)?$/.test(raw)) score += 2;
+      if (/库存|数量|件/.test(ph)) score += 2;
+      if (input.type === 'number') score += 1;
+
+      // 层级越深越可能是整块表单，给一点点减分，让「近的、有数字的」胜出
+      score -= depth;
+      candidates.push({
+        input,
+        score,
+        depth,
+        raw,
+        ph,
+        attr: input.getAttribute('value') || '',
+        type: input.type || '',
+        x: Math.round(r.x),
+        y: Math.round(r.y),
+      });
     }
+    // ⚠️ 这里**不能**「有候选就 break」：标签的最近一层可能只是说明文案的容器，
+    // 里面那个 input 是空的，真正的数字框是再上一层的兄弟节点。
+    // 所以一路扫到第 6 层，最后靠分数挑。
+    scope = scope.parentElement;
   }
-  return { found: false, reason: 'no-input' };
+
+  if (!candidates.length) return { found: false, reason: 'no-input', candidates: [] };
+
+  candidates.sort((a, b) => b.score - a.score);
+  // 同分时优先「值（或 value 属性）本身就是数字」的那个
+  const isNumeric = (v) => /^-?\\d+([.,]\\d+)?$/.test(v || '');
+  const best =
+    candidates.find((c) => isNumeric(c.raw) || isNumeric(c.attr)) ?? candidates[0];
+
+  for (const c of candidates) c.input.removeAttribute('data-oba-stock');
+  best.input.setAttribute('data-oba-stock', '1');
+
+  return {
+    found: true,
+    value: best.raw,
+    placeholder: best.ph,
+    type: best.type,
+    attr: best.attr,
+    // 排查用：标签块和选中输入框的真实 HTML（各截断）
+    labelHtml: (label.parentElement?.outerHTML || '').replace(/s+/g, ' ').slice(0, 260),
+    inputHtml: (best.input.outerHTML || '').replace(/s+/g, ' ').slice(0, 200),
+    scopeText: (best.input.parentElement?.innerText || label.parentElement?.innerText || '')
+      .replace(/\\s+/g, ' ')
+      .slice(0, 120),
+    visible: true,
+    // 仅供排查：最多 5 个候选
+    candidates: candidates.slice(0, 5).map((c) => ({
+      score: c.score,
+      value: c.raw,
+      placeholder: c.ph,
+      type: c.type,
+      at: [c.x, c.y],
+    })),
+  };
 })()`
 
-/** 把值写进 React 受控输入框（必须用原生 setter + input 事件，否则页面状态不更新） */
-const SET_STOCK_INPUT = (next: number) => `(() => {
-  const labels = Array.from(document.querySelectorAll('*')).filter((el) => {
-    const t = (el.textContent || '').trim();
-    return t.startsWith(${JSON.stringify(TEXT.STOCK_LABEL)}) && t.length <= 14;
-  });
-  for (let i = labels.length - 1; i >= 0; i--) {
-    let scope = labels[i].parentElement;
-    for (let depth = 0; depth < 5 && scope && scope !== document.body; depth++) {
-      const input = scope.querySelector('input');
-      if (input) {
-        const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
-        setter.call(input, String(${next}));
-        input.dispatchEvent(new Event('input', { bubbles: true }));
-        input.dispatchEvent(new Event('change', { bubbles: true }));
-        return { ok: true, value: input.value };
-      }
-      scope = scope.parentElement;
+/** 「提交」在不同版本可能叫「保存 / 确定」，按优先级排列 */
+const SUBMIT_TEXTS = ['提交', '保存', '确定', '确认提交', '确认保存', '保存修改'] as const
+
+/**
+ * 扫描提交类按钮。可见且可点的打上 `data-oba-submit="1"` 标记，便于后续直接点。
+ *
+ * ⚠️ 不能只看原生 `disabled`：eos 的按钮有时用 class（okee-btn-disabled）表达禁用，
+ * 此时 `isDisabled()` 返回 false，点下去毫无反应。
+ */
+const PROBE_SUBMIT = `(() => {
+  document.querySelectorAll('[data-oba-submit]').forEach((el) => el.removeAttribute('data-oba-submit'));
+  const texts = ${JSON.stringify(SUBMIT_TEXTS)};
+  const out = [];
+  const nodes = Array.from(document.querySelectorAll('button, [role="button"], a'));
+  for (const el of nodes) {
+    const t = (el.textContent || '').replace(/\\s+/g, '');
+    if (!texts.includes(t)) continue;
+    const r = el.getBoundingClientRect();
+    const visible = r.width > 0 && r.height > 0;
+    const cls = el.getAttribute('class') || '';
+    const disabled =
+      el.disabled === true ||
+      el.getAttribute('aria-disabled') === 'true' ||
+      /disabled|is-disabled/i.test(cls);
+    const ok = visible && !disabled;
+    if (ok) el.setAttribute('data-oba-submit', t);
+    out.push({ text: t, visible, disabled, marked: ok, cls: cls.slice(0, 50) });
+  }
+  return out;
+})()`
+
+/** 读当前「投放库存」输入框的值 + 附近提示文案（提交按钮卡住时用来写错误信息） */
+const DESCRIBE_STOCK_FORM = `(() => {
+  const input = document.querySelector('[data-oba-stock="1"]');
+  if (!input) return { value: '(找不到输入框)', hint: '', scope: '' };
+  const scope = input.parentElement || input.closest('div');
+  const hints = [];
+  if (scope) {
+    for (const el of Array.from(
+      scope.querySelectorAll('[class*="error"], [class*="help"], [class*="tip"], [class*="warn"]'),
+    )) {
+      const t = (el.textContent || '').replace(/\\s+/g, ' ').trim();
+      if (t && t.length <= 60) hints.push(t);
     }
   }
-  return { ok: false, reason: 'no-input' };
+  return {
+    value: input.value,
+    hint: Array.from(new Set(hints)).slice(0, 4).join(' / '),
+    scope: (scope && scope.innerText ? scope.innerText : '').replace(/\\s+/g, ' ').slice(0, 100),
+  };
 })()`
+
+/** 读当前「投放库存」输入框的值（含 value 为空的情况） */
+const PROBE_STOCK_STATE = `(() => {
+  const input = document.querySelector('[data-oba-stock="1"]');
+  if (!input) return { found: false, value: '' };
+  return { found: true, value: input.value || '' };
+})()`
+
+/**
+ * 读「投放库存」当前值，**等它稳定**再取。
+ *
+ * ⚠️ 表单是先出空壳、再异步灌数据的。以前一读到空就当 0，
+ * 于是「原值 + N」被算成「0 + N」，等于把活动库存改小了。
+ * 这里要求值连续多次不变才认：有数字约 0.6 秒，为空要连等约 2.4 秒
+ * （空值风险大得多，宁可多等一会）。
+ */
+async function readStockSettled(
+  page: Page,
+  target: import('playwright').Page | import('playwright').Frame,
+  timeout: number,
+): Promise<{ value: number | null; raw: string; settled: boolean }> {
+  const deadline = Date.now() + timeout
+  let last = ''
+  let same = 0
+  while (Date.now() < deadline) {
+    const st = (await target.evaluate(PROBE_STOCK_STATE).catch(() => null)) as {
+      found: boolean
+      value: string
+    } | null
+    if (!st?.found) {
+      await page.waitForTimeout(300)
+      continue
+    }
+    if (st.value === last) {
+      same++
+    } else {
+      last = st.value
+      same = 0
+    }
+    const need = last.trim() === '' ? 8 : 2
+    if (same >= need) return { value: parseQuantity(last), raw: last, settled: true }
+    await page.waitForTimeout(300)
+  }
+  return { value: parseQuantity(last), raw: last, settled: false }
+}
+
+/** 立刻读一次原始值（不等待），用于写入后的覆盖检查 */
+async function readStockRaw(
+  target: import('playwright').Page | import('playwright').Frame,
+): Promise<string> {
+  const st = (await target.evaluate(PROBE_STOCK_STATE).catch(() => null)) as {
+    found: boolean
+    value: string
+  } | null
+  return st?.found ? st.value : ''
+}
+
+/**
+ * 把数字写进「投放库存」。
+ *
+ * ⚠️ 只 dispatch input 事件在部分版本里会被 React 忽略：值显示变了，但表单的校验状态
+ * 没更新，「提交」按钮一直灰着。所以优先用**真实键盘输入**（keydown → input → blur），
+ * 不行再用原生 setter 兜底，最后回读确认值真的进去了。
+ */
+async function fillStockInput(
+  target: import('playwright').Page | import('playwright').Frame,
+  next: number,
+  trace: string[],
+): Promise<{ ok: boolean; value: string; reason?: string }> {
+  const wanted = String(next)
+  let input = target.locator('[data-oba-stock="1"]').first()
+  if ((await input.count().catch(() => 0)) === 0) {
+    return { ok: false, value: '', reason: '页面重渲染后找不到标记过的输入框' }
+  }
+
+  /**
+   * 回读输入框的值。
+   * ⚠️ 失焦后页面可能整块重渲染，原来的 DOM 节点被换掉（标记也一起没了），
+   * 这时要重新跑一次查找再读，否则会「明明写进去了却判成没写」。
+   */
+  const readBack = async (): Promise<string | null> => {
+    if ((await input.count().catch(() => 0)) > 0) {
+      return (await input.inputValue().catch(() => '')).trim()
+    }
+    const again = (await target.evaluate(FIND_STOCK_INPUT).catch(() => ({ found: false }))) as {
+      found: boolean
+      value?: string
+    }
+    if (!again.found) return null
+    input = target.locator('[data-oba-stock="1"]').first()
+    return (again.value || '').trim()
+  }
+
+  // 1) 真实键盘输入
+  const focused = await input
+    .click({ timeout: 3000 })
+    .then(() => true)
+    .catch(() => false)
+  if (focused) {
+    await input.press('ControlOrMeta+a').catch(() => {})
+    await input.press('Backspace').catch(() => {})
+    await input.pressSequentially(wanted, { delay: 70 }).catch(() => {})
+    // 很多表单的校验挂在 blur 上，不先失焦按钮不会亮
+    await input.press('Tab').catch(() => {})
+    const typed = await readBack()
+    if (typed !== null && parseQuantity(typed) === next) {
+      trace.push(`投放库存填 ${next}（键盘输入）`)
+      return { ok: true, value: typed }
+    }
+  }
+
+  // 2) 原生 setter 兜底（自定义输入组件不吃键盘事件时）
+  if ((await input.count().catch(() => 0)) === 0) {
+    const current = await readBack()
+    if (current !== null && parseQuantity(current) === next) {
+      trace.push(`投放库存填 ${next}（键盘输入·节点已重建）`)
+      return { ok: true, value: current }
+    }
+    return { ok: false, value: current ?? '', reason: '写入时输入框已被重渲染移除' }
+  }
+  const fallback = (await input
+    .evaluate((el, value) => {
+      const node = el as HTMLInputElement
+      const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set
+      setter?.call(node, String(value))
+      node.dispatchEvent(new Event('input', { bubbles: true }))
+      node.dispatchEvent(new Event('change', { bubbles: true }))
+      node.blur()
+      return node.value
+    }, next)
+    .catch(() => '')) as string
+  const value = (fallback || '').trim() || (await readBack()) || ''
+  if (parseQuantity(value) === next) {
+    trace.push(`投放库存填 ${next}（setter）`)
+    return { ok: true, value }
+  }
+  return { ok: false, value, reason: `输入框回读为 "${value}"，期望 "${wanted}"` }
+}
+
+/**
+ * 等「提交」变成可点。
+ *
+ * ⚠️ 这是补货失败的主要来源：点完「编辑」后表单是**异步灌数据**的，刚填完值的瞬间
+ * 校验还没跑完，按钮必然是 disabled。以前填完立刻判定，正常值也会被判成
+ * 「超出可售库存」，于是十次里失败七八次。
+ */
+async function waitSubmitReady(
+  page: Page,
+  target: import('playwright').Page | import('playwright').Frame,
+  timeout: number,
+): Promise<import('playwright').Locator | null> {
+  const deadline = Date.now() + timeout
+  while (Date.now() < deadline) {
+    // 每次都重新扫一遍：按钮的可用状态是随校验异步变的
+    await target.evaluate(PROBE_SUBMIT).catch(() => [])
+    // 按「提交 → 保存 → 确定」的优先级取，避免误点同一屏里的其它按钮
+    for (const text of SUBMIT_TEXTS) {
+      const btn = target.locator(`[data-oba-submit="${text}"]`).first()
+      if ((await btn.count().catch(() => 0)) > 0 && (await btn.isVisible().catch(() => false))) {
+        return btn
+      }
+    }
+    await page.waitForTimeout(300)
+  }
+  return null
+}
 
 type IconProbe = { index: number; cls: string; tip: string }
 
@@ -343,30 +657,64 @@ function allTargets(page: Page): Array<import('playwright').Page | import('playw
 }
 
 /** 在页面和所有 iframe 里找「投放库存」输入框 */
-async function locateStockInput(page: Page): Promise<{
+type StockCandidate = {
+  score: number
+  value: string
+  placeholder: string
+  type: string
+  at: number[]
+}
+
+type StockInputInfo = {
   target: import('playwright').Page | import('playwright').Frame
   value: string
-} | null> {
+  /** DOM 上的 value 属性（有的组件只更新 attribute 不更新 property） */
+  attr: string
+  placeholder: string
+  type: string
+  scopeText: string
+  candidates: StockCandidate[]
+  labelHtml: string
+  inputHtml: string
+}
+
+async function locateStockInput(page: Page): Promise<StockInputInfo | null> {
   for (const target of allTargets(page)) {
     const found = (await target.evaluate(FIND_STOCK_INPUT).catch(() => ({ found: false }))) as
-      | { found: true; value: string; visible: boolean }
+      | {
+          found: true
+          value: string
+          placeholder: string
+          type: string
+          scopeText: string
+          attr?: string
+          labelHtml?: string
+          inputHtml?: string
+          candidates?: StockCandidate[]
+          visible: boolean
+        }
       | { found: false }
-    if (found.found && found.visible) return { target, value: found.value }
+    if (found.found && found.visible) {
+      return {
+        target,
+        value: found.value,
+        attr: found.attr ?? '',
+        placeholder: found.placeholder,
+        type: found.type,
+        scopeText: found.scopeText,
+        candidates: found.candidates ?? [],
+        labelHtml: found.labelHtml ?? '',
+        inputHtml: found.inputHtml ?? '',
+      }
+    }
   }
   return null
 }
 
 /** 轮询等「投放库存」出现（跨所有 frame） */
-async function waitForStockInput(
-  page: Page,
-  timeout: number,
-): Promise<{
-  target: import('playwright').Page | import('playwright').Frame
-  value: string
-} | null> {
+async function waitForStockInput(page: Page, timeout: number): Promise<StockInputInfo | null> {
   const deadline = Date.now() + timeout
   while (Date.now() < deadline) {
-    const readStarted = Date.now()
     const located = await locateStockInput(page)
     if (located) return located
     await page.waitForTimeout(400)
@@ -386,7 +734,7 @@ async function clickEditInAnyFrame(page: Page): Promise<boolean> {
   return false
 }
 
-/** 描述当前抽屉内部/** 描述当前抽屉内部：文字、按钮、是否 iframe（排查「抽屉开了但找不到编辑」） */
+/** 描述当前抽屉内部：文字、按钮、是否 iframe（排查「抽屉开了但找不到编辑」） */
 async function describeDrawer(page: Page): Promise<string> {
   return (await page
     .evaluate(() => {
@@ -462,14 +810,16 @@ async function openSeckillByButton(
     if (text) frameTexts.push(`[${target.url().slice(0, 40)}] ${text}`)
   }
   const frameText = frameTexts.join(' || ').slice(0, 400)
+  // 失败时留一张现场截图，方便在别的机器上排查
+  await takeScreenshot(page, '秒杀补货').catch(() => {})
   const drawer = await describeDrawer(page).catch(() => '{}')
   trace.push(
-    `${editClicked ? '点了编辑但没等到投放库存' : '抽屉已打开但没找到「编辑」'}；抽屉内容=${drawer}`,
+    `${editClicked ? '点了编辑但没等到投放库存' : '抽屉已打开但没找到「编辑」'}；抽屉内容=${drawer}；各 frame 文字=${frameText || '(空)'}`,
   )
   return false
 }
 
-/** 页面当前可见的短文本/** 页面当前可见的短文本/** 页面当前可见的短文本（排查用，控制在 25 条以内） */
+/** 页面当前可见的短文本（排查用，控制在 25 条以内） */
 async function snapshotTexts(page: Page): Promise<string> {
   return (await page.evaluate(() => {
     const visible = (el: Element) => {
@@ -624,102 +974,185 @@ export async function restockSeckill(
     throw new Error('「投放秒杀」里没找到「投放库存」输入框（主文档和所有 iframe 都查过了）')
   }
   const uiTarget = located.target
-  const current = { found: true as const, value: located.value }
-  const beforeValue = Number.parseInt(current.value, 10)
-  if (!Number.isFinite(beforeValue)) {
-    throw new Error(`「投放库存」当前值不是数字：${current.value}`)
+
+  // ⚠️ 输入框会先以空壳出现，数据是异步灌进来的：空着 ≠ 真的是 0。
+  //    所以先等值稳定（空值要多等一会），再拿它当基准。
+  const settled = await readStockSettled(page, uiTarget, 8000)
+  let beforeValue = settled.value
+  if (beforeValue === null && settled.raw.trim() !== '') {
+    // 有内容但不是数字 → 多半抓错了框，退回 placeholder / 附近文案再试
+    beforeValue = parseStockFromScopeText(located.scopeText)
   }
-  const nextValue = beforeValue + addCount
+  if (beforeValue === null && settled.raw.trim() === '') {
+    // 等稳了还是空 → 该活动确实还没投放库存，补货 +N 等于设为 N
+    beforeValue = 0
+    trace.push(`投放库存输入框持续为空（${settled.settled ? '已稳定' : '等满 8 秒'}），按 0 处理`)
+  }
+
+  if (beforeValue === null) {
+    const cand = located.candidates
+      .map(c => `[分${c.score} value="${c.value}" ph="${c.placeholder}" ${c.type || 'text'}]`)
+      .join(' ')
+    throw new Error(
+      `「投放库存」当前值不是数字：value="${located.value}" ` +
+        `placeholder="${located.placeholder}" type=${located.type || '(无)'} ` +
+        `附近文字="${located.scopeText}"；候选：${cand || '无'}；` +
+        `输入框HTML=${located.inputHtml}；标签块HTML=${located.labelHtml}`,
+    )
+  }
+  let nextValue = beforeValue + addCount
   timings.readStockMs = Date.now() - readStarted
 
-  const setResult = (await uiTarget.evaluate(SET_STOCK_INPUT(nextValue))) as
-    | { ok: true; value: string }
-    | { ok: false; reason: string }
-  if (!setResult.ok) {
-    throw new Error(`写入「投放库存」失败（${setResult.reason}）`)
-  }
-
-  // 4) 提交
+  // 3.5) 填值 → 回读校验 → 等按钮可用 → 提交
+  //      两道时序关卡：
+  //      a) 填完按钮要等一次 React 重渲染 + 异步校验才会亮，必须轮询；
+  //      b) 页面可能在我们写完的瞬间才把数据灌回来，把值冲掉——
+  //         所以写完先等 1.2 秒回读一次，被覆盖就拿真实值重算，最多三轮。
   const submitStarted = Date.now()
-  // 「提交」在不同版本可能叫「保存 / 确定」，按优先级找第一个可见可用的
-  const submitCandidates = ['提交', '保存', '确定'].map(t => `button:text-is("${t}")`)
   let submitBtn: import('playwright').Locator | null = null
-  for (const selector of submitCandidates) {
-    const locator = uiTarget.locator(selector).last()
-    if (await locator.isVisible().catch(() => false)) {
-      submitBtn = locator
-      break
+  let filledValue = ''
+
+  for (let attempt = 1; attempt <= 3 && !submitBtn; attempt++) {
+    const filled = await fillStockInput(uiTarget, nextValue, trace)
+    filledValue = filled.value
+    if (!filled.ok) {
+      throw new Error(`写入「投放库存」失败（${filled.reason}）`)
+    }
+
+    // a/b 的顺序不能反：先确认值还在，再等按钮
+    await page.waitForTimeout(1200)
+    const nowRaw = await readStockRaw(uiTarget)
+    const nowValue = parseQuantity(nowRaw)
+    if (nowValue !== null && nowValue !== nextValue) {
+      nextValue = nowValue + addCount
+      trace.push(`第${attempt}轮写入被页面覆盖（读到 ${nowRaw}），按真实值重算为 ${nextValue}`)
+      continue
+    }
+
+    submitBtn = await waitSubmitReady(page, uiTarget, attempt === 1 ? 8000 : 6000)
+    if (!submitBtn && attempt < 3) {
+      trace.push(`第${attempt}轮提交按钮不可用，重填一次`)
+      await page.waitForTimeout(1000)
     }
   }
-  if (!submitBtn) throw new Error('找不到「提交/保存」按钮')
-  if (await submitBtn.isDisabled().catch(() => false)) {
-    throw new Error('「提交」按钮不可用：投放库存可能超出可售库存，或表单未填完')
+
+  if (!submitBtn) {
+    const form = (await uiTarget.evaluate(DESCRIBE_STOCK_FORM).catch(() => null)) as {
+      value: string
+      hint: string
+      scope: string
+    } | null
+    const probes = (await uiTarget.evaluate(PROBE_SUBMIT).catch(() => [])) as Array<{
+      text: string
+      visible: boolean
+      disabled: boolean
+      cls: string
+    }>
+    const btnState =
+      probes
+        .map(
+          p =>
+            `${p.text}${p.visible ? '' : '(不可见)'}${p.disabled ? `(禁用 cls=${p.cls})` : '(可用)'}`,
+        )
+        .join('、') || '页面上没有「提交/保存/确定」按钮'
+    const available = parseAvailableFromScopeText(form?.scope || located.scopeText)
+    throw new Error(
+      '「提交」按钮一直不可用，库存没写进表单或被校验挡住：' +
+        `输入框当前值="${form?.value ?? filledValue}"，按钮=${btnState}，` +
+        `附近提示="${form?.hint || '无'}"，附近文字="${form?.scope || located.scopeText}"` +
+        (available !== null ? `，可售库存 ${available}` : '') +
+        (available === 0
+          ? '（可售库存为 0 通常是商品本身库存已售完，需要先在商品库存里补，秒杀这边才能加）'
+          : '') +
+        `；步骤：${trace.join(' → ')}`,
+    )
   }
   await submitBtn.click()
   timings.submitMs = Date.now() - submitStarted
+  trace.push(`已点提交（${nextValue}）`)
 
-  // 5) 等弹窗关闭（提交成功的表现），并复核剩余库存是否真的变了
-  //    同样不依赖标题：以「投放库存」输入框消失为准
-  let sawSuccessText = false
-  const closed = await (async () => {
-    const deadline = Date.now() + 15000
-    while (Date.now() < deadline) {
-      const found = (await uiTarget.evaluate(FIND_STOCK_INPUT).catch(() => ({ found: true }))) as {
-        found: boolean
-        visible?: boolean
-      }
-      // 表单收起来后，输入框可能只是被隐藏（仍留在 DOM 里），所以判「不可见」也算关闭
-      if (!found.found || found.visible === false) return true
-
-      // 兜底：出现成功提示也算提交完成
-      const successText = await uiTarget
-        .evaluate(() =>
-          /提交成功|保存成功|操作成功|已提交|审核中/.test(document.body?.innerText || ''),
-        )
-        .catch(() => false)
-      if (successText) {
-        sawSuccessText = true
-        return true
-      }
-
-      await page.waitForTimeout(500)
-    }
-    return false
-  })()
-
+  // 5) 提交之后：**同时**盯两个信号，谁先到算谁
+  //    - 表单收起（输入框消失/不可见，或出现成功提示）
+  //    - 列表里的剩余库存真的变了
+  //    以前是先等表单关闭、再查库存，可有些版本提交成功后编辑页根本不收起，
+  //    于是永远判不出「关闭」，明明补成功也报「没捕获到表单关闭」。
   const verifyStarted = Date.now()
+  let sawSuccessText = false
+  let closed = false
   let after: number | null = null
-  if (closed) {
-    const deadline = Date.now() + 10000
-    while (Date.now() < deadline) {
-      await page.waitForTimeout(800)
-      const text = await row.innerText().catch(() => '')
-      const parsed = parseRowText(text)
-      if (parsed.stock !== null && parsed.stock !== before.stock) {
-        after = parsed.stock
-        break
+
+  const deadline = Date.now() + 20000
+  while (Date.now() < deadline) {
+    if (!closed) {
+      const found = (await uiTarget.evaluate(FIND_STOCK_INPUT).catch(() => ({
+        found: false,
+        visible: false,
+      }))) as { found: boolean; visible?: boolean }
+
+      // 表单收起来后，输入框可能只是被隐藏（仍留在 DOM 里），所以判「不可见」也算关闭
+      if (!found.found || found.visible === false) {
+        closed = true
+      }
+
+      // 第二个信号：提交后回到「秒杀详情」视图（「编辑」按钮重新出现）
+      if (!closed) {
+        const backToDetail = await uiTarget
+          .locator('button:text-is("编辑"), :text-is("编辑")')
+          .last()
+          .isVisible()
+          .catch(() => false)
+        if (backToDetail) closed = true
+      }
+
+      // 第三个信号：页面出现成功提示
+      if (!closed) {
+        const successText = await uiTarget
+          .evaluate(() =>
+            /提交成功|保存成功|操作成功|已提交|审核中/.test(document.body?.innerText || ''),
+          )
+          .catch(() => false)
+        if (successText) {
+          sawSuccessText = true
+          closed = true
+        }
       }
     }
+
+    // 库存变了就是铁证，不管表单有没有收起
+    const text = await row.innerText().catch(() => '')
+    const parsed = parseRowText(text)
+    if (parsed.stock !== null && parsed.stock !== before.stock) {
+      after = parsed.stock
+      break
+    }
+
+    // 表单已收起但列表迟迟不刷新，就别干等了
+    if (closed && Date.now() - verifyStarted > 6000) break
+
+    await page.waitForTimeout(600)
   }
+
   timings.verifyMs = Date.now() - verifyStarted
 
   const verified = after !== null
+  // 写入过程中可能被页面覆盖后重算过，基准值以最终提交的为准
+  const effectiveBefore = nextValue - addCount
   return {
     index,
     title: before.title,
-    before: beforeValue,
+    before: effectiveBefore,
     next: nextValue,
     beforeStock: before.stock,
     afterStock: after,
     verified,
     closed,
     message: verified
-      ? `投放库存 ${beforeValue} → ${nextValue}，剩余库存已变为 ${after}（合计 ${Date.now() - startedAt}ms）`
+      ? `投放库存 ${effectiveBefore} → ${nextValue}，剩余库存已变为 ${after}（合计 ${Date.now() - startedAt}ms）`
       : closed
-        ? `投放库存已提交（${beforeValue} → ${nextValue}）${
+        ? `投放库存已提交（${effectiveBefore} → ${nextValue}）${
             sawSuccessText ? '，页面已提示成功' : ''
           }，列表可能还没刷新`
-        : '已点提交，但 15 秒内表单没有收起，可能在提交中或失败，请到页面核对',
+        : '已点提交：表单没收起、也没读到库存变化（可能仍在提交，或列表没刷新），请到页面核对',
     timings,
   }
 }

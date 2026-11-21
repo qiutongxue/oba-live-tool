@@ -11,6 +11,7 @@ import { useCurrentLiveControl } from '@/hooks/useLiveControl'
 import {
   useCurrentSeckillConfig,
   useCurrentSeckillGoods,
+  useCurrentSeckillRunning,
   useSeckillActions,
 } from '@/hooks/useSeckill'
 import { cn } from '@/lib/utils'
@@ -27,7 +28,8 @@ export default function Seckill() {
   const lastReadAt = useCurrentSeckillGoods(context => context.lastReadAt)
   const loading = useCurrentSeckillGoods(context => context.loading)
   const config = useCurrentSeckillConfig()
-  const { read, restock, dump, recordClick, openFloat, applyFloatMode, updateConfig } =
+  const running = useCurrentSeckillRunning()
+  const { read, restock, openFloat, applyFloatMode, updateConfig, startWatch, stopWatch } =
     useSeckillActions()
 
   const [busyIndex, setBusyIndex] = useState<number | null>(null)
@@ -58,6 +60,20 @@ export default function Seckill() {
       <div className="flex items-center justify-between">
         <Title title="秒杀补货" description="监控货架上的秒杀商品，售罄后一键补库存" />
         <div className="flex items-center gap-2">
+          <Button
+            variant={running ? 'outline' : 'default'}
+            size="sm"
+            disabled={!connected}
+            onClick={() => (running ? stopWatch() : startWatch())}
+          >
+            <span
+              className={cn(
+                'mr-1.5 h-2 w-2 rounded-full',
+                running ? 'bg-emerald-500 animate-pulse' : 'bg-muted-foreground/40',
+              )}
+            />
+            {running ? '停止监控' : '开启监控'}
+          </Button>
           <Button variant="outline" size="sm" onClick={() => openFloat()}>
             <ExternalLink className="w-4 h-4 mr-1.5" />
             打开悬浮窗
@@ -141,35 +157,25 @@ export default function Seckill() {
 
         <Card>
           <CardHeader>
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <CardTitle>
-                  货架商品
-                  {goods.length > 0 && (
-                    <span className="ml-2 text-xs font-normal text-muted-foreground">
-                      共 {goods.length} 个 · 售罄 {soldOutCount} 个
-                    </span>
-                  )}
-                </CardTitle>
-                <CardDescription>
-                  {lastReadAt
-                    ? `上次读取：${new Date(lastReadAt).toLocaleTimeString('zh-CN')}`
-                    : '还没有读取过'}
-                  {config.manualEntry && (
-                    <span className="ml-2 text-amber-600">
-                      手动模式：点「补货」后，请到页面上点闹钟图标 → 编辑，我会自动填数并提交
-                    </span>
-                  )}
-                </CardDescription>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm" onClick={() => void recordClick()}>
-                  抓取一次点击
-                </Button>
-                <Button variant="ghost" size="sm" onClick={() => void dump()}>
-                  导出页面结构
-                </Button>
-              </div>
+            <div>
+              <CardTitle>
+                货架商品
+                {goods.length > 0 && (
+                  <span className="ml-2 text-xs font-normal text-muted-foreground">
+                    共 {goods.length} 个 · 售罄 {soldOutCount} 个
+                  </span>
+                )}
+              </CardTitle>
+              <CardDescription>
+                {lastReadAt
+                  ? `上次读取：${new Date(lastReadAt).toLocaleTimeString('zh-CN')}`
+                  : '还没有读取过'}
+                {config.manualEntry && (
+                  <span className="ml-2 text-amber-600">
+                    手动模式：点「补货」后，请到页面上点闹钟图标 → 编辑，我会自动填数并提交
+                  </span>
+                )}
+              </CardDescription>
             </div>
           </CardHeader>
           <CardContent>
@@ -218,7 +224,9 @@ export default function Seckill() {
         </Card>
 
         <p className="text-xs text-muted-foreground">
-          自动补货还没开放：补货要在「投放秒杀」弹窗里改数和提交，先把手动链路在真机上跑通、确认选择器稳定，再接自动循环。
+          {running
+            ? '监控中：每 30 秒巡检一次货架，售罄后按「悬浮窗打开方式」提示你补货。'
+            : '点「开启监控」后，程序会每 30 秒巡检一次货架，售罄时提醒你（不会自动改库存）。'}
         </p>
       </div>
     </div>

@@ -115,8 +115,12 @@ export interface IpcChannels {
     params: SendGiftBagParams,
   ) => SendGiftBagResult | null
   [IPC_CHANNELS.tasks.marketing.getCoupons]: (accountId: string) => CouponInfo[]
+  [IPC_CHANNELS.tasks.marketing.getCouponSendOptions]: (
+    accountId: string,
+    couponName: string,
+  ) => CouponSendOptions
   // 秒杀补货
-  [IPC_CHANNELS.seckill.read]: (accountId: string) => SeckillGoods[]
+  [IPC_CHANNELS.seckill.read]: (accountId: string) => { goods: SeckillGoods[]; ok: boolean }
   [IPC_CHANNELS.seckill.restock]: (
     accountId: string,
     index: number,
@@ -127,6 +131,13 @@ export interface IpcChannels {
   [IPC_CHANNELS.seckill.recordClick]: (accountId: string) => string
   [IPC_CHANNELS.seckill.openFloat]: () => void
   [IPC_CHANNELS.seckill.closeFloat]: () => void
+  [IPC_CHANNELS.seckill.setFloatHeight]: (height: number) => void
+  [IPC_CHANNELS.seckill.reportFloatCount]: (count: number, ok: boolean) => void
+  [IPC_CHANNELS.seckill.floatShownEvent]: (payload: { goods: SeckillGoods[] }) => void
+  [IPC_CHANNELS.seckill.floatGoodsEvent]: (payload: { goods: SeckillGoods[] }) => void
+  [IPC_CHANNELS.seckill.start]: (accountId: string) => void
+  [IPC_CHANNELS.seckill.stop]: (accountId: string) => void
+  [IPC_CHANNELS.seckill.stoppedEvent]: (accountId: string) => void
   [IPC_CHANNELS.seckill.setFloatMode]: (accountId: string, mode: SeckillFloatMode) => void
 
   [IPC_CHANNELS.tasks.marketing.sendCoupon]: (
