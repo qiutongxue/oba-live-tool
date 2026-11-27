@@ -121,6 +121,12 @@ export class AccountSession {
   }
 
   public async startTask(task: LiveControlTask): Result.ResultAsync<void, Error> {
+    // 同类型任务已在运行时先停止，避免重复启动导致任务泄漏 / 重复发送
+    const existingTask = this.activeTasks.get(task.type)
+    if (existingTask?.isRunning()) {
+      existingTask.stop()
+      this.activeTasks.delete(task.type)
+    }
     const newTask = makeTask(task, this.platform, this.account, this.logger)
     if (Result.isFailure(newTask)) {
       return newTask

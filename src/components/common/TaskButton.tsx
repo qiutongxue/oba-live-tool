@@ -8,12 +8,20 @@ export function TaskButton({
   isTaskRunning,
   onStartStop,
   forbidden = false,
+  connectionReady,
 }: {
   isTaskRunning: boolean
   onStartStop: () => void
   forbidden?: boolean
+  /** 覆盖默认的「当前账号是否已连接」判断，用于多账号场景 */
+  connectionReady?: boolean
 }) {
-  const isConnected = useCurrentLiveControl(context => context.isConnected)
+  const currentIsConnected = useCurrentLiveControl(context => context.isConnected)
+  const isConnected = connectionReady
+    ? 'connected'
+    : currentIsConnected === 'connected'
+      ? 'connected'
+      : 'disconnected'
   const debouncedFn = useDebounceFn(onStartStop, {
     wait: 500,
     leading: true,

@@ -43,6 +43,11 @@ function useGlobalIpcListener() {
 
   useIpcListener(IPC_CHANNELS.tasks.liveControl.disconnectedEvent, id => {
     setIsConnected(id, 'disconnected')
+    // 断连时主进程会停止该账号的所有任务；手动停止不再推送 stoppedEvent，
+    // 这里显式重置运行状态，避免 UI 残留「发言中 / 弹窗中」状态。
+    setIsRunningAutoMessage(id, false)
+    setIsRunningAutoPopUp(id, false)
+    setIsListening(id, 'stopped')
     toast.error('直播控制台已断开连接')
   })
 

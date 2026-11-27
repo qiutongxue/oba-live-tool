@@ -8,6 +8,7 @@ import type { IPerformComment } from '#/platforms/IPlatform'
 import { insertRandomSpaces, randomInt, replaceVariant, takeScreenshot } from '#/utils'
 import windowManager from '#/windowManager'
 import { createIntervalTask } from './IntervalTask'
+import { TaskStopReason } from './ITask'
 import { runWithRetry } from './retry'
 
 const TASK_NAME = '自动评论'
@@ -137,7 +138,11 @@ export function createAutoCommentTask(
     )
   }
 
-  intervalTask.addStopListener(() => {
+  intervalTask.addStopListener((_, reason) => {
+    // 手动停止（含批量停止 / 重复启动时的旧任务清理）由调用方自行更新 UI 状态，
+    // 不再推送 stoppedEvent，否则会与启动流程产生竞态并误报「任务已停止」错误提示。
+    // 仅在任务异常中断时通知渲染层。
+    if (reason === TaskStopReason.MANUAL) return
     windowManager.send(IPC_CHANNELS.tasks.autoMessage.stoppedEvent, account.id)
   })
 

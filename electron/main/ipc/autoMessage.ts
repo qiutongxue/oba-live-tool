@@ -1,4 +1,5 @@
 import { Result } from '@praha/byethrow'
+import type { BatchAccountResult } from 'shared/electron-api'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { createLogger } from '#/logger'
 import { accountManager } from '#/managers/AccountManager'
@@ -33,6 +34,43 @@ function setupIpcHandlers() {
     )
   })
 
+  /** 批量启动自动发言：每个账号使用各自独立的会话与配置 */
+  typedIpcMainHandle(
+    IPC_CHANNELS.tasks.autoMessage.startForAccounts,
+    async (_, accountIds, config) => {
+      const results: BatchAccountResult[] = []
+      for (const accountId of accountIds) {
+        const outcome = await Result.pipe(
+          accountManager.getSession(accountId),
+          Result.andThen(accountSession =>
+            accountSession.startTask({ type: TASK_TYPE, config }),
+          ),
+        )
+        const result = Result.isSuccess(outcome)
+        if (!result) {
+          const logger = createLogger(`@${accountManager.getAccountName(accountId)}`).scope(
+            TASK_NAME,
+          )
+          logger.error('批量启动任务失败：', Result.unwrapError(outcome))
+        }
+        results.push({ accountId, success: result })
+      }
+      return results
+    },
+  )
+
+  /** 批量停止自动发言 */
+  typedIpcMainHandle(IPC_CHANNELS.tasks.autoMessage.stopForAccounts, async (_, accountIds) => {
+    return accountIds.map(accountId => {
+      const result = Result.pipe(
+        accountManager.getSession(accountId),
+        Result.inspect(accountSession => accountSession.stopTask(TASK_TYPE)),
+        r => Result.isSuccess(r),
+      )
+      return { accountId, success: result }
+    })
+  })
+
   typedIpcMainHandle(
     IPC_CHANNELS.tasks.autoMessage.sendBatchMessages,
     async (_, accountId, messages, count) => {
@@ -49,6 +87,29 @@ function setupIpcHandlers() {
         }),
         r => r.then(Result.isSuccess),
       )
+    },
+  )
+
+  /** 批量一键刷屏：每个账号在各自直播间独立执行 */
+  typedIpcMainHandle(
+    IPC_CHANNELS.tasks.autoMessage.sendBatchMessagesForAccounts,
+    async (_, accountIds, messages, count) => {
+      const results: BatchAccountResult[] = []
+      for (const accountId of accountIds) {
+        const outcome = await Result.pipe(
+          accountManager.getSession(accountId),
+          Result.andThen(accountSession =>
+            accountSession.startTask({ type: 'send-batch-messages', config: { messages, count } }),
+          ),
+        )
+        const result = Result.isSuccess(outcome)
+        if (!result) {
+          const logger = createLogger(`@${accountManager.getAccountName(accountId)}`).scope('一键评论')
+          logger.error('批量一键刷屏失败：', Result.unwrapError(outcome))
+        }
+        results.push({ accountId, success: result })
+      }
+      return results
     },
   )
 

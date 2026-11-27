@@ -2,6 +2,13 @@ import type { LogMessage } from 'electron-log'
 import type { ProgressInfo, UpdateDownloadedEvent } from 'electron-updater'
 import { IPC_CHANNELS } from './ipcChannels'
 
+/** 批量操作单个账号的执行结果 */
+export interface BatchAccountResult {
+  accountId: string
+  success: boolean
+  error?: string
+}
+
 export interface IpcChannels {
   // LiveControl
   [IPC_CHANNELS.tasks.liveControl.connect]: (params: {
@@ -11,6 +18,15 @@ export interface IpcChannels {
     platform: LiveControlPlatform
     account: Account
   }) => boolean
+  [IPC_CHANNELS.tasks.liveControl.connectAccounts]: (
+    params: Array<{
+      chromePath?: string
+      headless?: boolean
+      storageState?: string
+      platform: LiveControlPlatform
+      account: Account
+    }>,
+  ) => BatchAccountResult[]
   [IPC_CHANNELS.tasks.liveControl.disconnect]: (accountId: string) => boolean
   [IPC_CHANNELS.tasks.liveControl.disconnectedEvent]: (id: string) => void
   [IPC_CHANNELS.tasks.liveControl.notifyAccountName]: (
@@ -26,12 +42,22 @@ export interface IpcChannels {
   // AutoMessage
   [IPC_CHANNELS.tasks.autoMessage.start]: (accountId: string, config: AutoCommentConfig) => boolean
   [IPC_CHANNELS.tasks.autoMessage.stop]: (accountId: string) => boolean
+  [IPC_CHANNELS.tasks.autoMessage.startForAccounts]: (
+    accountIds: string[],
+    config: AutoCommentConfig,
+  ) => BatchAccountResult[]
+  [IPC_CHANNELS.tasks.autoMessage.stopForAccounts]: (accountIds: string[]) => BatchAccountResult[]
   [IPC_CHANNELS.tasks.autoMessage.stoppedEvent]: (id: string) => void
   [IPC_CHANNELS.tasks.autoMessage.sendBatchMessages]: (
     accountId: string,
     messages: string[],
     count: number,
   ) => boolean
+  [IPC_CHANNELS.tasks.autoMessage.sendBatchMessagesForAccounts]: (
+    accountIds: string[],
+    messages: string[],
+    count: number,
+  ) => BatchAccountResult[]
   [IPC_CHANNELS.tasks.autoMessage.updateConfig]: (
     accountId: string,
     config: Parital<AutoCommentConfig>,

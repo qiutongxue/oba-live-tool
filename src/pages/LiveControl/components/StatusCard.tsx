@@ -1,5 +1,5 @@
 import { useMemoizedFn } from 'ahooks'
-import { CheckIcon, CircleAlert, GlobeIcon, XIcon } from 'lucide-react'
+import { CheckIcon, CircleAlert, GlobeIcon, Layers3Icon, XIcon } from 'lucide-react'
 import React, { useState } from 'react'
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -8,8 +8,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
 import { useAccounts } from '@/hooks/useAccounts'
-import { useCurrentChromeConfig, useCurrentChromeConfigActions } from '@/hooks/useChromeConfig'
-import { useCurrentLiveControl, useCurrentLiveControlActions } from '@/hooks/useLiveControl'
+import {
+  useChromeConfigStore,
+  useCurrentChromeConfig,
+  useCurrentChromeConfigActions,
+} from '@/hooks/useChromeConfig'
+import {
+  useCurrentLiveControl,
+  useCurrentLiveControlActions,
+  useLiveControlStore,
+} from '@/hooks/useLiveControl'
 import { useToast } from '@/hooks/useToast'
 import PlatformSelect from './PlatformSelect'
 
@@ -76,9 +84,82 @@ const StatusCard = React.memo(() => {
           <StatusAlert />
           <Separator />
           <HeadlessSetting />
+          <Separator />
+          <MultiAccountConnect />
         </div>
       </CardContent>
     </Card>
+  )
+})
+
+/** 一键连接所有未连接账号：每个账号使用各自的登录态与平台配置，互不干扰 */
+const MultiAccountConnect = React.memo(() => {
+  const accounts = useAccounts(state => state.accounts)
+  const connectionContexts = useLiveControlStore(state => state.contexts)
+  const chromeContexts = useChromeConfigStore(state => state.contexts)
+  const setIsConnected = useLiveControlStore(state => state.setIsConnected)
+  const [connecting, setConnecting] = useState(false)
+  const { toast } = useToast()
+
+  const pendingAccounts = accounts.filter(
+    account => connectionContexts[account.id]?.isConnected !== 'connected',
+  )
+
+  const handleConnectAll = useMemoizedFn(async () => {
+    if (pendingAccounts.length === 0) {
+      toast.success('所有账号均已连接')
+      return
+    }
+    setConnecting(true)
+    try {
+      const params = pendingAccounts.map(account => {
+        const chromeConfig = chromeContexts[account.id]
+        const platform = connectionContexts[account.id]?.platform ?? 'douyin'
+        return {
+          chromePath: chromeConfig?.path,
+          // 淘宝强制关闭无头模式（与单账号连接保持一致）
+          headless: platform === 'taobao' ? false : chromeConfig?.headless,
+          storageState: chromeConfig?.storageState,
+          platform,
+          account,
+        }
+      })
+      for (const item of params) setIsConnected(item.account.id, 'connecting')
+      const results = await window.ipcRenderer.invoke(
+        IPC_CHANNELS.tasks.liveControl.connectAccounts,
+        params,
+      )
+      let successCount = 0
+      for (const result of results) {
+        setIsConnected(result.accountId, result.success ? 'connected' : 'disconnected')
+        if (result.success) successCount++
+      }
+      if (successCount > 0) toast.success(`已连接 ${successCount} 个账号`)
+      if (successCount < results.length) toast.error(`${results.length - successCount} 个账号连接失败`)
+    } catch (error) {
+      for (const account of pendingAccounts) setIsConnected(account.id, 'disconnected')
+      toast.error(error instanceof Error ? error.message : '批量连接失败')
+    } finally {
+      setConnecting(false)
+    }
+  })
+
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <div>
+        <div className="flex items-center gap-2 text-sm font-medium">
+          <Layers3Icon className="h-4 w-4" />
+          多账号连接
+        </div>
+        <div className="text-muted-foreground text-xs">
+          一键连接全部账号，各账号登录态与浏览器环境相互隔离（共 {accounts.length} 个账号，
+          {pendingAccounts.length} 个待连接）
+        </div>
+      </div>
+      <Button size="sm" variant="outline" onClick={handleConnectAll} disabled={connecting}>
+        {connecting ? '连接中...' : '连接所有账号'}
+      </Button>
+    </div>
   )
 })
 
