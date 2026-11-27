@@ -22,7 +22,10 @@ import { useAutoMessageStore } from './hooks/useAutoMessage'
 import { useAutoPopUpStore } from './hooks/useAutoPopUp'
 import { useAutoReply, useAutoReplyStore } from './hooks/useAutoReply'
 import { useChromeConfigStore } from './hooks/useChromeConfig'
+import { useCommentScrollStore } from './hooks/useCommentScroll'
 import { useLiveControlStore } from './hooks/useLiveControl'
+import { useMarketingLoopStore } from './hooks/useMarketingLoop'
+import { useSeckillFloatModeSync, useSeckillRuntimeStore } from './hooks/useSeckill'
 import { useToast } from './hooks/useToast'
 import { useUpdateConfigStore, useUpdateStore } from './hooks/useUpdate'
 
@@ -32,6 +35,9 @@ function useGlobalIpcListener() {
   const { setIsConnected, setAccountName } = useLiveControlStore()
   const setIsRunningAutoMessage = useAutoMessageStore(s => s.setIsRunning)
   const setIsRunningAutoPopUp = useAutoPopUpStore(s => s.setIsRunning)
+  const setIsRunningMarketingLoop = useMarketingLoopStore(s => s.setIsRunning)
+  const setCommentScrollRunning = useCommentScrollStore(s => s.setRunning)
+  const setSeckillRunning = useSeckillRuntimeStore(s => s.setRunning)
   const setStorageState = useChromeConfigStore(s => s.setStorageState)
   const enableAutoCheckUpdate = useUpdateConfigStore(s => s.enableAutoCheckUpdate)
   const handleUpdate = useUpdateStore.use.handleUpdate()
@@ -54,6 +60,20 @@ function useGlobalIpcListener() {
   useIpcListener(IPC_CHANNELS.tasks.autoPopUp.stoppedEvent, id => {
     setIsRunningAutoPopUp(id, false)
     toast.error('自动弹窗已停止')
+  })
+
+  useIpcListener(IPC_CHANNELS.tasks.marketing.loopStoppedEvent, id => {
+    setIsRunningMarketingLoop(id, false)
+    toast.error('营销循环已停止')
+  })
+
+  useIpcListener(IPC_CHANNELS.tasks.commentScroll.stoppedEvent, id => {
+    setCommentScrollRunning(id, false)
+  })
+
+  // 断开中控台后主进程会停掉秒杀巡检，这里把侧边栏绿点一起熄掉
+  useIpcListener(IPC_CHANNELS.seckill.stoppedEvent, id => {
+    setSeckillRunning(id, false)
   })
 
   useIpcListener(IPC_CHANNELS.tasks.autoReply.listenerStopped, id => {
@@ -89,6 +109,8 @@ function App() {
   }, [accounts, currentAccountId])
 
   useGlobalIpcListener()
+  // 售罄弹窗方式：把界面上的持久化配置推给主进程，避免重启后主进程还停在默认的「快捷键」
+  useSeckillFloatModeSync()
 
   const handleRefresh = () => {
     window.location.reload()

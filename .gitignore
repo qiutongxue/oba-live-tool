@@ -43,3 +43,15 @@ coverage/
 
 .trae
 .claude
+
+# 取证脚本产物（含登录态截图/DOM，禁止提交）
+recon/
+.recon-chrome-profile/
+
+# 本机排查产物 / 私人脚本（不提交到仓库）
+.workbuddy/
+HANDOFF.md
+oba-probe/
+scripts/recon.mjs
+scripts/cdp-inspect.mjs
+scripts/eos-marketing-test.mjs

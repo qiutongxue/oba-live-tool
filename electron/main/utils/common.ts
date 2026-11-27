@@ -55,6 +55,63 @@ export function errorMessage(error: unknown) {
   return String(error)
 }
 
+/**
+ * 把「5分钟」「30秒」「1小时」这类时长文本转成毫秒；无法识别返回 null。
+ * 用途：营销循环记录发放时长，估算下一次检查时间。
+ */
+export function parseDurationText(text: string): number | null {
+  const matched = text.replace(/\s/g, '').match(/^(\d+)(秒|分钟|分|小时)$/)
+  if (!matched) return null
+  const value = Number(matched[1])
+  switch (matched[2]) {
+    case '秒':
+      return value * 1000
+    case '小时':
+      return value * 3600 * 1000
+    default:
+      return value * 60 * 1000
+  }
+}
+
+/**
+ * 从状态文本里解析剩余时间，如「发放中 03:31」→ 211000（毫秒）。
+ * 支持 mm:ss 与 hh:mm:ss；解析不到或超出合理范围（> 6 小时）返回 null。
+ */
+export function parseCountdownText(text: string): number | null {
+  const matched = text.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?/)
+  if (!matched) return null
+  const hasHours = matched[3] !== undefined
+  const hours = hasHours ? Number(matched[1]) : 0
+  const minutes = hasHours ? Number(matched[2]) : Number(matched[1])
+  const seconds = hasHours ? Number(matched[3]) : Number(matched[2])
+  const ms = ((hours * 60 + minutes) * 60 + seconds) * 1000
+  if (ms < 0 || ms > 6 * 3600 * 1000) return null
+  return ms
+}
+
+/**
+ * 极简异步互斥锁（先到先得，排队执行）。
+ *
+ * 用途：多个任务共用**同一个页面**做 DOM 操作时（自动弹窗 / 自动发言 / 营销循环），
+ * 一方的操作会让页面重渲染，把另一方刚拿到的 ElementHandle 挤掉，
+ * 报 `Element is not attached to the DOM`。用这把锁把页面操作串行化即可避免互相踩。
+ *
+ * 注意：不要嵌套使用同一把锁（会死锁）。
+ */
+export class AsyncLock {
+  private tail: Promise<unknown> = Promise.resolve()
+
+  run<T>(task: () => Promise<T>): Promise<T> {
+    const result = this.tail.then(task, task)
+    // 无论成败都让链条继续，避免一次失败卡死后续所有排队者
+    this.tail = result.then(
+      () => undefined,
+      () => undefined,
+    )
+    return result
+  }
+}
+
 export function insertRandomSpaces(text: string, insertionProbability = 0.2): string {
   // 不处理空字符串或概率为0的情况
   if (!text || insertionProbability <= 0) return text
